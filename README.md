@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173/ for the gallery, or http://localhost:5173/ev-operations/ for a showcase.
+Open the URL Vite prints for the gallery, and add a showcase folder to it for a showcase, e.g. `/ev-operations/`.
 
 To run the smoke tests, install Chromium for Playwright once, then run `npm test`:
 
@@ -33,12 +33,14 @@ npm test
 |--------|--------------|
 | `npm run dev` | Vite dev server for the gallery and all showcases |
 | `npm run build` | Builds the gallery and all showcases into `dist/`: `dist/index.html` and `dist/<showcase>/` |
-| `npm run preview` | Serves `dist/` under `/showcases/`, as on GitHub Pages: http://localhost:4173/showcases/ |
+| `npm run preview` | Serves `dist/` under `/showcases/`, as on GitHub Pages, at the URL it prints |
 | `npm run lint` | ESLint, then Stylelint (logical properties, no `!important`) |
 | `npm test` | Playwright smoke tests in [`tests/`](tests/): builds, serves under `/showcases/` and checks every page |
 
 The `@bryntum` packages come from the public npm registry. The repository's `.npmrc` points the `@bryntum` scope
 there, in case your npm config sends it to npm.bryntum.com, which serves Bryntum 7 and older.
+
+Without a licence key the Bryntum components run in trial mode and show a watermark.
 
 ## Repository layout
 

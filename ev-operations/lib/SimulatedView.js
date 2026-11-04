@@ -53,7 +53,8 @@ export default Target => class SimulatedView extends ClippedBars(NowMarker(Simul
                     beforeLoadApply : ({ response }) => {
                         me.people = new Map((response.people || []).map(person => [person.name, person]));
                     },
-                    // Deferred: dataReady fires mid-commit, and the store edits below would start a nested commit
+                    // Deferred: dataReady fires mid-commit, the store edits below would nest a commit.
+                    // See bryntum/bryntum#14129
                     dataReady : () => queueMicrotask(() => {
                         if (!me.isDestroyed) {
                             me.onOpsDataReady();
