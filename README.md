@@ -124,6 +124,26 @@ on the app a showcase renders into it.
 GitHub Pages. The build uses relative asset URLs (`base : './'`), so it runs under `/showcases/` as well as at any
 other path.
 
+### Analytics
+
+The deployed pages report to Bryntum's Google Analytics 4 property (`G-1VY6776VJP`) with the plain gtag.js snippet.
+No other tags are loaded, and no ad tags.
+
+- **Consent denied by default.** The snippet sets Google Consent Mode v2 with `ad_storage`, `ad_user_data`,
+  `ad_personalization` and `analytics_storage` all `denied`, before the config. GA4 then sends cookieless pings only:
+  no cookies are set and nothing is used for ads. Google signals and ad personalization are also turned off in the
+  config.
+- **Production deploys only.** The Vite plugin in `vite.config.js` injects the snippet into every page's `<head>`
+  only when the `SHOWCASES_GA4_ID` environment variable is set, see `shared/google-analytics.js`, which stops the build
+  on an ID not shaped like `G-XXXXXXXXXX`. The workflow sets it for the final build on `main`, after the tests.
+  `npm run dev`, local builds, `npm run preview` and the tests load no tracking.
+
+To change the property, edit `SHOWCASES_GA4_ID` in `.github/workflows/pages.yml`. To disable tracking, remove it
+there. To try it locally, run `SHOWCASES_GA4_ID=G-1VY6776VJP npm run build`, then `npm run preview`.
+
+Granting `analytics_storage` (cookies) or adding any ad tag needs a cookie consent banner first, which the showcases
+do not have. Such a banner would call `gtag('consent', 'update', { … })` once the visitor accepts.
+
 ## License
 
 The showcase code in this repository is MIT licensed, see [LICENSE](LICENSE).
