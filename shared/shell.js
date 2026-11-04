@@ -3,15 +3,15 @@ import { createColorSchemeToggle, storedColorScheme } from './color-scheme.js';
 // Icons of the Bryntum widgets, from the Core package's own Font Awesome build
 import '@bryntum/core-enterprise/fontawesome/css/fontawesome.css';
 import '@bryntum/core-enterprise/fontawesome/css/solid.css';
-// The showcases' font and design tokens (shell.css imports tokens.css)
+// The showcases' font, design tokens and brand lockup (shell.css imports tokens.css and brand.css)
 import './fonts.css';
 import './shell.css';
-import logoUrl from './logo-round.svg';
 import githubMark from './github-mark.svg?raw';
 
 /**
- * The showcase shell, shared by all showcases: a header with the round Bryntum logo, the showcase title, a light / dark
- * switch and links to the source on GitHub and to bryntum.com, above the container the app renders into.
+ * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum mark and name, then the
+ * showcase title), a light / dark switch and links to the source on GitHub and to bryntum.com, above the container the
+ * app renders into.
  *
  * ```javascript
  * import { createShell } from '@showcases/shared';
@@ -48,13 +48,23 @@ export function createShell({ title, source }) {
             parent    : body,
             children  : [
                 {
-                    tag          : 'a',
-                    className    : 'sc-logo',
-                    href         : 'https://bryntum.com',
-                    'aria-label' : 'Bryntum home page',
-                    children     : [{ tag : 'img', src : logoUrl, alt : '', width : 32, height : 32 }]
-                },
-                { tag : 'h1', className : 'sc-title', text : title }
+                    // The lockup of brand.css. The mark and the name link to bryntum.com, the title is the page heading
+                    className : 'sc-brand',
+                    children  : [
+                        {
+                            tag          : 'a',
+                            className    : 'sc-brand-home',
+                            href         : 'https://bryntum.com',
+                            'aria-label' : 'Bryntum home page',
+                            children     : [
+                                { tag : 'span', className : 'sc-brand-mark', 'aria-hidden' : 'true' },
+                                { tag : 'span', className : 'sc-brand-name', text : 'Bryntum' }
+                            ]
+                        },
+                        { tag : 'span', className : 'sc-brand-divider', 'aria-hidden' : 'true' },
+                        { tag : 'h1', className : 'sc-brand-title', text : title }
+                    ]
+                }
             ]
         }),
         container = DomHelper.createElement({ tag : 'main', id : 'container', className : 'sc-container', parent : body });

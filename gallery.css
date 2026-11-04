@@ -5,6 +5,7 @@
 @import '@showcases/shared/fonts.css';
 @import '@showcases/shared/tokens.css';
 @import '@showcases/shared/icon-button.css';
+@import '@showcases/shared/brand.css';
 
 :root {
     color-scheme : dark;
@@ -16,6 +17,8 @@
     --g-accent       : var(--sc-accent);
     --g-accent-fill  : var(--sc-accent-fill);
     --g-accent-hover : var(--sc-accent-hover);
+    --g-text         : var(--sc-text);
+    --g-sub          : var(--sc-text-muted);
 
     /* Gallery only */
     --g-max-width : 71.25rem;
@@ -28,8 +31,6 @@
     --g-surface-2    : light-dark(#f3f5f8, #1f2228);
     --g-border      : light-dark(#dde1e7, #2a2e35);
     --g-border-soft : light-dark(#e7eaef, #22252b);
-    --g-text        : light-dark(#15181d, #eef0f3);
-    --g-sub         : light-dark(#5b6270, #9aa1ac);
     --g-faint       : light-dark(#6b7280, #6c737e);
     --g-on-accent   : #fff;
     --g-tag-bg      : light-dark(#e5effc, #1c2a3d);
@@ -204,24 +205,9 @@ a {
     }
 }
 
+/* The brand lockup (shared brand.css), a little larger than the links */
 .brand {
-    display         : flex;
-    align-items     : center;
-    gap             : 0.6rem;
-    font-weight     : 700;
-    color           : var(--g-text);
-    text-decoration : none;
-
-    img {
-        width  : 1.9rem;
-        height : 1.9rem;
-    }
-
-    /* "Bryntum showcases", one font and size, the second word in the page accent */
-    .brand-accent {
-        font-weight : 600;
-        color       : var(--g-accent);
-    }
+    font-size : 1.125rem;
 }
 
 .site-links {
@@ -1042,13 +1028,7 @@ a {
     }
 
     .brand {
-        gap       : 0.45rem;
-        font-size : 0.95rem;
-
-        img {
-            width  : 1.6rem;
-            height : 1.6rem;
-        }
+        font-size : 1rem;
     }
 
     .site-actions {

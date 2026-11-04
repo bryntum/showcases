@@ -2,6 +2,7 @@
 
 @import './tokens.css';
 @import './icon-button.css';
+@import './brand.css';
 
 html, body {
     height     : 100%;
@@ -41,32 +42,26 @@ body {
         text-decoration : none;
     }
 
-    /* The round logo is its own circle, the link only rounds its focus outline */
-    .sc-logo {
-        display       : flex;
-        border-radius : 50%;
+    /* The lockup fills the row, pushing the tools to the end */
+    .sc-brand {
+        flex      : 1;
+        font-size : 1.1em;
 
-        &:focus-visible {
-            outline        : 2px solid var(--b-widget-focus-outline-color);
-            outline-offset : 0.25em;
+        .sc-brand-home {
+            border-radius : var(--sc-radius);
+
+            &:focus-visible {
+                outline        : 2px solid var(--b-widget-focus-outline-color);
+                outline-offset : 0.25em;
+            }
         }
 
-        img {
-            display : block;
-            width   : 2.3em;
-            height  : 2.3em;
+        /* Phone widths, the mark alone stands for Bryntum, so the showcase title fits in full */
+        @media (width < 30rem) {
+            .sc-brand-name, .sc-brand-divider {
+                display : none;
+            }
         }
-    }
-
-    .sc-title {
-        flex          : 1;
-        min-width     : 0;
-        margin        : 0;
-        font-size     : 1.1em;
-        font-weight   : 600;
-        white-space   : nowrap;
-        overflow      : hidden;
-        text-overflow : ellipsis;
     }
 
     .sc-tools {
@@ -76,7 +71,7 @@ body {
         --b-toolbar-padding    : 0.7em 0;
         --b-toolbar-background : transparent;
 
-        /* Below the wide breakpoint the logo links to bryntum.com, out-specifying the toolbar's own `display` */
+        /* Below the wide breakpoint the Bryntum mark links to bryntum.com, out-specifying the toolbar's own `display` */
         @media (width < 1000px) {
             &.b-toolbar {
                 display : none;
