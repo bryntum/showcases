@@ -87,6 +87,46 @@ test.describe('EV Operations', () => {
     });
 });
 
+test.describe('EV Operations theme colours', () => {
+    // Backgrounds set through light-dark(): the Svalbard theme (app panel) and the showcase tokens (bar, stripe)
+    const
+        surfaces = {
+            panel  : '.sc-container > .b-outer',
+            bar    : '.ev-bar',
+            stripe : '.ev-stripe'
+        },
+        transparent = /^(transparent|rgba\(0, 0, 0, 0\))$/;
+
+    async function backgrounds(page, colorScheme) {
+        await page.emulateMedia({ colorScheme });
+        await page.goto('./ev-operations/');
+        await expect(view(page, 'production').locator('.ev-stripe').first()).toBeVisible();
+
+        const result = {};
+
+        for (const [name, selector] of Object.entries(surfaces)) {
+            result[name] = await page.locator(selector).first()
+                .evaluate(element => getComputedStyle(element).backgroundColor);
+        }
+
+        return result;
+    }
+
+    test('light-dark() colours resolve in light and dark', async({ page }) => {
+        const
+            light = await backgrounds(page, 'light'),
+            dark  = await backgrounds(page, 'dark');
+
+        for (const name of Object.keys(surfaces)) {
+            expect(light[name], `${name} in light`).not.toMatch(transparent);
+            expect(dark[name], `${name} in dark`).not.toMatch(transparent);
+        }
+
+        expect(dark.panel, 'the panel follows the scheme').not.toBe(light.panel);
+        expect(dark.bar, 'the bar follows the scheme').not.toBe(light.bar);
+    });
+});
+
 test.describe('EV Operations on a phone', () => {
     test.use({ viewport : { width : 390, height : 844 } });
 

@@ -188,7 +188,7 @@
                 width                  : var(--ev-summary-foot);
                 height                 : calc(var(--ev-summary-thickness) + var(--ev-summary-foot));
                 /* Physical, like the clip-path it rounds. RTL mirrors the whole shape, see .b-rtl below */
-                /* stylelint-disable-next-line csstools/use-logical */
+                /* stylelint-disable-next-line property-layout-mappings */
                 border-top-left-radius : calc(var(--ev-summary-thickness) / 2);
                 background             : var(--ev-track);
                 clip-path              : polygon(0 0, 100% 0, 100% var(--ev-summary-thickness), 0 100%);
@@ -393,7 +393,7 @@
         /* The chart is not mirrored in RTL, its last point is always on the right */
         .ev-slip-dot {
             position      : absolute;
-            /* stylelint-disable-next-line csstools/use-logical */
+            /* stylelint-disable-next-line property-layout-mappings */
             left          : 100%;
             width         : 0.429em;
             height        : 0.429em;
