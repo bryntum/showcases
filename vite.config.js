@@ -36,6 +36,9 @@ export default defineConfig({
         emptyOutDir           : true,
         // ES2022 for the top level await in the showcases
         target                : 'es2022',
+        // Browsers with native light-dark(). Lower targets make Lightning CSS rewrite it into variables that need a
+        // static color-scheme, while the Bryntum themes and the shell set color-scheme at runtime
+        cssTarget             : ['chrome123', 'edge123', 'firefox120', 'safari17.5', 'ios17.5'],
         // The Bryntum bundles are big by design, one per product
         chunkSizeWarningLimit : 4096,
         rollupOptions         : {

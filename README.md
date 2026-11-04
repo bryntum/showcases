@@ -13,7 +13,7 @@ packages. No backend: each showcase loads its data from static JSON files and ru
 
 ## Running locally
 
-Requires Node.js 20 or newer.
+Requires Node.js 22.22.2+, 24.15+ or 26+. `.nvmrc` pins 26, the current LTS, which CI uses too, so run `nvm use` first.
 
 ```shell
 npm install
