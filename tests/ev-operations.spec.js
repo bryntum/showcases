@@ -87,6 +87,22 @@ test.describe('EV Operations', () => {
     });
 });
 
+test.describe('EV Operations breadcrumb', () => {
+    test('links back to the gallery', async({ page }) => {
+        await page.goto('./ev-operations/');
+
+        const breadcrumb = page.getByRole('navigation', { name : 'Breadcrumb' });
+
+        await expect(breadcrumb.getByRole('heading', { level : 1, name : 'EV Operations' }))
+            .toHaveAttribute('aria-current', 'page');
+
+        await breadcrumb.getByRole('link', { name : 'Showcases' }).click();
+
+        await expect(page).toHaveURL(/\/showcases\/$/);
+        await expect(page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' })).toBeVisible();
+    });
+});
+
 test.describe('EV Operations theme colours', () => {
     // Backgrounds set through light-dark(): the Svalbard theme (app panel) and the showcase tokens (bar, stripe)
     const
@@ -144,5 +160,30 @@ test.describe('EV Operations on a phone', () => {
         });
 
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+
+    test('the breadcrumb keeps the title in full and the gallery link reachable', async({ page }) => {
+        await page.goto('./ev-operations/');
+
+        const
+            breadcrumb = page.getByRole('navigation', { name : 'Breadcrumb' }),
+            title      = breadcrumb.getByRole('heading', { level : 1, name : 'EV Operations' }),
+            gallery    = breadcrumb.getByRole('link', { name : 'Showcases' }),
+            toggle     = page.locator('.sc-header .sc-scheme-toggle');
+
+        await expect(gallery).toBeVisible();
+        await expect(title).toBeVisible();
+
+        const
+            titleBox  = await title.boundingBox(),
+            toggleBox = await toggle.boundingBox();
+
+        // Not cut, and clear of the header's tools
+        expect(await title.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+        expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(toggleBox.x);
+
+        await gallery.click();
+
+        await expect(page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' })).toBeVisible();
     });
 });

@@ -47,7 +47,7 @@ body {
         flex      : 1;
         font-size : 1.1em;
 
-        .sc-brand-home {
+        .sc-brand-home, .sc-crumb-link {
             border-radius : var(--sc-radius);
 
             &:focus-visible {
@@ -56,10 +56,38 @@ body {
             }
         }
 
-        /* Phone widths, the mark alone stands for Bryntum, so the showcase title fits in full */
+        /* Phone widths, the mark alone stands for Bryntum and a chevron for the gallery, so the title fits in full.
+         * The link text stays for screen readers, as the link's name */
         @media (width < 30rem) {
-            .sc-brand-name, .sc-brand-divider {
+            .sc-brand-name, .sc-brand-divider, .sc-crumb-separator {
                 display : none;
+            }
+
+            .sc-crumb-link {
+                display         : flex;
+                align-items     : center;
+                justify-content : center;
+                min-width       : 2em;
+                min-height      : 2.4rem;
+            }
+
+            .sc-crumb-back {
+                display             : block;
+                width               : 0.5em;
+                height              : 0.5em;
+                margin-inline-start : 0.2em;
+                border-block-start  : 0.12em solid;
+                border-inline-start : 0.12em solid;
+                rotate              : -45deg;
+            }
+
+            .sc-crumb-text {
+                position    : absolute;
+                width       : 1px;
+                height      : 1px;
+                overflow    : hidden;
+                clip-path   : inset(50%);
+                white-space : nowrap;
             }
         }
     }

@@ -8,7 +8,8 @@
  *     <span class="sc-brand-title">Showcases</span>
  * </a>
  *
- * `.sc-brand-home` optionally wraps the mark and the name in their own link, laid out alike */
+ * `.sc-brand-home` optionally wraps the mark and the name in their own link, laid out alike. On the showcase pages the
+ * page name is a breadcrumb instead, `.sc-crumbs`: the gallery link, a separator and the title (see shell.js) */
 
 .sc-brand {
     /* Mark to name, and either side of the divider */
@@ -68,5 +69,46 @@
         color         : var(--sc-text-muted);
         overflow      : hidden;
         text-overflow : ellipsis;
+    }
+
+    /* The breadcrumb takes the page name's place, its gallery link reads like the gallery's own "Showcases" */
+    .sc-crumbs {
+        min-width : 0;
+
+        ol, li {
+            display     : flex;
+            align-items : center;
+            gap         : var(--sc-brand-gap);
+            margin      : 0;
+            padding     : 0;
+            list-style  : none;
+        }
+    }
+
+    .sc-crumb-link {
+        color           : var(--sc-text-muted);
+        text-decoration : none;
+
+        &:hover {
+            color : var(--sc-text);
+        }
+    }
+
+    /* The compact back link, shown in place of the text where the header is too narrow (shell.css) */
+    .sc-crumb-back {
+        display : none;
+    }
+
+    .sc-crumb-separator {
+        font-weight : 300;
+        color       : var(--sc-text-muted);
+    }
+
+    /* The current page ends the trail: primary and semibold, never cut */
+    .sc-brand-title[aria-current] {
+        flex        : none;
+        font-weight : 600;
+        color       : var(--sc-text);
+        overflow    : visible;
     }
 }

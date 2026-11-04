@@ -9,9 +9,9 @@ import './shell.css';
 import githubMark from './github-mark.svg?raw';
 
 /**
- * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum mark and name, then the
- * showcase title), a light / dark switch and links to the source on GitHub and to bryntum.com, above the container the
- * app renders into.
+ * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum mark and name, then a
+ * breadcrumb from the gallery to the showcase title), a light / dark switch and links to the source on GitHub and to
+ * bryntum.com, above the container the app renders into.
  *
  * ```javascript
  * import { createShell } from '@showcases/shared';
@@ -32,13 +32,55 @@ import githubMark from './github-mark.svg?raw';
 const repoUrl = 'https://github.com/bryntum/showcases';
 
 /**
+ * The breadcrumb of the lockup: the gallery link, then the page heading as the current page. The heading is the trail's
+ * last item, so the page keeps its h1 and the trail its end
+ * @param {String} title The showcase title
+ * @param {String} gallery The gallery URL
+ * @returns {Object} The breadcrumb's DomConfig
+ */
+function breadcrumb(title, gallery) {
+    return {
+        tag          : 'nav',
+        className    : 'sc-crumbs',
+        'aria-label' : 'Breadcrumb',
+        children     : [{
+            tag      : 'ol',
+            children : [
+                {
+                    tag      : 'li',
+                    children : [{
+                        tag       : 'a',
+                        className : 'sc-crumb-link',
+                        href      : gallery,
+                        title     : 'All showcases',
+                        children  : [
+                            { tag : 'span', className : 'sc-crumb-back', 'aria-hidden' : 'true' },
+                            { tag : 'span', className : 'sc-crumb-text', text : 'Showcases' }
+                        ]
+                    }]
+                },
+                {
+                    tag      : 'li',
+                    children : [
+                        { tag : 'span', className : 'sc-crumb-separator', 'aria-hidden' : 'true', text : '/' },
+                        { tag : 'h1', className : 'sc-brand-title', 'aria-current' : 'page', text : title }
+                    ]
+                }
+            ]
+        }]
+    };
+}
+
+/**
  * Builds the page shell: the header, and the container the app renders into. Call it once, before creating the app
  * @param {Object} options
  * @param {String} options.title The showcase title, shown in the header
  * @param {String} options.source The showcase folder in the repository, the target of the GitHub source link
+ * @param {String} [options.gallery] The gallery URL, the breadcrumb's first link. Relative, as every showcase lives one
+ * folder below the gallery, so it works under any base path
  * @returns {HTMLElement} The container to render the app into (`appendTo`)
  */
-export function createShell({ title, source }) {
+export function createShell({ title, source, gallery = '../' }) {
     const
         { body } = document,
         scheme   = storedColorScheme(),
@@ -48,7 +90,7 @@ export function createShell({ title, source }) {
             parent    : body,
             children  : [
                 {
-                    // The lockup of brand.css. The mark and the name link to bryntum.com, the title is the page heading
+                    // The lockup of brand.css. The mark and the name link to bryntum.com, the breadcrumb to the gallery
                     className : 'sc-brand',
                     children  : [
                         {
@@ -62,7 +104,7 @@ export function createShell({ title, source }) {
                             ]
                         },
                         { tag : 'span', className : 'sc-brand-divider', 'aria-hidden' : 'true' },
-                        { tag : 'h1', className : 'sc-brand-title', text : title }
+                        breadcrumb(title, gallery)
                     ]
                 }
             ]
