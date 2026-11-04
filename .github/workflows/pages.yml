@@ -46,6 +46,14 @@ jobs:
             test-results/
           retention-days: 14
 
+      # The deployed build, with Bryntum's GA4 property, consent denied (cookieless, no ads). Built after the tests,
+      # which build and test without it, so only the deployed pages load it. The ID is public, it could also come
+      # from a repository variable: SHOWCASES_GA4_ID: ${{ vars.SHOWCASES_GA4_ID }}
+      - if: github.ref == 'refs/heads/main'
+        run: npm run build
+        env:
+          SHOWCASES_GA4_ID: G-1VY6776VJP
+
       - if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5
         with:

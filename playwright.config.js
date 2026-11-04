@@ -22,6 +22,8 @@ export default defineConfig({
         command             : `npm run build && npm run preview -- --port ${port} --strictPort`,
         url                 : baseURL,
         reuseExistingServer : !CI,
-        timeout             : 180_000
+        timeout             : 180_000,
+        // The tests never load Google Analytics, even with SHOWCASES_GA4_ID set in the shell (see vite.config.js)
+        env                 : { SHOWCASES_GA4_ID : '' }
     }
 });
