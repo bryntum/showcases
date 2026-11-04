@@ -33,7 +33,7 @@ test.describe('Gallery', () => {
     });
 
     test('shows the three how built cards', async({ page }) => {
-        const section = page.getByRole('region', { name : /Nothing hidden/ });
+        const section = page.getByRole('region', { name : /Built the way you'd build it/ });
 
         for (const name of ['Public npm packages', 'Fully front-end', 'Source on GitHub']) {
             await expect(section.getByRole('heading', { level : 3, name })).toBeVisible();
