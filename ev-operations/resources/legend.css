@@ -1,0 +1,108 @@
+/* The status legend (StatusLegend) and the blocked time key (StatusKey) in the bar below the views */
+
+.ev-legend-bar {
+    border-block-start : 1px solid var(--ev-border);
+
+    /* A slim strip, the theme's inline padding. The legend and the key set their own spacing */
+    --b-toolbar-padding : 0.25em var(--b-widget-padding);
+    --b-toolbar-gap     : 0;
+
+    .ev-legend-count {
+        min-width            : 2ch;
+        font-weight          : 500;
+        color                : var(--ev-ink-sub);
+        font-variant-numeric : tabular-nums;
+    }
+}
+
+.b-list.ev-legend {
+    flex-direction : row;
+    gap            : 0.5em;
+    font-size      : 0.857em;
+    outline        : none;
+
+    --b-list-background                : transparent;
+    --b-list-item-padding              : 0.25em 0.42em;
+    --b-list-multi-select-item-padding : 0.25em 0.42em;
+    --b-list-item-gap                  : 0.58em;
+    --b-list-item-selected-background  : transparent;
+    --b-list-item-focus-background     : transparent;
+
+    .b-list-item {
+        align-items : center;
+        white-space : nowrap;
+        cursor      : pointer;
+
+        /* The legend toggles statuses through List multiSelect, but wants no checkmark */
+        .b-selected-icon {
+            display : none;
+        }
+
+        /* Hidden statuses show a hollow swatch, the label stays readable */
+        &:where(:not(.b-selected)) {
+            .ev-legend-swatch {
+                background : transparent;
+                box-shadow : inset 0 0 0 1.5px var(--ev-color);
+            }
+        }
+
+        /* List focuses the items themselves, ring them for keyboard navigation only */
+        &:focus-visible {
+            outline        : 2px solid var(--b-primary);
+            outline-offset : -2px;
+        }
+    }
+}
+
+/* Status swatch of the legend and the detail panel */
+:is(.ev-legend-swatch, .ev-detail-swatch) {
+    flex          : none;
+    width         : 0.833em;
+    height        : 0.833em;
+    border-radius : 0.208em;
+    background    : var(--ev-color);
+}
+
+/* Key for the blocked time hatches (StatusKey), after the status legend and a divider. Not interactive, unlike the
+ * status filters before it, and quieter: lighter text, no count. The legend's 12px text */
+.ev-legend-key {
+    display              : flex;
+    align-items          : center;
+    align-self           : center;
+    gap                  : 1.167em;
+    margin-inline-start  : 1em;
+    font-size            : 0.857em;
+    padding-inline-start : 1.167em;
+    color                : var(--ev-ink-sub);
+    border-inline-start  : 1px solid var(--ev-border);
+    cursor               : default;
+    user-select          : none;
+
+    .ev-key-item {
+        display     : flex;
+        align-items : center;
+        gap         : 0.583em;
+        white-space : nowrap;
+    }
+
+    /* The hatch of the timeline, wider than the status swatches */
+    .ev-key-swatch {
+        width         : 1.667em;
+        height        : 0.833em;
+        border-radius : 0.208em;
+
+        --ev-hatch-step : 3px;
+    }
+}
+
+/* Narrow screens (OperationsApp#compact): the statuses wrap, and the hatch key gives way */
+.ev-app.ev-compact {
+    .b-list.ev-legend {
+        flex-wrap : wrap;
+        min-width : 0;
+    }
+
+    .ev-legend-key {
+        display : none;
+    }
+}

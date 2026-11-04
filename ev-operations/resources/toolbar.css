@@ -1,0 +1,68 @@
+/* The app toolbar: the view switch, the heading and the simulation controls */
+
+/* One row: the heading gives way (the items' `flex` configs), its summary ellipsizes */
+.ev-toolbar {
+    /* Its content edge is the one the page header lines up with, see shared/tokens.css */
+    --b-toolbar-padding : var(--sc-panel-padding);
+    --b-toolbar-gap     : 1.43em;
+}
+
+.ev-controls {
+    align-items : center;
+    gap         : 0.43em;
+
+    /* Fits its widest label with the icon ("Simulate", "Resume" is close), so Simulate / Pause / Resume keep one
+     * width */
+    .ev-simulate {
+        min-width       : 7.9em;
+        justify-content : center;
+    }
+}
+
+.ev-heading {
+    display     : flex;
+    align-items : baseline;
+    gap         : 0.857em;
+    min-width   : 0;
+    overflow    : hidden;
+    white-space : nowrap;
+
+    /* On narrow screens the summary goes first, then the title ellipsizes */
+    > * {
+        min-width     : 0;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    .ev-title {
+        flex        : 0 1 auto;
+        font-size   : 1.071em;
+        font-weight : 600;
+    }
+
+    .ev-summary {
+        flex      : 0 1000 auto;
+        font-size : 0.929em;
+        color     : var(--ev-ink-sub);
+    }
+}
+
+/* Divider between the toolbar and the column headers */
+.ev-views {
+    border-block-start : 1px solid var(--ev-border);
+}
+
+/* Narrow screens (OperationsApp#compact): tighter tabs and icon-only controls, so the toolbar fits a phone */
+.ev-app.ev-compact {
+    .ev-toolbar {
+        --b-toolbar-gap : 0.57em;
+    }
+
+    .ev-view-switch {
+        --b-button-padding-inline : 0.71em;
+    }
+
+    .ev-controls .ev-simulate {
+        min-width : 0;
+    }
+}

@@ -1,0 +1,68 @@
+/* Design tokens of the demo, mapped onto the theme palette so it follows the theme and light / dark mode. Sizes are
+ * in em, relative to the 14px app font size unless an element sets its own. The app panel's frame is the shell's */
+
+.ev-app, .ev-editor, .ev-toast {
+    /* Status colours, the theme palette darkened in light mode for contrast on white, lightened in dark mode */
+    --ev-ok       : light-dark(color-mix(in srgb, var(--b-color-green) 82%, var(--b-color-black)),
+        var(--b-color-green));
+    --ev-focus    : light-dark(color-mix(in srgb, var(--b-color-blue) 90%, var(--b-color-black)), var(--b-color-blue));
+    --ev-late     : light-dark(color-mix(in srgb, var(--b-color-orange) 92%, var(--b-color-black)),
+        var(--b-color-orange));
+    --ev-down     : light-dark(color-mix(in srgb, var(--b-color-red) 90%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-red) 75%, var(--b-color-white)));
+    /* Orange text, a burnt orange in light mode for AA contrast on white */
+    --ev-warn-ink : light-dark(
+        color-mix(in srgb, color-mix(in srgb, var(--b-color-orange) 65%, var(--b-color-deep-orange)) 73%,
+            var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-orange) 70%, var(--b-color-white)));
+    --ev-star     : light-dark(color-mix(in srgb, var(--b-color-amber) 95%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-amber) 70%, var(--b-color-white)));
+    --ev-sched    : var(--b-neutral-60);
+    --ev-done     : var(--b-neutral-80);
+
+    /* Neutrals, from the theme */
+    --ev-surface   : var(--b-neutral-100);
+    --ev-card      : light-dark(var(--b-neutral-100), var(--b-neutral-95));
+    --ev-sunken    : var(--b-neutral-98);
+    --ev-border    : var(--b-border-7);
+    --ev-line      : var(--b-neutral-85);
+    --ev-line-hard : var(--b-neutral-65);
+    --ev-track     : var(--b-neutral-90);
+    --ev-ink       : var(--b-text-1);
+    --ev-ink-sub   : var(--b-neutral-40);
+    --ev-ink-faint : var(--b-neutral-55);
+    --ev-ink-quiet : var(--b-neutral-70);
+    --ev-on-accent : var(--b-color-white);
+    --ev-shadow    : light-dark(color-mix(in srgb, var(--b-color-black) 12%, transparent),
+        color-mix(in srgb, var(--b-color-black) 40%, transparent));
+    --ev-past      : light-dark(color-mix(in srgb, var(--b-color-black) 5%, transparent),
+        color-mix(in srgb, var(--b-color-black) 22%, transparent));
+    --ev-hatch-a   : var(--b-neutral-95);
+    --ev-hatch-b   : var(--b-neutral-90);
+
+    /* Bars end this far before their end date, air between adjacent bars. The same as barGap in lib/bar/BarParts.js */
+    --ev-bar-gap : 4px;
+}
+
+.ev-app {
+    /* Status colour and the matching translucent elapsed fill, set on any element with a status class */
+    :is(.ev-status-ok, .ev-status-focus, .ev-status-late) {
+        --ev-fill-bg : color-mix(in srgb, var(--ev-color) 11%, transparent);
+    }
+
+    .ev-status-ok { --ev-color : var(--ev-ok); }
+    .ev-status-focus { --ev-color : var(--ev-focus); }
+    .ev-status-late { --ev-color : var(--ev-late); }
+    .ev-status-sched { --ev-color : var(--ev-sched); }
+    .ev-status-done { --ev-color : var(--ev-done); }
+    .ev-status-down { --ev-color : var(--ev-down); }
+}
+
+/* The app panel's body (its bodyCls): no gap between the timeline and the detail panel, and only the app's outer
+ * corners are rounded */
+.ev-app-body {
+    border-radius : 0;
+
+    --b-panel-padding : 0;
+    --b-panel-gap     : 0;
+}

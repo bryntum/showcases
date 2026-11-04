@@ -1,0 +1,118 @@
+/* Bar details per type: the step pipeline, the charging battery and power curve, and linked bars */
+
+/* Step pipeline (service jobs, program phases) */
+.ev-steps {
+    display          : flex;
+    gap              : 0.286em;
+    min-width        : 0;
+    /* The track is the lowest ink, raise it to the meta baseline of the other bar types */
+    margin-block-end : 0.229em;
+}
+
+.ev-step {
+    display        : flex;
+    flex           : var(--ev-weight) 1 0;
+    flex-direction : column;
+    gap            : 0.286em;
+    min-width      : 0;
+}
+
+.ev-step-label {
+    font-size      : 0.714em;
+    font-weight    : 500;
+    letter-spacing : 0.02em;
+    color          : var(--ev-ink-faint);
+    white-space    : nowrap;
+    overflow       : hidden;
+
+    .ev-step-complete & {
+        color : var(--ev-ink-sub);
+    }
+
+    .ev-step-active & {
+        font-weight : 600;
+        color       : var(--ev-ink);
+    }
+}
+
+/* Battery glyph in the charging chip, em of the 11px chip text. Its width is batteryWidth in
+ * lib/OperationsScheduler.js */
+.ev-battery {
+    position      : relative;
+    display       : block;
+    width         : 1.636em;
+    height        : 0.818em;
+    padding       : 1px;
+    border        : 1.5px solid currentColor;
+    border-radius : 2.5px;
+    box-sizing    : border-box;
+
+    &::after {
+        content                 : '';
+        position                : absolute;
+        inset-inline-end        : -0.364em;
+        inset-block-start       : 0.136em;
+        width                   : 0.182em;
+        height                  : 0.273em;
+        border-start-end-radius : 1px;
+        border-end-end-radius   : 1px;
+        background              : currentColor;
+    }
+
+    .ev-battery-level {
+        display       : block;
+        height        : 100%;
+        width         : calc(var(--ev-fill) * 100%);
+        border-radius : 1px;
+        background    : var(--ev-ok);
+    }
+
+    &.ev-battery-low {
+        .ev-battery-level {
+            background : var(--ev-down);
+        }
+    }
+}
+
+/* Charging power curve, in the band below the title row: full power at the top of row 2, 0 kW at the bar bottom */
+.ev-curve {
+    position : absolute;
+    inset    : 42% 0 0;
+    width    : 100%;
+    height   : 58%;
+
+    .ev-curve-area {
+        fill : color-mix(in srgb, var(--ev-focus) 16%, transparent);
+    }
+
+    .ev-curve-line {
+        fill          : none;
+        stroke        : color-mix(in srgb, var(--ev-focus) 80%, transparent);
+        stroke-width  : 1.5;
+        vector-effect : non-scaling-stroke;
+    }
+
+    .ev-status-sched & {
+        .ev-curve-line {
+            stroke : color-mix(in srgb, var(--ev-sched) 50%, transparent);
+        }
+    }
+}
+
+/* Row 2 of charging sessions sits on the curve, a halo in the card colour keeps it legible */
+.ev-type-charge {
+    .ev-row-meta {
+        .ev-meta {
+            position    : relative;
+            text-shadow : 0 0 2px var(--ev-card), 0 0 2px var(--ev-card), 1px 0 1px var(--ev-card),
+                -1px 0 1px var(--ev-card);
+        }
+    }
+}
+
+/* Linked bars: a selected service job highlights the related charging session */
+.ev-linking {
+    :is(.b-sch-event-wrap:where(:not(.ev-linked, .b-selected)), .ev-gap) {
+        opacity : 0.4;
+    }
+}

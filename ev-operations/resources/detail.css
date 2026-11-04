@@ -1,0 +1,168 @@
+/* The detail panel below the views (DetailPanel), live stats of the selected event or task */
+
+.ev-detail {
+    display            : grid;
+    grid-template-rows : 0fr;
+    flex               : none;
+    background         : var(--ev-sunken);
+    border-block-start : 0 solid var(--ev-border);
+    transition         : grid-template-rows 0.25s ease;
+
+    &.ev-detail-open {
+        grid-template-rows       : 1fr;
+        border-block-start-width : 1px;
+
+        .ev-detail-inner {
+            padding-block : 1.286em;
+        }
+    }
+
+    .ev-detail-inner {
+        display     : flex;
+        align-items : stretch;
+        flex-wrap   : wrap;
+        gap         : 2em;
+        min-height  : 0;
+        padding     : 0 1.43em;
+        overflow    : hidden;
+    }
+
+    .ev-detail-summary {
+        display        : flex;
+        flex-direction : column;
+        gap            : 0.571em;
+        min-width      : 14.3em;
+    }
+
+    .ev-detail-heading, .ev-detail-meta, .ev-detail-status {
+        display     : flex;
+        align-items : center;
+    }
+
+    .ev-detail-heading {
+        gap : 0.714em;
+    }
+
+    .ev-detail-swatch {
+        width  : 0.714em;
+        height : 0.714em;
+    }
+
+    .ev-detail-title {
+        font-size   : 1.143em;
+        font-weight : 600;
+    }
+
+    .ev-detail-meta {
+        gap       : 0.667em;
+        font-size : 0.857em;
+        color     : var(--ev-ink-sub);
+    }
+
+    .ev-detail-status {
+        height        : 1.667em;
+        padding       : 0 0.667em;
+        font-weight   : 600;
+        color         : var(--ev-color);
+        background    : var(--ev-card);
+        border        : 1px solid var(--ev-line);
+        border-radius : calc(var(--b-widget-border-radius) / 2);
+    }
+
+    .ev-detail-stats {
+        display               : grid;
+        flex                  : 1;
+        grid-template-columns : repeat(auto-fit, minmax(12.14em, 1fr));
+        gap                   : 1px;
+        min-width             : 0;
+        border                : 1px solid var(--ev-border);
+        border-radius         : var(--b-widget-border-radius);
+        overflow              : hidden;
+    }
+
+    .ev-detail-stat {
+        display        : flex;
+        flex-direction : column;
+        gap            : 0.286em;
+        padding        : 0.714em 1em;
+        background     : var(--ev-surface);
+        /* 1px dividers, also when the last row is not full */
+        box-shadow     : 0 0 0 1px var(--ev-border);
+    }
+
+    .ev-detail-stat-label {
+        font-size      : 0.786em;
+        font-weight    : 500;
+        color          : var(--ev-ink-sub);
+        text-transform : uppercase;
+        letter-spacing : 0.055em;
+    }
+
+    .ev-detail-stat-value {
+        font-size            : 1.071em;
+        font-weight          : 600;
+        text-wrap            : balance;
+        font-variant-numeric : tabular-nums;
+    }
+
+    /* Hide details, a discrete chevron */
+    .ev-detail-close {
+        align-self    : flex-start;
+        width         : 2em;
+        height        : 2em;
+        font-size     : 1em;
+        color         : var(--ev-ink-sub);
+        background    : transparent;
+        border        : 0;
+        border-radius : var(--b-widget-border-radius);
+        cursor        : pointer;
+        transition    : background 0.15s, color 0.15s;
+
+        &:hover, &:focus-visible {
+            color      : var(--ev-ink);
+            background : var(--ev-track);
+        }
+
+        &:focus-visible {
+            outline        : 2px solid var(--b-primary);
+            outline-offset : 1px;
+        }
+    }
+}
+
+/* Narrow screens (OperationsApp#compact): the panel overlays the bottom of the timeline instead of squeezing it */
+.ev-app.ev-compact {
+    .ev-app-body {
+        position : relative;
+    }
+
+    .ev-detail {
+        position        : absolute;
+        inset-inline    : 0;
+        inset-block-end : 0;
+        z-index         : 5;
+        max-height      : 70%;
+        box-shadow      : 0 -0.5em 1.5em var(--ev-shadow);
+
+        .ev-detail-inner {
+            gap        : 1em;
+            overflow-y : auto;
+        }
+
+        /* The summary and the close button on the first line, the stats below in two columns */
+        .ev-detail-summary {
+            flex      : 1;
+            min-width : 0;
+        }
+
+        .ev-detail-close {
+            order : 1;
+        }
+
+        .ev-detail-stats {
+            flex-basis            : 100%;
+            order                 : 2;
+            grid-template-columns : repeat(2, minmax(0, 1fr));
+        }
+    }
+}

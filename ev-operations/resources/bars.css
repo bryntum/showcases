@@ -1,0 +1,298 @@
+/* The bar anatomy shared by the three views (fully custom bars, `eventStyle : null`): layers, title row, chips,
+ * values, avatars and the meta row. Pixel sizes used before render mirror lib/bar/BarParts.js */
+
+/* The bars are fully custom (`eventStyle : null`), the event element carries `ev-bar` (the renderers' cls) */
+.ev-app {
+    :is(.b-sch-event-wrap, .b-gantt-task-wrap) {
+        .ev-bar {
+            width         : calc(100% - var(--ev-bar-gap));
+            padding       : 0;
+            color         : var(--ev-ink);
+            font-size     : 1em;
+            font-weight   : 400;
+            background    : var(--ev-card);
+            border        : 1px solid var(--ev-line);
+            border-radius : var(--b-widget-border-radius);
+            box-sizing    : border-box;
+            overflow      : clip;
+            cursor        : pointer;
+            transition    : box-shadow 0.15s, border-color 0.15s;
+
+            &.ev-live {
+                box-shadow : 0 2px 8px color-mix(in srgb, var(--ev-shadow) 70%, transparent);
+            }
+
+            &.ev-status-sched {
+                border-color : var(--ev-border);
+            }
+
+            /* Done: muted throughout, through the tokens its parts use */
+            &.ev-status-done {
+                --ev-card    : var(--ev-sunken);
+                --ev-line    : var(--ev-border);
+                --ev-ink     : var(--ev-ink-faint);
+                --ev-ink-sub : var(--ev-ink-quiet);
+                --ev-focus   : var(--ev-ink-faint);
+                --ev-ok      : var(--ev-ink-faint);
+                --ev-down    : var(--ev-ink-faint);
+            }
+
+            &:hover {
+                border-color : var(--ev-line-hard);
+            }
+
+            > :is(.b-sch-event-content, .b-gantt-task-content) {
+                width       : 100%;
+                height      : 100%;
+                margin      : 0;
+                padding     : 0;
+                font-size   : 1em;
+                line-height : normal;
+            }
+        }
+
+        /* Selected: Scheduler flags the wrap, Gantt the bar */
+        &.b-selected .ev-bar, .ev-bar.b-task-selected {
+            border-color : var(--b-primary);
+            box-shadow   : 0 0 0 3px color-mix(in srgb, var(--b-primary) 22%, transparent), 0 8px 22px var(--ev-shadow);
+        }
+    }
+}
+
+/* Progressive disclosure for bars clipped by the view edge, see ClippedBars#syncClippedBars */
+.ev-bar {
+    &.ev-hide-right {
+        .ev-right {
+            display : none;
+        }
+    }
+
+    &.ev-hide-chip {
+        .ev-chip {
+            display : none;
+        }
+    }
+}
+
+/* Live status changes fade during Simulate, only on elements flagged `ev-flip` (see SimulatedView#markFlip).
+ * Widths are not transitioned, they follow the now line */
+@media (prefers-reduced-motion : no-preference) {
+    .ev-simulating {
+        :is(.ev-flip, .ev-flip *) {
+            transition : background-color 0.5s ease-out, border-color 0.5s ease-out, color 0.5s ease-out,
+                box-shadow 0.5s ease-out, fill 0.5s ease-out, stroke 0.5s ease-out, opacity 0.5s ease-out;
+        }
+    }
+}
+
+/* Bar layers: elapsed fill (lines up with the now line), status stripe and the slip zone beyond the baseline end */
+.ev-fill, .ev-stripe, .ev-slip {
+    position     : absolute;
+    inset-block  : 0;
+    inset-inline : 0 auto;
+}
+
+.ev-fill {
+    width      : var(--ev-elapsed);
+    background : var(--ev-fill-bg);
+}
+
+.ev-stripe {
+    width      : 0.214em;
+    background : var(--ev-color);
+}
+
+.ev-slip {
+    inset-inline        : auto 0;
+    width               : var(--ev-slip);
+    border-inline-start : 1px dashed color-mix(in srgb, var(--ev-warn-ink) 60%, transparent);
+    background          : repeating-linear-gradient(135deg,
+        color-mix(in srgb, var(--ev-late) 14%, transparent) 0 5px, transparent 5px 10px);
+}
+
+.ev-body {
+    position        : relative;
+    display         : flex;
+    flex            : 1;
+    flex-direction  : column;
+    justify-content : space-between;
+    width           : 100%;
+    min-width       : 0;
+    height          : 100%;
+    /* 14px inset from the stripe. Vertically trimmed by the text leading, so the ink sits 12px from the top and
+     * bottom edges. The inline padding (17px + 14px) is barInset in lib/bar/BarParts.js */
+    padding-block   : 0.614em 0.629em;
+    padding-inline  : 1.214em 1em;
+    box-sizing      : border-box;
+}
+
+.ev-row {
+    display     : flex;
+    align-items : center;
+    min-width   : 0;
+    white-space : nowrap;
+    line-height : 1.25;
+}
+
+.ev-row-title {
+    justify-content : space-between;
+    gap             : 0.571em;
+    /* The title line sets the row height, taller chips and avatars overhang it centred */
+    height          : 1.2em;
+}
+
+/* Sticks to the visible left edge when the bar is clipped by the view edge */
+.ev-title-group {
+    position           : sticky;
+    inset-inline-start : 1.21em;
+    display            : flex;
+    align-items        : center;
+    gap                : 0.5em;
+    min-width          : 0;
+}
+
+.ev-star {
+    flex      : none;
+    font-size : 0.857em;
+    color     : var(--ev-star);
+}
+
+.ev-title {
+    font-size      : 1em;
+    line-height    : 1.2;
+    font-weight    : 600;
+    letter-spacing : -0.007em;
+    overflow       : hidden;
+    text-overflow  : ellipsis;
+}
+
+/* Small rounded labels: the delay badge and the info chip */
+.ev-delay, .ev-chip {
+    display              : flex;
+    align-items          : center;
+    font-size            : 0.786em;
+    border-radius        : calc(var(--b-widget-border-radius) / 2);
+    font-variant-numeric : tabular-nums;
+}
+
+.ev-delay {
+    height      : 1.636em;
+    padding     : 0 0.455em;
+    font-weight : 600;
+    color       : var(--ev-warn-ink);
+    background  : color-mix(in srgb, var(--ev-late) 14%, transparent);
+}
+
+.ev-chip {
+    gap         : 0.455em;
+    height      : 1.818em;
+    padding     : 0 0.636em;
+    font-weight : 500;
+    color       : var(--ev-ink-sub);
+    background  : color-mix(in srgb, var(--ev-card) 75%, transparent);
+    border      : 1px solid var(--ev-line);
+    box-sizing  : border-box;
+
+    .ev-chip-icon {
+        font-size : 0.9em;
+    }
+
+    .ev-chip-value {
+        min-width  : calc(var(--ev-chars) * 1ch);
+        text-align : end;
+    }
+}
+
+.ev-right-group, .ev-right {
+    display     : flex;
+    flex        : none;
+    align-items : center;
+    gap         : 0.714em;
+}
+
+.ev-right {
+    padding-inline-start : 0.43em;
+}
+
+/* Fixed width (sized to the widest value of the event) so the live counter does not move the content before it */
+.ev-value {
+    display              : inline-block;
+    min-width            : calc(var(--ev-chars) * 1ch);
+    text-align           : end;
+    font-size            : 0.929em;
+    font-weight          : 600;
+    font-variant-numeric : tabular-nums;
+}
+
+.ev-avatars {
+    display : flex;
+}
+
+.ev-avatar {
+    display             : flex;
+    align-items         : center;
+    justify-content     : center;
+    /* em of the 9px initials */
+    width               : 2.444em;
+    height              : 2.444em;
+    margin-inline-start : -0.667em;
+    font-size           : 0.643em;
+    font-weight         : 600;
+    letter-spacing      : 0.022em;
+    color               : var(--ev-on-accent);
+    border              : 2px solid var(--ev-card);
+    border-radius       : 50%;
+    box-sizing          : border-box;
+
+    /* Cool hues of the theme palette only (violet, blue, indigo, teal, steel, slate), warm colours mean status */
+    &.ev-avatar-0 { background : color-mix(in srgb, var(--b-color-violet) 80%, var(--b-color-white)); }
+    &.ev-avatar-1 { background : color-mix(in srgb, var(--b-color-blue) 85%, var(--b-color-black)); }
+    &.ev-avatar-2 { background : color-mix(in srgb, var(--b-color-indigo) 85%, var(--b-color-white)); }
+    &.ev-avatar-3 { background : var(--b-color-teal); }
+    &.ev-avatar-4 { background : color-mix(in srgb, var(--b-color-light-blue) 50%, var(--b-color-gray)); }
+    &.ev-avatar-5 { background : color-mix(in srgb, var(--b-color-gray) 85%, var(--b-color-blue)); }
+}
+
+/* Row 2 */
+.ev-row-meta {
+    gap : 0.714em;
+}
+
+.ev-row-split {
+    justify-content : space-between;
+    gap             : 0.571em;
+}
+
+.ev-meta {
+    font-size            : 0.786em;
+    color                : var(--ev-ink-sub);
+    font-variant-numeric : tabular-nums;
+}
+
+/* Thin progress tracks: the quality track of batches and the step tracks */
+.ev-quality, .ev-track {
+    display       : flex;
+    height        : 0.214em;
+    border-radius : 2px;
+    background    : var(--ev-track);
+    overflow      : hidden;
+
+    > * {
+        height : 100%;
+        width  : calc(var(--ev-fill) * 100%);
+    }
+}
+
+.ev-quality {
+    flex      : 1;
+    min-width : 0;
+    height    : 0.286em;
+}
+
+.ev-quality-good, .ev-track-fill {
+    background : var(--ev-color);
+}
+
+.ev-quality-rework {
+    background : var(--ev-warn-ink);
+}

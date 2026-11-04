@@ -1,0 +1,119 @@
+/* EV Operations demo, Production line view: work center and shift cells. Tokens are in tokens.css, loaded first */
+
+/* Work center cell: a neutral glyph tile, the status lives in the Shift column */
+.ev-glyph-tile {
+    display       : grid;
+    flex          : none;
+    place-items   : center;
+    width         : 2.857em;
+    height        : 2.857em;
+    color         : var(--ev-ink-sub);
+    border        : 1px solid var(--ev-border);
+    border-radius : var(--b-widget-border-radius);
+
+    .ev-station-glyph {
+        width           : 1.429em;
+        height          : 1.429em;
+        fill            : none;
+        stroke          : currentColor;
+        stroke-width    : 1.6;
+        stroke-linecap  : round;
+        stroke-linejoin : round;
+    }
+
+    /* A phone's narrow column keeps the name */
+    @container (width < 14em) {
+        display : none;
+    }
+}
+
+/* Shift cell: state and OEE, the shift strip below */
+.ev-shift {
+    display        : flex;
+    flex-direction : column;
+    gap            : 0.571em;
+    width          : 100%;
+
+    .ev-shift-line {
+        display         : flex;
+        align-items     : baseline;
+        justify-content : space-between;
+        gap             : 0.571em;
+        white-space     : nowrap;
+    }
+
+    /* The state is the strongest element of the cell, 13px / 600 in the status colour. The OEE has the same size and
+     * baseline, muted at or above the target. Orange text uses the darker warning ink */
+    .ev-shift-state, .ev-shift-oee {
+        display   : flex;
+        font-size : 0.929em;
+    }
+
+    .ev-shift-state {
+        align-items : center;
+        gap         : 0.538em;
+        font-weight : 600;
+        color       : var(--ev-color);
+
+        &.ev-status-sched {
+            color : var(--ev-ink-sub);
+        }
+    }
+
+    .ev-shift-oee {
+        align-items          : baseline;
+        gap                  : 0.333em;
+        color                : var(--ev-ink-sub);
+        font-variant-numeric : tabular-nums;
+    }
+
+    :is(.ev-shift-state.ev-status-late, .ev-shift-oee.ev-oee-low) {
+        color : var(--ev-warn-ink);
+    }
+
+    /* 7px, em of the 13px state */
+    .ev-shift-dot {
+        flex          : none;
+        width         : 0.538em;
+        height        : 0.538em;
+        border-radius : 50%;
+        background    : var(--ev-color);
+    }
+
+    /* Fixed width, fits two tabular digits and "%", so the values line up from row to row */
+    .ev-shift-oee-value {
+        min-width   : 3.2ch;
+        font-weight : 600;
+        text-align  : end;
+    }
+
+    /* From the shift start to its end, filled up to now with a segment per state period, then the empty track */
+    .ev-shift-strip {
+        position      : relative;
+        height        : 0.286em;
+        border-radius : 999px;
+        overflow      : hidden;
+    }
+
+    .ev-shift-segment {
+        position           : absolute;
+        inset-block        : 0;
+        inset-inline-start : calc(var(--ev-from) * 100%);
+        /* 1px gap, showing the row background, where the state changes and at now */
+        width              : calc(var(--ev-size) * 100% - 1px);
+        /* Softer than the status label */
+        background         : color-mix(in srgb, var(--ev-color) 65%, var(--ev-surface));
+
+        &.ev-shift-segment-last {
+            width : calc(var(--ev-size) * 100%);
+        }
+
+        &.ev-status-sched {
+            background : var(--ev-done);
+        }
+
+        &.ev-shift-rest {
+            background : var(--ev-track);
+        }
+    }
+}

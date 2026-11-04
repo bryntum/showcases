@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bryntum Showcases · Real-world scheduling and planning apps</title>
+    <meta name="description" content="Realistic, fully front-end scheduling and planning apps built on the public Bryntum npm packages. Open the live demo, then read every line of the source.">
+    <link rel="canonical" href="https://bryntum.github.io/showcases/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bryntum">
+    <meta property="og:url" content="https://bryntum.github.io/showcases/">
+    <meta property="og:title" content="Bryntum Showcases · Real-world scheduling and planning apps">
+    <meta property="og:description" content="Realistic, fully front-end scheduling and planning apps built on the public Bryntum npm packages, with the source on GitHub.">
+    <!-- Absolute URL, the image is copied as is from public/gallery/ -->
+    <meta property="og:image" content="https://bryntum.github.io/showcases/gallery/og-ev-operations.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The EV Operations showcase: a production line scheduled per work center">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="./shared/logo-round.svg" type="image/svg+xml">
+    <!-- vite.config.js injects the theme colour and the head script applying the stored light / dark choice -->
+    <link rel="stylesheet" href="./gallery.css">
+    <script type="module" src="./gallery.js"></script>
+</head>
+
+<body>
+    <!-- One copy of each icon, used by every link below. The GitHub mark is also @showcases/shared/github-mark.svg,
+         inline here so `<use>` can colour it with currentColor -->
+    <svg width="0" height="0" class="visually-hidden" aria-hidden="true">
+        <symbol id="icon-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol>
+        <symbol id="icon-play" viewBox="0 0 16 16"><path fill="currentColor" d="M4 2.5v11l9.5-5.5z"/></symbol>
+        <symbol id="icon-arrow-down" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M8 2.5v11m-4.5-4.5L8 13.5 12.5 9"/></symbol>
+        <symbol id="icon-code" viewBox="0 0 16 16"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m5.5 4-4 4 4 4m5-8 4 4-4 4"/></symbol>
+    </svg>
+
+    <a class="visually-hidden skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+        <nav class="wrap" aria-label="Main">
+            <a class="brand" href="./">
+                <img src="./shared/logo-round.svg" alt="" width="30" height="30">
+                <span>Bryntum <span class="brand-accent">showcases</span></span>
+            </a>
+            <ul class="site-links">
+                <li><a href="#showcases">All showcases</a></li>
+                <li><a href="https://bryntum.com/products/complete/">Products</a></li>
+                <li><a href="https://bryntum.com/docs/">Docs</a></li>
+            </ul>
+            <div class="site-actions">
+                <a class="sc-icon-button" href="https://github.com/bryntum/showcases" title="View source on GitHub"
+                    aria-label="View source on GitHub">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-github"/></svg>
+                </a>
+                <a class="button primary" href="https://bryntum.com">bryntum.com</a>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main">
+        <section class="hero wrap" aria-labelledby="hero-title">
+            <!-- The headline, swap it here (the page title and og:title are in the head) -->
+            <h1 id="hero-title">Real-world planning apps. <em>Source included.</em></h1>
+            <p class="lede">
+                Realistic, fully front-end use cases built on the public Bryntum npm packages. Open the
+                live demo, then read every line of the source.
+            </p>
+            <div class="button-row">
+                <a class="button primary" href="#showcases">
+                    Browse showcases
+                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
+                </a>
+                <a class="button" href="./ev-operations/">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
+                    Try the latest demo
+                </a>
+            </div>
+        </section>
+
+        <section class="featured wrap" aria-labelledby="featured-title">
+            <!-- Decorative time axis, the "now" marker creeps along -->
+            <div class="timeline" aria-hidden="true">
+                <ol>
+                    <li>09:00</li><li>10:00</li><li>11:00</li><li>12:00</li>
+                    <li>13:00</li><li>14:00</li><li>15:00</li><li>16:00</li>
+                </ol>
+                <div class="now-track">
+                    <div class="now-marker">
+                        <span class="now-pill">NOW</span>
+                        <span class="now-line"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="featured-grid">
+                <figure class="frame">
+                    <figcaption>
+                        <span class="live">Live simulation</span>
+                        <span>ev-operations</span>
+                    </figcaption>
+                    <a href="./ev-operations/" tabindex="-1" aria-hidden="true">
+                        <picture>
+                            <source type="image/webp"
+                                srcset="./gallery/ev-operations-800.webp 800w, ./gallery/ev-operations-1600.webp 1600w"
+                                sizes="(max-width: 56rem) 100vw, 44rem">
+                            <img src="./gallery/ev-operations-1200.png" width="1200" height="741" fetchpriority="high"
+                                alt="EV Operations, Production line view: work centers with running, behind and expedited batches on a shift timeline">
+                        </picture>
+                    </a>
+                </figure>
+
+                <div>
+                    <h2 id="featured-title">EV Operations</h2>
+                    <ul class="tags" aria-label="Built with">
+                        <li><a href="https://bryntum.com/products/scheduler/">Scheduler</a></li>
+                        <li><a href="https://bryntum.com/products/gantt/">Gantt</a></li>
+                    </ul>
+                    <p class="summary">
+                        Scheduler and Gantt in one app, driven by a live simulation you can
+                        start and stop.
+                    </p>
+                    <ol class="views" aria-label="Views">
+                        <li>
+                            <span class="index" aria-hidden="true">01</span>
+                            <span>
+                                <strong>Production line</strong>
+                                <span>Work centers, batches and OEE per shift</span>
+                            </span>
+                        </li>
+                        <li>
+                            <span class="index" aria-hidden="true">02</span>
+                            <span>
+                                <strong>Service &amp; charging</strong>
+                                <span>A service center with DC fast chargers</span>
+                            </span>
+                        </li>
+                        <li>
+                            <span class="index" aria-hidden="true">03</span>
+                            <span>
+                                <strong>Vehicle program</strong>
+                                <span>The launch plan as a Gantt</span>
+                            </span>
+                        </li>
+                    </ol>
+                    <div class="button-row">
+                        <a class="button primary" href="./ev-operations/">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
+                            Live demo
+                        </a>
+                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/ev-operations">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
+                            Source
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="showcases" id="showcases" aria-labelledby="showcases-title">
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <h2 id="showcases-title">All showcases</h2>
+                        <p>Complete apps on the public packages, each with its source on GitHub.</p>
+                    </div>
+                    <div class="filters" role="group" aria-label="Filter by product" hidden></div>
+                </div>
+                <p class="visually-hidden" aria-live="polite" data-filter-status hidden></p>
+                <!-- Rendered by gallery.js from its showcase list -->
+                <ul class="cards" data-cards>
+                    <li>
+                        <noscript>
+                            <p>
+                                <a href="./ev-operations/">EV Operations</a>: a
+                                production line, a service center with DC fast chargers
+                                and a vehicle program, with a live simulation.
+                            </p>
+                        </noscript>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="built wrap" aria-labelledby="built-title">
+            <h2 id="built-title">Nothing hidden. The same packages you install.</h2>
+            <ul class="points">
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
+                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+                        <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/>
+                        <path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>
+                    </svg>
+                    <h3>Public npm packages</h3>
+                    <p>Every showcase installs the published Bryntum packages. No private builds, no special access.</p>
+                </li>
+                <li>
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
+                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="2.5" y="3.5" width="19" height="13" rx="1.5"/>
+                        <path d="M8.5 20.5h7M12 16.5v4"/>
+                    </svg>
+                    <h3>Fully front-end</h3>
+                    <p>
+                        Data, logic and simulation run in the browser, so there is no backend to
+                        stand up before you can explore.
+                    </p>
+                </li>
+                <li>
+                    <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
+                    <h3>Source on GitHub</h3>
+                    <p>Read how each view is wired up, then lift the patterns straight into your own app.</p>
+                </li>
+            </ul>
+        </section>
+
+        <section class="cta" aria-labelledby="cta-title">
+            <div class="wrap">
+                <div>
+                    <h2 id="cta-title">Have a use case we should build next?</h2>
+                    <p>Tell us the planning problem you are solving. The best ideas become the next showcase.</p>
+                </div>
+                <div class="button-row">
+                    <a class="button primary" href="https://github.com/bryntum/showcases/issues/new?title=Showcase%20idea%3A%20">Suggest a showcase</a>
+                    <a class="button" href="https://bryntum.com/products/complete/">Explore the products</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <p>© Bryntum AB · Stockholm</p>
+            <nav aria-label="Footer">
+                <ul>
+                    <li><a href="https://github.com/bryntum/showcases">GitHub</a></li>
+                    <li><a href="https://bryntum.com/docs/">Docs</a></li>
+                    <li><a href="https://bryntum.com">bryntum.com</a></li>
+                </ul>
+            </nav>
+        </div>
+    </footer>
+</body>
+
+</html>

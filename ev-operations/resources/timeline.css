@@ -1,0 +1,100 @@
+/* The simulated clock on the timeline: past shading, the now line and the now pill in the header */
+
+.ev-app {
+    :is(.b-operations-scheduler, .b-program-gantt) {
+        /* px like the borders: the dot is centred on the header's 1px bottom border */
+        --ev-now-dot-size  : 7px;
+        --ev-now-halo-size : 3px;
+        --ev-now-overhang  : calc(var(--ev-now-dot-size) / 2 + var(--ev-now-halo-size) + 1px);
+
+        /* The now dot overhangs into the first row, no public hook for that, see bryntum/support#13982. `normal` is
+         * the fixed name of the timeline region in this two-region layout, the locked column is not opened up */
+        .b-grid-header-scroller-normal {
+            overflow  : visible;
+            clip-path : inset(0 0 calc(var(--ev-now-overhang) * -1) 0);
+        }
+
+        .b-grid-headers-normal {
+            margin-block-end  : calc(var(--ev-now-overhang) * -1);
+            padding-block-end : var(--ev-now-overhang);
+            /* The overhang strip lies over the first row, let pointer events through to it */
+            pointer-events    : none;
+
+            > * {
+                pointer-events : auto;
+            }
+        }
+
+        .b-sch-time-axis-column {
+            overflow : visible;
+        }
+
+        /* Body: past shading and the now line, behind the events */
+        .ev-past {
+            background : var(--ev-past);
+            opacity    : 1;
+        }
+
+        .ev-now {
+            z-index    : 1;
+            width      : 0;
+            background : none;
+            opacity    : 1;
+
+            --b-time-range-line-color : var(--ev-focus);
+            --b-time-range-line-width : 1px;
+        }
+
+        /* Header: the same records render there too, the now pill above the time axis labels */
+        .b-grid-header {
+            .ev-past {
+                display : none;
+            }
+
+            .ev-now {
+                overflow : visible;
+                border   : 0;
+                z-index  : 3;
+
+                /* Dot where the now line meets the header, centred on the header's 1px bottom border */
+                &::after {
+                    content            : '';
+                    position           : absolute;
+                    inset-block-end    : calc(1px / 2 - var(--ev-now-dot-size) / 2);
+                    inset-inline-start : calc(var(--ev-now-dot-size) / -2 + 0.5px);
+                    width              : var(--ev-now-dot-size);
+                    height             : var(--ev-now-dot-size);
+                    border-radius      : 50%;
+                    background         : var(--ev-focus);
+                    box-shadow         : 0 0 0 var(--ev-now-halo-size) color-mix(in srgb, var(--ev-focus) 25%,
+                        transparent);
+                    pointer-events     : none;
+                }
+            }
+        }
+
+        .ev-now-pill {
+            position             : absolute;
+            inset-block-start    : 1em;
+            inset-inline-start   : 0;
+            translate            : -50% 0;
+            display              : flex;
+            align-items          : center;
+            justify-content      : center;
+            height               : 2em;
+            /* Fixed width, the widest label of the view, see SimulatedView#resetNowPillWidth */
+            box-sizing           : content-box;
+            width                : var(--ev-now-pill-text, 6ch);
+            padding              : 0 0.667em;
+            font-size            : 0.857em;
+            font-weight          : 600;
+            color                : var(--ev-on-accent);
+            background           : var(--ev-focus);
+            border-radius        : calc(var(--b-widget-border-radius) * 0.7);
+            /* A halo in the header's own colour hides the time axis label below the pill */
+            box-shadow           : 0 0 0 0.4em var(--b-grid-header-applied-background, var(--b-grid-header-background));
+            white-space          : nowrap;
+            font-variant-numeric : tabular-nums;
+        }
+    }
+}

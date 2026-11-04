@@ -1,0 +1,497 @@
+/* EV Operations demo, Vehicle program view: phase tree, slip cells, summary bars, milestone, dependencies. Tokens are
+ * in tokens.css, loaded first */
+
+.ev-app {
+    .b-program-gantt {
+        --b-tree-expander-color : var(--ev-ink-sub);
+        /* 10px from the expander to a group's name, phases line up under it */
+        --b-tree-cell-gap       : 0.714em;
+        --b-tree-indent-size    : 1.929em;
+        --b-tree-parent-color   : var(--ev-ink);
+
+        /* Year start, the one accented time axis label, with the year divider */
+        .b-sch-header-time-axis-cell.ev-year-start {
+            font-size                 : 1em;
+            font-weight               : 600;
+            border-inline-start-color : var(--ev-line-hard);
+        }
+
+        /* region Dependencies and bars */
+
+        /* Thin neutral guides behind the bars, styled through the feature's variables, hover and selection are the
+         * theme's. The invisible, wider click area shares .b-sch-dependency and is left alone */
+        .b-sch-dependency:where(:not(.b-click-area)) {
+            /* The line ends at the tip of the arrow head, a round cap would poke out of it */
+            stroke-linecap  : butt;
+            stroke-linejoin : round;
+
+            --b-dependency-color : var(--ev-line);
+
+            /* Leaving a finished phase, the line fades towards the surface like the finished bar does */
+            &.ev-done {
+                --b-dependency-color : color-mix(in srgb, var(--ev-line) 60%, var(--ev-surface));
+            }
+        }
+
+        /* Arrow head, filled and stroked in the line colour (context-stroke), softened corners by a round join */
+        .b-sch-dependency-arrow {
+            path {
+                stroke          : context-stroke;
+                stroke-width    : 1;
+                stroke-linejoin : round;
+            }
+        }
+
+        /* 52px rows, 28px bars. Gantt has no per-row bar size: getRowHeight sizes rows only, bars use one canvas-wide
+         * --b-event-size */
+        .b-gantt-task-wrap:is(.b-gantt-task-parent, .b-milestone-wrap) {
+            --b-event-size : 28;
+        }
+
+        /* Milestone: a hollow 18px diamond centred in its 28px bar box, pulsing while approaching, solid
+         * once reached */
+        .b-gantt-task-wrap.b-milestone-wrap {
+            align-items : center;
+
+            .b-gantt-task.b-milestone {
+                position      : relative;
+                place-self    : center;
+                width         : 1.286em;
+                height        : 1.286em;
+                min-width     : 0;
+                rotate        : 45deg;
+                overflow      : visible;
+                background    : var(--ev-surface);
+                border        : 2px solid var(--ev-ink);
+                border-radius : 4px;
+                box-sizing    : border-box;
+                box-shadow    : var(--ev-ms-ring);
+                transition    : border-color 0.15s, background 0.15s;
+
+                --ev-ms-halo : color-mix(in srgb, var(--ev-ink) 10%, transparent);
+                --ev-ms-ring : 0 0 0 5px var(--ev-ms-halo), 0 6px 14px var(--ev-shadow);
+
+                /* The default milestone shape */
+                .b-gantt-task-content::before {
+                    content : none;
+                }
+
+                /* Core */
+                &::after {
+                    content       : '';
+                    position      : absolute;
+                    inset         : 50% auto auto 50%;
+                    width         : 6px;
+                    height        : 6px;
+                    translate     : -50% -50%;
+                    border-radius : 1px;
+                    background    : var(--ev-ink);
+                }
+
+                &:hover {
+                    border-color : var(--b-neutral-0);
+                }
+
+                &.ev-milestone-approaching {
+                    border-color : var(--ev-focus);
+
+                    --ev-ms-halo : color-mix(in srgb, var(--ev-focus) 20%, transparent);
+                }
+
+                &.ev-milestone-reached {
+                    background : var(--ev-ink);
+                }
+
+                &.b-task-selected {
+                    border-color : var(--b-primary);
+                    box-shadow   : 0 0 0 3px color-mix(in srgb, var(--b-primary) 22%, transparent), var(--ev-ms-ring);
+                }
+
+                /* While approaching the halo pulses. Reached live during Simulate, a one-shot flare */
+                @media (prefers-reduced-motion : no-preference) {
+                    &.ev-milestone-approaching {
+                        animation : ev-milestone-pulse 2.4s ease-in-out infinite;
+                    }
+
+                    &.ev-milestone-flare {
+                        animation : ev-milestone-flare 0.3s ease-out;
+                    }
+                }
+            }
+        }
+
+        /* The block is centred on the diamond: the name just above its centre, the date below */
+        .ev-milestone-label {
+            display        : flex;
+            flex-direction : column;
+            align-items    : flex-end;
+            gap            : 0.143em;
+            white-space    : nowrap;
+        }
+
+        .ev-milestone-name {
+            font-size   : 0.929em;
+            font-weight : 600;
+        }
+
+        .ev-milestone-date {
+            font-size            : 0.786em;
+            color                : var(--ev-ink-sub);
+            font-variant-numeric : tabular-nums;
+        }
+
+        /* Group rows, the summary bar of a group of phases: one pill over the span of its phases, filled up to now.
+         * Neutralizes the default parent bar shape */
+        .b-gantt-task.ev-summary {
+            display    : block;
+            height     : 100%;
+            max-height : none;
+            overflow   : visible;
+            background : transparent;
+            border     : 0;
+            box-shadow : none;
+            clip-path  : none;
+            cursor     : pointer;
+
+            /* Track thickness (6px) and how far the bracket ends drop below it (7px) */
+            --ev-summary-thickness : 0.4286em;
+            --ev-summary-foot      : 0.5em;
+
+            .ev-summary-track {
+                position      : absolute;
+                inset         : 50% 0 auto;
+                height        : var(--ev-summary-thickness);
+                translate     : 0 -50%;
+                border-radius : 999px;
+                background    : var(--ev-track);
+                overflow      : hidden;
+            }
+
+            .ev-summary-fill {
+                height     : 100%;
+                width      : calc(var(--ev-fill) * 100%);
+                background : var(--ev-color);
+            }
+
+            &.b-task-selected {
+                .ev-summary-track {
+                    box-shadow : 0 0 0 3px color-mix(in srgb, var(--b-primary) 22%, transparent);
+                }
+            }
+
+            /* Bracket ends of the slim parent track (stock Gantt clips them out of its taller bar), one shape, the
+             * end one mirrored, in the colour of the track end they meet */
+            &::before, &::after {
+                content                : "";
+                position               : absolute;
+                inset-block-start      : calc(50% - var(--ev-summary-thickness) / 2);
+                width                  : var(--ev-summary-foot);
+                height                 : calc(var(--ev-summary-thickness) + var(--ev-summary-foot));
+                /* Physical, like the clip-path it rounds. RTL mirrors the whole shape, see .b-rtl below */
+                /* stylelint-disable-next-line csstools/use-logical */
+                border-top-left-radius : calc(var(--ev-summary-thickness) / 2);
+                background             : var(--ev-track);
+                clip-path              : polygon(0 0, 100% 0, 100% var(--ev-summary-thickness), 0 100%);
+            }
+
+            &::before {
+                inset-inline-start : 0;
+            }
+
+            &::after {
+                inset-inline-end : 0;
+                scale            : -1 1;
+            }
+
+            .b-rtl & {
+                &::before {
+                    scale : -1 1;
+                }
+
+                &::after {
+                    scale : none;
+                }
+            }
+
+            &.ev-summary-started::before, &.ev-summary-complete::after {
+                background : var(--ev-color);
+            }
+        }
+
+        /* endregion */
+
+        /* region Phase tree */
+
+        .ev-tree-cell.b-grid-cell {
+            padding-inline : 0.857em;
+            /* A phone's narrow column drops the owners, see .ev-avatars */
+            container-type : inline-size;
+
+            /* The cell content fills the width left by the indent, right aligned parts stay inside. The tree cell's
+             * inner elements have no variable for this */
+            .b-tree-cell-inner, .b-tree-cell-value {
+                flex      : 1;
+                min-width : 0;
+            }
+        }
+
+        /* Group rows, a faint band */
+        .b-grid-row.ev-parent-row {
+            background : var(--ev-sunken);
+        }
+
+        .ev-phase-cell {
+            display     : flex;
+            align-items : center;
+            gap         : 0.429em;
+            width       : 100%;
+            min-width   : 0;
+            white-space : nowrap;
+
+            .ev-phase-text {
+                display        : flex;
+                flex           : 1;
+                flex-direction : column;
+                gap            : 0.143em;
+                min-width      : 0;
+            }
+
+            /* 14px / 400, 600 for groups */
+            .ev-phase-name {
+                flex      : 1;
+                min-width : 0;
+            }
+
+            &.ev-phase-group {
+                .ev-phase-name {
+                    font-weight : 600;
+                }
+            }
+
+            /* Gate and end date, 12px */
+            .ev-phase-sub, .ev-phase-date {
+                font-size            : 0.857em;
+                color                : var(--ev-ink-sub);
+                font-variant-numeric : tabular-nums;
+            }
+
+            .ev-phase-name, .ev-phase-sub {
+                overflow      : hidden;
+                text-overflow : ellipsis;
+            }
+
+            /* Owner stack: 22px discs in a 2px ring of the row colour, overlapping 6px, more owners in a +N chip */
+            .ev-avatars {
+                flex : none;
+
+                @container (width < 14em) {
+                    display : none;
+                }
+
+                .ev-avatar {
+                    width               : 2.6em;
+                    height              : 2.6em;
+                    margin-inline-start : -0.6em;
+                    font-size           : 0.714em;
+                    border-color        : var(--ev-surface);
+
+                    &:first-child {
+                        margin-inline-start : 0;
+                    }
+                }
+
+                .ev-avatar-more {
+                    color      : var(--ev-ink-sub);
+                    background : var(--ev-track);
+                }
+            }
+        }
+
+        /* Rolled up progress of a group, 12px / 600 and a 16px ring, its end 7px inside the owner discs above */
+        .ev-phase-rollup, .ev-rollup-pending {
+            flex              : none;
+            margin-inline-end : 0.75em;
+            font-size         : 0.857em;
+        }
+
+        .ev-phase-rollup {
+            display     : flex;
+            align-items : center;
+            gap         : 0.75em;
+
+            /* Fixed width, fits "100%" */
+            .ev-rollup-value {
+                min-width            : 4ch;
+                font-weight          : 600;
+                text-align           : end;
+                color                : var(--ev-ink-sub);
+                font-variant-numeric : tabular-nums;
+            }
+        }
+
+        /* A group that has not started yet, instead of an empty 0% ring */
+        .ev-rollup-pending {
+            color : var(--ev-ink-quiet);
+        }
+
+        /* Mini progress ring, 16px with a 2px stroke. The 18 unit viewBox scales down */
+        .ev-ring.ev-ring-mini {
+            width  : 1.333em;
+            height : 1.333em;
+
+            .ev-ring-track, .ev-ring-arc {
+                stroke-width : 2.25;
+            }
+
+            /* Neutral progress, in the roll-up text colour */
+            &.ev-status-neutral {
+                .ev-ring-arc {
+                    stroke : var(--ev-ink-sub);
+                }
+            }
+        }
+
+        /* endregion */
+
+        /* region Slip column */
+
+        /* 16px each side, the header label (the column's cls) lines up with the values (its cellCls) */
+        .ev-slip-column {
+            &.b-grid-cell {
+                padding-inline : 1.143em;
+            }
+
+            &.ev-header {
+                --b-grid-header-padding : 1.143em;
+            }
+        }
+
+        /* Slip: the value on top, the six week line chart below, 12px / 400. Its context is in the tooltip */
+        .ev-slip-cell {
+            display        : flex;
+            flex-direction : column;
+            gap            : 0.5em;
+            width          : 100%;
+            min-width      : 0;
+            white-space    : nowrap;
+
+            .ev-slip-value {
+                line-height : 1.5;
+            }
+        }
+
+        .ev-slip-value {
+            font-size            : 0.857em;
+            font-variant-numeric : tabular-nums;
+        }
+
+        /* The chart and its end dot, placed in % of the chart box */
+        .ev-slip-plot {
+            position : relative;
+        }
+
+        /* The chart is not mirrored in RTL, its last point is always on the right */
+        .ev-slip-dot {
+            position      : absolute;
+            /* stylelint-disable-next-line csstools/use-logical */
+            left          : 100%;
+            width         : 0.429em;
+            height        : 0.429em;
+            border-radius : 50%;
+            background    : var(--ev-slip-stroke);
+            translate     : -50% -50%;
+        }
+
+        /* Spans the cell, the stroke keeps its width when the chart stretches */
+        .ev-slip-chart {
+            display  : block;
+            width    : 100%;
+            height   : 1.714em;
+            overflow : visible;
+
+            --ev-slip-stroke : var(--ev-sched);
+            --ev-slip-fill   : color-mix(in srgb, var(--ev-sched) 16%, transparent);
+
+            .ev-slip-line {
+                fill            : none;
+                stroke          : var(--ev-slip-stroke);
+                stroke-width    : 1.5;
+                stroke-linejoin : round;
+                vector-effect   : non-scaling-stroke;
+            }
+
+            .ev-slip-area {
+                fill : var(--ev-slip-fill);
+            }
+
+            &.ev-slip-flat {
+                --ev-slip-stroke : var(--ev-done);
+            }
+        }
+
+        .ev-slip-recovered {
+            .ev-slip-value {
+                color : var(--ev-ok);
+            }
+        }
+
+        /* Past float now, red. On the cell, or on the single value of a group or the milestone */
+        .ev-slip-late {
+            &.ev-slip-value, .ev-slip-value {
+                color : var(--ev-down);
+            }
+
+            .ev-slip-chart:where(:not(.ev-slip-flat)) {
+                --ev-slip-stroke : var(--ev-down);
+                --ev-slip-fill   : color-mix(in srgb, var(--ev-down) 12%, transparent);
+            }
+        }
+
+        /* Finished: the history up to its end, quieter than the running phases */
+        .ev-slip-finished {
+            .ev-slip-plot {
+                --ev-slip-stroke : var(--ev-ink-quiet);
+                --ev-slip-fill   : color-mix(in srgb, var(--ev-ink-quiet) 10%, transparent);
+
+                .ev-slip-chart {
+                    --ev-slip-stroke : inherit;
+                    --ev-slip-fill   : inherit;
+                }
+            }
+
+            &.ev-slip-value, .ev-slip-value {
+                color : var(--ev-ink-quiet);
+            }
+        }
+
+        /* endregion */
+    }
+}
+
+@keyframes ev-milestone-pulse {
+    50% {
+        box-shadow : 0 0 0 5px color-mix(in srgb, var(--ev-focus) 28%, transparent), 0 6px 14px var(--ev-shadow);
+    }
+}
+
+@keyframes ev-milestone-flare {
+    from {
+        background : var(--ev-surface);
+    }
+
+    60% {
+        box-shadow : 0 0 0 9px color-mix(in srgb, var(--ev-focus) 28%, transparent), 0 6px 14px var(--ev-shadow);
+    }
+}
+
+/* Slip charts ease between the weeks during playback only, so a re-used row does not morph from another phase's
+ * chart. Chrome and Firefox animate `d`, Safari snaps */
+@media (prefers-reduced-motion : no-preference) {
+    .ev-simulating {
+        .ev-slip-chart {
+            path {
+                transition : d 0.3s ease-out, fill 0.5s ease-out, stroke 0.5s ease-out;
+            }
+        }
+    }
+}

@@ -1,0 +1,862 @@
+/* Showcase gallery, plain CSS without Bryntum widgets. Dark by default, light when the viewer picks it (`data-theme` on
+ * the root, set before the first paint, see index.html) or, without a choice, when the system asks for it */
+
+/* The font and the design tokens shared with the showcase shell */
+@import '@showcases/shared/fonts.css';
+@import '@showcases/shared/tokens.css';
+@import '@showcases/shared/icon-button.css';
+
+:root {
+    color-scheme : dark;
+
+    /* From shared, the only place the gallery reads the shared token names */
+    --g-font         : var(--sc-font-family);
+    --g-mono         : var(--sc-font-mono);
+    --g-radius       : var(--sc-radius);
+    --g-accent       : var(--sc-accent);
+    --g-accent-fill  : var(--sc-accent-fill);
+    --g-accent-hover : var(--sc-accent-hover);
+
+    /* Gallery only */
+    --g-max-width : 71.25rem;
+    --g-gutter    : 1.5rem;
+
+    /* Light and dark in one value, picked by `color-scheme` below */
+    --g-bg      : light-dark(#f6f7f9, #121417);
+    --g-bg-alt  : light-dark(#eef0f4, #16181c);
+    --g-surface : light-dark(#fff, #1a1d22);
+    --g-surface-2    : light-dark(#f3f5f8, #1f2228);
+    --g-border      : light-dark(#dde1e7, #2a2e35);
+    --g-border-soft : light-dark(#e7eaef, #22252b);
+    --g-text        : light-dark(#15181d, #eef0f3);
+    --g-sub         : light-dark(#5b6270, #9aa1ac);
+    --g-faint       : light-dark(#6b7280, #6c737e);
+    --g-on-accent   : #fff;
+    --g-tag-bg      : light-dark(#e5effc, #1c2a3d);
+    --g-tag-text    : light-dark(#0a4f9e, #9cc8ff);
+    --g-running     : light-dark(#1f8a35, #3fb950);
+    --g-focus       : light-dark(#0a6ad6, #6cb2ff);
+    --g-shadow      : 0 1.5rem 3rem -1rem rgb(0 0 0 / 60%);
+
+    font-family : var(--g-font);
+    font-weight : 400;
+    line-height : 1.55;
+    color       : var(--g-text);
+    background  : var(--g-bg);
+
+    /* Light mode: the viewer's choice, or the system setting while there is none */
+    &[data-theme="light"] {
+        color-scheme : light;
+
+        --g-shadow : 0 1.5rem 3rem -1.5rem rgb(20 30 50 / 25%);
+    }
+
+    @media (prefers-color-scheme: light) {
+        &:not([data-theme]) {
+            color-scheme : light;
+
+            --g-shadow : 0 1.5rem 3rem -1.5rem rgb(20 30 50 / 25%);
+        }
+    }
+}
+
+* {
+    box-sizing : border-box;
+}
+
+html {
+    scroll-behavior : smooth;
+
+    @media (prefers-reduced-motion: reduce) {
+        scroll-behavior : auto;
+    }
+}
+
+body {
+    margin     : 0;
+    background : var(--g-bg);
+    overflow-x : clip;
+}
+
+h1, h2, h3, p, ol, ul {
+    margin : 0;
+}
+
+a {
+    color : var(--g-accent);
+}
+
+:focus-visible {
+    outline        : 2px solid var(--g-focus);
+    outline-offset : 3px;
+    border-radius  : var(--g-radius);
+}
+
+.visually-hidden {
+    position    : absolute;
+    width       : 1px;
+    height      : 1px;
+    overflow    : hidden;
+    clip-path   : inset(50%);
+    white-space : nowrap;
+}
+
+/* Content column shared by every section */
+.wrap {
+    width          : 100%;
+    max-width      : calc(var(--g-max-width) + 2 * var(--g-gutter));
+    margin-inline  : auto;
+    padding-inline : var(--g-gutter);
+}
+
+.icon {
+    width       : 1em;
+    height      : 1em;
+    flex-shrink : 0;
+}
+
+/* Buttons, a primary fill and a quiet outline */
+.button {
+    display         : inline-flex;
+    align-items     : center;
+    justify-content : center;
+    gap             : 0.55em;
+    min-height      : 2.75rem;
+    padding         : 0 1.15em;
+    border          : 1px solid var(--g-border);
+    border-radius   : var(--g-radius);
+    font-size       : 0.9rem;
+    font-weight     : 600;
+    color           : var(--g-text);
+    text-decoration : none;
+    white-space     : nowrap;
+    background      : transparent;
+    transition      : background-color 0.15s, border-color 0.15s;
+
+    &:hover {
+        border-color : var(--g-faint);
+        background   : var(--g-surface-2);
+    }
+
+    &.primary {
+        border-color : var(--g-accent-fill);
+        color        : var(--g-on-accent);
+        background   : var(--g-accent-fill);
+
+        &:hover {
+            border-color : var(--g-accent-hover);
+            background   : var(--g-accent-hover);
+        }
+    }
+
+    .icon {
+        width  : 0.95em;
+        height : 0.95em;
+    }
+}
+
+.button-row {
+    display   : flex;
+    flex-wrap : wrap;
+    gap       : 0.75rem;
+}
+
+/* Product tags, shared by the featured showcase and the cards */
+.tags {
+    display     : flex;
+    flex-wrap   : wrap;
+    align-items : center;
+    gap         : 0.4rem;
+    padding     : 0;
+    list-style  : none;
+
+    li {
+        padding       : 0.2em 0.6em;
+        border-radius : 0.25rem;
+        font-size     : 0.72rem;
+        font-weight   : 500;
+        color         : var(--g-tag-text);
+        background    : var(--g-tag-bg);
+
+        /* A tag linking to its product page still reads as a tag, underlined only on hover and focus */
+        a {
+            color           : inherit;
+            text-decoration : none;
+
+            &:is(:hover, :focus-visible) {
+                text-decoration : underline;
+            }
+        }
+    }
+}
+
+/* Top navigation */
+.site-header {
+    border-block-end : 1px solid var(--g-border-soft);
+
+    .wrap {
+        display       : flex;
+        flex-wrap     : wrap;
+        align-items   : center;
+        gap           : 0.75rem 2rem;
+        min-height    : 4rem;
+        padding-block : 0.6rem;
+    }
+}
+
+.brand {
+    display         : flex;
+    align-items     : center;
+    gap             : 0.6rem;
+    font-weight     : 700;
+    color           : var(--g-text);
+    text-decoration : none;
+
+    img {
+        width  : 1.9rem;
+        height : 1.9rem;
+    }
+
+    /* "Bryntum showcases", one font and size, the second word in the page accent */
+    .brand-accent {
+        font-weight : 600;
+        color       : var(--g-accent);
+    }
+}
+
+.site-links {
+    display    : flex;
+    gap        : 1.5rem;
+    padding    : 0;
+    list-style : none;
+
+    a {
+        font-size       : 0.875rem;
+        font-weight     : 500;
+        color           : var(--g-sub);
+        text-decoration : none;
+
+        &:hover {
+            color : var(--g-text);
+        }
+    }
+}
+
+.site-actions {
+    display             : flex;
+    gap                 : 0.6rem;
+    margin-inline-start : auto;
+
+    .button {
+        min-height : 2.4rem;
+        font-size  : 0.85rem;
+    }
+}
+
+/* Hero */
+.hero {
+    padding-block : 6rem 4.5rem;
+
+    h1 {
+        font-size      : clamp(2.4rem, 1.2rem + 4.6vw, 4.5rem);
+        font-weight    : 700;
+        line-height    : 1.04;
+        letter-spacing : -0.035em;
+        text-wrap      : balance;
+
+        /* The answer gets its own line */
+        em {
+            display    : block;
+            font-style : normal;
+            color      : var(--g-accent);
+        }
+    }
+
+    .lede {
+        max-width          : 34em;
+        margin-block-start : 1.5rem;
+        font-size          : 1.1rem;
+        color              : var(--g-sub);
+    }
+
+    .button-row {
+        margin-block-start : 2.25rem;
+    }
+}
+
+/* The time axis above the featured showcase, with a slowly advancing "now" marker */
+.timeline {
+    position : relative;
+
+    ol {
+        display               : grid;
+        grid-template-columns : repeat(8, minmax(0, 1fr));
+        padding               : 0;
+        border                : 1px solid var(--g-border-soft);
+        list-style            : none;
+    }
+
+    li {
+        padding     : 0.45rem 0.6rem;
+        white-space : nowrap;
+        font-family : var(--g-mono);
+        font-size   : 0.72rem;
+        color       : var(--g-faint);
+
+        & + li {
+            border-inline-start : 1px solid var(--g-border-soft);
+        }
+    }
+
+    /* Every second hour on narrow screens, the labels run into the empty cell next to them */
+    @media (max-width: 40rem) {
+        li {
+            padding-inline : 0.4rem;
+        }
+
+        li:nth-child(even) {
+            color : transparent;
+        }
+    }
+}
+
+/* Spans the axis, clipped sideways only so the drop line can reach the screenshot below */
+.now-track {
+    position       : absolute;
+    inset          : 0;
+    overflow-x     : clip;
+    pointer-events : none;
+}
+
+/* As wide as the axis, so a translate percentage is a position on the axis (11:40 at load) */
+.now-marker {
+    width     : 100%;
+    height    : 100%;
+    translate : 34% 0;
+    animation : now-creep 1800s linear forwards;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation : none;
+    }
+}
+
+.now-pill {
+    position           : absolute;
+    inset-block-start  : 50%;
+    inset-inline-start : 0;
+    padding            : 0.15em 0.45em;
+    border-radius      : 0.2rem;
+    font-family        : var(--g-mono);
+    font-size          : 0.65rem;
+    font-weight        : 700;
+    color              : var(--g-on-accent);
+    background         : var(--g-accent-fill);
+    translate          : -50% -50%;
+}
+
+.now-line {
+    position            : absolute;
+    inset-block-start   : calc(50% + 0.7rem);
+    inset-inline-start  : 0;
+    height              : 3.2rem;
+    border-inline-start : 1px solid var(--g-accent-fill);
+
+    &::after {
+        content             : '';
+        position            : absolute;
+        inset-block-end     : -0.2rem;
+        inset-inline-start  : -0.2rem;
+        width               : 0.35rem;
+        height              : 0.35rem;
+        margin-inline-start : -0.5px;
+        border-radius       : 50%;
+        background          : var(--g-accent-fill);
+    }
+}
+
+@keyframes now-creep {
+    to {
+        translate : 92% 0;
+    }
+}
+
+/* Featured showcase */
+.featured {
+    padding-block-end : 6rem;
+
+    .featured-grid {
+        display               : grid;
+        grid-template-columns : minmax(0, 1.65fr) minmax(0, 1fr);
+        align-items           : center;
+        gap                   : 3rem 4rem;
+        margin-block-start    : 3.25rem;
+
+        @media (max-width: 56rem) {
+            grid-template-columns : minmax(0, 1fr);
+        }
+    }
+
+    h2 {
+        font-size      : clamp(2rem, 1.5rem + 1.5vw, 2.6rem);
+        font-weight    : 700;
+        letter-spacing : -0.025em;
+        line-height    : 1.1;
+    }
+
+    .tags {
+        margin-block-start : 0.9rem;
+    }
+
+    .summary {
+        margin-block-start : 1.25rem;
+        color              : var(--g-sub);
+    }
+
+    .views {
+        margin-block-start : 1.5rem;
+        padding            : 0;
+        list-style         : none;
+
+        li {
+            display               : grid;
+            grid-template-columns : 2.2rem 1fr;
+            padding-block         : 0.8rem;
+            border-block-end      : 1px solid var(--g-border-soft);
+        }
+
+        .index {
+            font-family : var(--g-mono);
+            font-size   : 0.75rem;
+            line-height : 1.9;
+            color       : var(--g-faint);
+        }
+
+        strong {
+            display     : block;
+            font-size   : 0.92rem;
+            font-weight : 600;
+        }
+
+        span:last-child {
+            font-size : 0.85rem;
+            color     : var(--g-sub);
+        }
+    }
+
+    .button-row {
+        margin-block-start : 1.75rem;
+    }
+}
+
+/* Window chrome around the screenshot */
+.frame {
+    margin        : 0;
+    overflow      : hidden;
+    border        : 1px solid var(--g-border);
+    border-radius : 0.6rem;
+    background    : var(--g-surface);
+    box-shadow    : var(--g-shadow);
+
+    figcaption {
+        display          : flex;
+        align-items      : center;
+        justify-content  : space-between;
+        gap              : 1rem;
+        padding          : 0.6rem 0.9rem;
+        border-block-end : 1px solid var(--g-border);
+        font-family      : var(--g-mono);
+        font-size        : 0.72rem;
+        color            : var(--g-sub);
+    }
+
+    .live {
+        display     : flex;
+        align-items : center;
+        gap         : 0.5em;
+
+        &::before {
+            content       : '';
+            width         : 0.5rem;
+            height        : 0.5rem;
+            border-radius : 50%;
+            background    : var(--g-running);
+        }
+    }
+
+    img {
+        display : block;
+        width   : 100%;
+        height  : auto;
+    }
+}
+
+/* All showcases */
+.showcases {
+    padding-block             : 5.5rem 6rem;
+    border-block-start        : 1px solid var(--g-border-soft);
+    background                : var(--g-bg-alt);
+    scroll-margin-block-start : 0;
+
+    .section-head {
+        display          : flex;
+        flex-wrap        : wrap;
+        align-items      : flex-end;
+        justify-content  : space-between;
+        gap              : 1.5rem;
+        margin-block-end : 2.25rem;
+    }
+
+    h2 {
+        font-size      : clamp(1.75rem, 1.4rem + 1vw, 2.2rem);
+        font-weight    : 700;
+        letter-spacing : -0.02em;
+    }
+
+    .section-head p {
+        margin-block-start : 0.3rem;
+        color              : var(--g-sub);
+    }
+}
+
+/* Product filter, a row of toggle buttons */
+.filters {
+    display       : flex;
+    flex-wrap     : wrap;
+    gap           : 0.25rem;
+    padding       : 0.25rem;
+    border        : 1px solid var(--g-border);
+    border-radius : var(--g-radius);
+    background    : var(--g-surface);
+
+    /* Shown from two showcases on, see gallery.js */
+    &[hidden] {
+        display : none;
+    }
+
+    button {
+        min-height    : 2.25rem;
+        padding       : 0 0.8rem;
+        border        : 0;
+        border-radius : 0.25rem;
+        font          : inherit;
+        font-size     : 0.82rem;
+        font-weight   : 500;
+        color         : var(--g-sub);
+        background    : transparent;
+        cursor        : pointer;
+
+        &:hover {
+            color      : var(--g-text);
+            background : var(--g-surface-2);
+        }
+
+        &[aria-pressed='true'] {
+            color      : var(--g-on-accent);
+            background : var(--g-accent-fill);
+        }
+    }
+}
+
+.cards {
+    display               : grid;
+    grid-template-columns : repeat(3, minmax(0, 1fr));
+    gap                   : 1.25rem;
+    padding               : 0;
+    list-style            : none;
+
+    @media (max-width: 64rem) {
+        grid-template-columns : repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 40rem) {
+        grid-template-columns : minmax(0, 1fr);
+    }
+
+    > li[hidden] {
+        display : none;
+    }
+
+    /* A lone showcase spans the row as one horizontal card, instead of a third of it */
+    > li:only-child {
+        grid-column : 1 / -1;
+        max-width   : 48rem;
+    }
+}
+
+.card {
+    display        : flex;
+    flex-direction : column;
+    height         : 100%;
+    overflow       : hidden;
+    border         : 1px solid var(--g-border);
+    border-radius  : 0.5rem;
+    background     : var(--g-surface);
+
+    .thumb {
+        position         : relative;
+        aspect-ratio     : 16 / 10;
+        overflow         : hidden;
+        border-block-end : 1px solid var(--g-border);
+
+        img {
+            display         : block;
+            width           : 100%;
+            height          : 100%;
+            object-fit      : cover;
+            object-position : left top;
+        }
+    }
+
+    .body {
+        display        : flex;
+        flex-direction : column;
+        flex           : 1;
+        padding        : 1.1rem 1.1rem 1.3rem;
+    }
+
+    h3 {
+        margin-block-start : 0.8rem;
+        font-size          : 1.05rem;
+        font-weight        : 600;
+        letter-spacing     : -0.01em;
+
+        a {
+            color           : inherit;
+            text-decoration : none;
+
+            &:hover {
+                text-decoration : underline;
+            }
+        }
+    }
+
+    p {
+        margin-block-start : 0.4rem;
+        font-size          : 0.87rem;
+        color              : var(--g-sub);
+    }
+
+    /* The lone card of .cards, the screenshot beside the text. Stacked on phones */
+    li:only-child > & {
+        @media (min-width: 40rem) {
+            flex-direction : row;
+
+            .thumb {
+                flex              : 0 0 55%;
+                border-block-end  : 0;
+                border-inline-end : 1px solid var(--g-border);
+            }
+
+            .body {
+                justify-content : center;
+                padding         : 1.5rem;
+            }
+
+            .links {
+                margin-block-start : 0;
+            }
+        }
+    }
+
+    .links {
+        display             : flex;
+        gap                 : 1.25rem;
+        margin-block-start  : auto;
+        padding-block-start : 1rem;
+        font-size           : 0.87rem;
+        font-weight         : 600;
+
+        a {
+            text-decoration : none;
+
+            &:hover {
+                text-decoration : underline;
+            }
+
+            & + a {
+                color : var(--g-text);
+            }
+        }
+    }
+}
+
+/* How they are built */
+.built {
+    padding-block      : 6rem;
+    border-block-start : 1px solid var(--g-border-soft);
+
+    h2 {
+        max-width      : 16em;
+        font-size      : clamp(1.75rem, 1.4rem + 1vw, 2.2rem);
+        font-weight    : 700;
+        letter-spacing : -0.02em;
+        line-height    : 1.2;
+    }
+
+    .points {
+        display               : grid;
+        grid-template-columns : repeat(3, minmax(0, 1fr));
+        margin-block-start    : 3rem;
+        padding               : 0;
+        border-block-start    : 1px solid var(--g-border);
+        list-style            : none;
+
+        @media (max-width: 48rem) {
+            grid-template-columns : minmax(0, 1fr);
+        }
+    }
+
+    li {
+        padding : 2rem 2rem 0.5rem 0;
+
+        & + li {
+            padding-inline-start : 2rem;
+            border-inline-start  : 1px solid var(--g-border);
+        }
+
+        @media (max-width: 48rem) {
+            padding-inline-end : 0;
+
+            & + li {
+                padding-inline-start : 0;
+                border-inline-start  : 0;
+                border-block-start   : 1px solid var(--g-border);
+            }
+        }
+    }
+
+    .icon {
+        width  : 1.4rem;
+        height : 1.4rem;
+        color  : var(--g-accent);
+    }
+
+    h3 {
+        margin-block-start : 1.25rem;
+        font-size          : 1rem;
+        font-weight        : 600;
+    }
+
+    p {
+        margin-block-start : 0.4rem;
+        font-size          : 0.9rem;
+        color              : var(--g-sub);
+    }
+}
+
+/* Call to action */
+.cta {
+    padding-block      : 4.5rem;
+    border-block-start : 1px solid var(--g-border-soft);
+    background         : var(--g-bg-alt);
+
+    .wrap {
+        display         : flex;
+        flex-wrap       : wrap;
+        align-items     : center;
+        justify-content : space-between;
+        gap             : 2rem;
+    }
+
+    h2 {
+        font-size      : clamp(1.5rem, 1.25rem + 0.8vw, 1.9rem);
+        font-weight    : 700;
+        letter-spacing : -0.02em;
+    }
+
+    p {
+        max-width          : 32em;
+        margin-block-start : 0.4rem;
+        color              : var(--g-sub);
+    }
+}
+
+/* Footer */
+.site-footer {
+    padding-block      : 1.75rem;
+    border-block-start : 1px solid var(--g-border-soft);
+    font-size          : 0.82rem;
+    color              : var(--g-faint);
+
+    .wrap {
+        display         : flex;
+        flex-wrap       : wrap;
+        justify-content : space-between;
+        gap             : 1rem;
+    }
+
+    ul {
+        display    : flex;
+        gap        : 1.5rem;
+        padding    : 0;
+        list-style : none;
+    }
+
+    a {
+        color           : var(--g-sub);
+        text-decoration : none;
+
+        &:hover {
+            color : var(--g-text);
+        }
+    }
+}
+
+/* Phone width: links on their own row, GitHub as an icon button */
+@media (max-width: 45rem) {
+    .site-links {
+        order : 3;
+        width : 100%;
+    }
+
+    .site-header .wrap {
+        gap : 0.5rem 1rem;
+    }
+
+    .hero {
+        padding-block : 3.5rem 3rem;
+    }
+}
+
+@media (max-width: 26rem) {
+    .site-header .wrap {
+        column-gap : 0.5rem;
+    }
+
+    .brand {
+        gap       : 0.45rem;
+        font-size : 0.95rem;
+
+        img {
+            width  : 1.6rem;
+            height : 1.6rem;
+        }
+    }
+
+    .site-actions {
+        gap : 0.4rem;
+
+        .button {
+            min-height : 2.25rem;
+            padding    : 0 0.7em;
+            font-size  : 0.8rem;
+        }
+    }
+
+    .hero .button-row .button {
+        flex : 1 1 100%;
+    }
+}
+
+/* The skip link shows up when it gets keyboard focus */
+.skip:focus-visible {
+    z-index            : 1;
+    inset-block-start  : 0.5rem;
+    inset-inline-start : 0.5rem;
+    width              : auto;
+    height             : auto;
+    padding            : 0.5em 1em;
+    clip-path          : none;
+    color              : var(--g-on-accent);
+    background         : var(--g-accent-fill);
+}

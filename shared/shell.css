@@ -1,0 +1,122 @@
+/* Showcase shell: page layout and header. Sizes and the font come from tokens.css, colours from the Bryntum theme */
+
+@import './tokens.css';
+@import './icon-button.css';
+
+html, body {
+    height     : 100%;
+    margin     : 0;
+    overflow   : hidden;
+    box-sizing : border-box;
+}
+
+body {
+    display          : flex;
+    flex-direction   : column;
+    font-family      : var(--sc-font-family);
+    font-size        : 0.875rem;
+    color            : var(--b-text-1);
+    background-color : var(--b-neutral-97);
+    background-image :
+        radial-gradient(circle, var(--sc-glow-sky), transparent 70%),
+        radial-gradient(circle, var(--sc-glow-violet), transparent 70%),
+        radial-gradient(circle at right bottom, color-mix(in srgb, var(--b-primary), transparent 90%), transparent 70%);
+    background-position : bottom, right, bottom right;
+    background-size     : 50% 50%, 75% 75%, 100% 100%;
+    /* The mode the widgets render. A theme family leaves it unset, so the page's `color-scheme` comes through */
+    color-scheme        : var(--b-widget-color-scheme);
+    transition          : background-color var(--b-default-transition-duration);
+}
+
+.sc-header {
+    display        : flex;
+    align-items    : center;
+    gap            : 0.75em;
+    min-height     : 3.5em;
+    margin-inline  : var(--sc-gutter);
+    /* The logo and the last tool line up with the app panel's content, clear of its rounded corners */
+    padding-inline : calc(var(--sc-panel-border) + var(--sc-panel-padding));
+
+    a {
+        text-decoration : none;
+    }
+
+    /* The round logo is its own circle, the link only rounds its focus outline */
+    .sc-logo {
+        display       : flex;
+        border-radius : 50%;
+
+        &:focus-visible {
+            outline        : 2px solid var(--b-widget-focus-outline-color);
+            outline-offset : 0.25em;
+        }
+
+        img {
+            display : block;
+            width   : 2.3em;
+            height  : 2.3em;
+        }
+    }
+
+    .sc-title {
+        flex          : 1;
+        min-width     : 0;
+        margin        : 0;
+        font-size     : 1.1em;
+        font-weight   : 600;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    .sc-tools {
+        flex      : none;
+        font-size : 0.9em;
+
+        --b-toolbar-padding    : 0.7em 0;
+        --b-toolbar-background : transparent;
+
+        /* Below the wide breakpoint the logo links to bryntum.com, out-specifying the toolbar's own `display` */
+        @media (width < 1000px) {
+            &.b-toolbar {
+                display : none;
+            }
+        }
+    }
+}
+
+.sc-container {
+    position       : relative;
+    flex           : 1;
+    min-height     : 0;
+    display        : flex;
+    flex-direction : column;
+    padding        : 0 var(--sc-gutter) var(--sc-gutter);
+
+    /* The app panel, framed by the shell. `.b-outer` marks the outermost Bryntum widget, the shell has no other handle
+     * on the app a showcase renders into it */
+    > .b-outer {
+        flex          : 1;
+        min-height    : 0;
+        overflow      : clip;
+        background    : var(--b-neutral-100);
+        border        : var(--sc-panel-border) solid var(--b-border-7);
+        border-radius : var(--sc-panel-radius);
+        box-shadow    : var(--sc-panel-shadow);
+    }
+}
+
+/* Wide screens, a wider gutter and more air above the header and the panel */
+@media screen and (min-width : 1000px) {
+    :root {
+        --sc-gutter : 4em;
+    }
+
+    .sc-header {
+        margin-block-start : 1em;
+    }
+
+    .sc-container {
+        padding-block-start : 1em;
+    }
+}

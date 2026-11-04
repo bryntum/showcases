@@ -1,0 +1,17 @@
+{
+    "name": "@showcases/ev-operations",
+    "description": "EV operations: Bryntum Scheduler and Gantt in one app, with a live simulation",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "license": "MIT",
+    "dependencies": {
+        "@showcases/shared": "*"
+    },
+    "peerDependencies": {
+        "@bryntum/core-enterprise": "8.0.0",
+        "@bryntum/gantt-enterprise": "8.0.0",
+        "@bryntum/grid-enterprise": "8.0.0",
+        "@bryntum/scheduler-enterprise": "8.0.0"
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "name": "bryntum-showcases",
+    "description": "Realistic, fully front-end Bryntum use cases built on the public npm packages",
+    "private": true,
+    "type": "module",
+    "license": "MIT",
+    "author": {
+        "name": "Bryntum",
+        "url": "https://bryntum.com",
+        "email": "info@bryntum.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bryntum/showcases.git"
+    },
+    "homepage": "https://bryntum.github.io/showcases/",
+    "engines": {
+        "node": ">=20"
+    },
+    "workspaces": [
+        "shared",
+        "ev-operations"
+    ],
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview --base /showcases/",
+        "lint": "eslint . && stylelint \"**/*.css\"",
+        "test": "playwright test"
+    },
+    "dependencies": {
+        "@bryntum/core-enterprise": "8.0.0",
+        "@bryntum/engine-enterprise": "8.0.0",
+        "@bryntum/gantt-enterprise": "8.0.0",
+        "@bryntum/grid-enterprise": "8.0.0",
+        "@bryntum/scheduler-enterprise": "8.0.0",
+        "@fontsource-variable/montserrat": "^5.3.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.0",
+        "@playwright/test": "1.64.1",
+        "@stylistic/eslint-plugin": "^5.10.0",
+        "eslint": "^9.39.0",
+        "globals": "^16.5.0",
+        "stylelint": "16.26.1",
+        "stylelint-config-recommended": "14.0.1",
+        "stylelint-use-logical": "2.1.3",
+        "vite": "^6.4.5"
+    }
+}

@@ -1,0 +1,366 @@
+{
+  "success"   : true,
+  "resources" : {
+    "rows" : [
+      {
+        "id"          : "pr1",
+        "name"        : "Casting Press 1",
+        "description" : "Rear underbody",
+        "type"        : "press",
+        "performance" : 0.97
+      },
+      {
+        "id"          : "pr2",
+        "name"        : "Casting Press 2",
+        "description" : "Front underbody",
+        "type"        : "press",
+        "performance" : 0.94
+      },
+      {
+        "id"          : "biw",
+        "name"        : "Body in White",
+        "description" : "Weld · Line 1",
+        "type"        : "weld",
+        "performance" : 0.98
+      },
+      {
+        "id"          : "pnt",
+        "name"        : "Paint Shop",
+        "description" : "E-coat · Topcoat",
+        "type"        : "paint",
+        "performance" : 0.96
+      },
+      {
+        "id"          : "ga1",
+        "name"        : "General Assembly 1",
+        "description" : "Crossover line",
+        "type"        : "assembly",
+        "performance" : 0.97
+      },
+      {
+        "id"          : "ga2",
+        "name"        : "General Assembly 2",
+        "description" : "Pickup line",
+        "type"        : "assembly",
+        "performance" : 0.93
+      },
+      {
+        "id"          : "eol",
+        "name"        : "End of Line",
+        "description" : "Test · QA",
+        "type"        : "test",
+        "performance" : 0.98
+      }
+    ]
+  },
+  "events" : {
+    "rows" : [
+      {
+        "id"        : 1,
+        "type"      : "batch",
+        "name"      : "Batch 2411",
+        "startDate" : "2026-10-21T06:00:00",
+        "endDate"   : "2026-10-21T08:05:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 98.8
+      },
+      {
+        "id"        : 2,
+        "type"      : "batch",
+        "name"      : "Batch 2412",
+        "startDate" : "2026-10-21T08:20:00",
+        "endDate"   : "2026-10-21T10:35:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 99.15
+      },
+      {
+        "id"        : 3,
+        "type"      : "batch",
+        "name"      : "Batch 2413",
+        "startDate" : "2026-10-21T10:50:00",
+        "endDate"   : "2026-10-21T13:05:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 99.5
+      },
+      {
+        "id"           : 4,
+        "type"         : "batch",
+        "name"         : "Batch 2414",
+        "startDate"    : "2026-10-21T08:00:00",
+        "endDate"      : "2026-10-21T10:45:00",
+        "model"        : "NV9 Pickup",
+        "units"        : 120,
+        "fpy"          : 97.4,
+        "status"       : "late",
+        "delayMinutes" : 15
+      },
+      {
+        "id"        : 5,
+        "type"      : "batch",
+        "name"      : "Batch 2415",
+        "startDate" : "2026-10-21T11:05:00",
+        "endDate"   : "2026-10-21T13:30:00",
+        "model"     : "NV9 Pickup",
+        "units"     : 120,
+        "fpy"       : 97.75
+      },
+      {
+        "id"        : 6,
+        "type"      : "batch",
+        "name"      : "Batch 2408",
+        "startDate" : "2026-10-21T06:00:00",
+        "endDate"   : "2026-10-21T09:15:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.75
+      },
+      {
+        "id"        : 7,
+        "type"      : "batch",
+        "name"      : "Batch 2409",
+        "startDate" : "2026-10-21T09:30:00",
+        "endDate"   : "2026-10-21T12:10:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 98.1
+      },
+      {
+        "id"        : 8,
+        "type"      : "batch",
+        "name"      : "Batch 2410",
+        "startDate" : "2026-10-21T12:25:00",
+        "endDate"   : "2026-10-21T13:30:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 98.45
+      },
+      {
+        "id"        : 9,
+        "type"      : "batch",
+        "name"      : "Batch 2405",
+        "startDate" : "2026-10-21T06:15:00",
+        "endDate"   : "2026-10-21T08:50:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 99.15
+      },
+      {
+        "id"        : 10,
+        "type"      : "batch",
+        "name"      : "Batch 2406",
+        "startDate" : "2026-10-21T09:50:00",
+        "endDate"   : "2026-10-21T11:20:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 160,
+        "fpy"       : 99.5
+      },
+      {
+        "id"        : 11,
+        "type"      : "batch",
+        "name"      : "Batch 2407",
+        "startDate" : "2026-10-21T11:40:00",
+        "endDate"   : "2026-10-21T13:30:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.4
+      },
+      {
+        "id"        : 12,
+        "type"      : "batch",
+        "name"      : "Batch 2401",
+        "startDate" : "2026-10-21T06:00:00",
+        "endDate"   : "2026-10-21T09:00:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.75
+      },
+      {
+        "id"        : 13,
+        "type"      : "batch",
+        "name"      : "Batch 2402",
+        "startDate" : "2026-10-21T09:15:00",
+        "endDate"   : "2026-10-21T12:30:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 98.1,
+        "status"    : "focus",
+        "priority"  : true
+      },
+      {
+        "id"        : 14,
+        "type"      : "batch",
+        "name"      : "Batch 2390",
+        "startDate" : "2026-10-21T06:30:00",
+        "endDate"   : "2026-10-21T10:10:00",
+        "model"     : "NV9 Pickup",
+        "units"     : 120,
+        "fpy"       : 99.5
+      },
+      {
+        "id"        : 15,
+        "type"      : "batch",
+        "name"      : "Batch 2391",
+        "startDate" : "2026-10-21T10:30:00",
+        "endDate"   : "2026-10-21T13:30:00",
+        "model"     : "NV9 Pickup",
+        "units"     : 120,
+        "fpy"       : 97.4
+      },
+      {
+        "id"        : 16,
+        "type"      : "batch",
+        "name"      : "Batch 2398",
+        "startDate" : "2026-10-21T07:00:00",
+        "endDate"   : "2026-10-21T09:20:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.4
+      },
+      {
+        "id"        : 17,
+        "type"      : "batch",
+        "name"      : "Batch 2399",
+        "startDate" : "2026-10-21T09:55:00",
+        "endDate"   : "2026-10-21T11:50:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.75
+      },
+      {
+        "id"        : 18,
+        "type"      : "batch",
+        "name"      : "Batch 2400",
+        "startDate" : "2026-10-21T12:00:00",
+        "endDate"   : "2026-10-21T13:30:00",
+        "model"     : "NV9 Crossover",
+        "units"     : 240,
+        "fpy"       : 97.4
+      }
+    ]
+  },
+  "assignments" : {
+    "rows" : [
+      {
+        "id"       : 1,
+        "event"    : 1,
+        "resource" : "pr1"
+      },
+      {
+        "id"       : 2,
+        "event"    : 2,
+        "resource" : "pr1"
+      },
+      {
+        "id"       : 3,
+        "event"    : 3,
+        "resource" : "pr1"
+      },
+      {
+        "id"       : 4,
+        "event"    : 4,
+        "resource" : "pr2"
+      },
+      {
+        "id"       : 5,
+        "event"    : 5,
+        "resource" : "pr2"
+      },
+      {
+        "id"       : 6,
+        "event"    : 6,
+        "resource" : "biw"
+      },
+      {
+        "id"       : 7,
+        "event"    : 7,
+        "resource" : "biw"
+      },
+      {
+        "id"       : 8,
+        "event"    : 8,
+        "resource" : "biw"
+      },
+      {
+        "id"       : 9,
+        "event"    : 9,
+        "resource" : "pnt"
+      },
+      {
+        "id"       : 10,
+        "event"    : 10,
+        "resource" : "pnt"
+      },
+      {
+        "id"       : 11,
+        "event"    : 11,
+        "resource" : "pnt"
+      },
+      {
+        "id"       : 12,
+        "event"    : 12,
+        "resource" : "ga1"
+      },
+      {
+        "id"       : 13,
+        "event"    : 13,
+        "resource" : "ga1"
+      },
+      {
+        "id"       : 14,
+        "event"    : 14,
+        "resource" : "ga2"
+      },
+      {
+        "id"       : 15,
+        "event"    : 15,
+        "resource" : "ga2"
+      },
+      {
+        "id"       : 16,
+        "event"    : 16,
+        "resource" : "eol"
+      },
+      {
+        "id"       : 17,
+        "event"    : 17,
+        "resource" : "eol"
+      },
+      {
+        "id"       : 18,
+        "event"    : 18,
+        "resource" : "eol"
+      }
+    ]
+  },
+  "resourceTimeRanges" : {
+    "rows" : [
+      {
+        "id"         : 1,
+        "resourceId" : "pr2",
+        "startDate"  : "2026-10-21T06:00:00",
+        "endDate"    : "2026-10-21T07:45:00",
+        "name"       : "Die change · Front underbody",
+        "state"      : "changeover"
+      },
+      {
+        "id"         : 2,
+        "resourceId" : "pr1",
+        "startDate"  : "2026-10-21T10:35:00",
+        "endDate"    : "2026-10-21T10:50:00",
+        "name"       : "Die change · Rear underbody",
+        "state"      : "changeover"
+      },
+      {
+        "id"         : 3,
+        "resourceId" : "eol",
+        "startDate"  : "2026-10-21T09:25:00",
+        "endDate"    : "2026-10-21T09:55:00",
+        "name"       : "Down · Conveyor fault",
+        "state"      : "down"
+      }
+    ]
+  }
+}

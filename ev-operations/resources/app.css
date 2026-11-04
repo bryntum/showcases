@@ -1,0 +1,23 @@
+/* EV Operations styles, one file per part of the app, in cascade order. The theme comes first (see app.js), the
+ * per-view files after this one */
+
+@import './tokens.css';
+@import './toolbar.css';
+@import './legend.css';
+@import './grid.css';
+@import './timeline.css';
+@import './bars.css';
+@import './bar-details.css';
+@import './gaps.css';
+@import './blocked-time.css';
+@import './detail.css';
+@import './ring.css';
+@import './editor.css';
+
+/* Shown in place of the app when its data fails to load, see app.js */
+.ev-load-error {
+    margin     : auto;
+    padding    : 2em;
+    text-align : center;
+    color      : var(--b-text-2);
+}

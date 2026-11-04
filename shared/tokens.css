@@ -1,0 +1,27 @@
+/* Design tokens shared by the showcase shell, every showcase and the gallery page: brand and accent colours, font
+ * stacks, radius, page gutter and the app panel's frame. Colours follow the page's `color-scheme` (light-dark()) */
+
+:root {
+    /* The Bryntum brand blue, also the fill of logo-round.svg */
+    --sc-brand         : #0076f8;
+    /* Links and buttons on pages without a Bryntum theme: text, filled button and its hover */
+    --sc-accent        : light-dark(#0a63c9, #2b8bf2);
+    --sc-accent-fill   : light-dark(#0a6ad6, #1570d6);
+    --sc-accent-hover  : light-dark(#0a5cb8, #1f7fe6);
+    /* Subtle borders and the pressed tint of the header icon buttons (icon-button.css) */
+    --sc-border        : light-dark(#dde1e7, #2a2e35);
+    --sc-tint          : color-mix(in srgb, currentColor 8%, transparent);
+    --sc-font-family   : 'Montserrat Variable', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    --sc-font-mono     : ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    --sc-radius        : 0.375rem;
+    /* Page gutter around the header and the app panel */
+    --sc-gutter        : 1em;
+    /* The app panel: its border, its toolbar's padding (the header lines up with that content edge) and its corners */
+    --sc-panel-border  : 1px;
+    --sc-panel-padding : 1em;
+    --sc-panel-radius  : var(--b-widget-border-radius-large, 1.2em);
+    --sc-panel-shadow  : 0.2rem 0.2rem 1.2rem rgb(0 0 0 / 5%);
+    /* The soft glows behind the showcase shell (shell.css) */
+    --sc-glow-sky      : light-dark(rgb(108 207 250 / 30%), rgb(55 104 122 / 30%));
+    --sc-glow-violet   : light-dark(rgb(78 34 191 / 10%), rgb(47 21 115 / 10%));
+}

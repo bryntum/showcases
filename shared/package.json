@@ -1,0 +1,24 @@
+{
+    "name": "@showcases/shared",
+    "description": "The showcase shell (header, light / dark switch, source link), design tokens, font and logos, on the public Bryntum API",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "license": "MIT",
+    "exports": {
+        ".": "./shell.js",
+        "./shell.css": "./shell.css",
+        "./tokens.css": "./tokens.css",
+        "./fonts.css": "./fonts.css",
+        "./icon-button.css": "./icon-button.css",
+        "./color-scheme.js": "./color-scheme.js",
+        "./logo-round.svg": "./logo-round.svg",
+        "./github-mark.svg": "./github-mark.svg"
+    },
+    "dependencies": {
+        "@fontsource-variable/montserrat": "^5.3.0"
+    },
+    "peerDependencies": {
+        "@bryntum/core-enterprise": "8.0.0"
+    }
+}

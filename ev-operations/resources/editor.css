@@ -1,0 +1,29 @@
+/* The TaskEdit drawer, the toast of an invalid save, and RTL reading order of the demo values */
+
+/* The TaskEdit drawer (its editorConfig cls). Its general tab is a two column grid, these fields span both */
+.ev-editor {
+    .ev-editor-wide {
+        grid-column : 1 / -1;
+    }
+}
+
+.ev-toast.b-toast {
+    --b-toast-background : var(--ev-late);
+    --b-toast-color      : var(--ev-on-accent);
+}
+
+/* The demo's English values keep their reading order in RTL, "+4 d" and "142 kW" would reorder otherwise */
+.b-rtl {
+    .ev-app {
+        :is(.ev-value, .ev-meta, .ev-delay, .ev-service-value, .ev-group-summary, .ev-slip-value, .ev-avatar-more,
+            .ev-chip > span) {
+            unicode-bidi : isolate;
+            direction    : ltr;
+        }
+
+        /* Cars face the reading direction */
+        .ev-car {
+            scale : -1 1;
+        }
+    }
+}

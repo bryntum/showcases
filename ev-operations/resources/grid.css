@@ -1,0 +1,102 @@
+/* Grid chrome of the views: header sizes, column lines, the locked column headers and the resource cell */
+
+.ev-app {
+    :is(.b-operations-scheduler, .b-program-gantt) {
+        --b-grid-header-font-size                    : 1em;
+        --b-sch-event-font-size                      : 1em;
+        --b-gantt-task-font-size                     : 1em;
+        /* Time axis labels, 12px, at the tick start (the header rows are configured with `align : 'start'`) */
+        --b-horizontal-time-axis-lowest-font-size    : 0.857em;
+        --b-horizontal-time-axis-cell-padding-inline : 0.833em;
+
+        .b-grid-header {
+            min-height : 3.43em;
+        }
+
+        .b-horizontal-time-axis {
+            .b-sch-header-row {
+                height : 3.43em;
+            }
+
+            .b-sch-header-time-axis-cell {
+                font-variant-numeric : tabular-nums;
+            }
+        }
+
+        /* Accent bar on the selected row's left edge */
+        .b-grid-row.b-selected {
+            .ev-resource-cell {
+                box-shadow : inset 3px 0 0 var(--b-primary);
+            }
+        }
+
+        /* Classes added by the ColumnLines renderers */
+        :is(.b-column-line, .b-column-line-major) {
+            &.ev-major-line {
+                border-inline-start-color : var(--ev-line);
+            }
+
+            &.ev-year-line {
+                border-inline-start-color : var(--ev-line-hard);
+            }
+        }
+
+        .ev-live-cell.b-grid-cell {
+            padding-inline : 0.857em;
+        }
+    }
+}
+
+/* Locked column headers (the columns' `cls`): uppercase labels, 12px from the edges, 20px for the first column */
+.ev-header {
+    --b-grid-header-padding        : 0.857em;
+    --b-grid-header-text-transform : uppercase;
+
+    &.ev-header-first {
+        --b-grid-header-padding : 1.43em;
+    }
+
+    .b-grid-header-text {
+        font-size      : 0.786em;
+        letter-spacing : 0.073em;
+    }
+}
+
+.ev-resource-cell.b-grid-cell {
+    padding-inline : 1.143em;
+    /* Narrow cells (the views' small responsive level) drop their secondary parts, see the @container rules */
+    container-type : inline-size;
+}
+
+.ev-resource {
+    display     : flex;
+    align-items : center;
+    gap         : 1em;
+    min-width   : 0;
+
+    .ev-resource-text {
+        display        : flex;
+        flex-direction : column;
+        gap            : 0.214em;
+        min-width      : 0;
+        white-space    : nowrap;
+    }
+
+    .ev-resource-name, .ev-resource-desc {
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    .ev-resource-name {
+        font-weight : 600;
+    }
+
+    .ev-resource-desc {
+        font-size : 0.929em;
+        color     : var(--ev-ink-faint);
+
+        &.ev-warn {
+            color : var(--ev-warn-ink);
+        }
+    }
+}

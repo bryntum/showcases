@@ -1,0 +1,46 @@
+/* Gap indicators between consecutive events, drawn by the dependency renderer (lib/scheduler/GapIndicators.js) */
+
+.ev-app {
+    .b-sch-dependency.ev-gap {
+        stroke         : none;
+        marker-end     : none;
+        pointer-events : none;
+
+        --ev-gap-stroke : var(--ev-line);
+
+        :is(.ev-gap-line, .ev-gap-box) {
+            stroke       : var(--ev-gap-stroke);
+            stroke-width : 1;
+            marker-end   : none;
+        }
+
+        .ev-gap-line {
+            fill             : none;
+            stroke-dasharray : 3 3;
+        }
+
+        .ev-gap-box {
+            fill             : var(--ev-surface);
+            /* Inactive dependencies are dashed, the label box is not */
+            stroke-dasharray : none;
+        }
+
+        .ev-gap-label {
+            fill                 : var(--ev-ink-sub);
+            stroke               : none;
+            font-size            : 0.786em;
+            font-weight          : 500;
+            font-variant-numeric : tabular-nums;
+            text-anchor          : middle;
+            dominant-baseline    : central;
+        }
+
+        &.ev-gap-tight {
+            --ev-gap-stroke : color-mix(in srgb, var(--ev-down) 45%, var(--ev-surface));
+
+            .ev-gap-label {
+                fill : var(--ev-down);
+            }
+        }
+    }
+}
