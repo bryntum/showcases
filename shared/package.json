@@ -11,8 +11,10 @@
         "./tokens.css": "./tokens.css",
         "./fonts.css": "./fonts.css",
         "./icon-button.css": "./icon-button.css",
+        "./brand.css": "./brand.css",
         "./color-scheme.js": "./color-scheme.js",
         "./logo-round.svg": "./logo-round.svg",
+        "./logo-mark.svg": "./logo-mark.svg",
         "./github-mark.svg": "./github-mark.svg"
     },
     "dependencies": {

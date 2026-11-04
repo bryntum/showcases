@@ -2,12 +2,15 @@
  * stacks, radius, page gutter and the app panel's frame. Colours follow the page's `color-scheme` (light-dark()) */
 
 :root {
-    /* The Bryntum brand blue, also the fill of logo-round.svg */
+    /* The Bryntum brand blue, also the fill of logo-round.svg and logo-mark.svg */
     --sc-brand         : #0076f8;
     /* Links and buttons on pages without a Bryntum theme: text, filled button and its hover */
     --sc-accent        : light-dark(#0a63c9, #2b8bf2);
     --sc-accent-fill   : light-dark(#0a6ad6, #1570d6);
     --sc-accent-hover  : light-dark(#0a5cb8, #1f7fe6);
+    /* Text on pages without a Bryntum theme, and the brand lockup (brand.css): primary and muted */
+    --sc-text          : light-dark(#15181d, #eef0f3);
+    --sc-text-muted    : light-dark(#5b6270, #9aa1ac);
     /* Subtle borders and the pressed tint of the header icon buttons (icon-button.css) */
     --sc-border        : light-dark(#dde1e7, #2a2e35);
     --sc-tint          : color-mix(in srgb, currentColor 8%, transparent);

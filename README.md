@@ -64,15 +64,17 @@ lists the Bryntum packages it imports as `peerDependencies` at the same pin. Dep
 | Import | What it is |
 |--------|------------|
 | `@showcases/shared` | `createShell({ title, source })`: the page header and the container the app renders into |
-| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand and accent colours, font stacks, radius, border, tint and glows, page gutter, the app panel's border, padding, radius and shadow |
+| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand, accent and text colours, font stacks, radius, border, tint and glows, page gutter, the app panel's border, padding, radius and shadow |
 | `@showcases/shared/fonts.css` | The Montserrat font, bundled from `@fontsource` |
 | `@showcases/shared/color-scheme.js` | `createColorSchemeToggle({ apply })`: the sun / moon button and the one stored light / dark choice, shared by the gallery and the showcases. No Bryntum dependency |
 | `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (light / dark toggle, GitHub link) |
-| `@showcases/shared/logo-round.svg` | The round Bryntum logo, also the favicon |
+| `@showcases/shared/brand.css` | `.sc-brand`, the header lockup: the Bryntum mark, "Bryntum", a divider and the page name |
+| `@showcases/shared/logo-round.svg` | The round Bryntum logo, the favicon |
+| `@showcases/shared/logo-mark.svg` | The bare Bryntum mark, the mask brand.css colours with the accent |
 | `@showcases/shared/github-mark.svg` | The GitHub mark, filled with `currentColor` |
 
-The shell imports the tokens, the icon buttons and the font itself. The showcase imports its Bryntum structural CSS and
-the Svalbard theme, which renders light and dark from one file.
+The shell imports the tokens, the icon buttons, the brand lockup and the font itself. The showcase imports its Bryntum
+structural CSS and the Svalbard theme, which renders light and dark from one file.
 
 The light / dark choice is stored under one key, defined once in `shared/color-scheme-head.js`. A small Vite plugin in
 `vite.config.js` injects a head script into every page, which applies the stored choice before the first paint
