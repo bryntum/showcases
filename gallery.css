@@ -680,7 +680,7 @@ a {
     }
 }
 
-/* How they are built */
+/* How they are built: three cards, each an illustration above its title and text */
 .built {
     padding-block      : 6rem;
     border-block-start : 1px solid var(--g-border-soft);
@@ -693,54 +693,272 @@ a {
         line-height    : 1.2;
     }
 
-    .points {
+    /* Subgrid rows line the illustrations and the texts up across the cards */
+    .how {
         display               : grid;
         grid-template-columns : repeat(3, minmax(0, 1fr));
+        gap                   : 1.25rem;
         margin-block-start    : 3rem;
         padding               : 0;
-        border-block-start    : 1px solid var(--g-border);
         list-style            : none;
 
         @media (max-width: 48rem) {
             grid-template-columns : minmax(0, 1fr);
         }
-    }
 
-    li {
-        padding : 2rem 2rem 0.5rem 0;
-
-        & + li {
-            padding-inline-start : 2rem;
-            border-inline-start  : 1px solid var(--g-border);
+        > li {
+            position           : relative;
+            display            : grid;
+            grid-row           : span 2;
+            grid-template-rows : subgrid;
+            row-gap            : 0;
+            overflow           : hidden;
+            border             : 1px solid var(--g-border);
+            border-radius      : 0.5rem;
+            background         : var(--g-surface);
+            transition         : border-color 0.15s;
         }
 
-        @media (max-width: 48rem) {
-            padding-inline-end : 0;
+        /* The whole card is the link of its heading */
+        > li.linked {
+            &:hover {
+                border-color : var(--g-accent);
+            }
 
-            & + li {
-                padding-inline-start : 0;
-                border-inline-start  : 0;
-                border-block-start   : 1px solid var(--g-border);
+            &:has(a:focus-visible) {
+                outline        : 2px solid var(--g-focus);
+                outline-offset : 3px;
+            }
+
+            h3 a {
+                color           : inherit;
+                text-decoration : none;
+
+                &::after {
+                    content  : '';
+                    position : absolute;
+                    inset    : 0;
+                }
+
+                &:focus-visible {
+                    outline : none;
+                }
             }
         }
     }
 
-    .icon {
-        width  : 1.4rem;
-        height : 1.4rem;
-        color  : var(--g-accent);
+    .art {
+        container-type   : inline-size;
+        display          : flex;
+        flex-direction   : column;
+        justify-content  : center;
+        gap              : 1rem;
+        min-width        : 0;
+        padding          : 1.25rem;
+        border-block-end : 1px solid var(--g-border);
+        font-size        : 0.8rem;
+    }
+
+    .text {
+        padding : 1.5rem 1.5rem 1.75rem;
     }
 
     h3 {
-        margin-block-start : 1.25rem;
-        font-size          : 1rem;
-        font-weight        : 600;
+        font-size      : 1.05rem;
+        font-weight    : 600;
+        letter-spacing : -0.01em;
     }
 
     p {
-        margin-block-start : 0.4rem;
+        margin-block-start : 0.5rem;
         font-size          : 0.9rem;
         color              : var(--g-sub);
+    }
+
+    .chip {
+        padding       : 0.45em 0.8em;
+        border        : 1px solid transparent;
+        border-radius : var(--g-radius);
+        white-space   : nowrap;
+    }
+
+    /* Public npm packages, one link per product */
+    .packages {
+        display        : flex;
+        flex-direction : column;
+        gap            : 0.35rem;
+        padding        : 0;
+        list-style     : none;
+
+        a {
+            display         : flex;
+            align-items     : center;
+            justify-content : space-between;
+            gap             : 1rem;
+            padding         : 0.4rem 0.85rem;
+            border          : 1px solid transparent;
+            border-radius   : var(--g-radius);
+            font-weight     : 500;
+            color           : var(--g-text);
+            text-decoration : none;
+            background      : var(--g-surface-2);
+            transition      : border-color 0.15s;
+
+            &:hover {
+                border-color : var(--g-faint);
+            }
+        }
+
+        .npm {
+            display     : flex;
+            align-items : center;
+            gap         : 0.45em;
+            color       : var(--g-running);
+
+            &::before {
+                content       : '';
+                width         : 0.4rem;
+                height        : 0.4rem;
+                border-radius : 50%;
+                background    : currentColor;
+            }
+        }
+    }
+
+    /* Fully front-end, the browser runs the whole pipeline */
+    .browser {
+        display        : flex;
+        flex-direction : column;
+        gap            : 0.75rem;
+        padding        : 0.85rem 0.85rem 1.75rem;
+        border         : 1px solid var(--g-accent);
+        border-radius  : var(--g-radius);
+
+        .caption {
+            font-size : 0.72rem;
+            color     : var(--g-accent);
+        }
+    }
+
+    .flow {
+        display     : flex;
+        align-items : center;
+        gap         : 0.35rem;
+        font-size   : clamp(0.7rem, 3.4cqi, 0.8rem);
+
+        .chip {
+            flex       : 1 1 0;
+            min-width  : 0;
+            padding    : 0.55em 0.4em;
+            text-align : center;
+            color      : var(--g-text);
+            background : var(--g-tag-bg);
+
+            &.ui {
+                font-weight : 600;
+                color       : var(--g-on-accent);
+                background  : var(--g-accent-fill);
+            }
+        }
+
+        .arrow {
+            width           : 0.85rem;
+            height          : 0.85rem;
+            flex-shrink     : 0;
+            fill            : none;
+            stroke          : var(--g-accent);
+            stroke-width    : 1.6;
+            stroke-linecap  : round;
+            stroke-linejoin : round;
+        }
+    }
+
+    .backend {
+        display     : flex;
+        flex-wrap   : wrap;
+        align-items : center;
+        gap         : 0.5rem 0.85rem;
+        color       : var(--g-faint);
+
+        .chip {
+            border-color : var(--g-faint);
+            border-style : dashed;
+        }
+    }
+
+    /* Source on GitHub, a stock and a custom bar on a small timeline. Callouts stay inside the panel: the bars give
+     * way first, the callouts never wrap out */
+    .timeline-art {
+        gap              : 0;
+        padding          : 1.25rem 1rem;
+        background-image : linear-gradient(to right, var(--g-border-soft) 1px, transparent 1px),
+            linear-gradient(to bottom, transparent calc(50% - 1px), var(--g-border-soft) 0 50%, transparent 0);
+        background-size  : 20% 100%, 100% 100%;
+    }
+
+    .lane {
+        display              : flex;
+        align-items          : center;
+        padding-block        : 0.9rem;
+        padding-inline-start : 4%;
+        font-size            : clamp(0.66rem, 3.4cqi, 0.8rem);
+
+        & + .lane {
+            padding-inline-start : 30%;
+        }
+
+        .bar {
+            position      : relative;
+            flex          : 0 1 52%;
+            min-width     : 4.5rem;
+            min-height    : 3.25rem;
+            padding       : 0.5em 0.75em;
+            overflow      : hidden;
+            border        : 1px solid var(--g-border);
+            border-radius : var(--g-radius);
+            font-weight   : 600;
+            white-space   : nowrap;
+            text-overflow : ellipsis;
+            background    : var(--g-surface-2);
+
+            &.custom {
+                border-color : var(--g-accent);
+                background   : var(--g-tag-bg);
+            }
+
+            svg {
+                position        : absolute;
+                inset-inline    : 0;
+                inset-block-end : 0;
+                width           : 100%;
+                height          : 45%;
+                fill            : none;
+                stroke          : var(--g-accent);
+                stroke-width    : 1.5;
+            }
+        }
+
+        /* Bases are of the lane's content box, so after the start padding: about 40% of the panel */
+        & + .lane .bar {
+            flex-basis : 58%;
+        }
+
+        .link {
+            flex               : 1 1 1rem;
+            min-width          : 0.6rem;
+            border-block-start : 1px dashed var(--g-faint);
+        }
+
+        .chip {
+            flex-shrink  : 0;
+            border-color : var(--g-border);
+            background   : var(--g-surface);
+
+            &.custom {
+                border-color : var(--g-accent);
+                color        : var(--g-tag-text);
+            }
+        }
     }
 }
 

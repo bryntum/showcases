@@ -183,33 +183,92 @@
 
         <section class="built wrap" aria-labelledby="built-title">
             <h2 id="built-title">Nothing hidden. The same packages you install.</h2>
-            <ul class="points">
+            <ul class="how">
                 <li>
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
-                        <path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/>
-                        <path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>
-                    </svg>
-                    <h3>Public npm packages</h3>
-                    <p>Every showcase installs the published Bryntum packages. No private builds, no special access.</p>
+                    <div class="art">
+                        <ul class="packages" aria-label="Bryntum packages on npm">
+                            <li>
+                                <a href="https://www.npmjs.com/package/@bryntum/scheduler-enterprise">
+                                    Scheduler
+                                    <span class="npm"><span class="visually-hidden">@bryntum/scheduler-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/@bryntum/gantt-enterprise">
+                                    Gantt
+                                    <span class="npm"><span class="visually-hidden">@bryntum/gantt-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/@bryntum/calendar-enterprise">
+                                    Calendar
+                                    <span class="npm"><span class="visually-hidden">@bryntum/calendar-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/@bryntum/taskboard-enterprise">
+                                    Task Board
+                                    <span class="npm"><span class="visually-hidden">@bryntum/taskboard-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/@bryntum/grid-enterprise">
+                                    Grid
+                                    <span class="npm"><span class="visually-hidden">@bryntum/grid-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="text">
+                        <h3>Public npm packages</h3>
+                        <p>Every showcase installs the published Bryntum packages. No private builds, no special access.</p>
+                    </div>
                 </li>
                 <li>
-                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"
-                        fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <rect x="2.5" y="3.5" width="19" height="13" rx="1.5"/>
-                        <path d="M8.5 20.5h7M12 16.5v4"/>
-                    </svg>
-                    <h3>Fully front-end</h3>
-                    <p>
-                        Data, logic and simulation run in the browser, so there is no backend to
-                        stand up before you can explore.
-                    </p>
+                    <div class="art" aria-hidden="true">
+                        <div class="browser">
+                            <span class="caption">Browser</span>
+                            <div class="flow">
+                                <span class="chip">Data</span>
+                                <svg class="arrow" viewBox="0 0 16 16"><path d="M2.5 8h11m-4-4 4 4-4 4"/></svg>
+                                <span class="chip">Simulation</span>
+                                <svg class="arrow" viewBox="0 0 16 16"><path d="M2.5 8h11m-4-4 4 4-4 4"/></svg>
+                                <span class="chip ui">UI</span>
+                            </div>
+                        </div>
+                        <div class="backend">
+                            <s class="chip">Backend</s>
+                            <span>Not needed to run it</span>
+                        </div>
+                    </div>
+                    <div class="text">
+                        <h3>Fully front-end</h3>
+                        <p>
+                            Data, logic and simulation run in the browser, so there is no backend to
+                            stand up before you can explore.
+                        </p>
+                    </div>
                 </li>
-                <li>
-                    <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
-                    <h3>Source on GitHub</h3>
-                    <p>Read how each view is wired up, then lift the patterns straight into your own app.</p>
+                <li class="linked">
+                    <div class="art timeline-art" aria-hidden="true">
+                        <div class="lane">
+                            <span class="bar custom">
+                                NV9 Sedan
+                                <svg viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 19 C40 15 60 14 100 4" vector-effect="non-scaling-stroke"/></svg>
+                            </span>
+                            <span class="link"></span>
+                            <span class="chip custom">eventRenderer</span>
+                        </div>
+                        <div class="lane">
+                            <span class="bar">NV9 Pickup</span>
+                            <span class="link"></span>
+                            <span class="chip">Stock</span>
+                        </div>
+                    </div>
+                    <div class="text">
+                        <h3><a href="https://github.com/bryntum/showcases">Source on GitHub</a></h3>
+                        <p>See what is stock and what is custom, then lift the patterns straight into your own app.</p>
+                    </div>
                 </li>
             </ul>
         </section>
