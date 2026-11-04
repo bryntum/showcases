@@ -166,7 +166,7 @@
     }
 }
 
-/* Group headers on a faint band. The Group feature exposes no variables for its rows */
+/* Group headers on a faint band. The Group feature exposes no variables for its rows, see bryntum/bryntum#14129 */
 .ev-app {
     .b-operations-scheduler.b-group {
         .b-grid-row.b-group-row {

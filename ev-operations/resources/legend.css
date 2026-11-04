@@ -33,7 +33,7 @@
         white-space : nowrap;
         cursor      : pointer;
 
-        /* The legend toggles statuses through List multiSelect, but wants no checkmark */
+        /* The legend toggles statuses through List multiSelect, but wants no checkmark, see bryntum/bryntum#14129 */
         .b-selected-icon {
             display : none;
         }

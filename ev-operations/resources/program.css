@@ -33,7 +33,7 @@
             }
         }
 
-        /* Arrow head, filled and stroked in the line colour (context-stroke), softened corners by a round join */
+        /* Arrow head in the line colour, round join. Styles the internal marker path, see bryntum/bryntum#14129 */
         .b-sch-dependency-arrow {
             path {
                 stroke          : context-stroke;
@@ -42,8 +42,8 @@
             }
         }
 
-        /* 52px rows, 28px bars. Gantt has no per-row bar size: getRowHeight sizes rows only, bars use one canvas-wide
-         * --b-event-size */
+        /* 52px rows, 28px bars. Gantt has no per-row bar size, bars use one canvas-wide --b-event-size, see
+         * bryntum/bryntum#14129 */
         .b-gantt-task-wrap:is(.b-gantt-task-parent, .b-milestone-wrap) {
             --b-event-size : 28;
         }
@@ -71,7 +71,7 @@
                 --ev-ms-halo : color-mix(in srgb, var(--ev-ink) 10%, transparent);
                 --ev-ms-ring : 0 0 0 5px var(--ev-ms-halo), 0 6px 14px var(--ev-shadow);
 
-                /* The default milestone shape */
+                /* The default milestone shape has no variable or config to replace it, see bryntum/bryntum#14129 */
                 .b-gantt-task-content::before {
                     content : none;
                 }
@@ -227,8 +227,8 @@
             /* A phone's narrow column drops the owners, see .ev-avatars */
             container-type : inline-size;
 
-            /* The cell content fills the width left by the indent, right aligned parts stay inside. The tree cell's
-             * inner elements have no variable for this */
+            /* The cell content fills the width left by the indent. The tree cell has no variable for this, see
+             * bryntum/bryntum#14129 */
             .b-tree-cell-inner, .b-tree-cell-value {
                 flex      : 1;
                 min-width : 0;

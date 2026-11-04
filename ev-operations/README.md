@@ -117,33 +117,3 @@ Bryntum components are restyled through their CSS variables and public configs w
 body through `bodyCls`, the locked column headers through the columns' `cls` and `--b-grid-header-*`, the time axis
 labels through the header rows' `align` and `--b-horizontal-time-axis-*`, blocked time through
 `--b-resource-time-range-*`, the compact view tabs through `--b-button-padding-inline`.
-
-## Workarounds
-
-These spots work around open Bryntum issues or gaps in the public API and are marked in the code:
-
-* `bryntum/support#13982`: no public hook for header overlay content, the now dot opens up the internal header markup
-  (`.b-grid-header-scroller-normal`, `.b-grid-headers-normal`, timeline.css)
-* `.b-sch-time-axis-column { overflow : visible }` lets the now pill overhang the time axis column (timeline.css), part
-  of the same gap
-* `--b-grid-header-applied-background`, the header's resolved background, gives the now pill's halo the header colour
-  (timeline.css), it is not a documented variable
-* `.b-group-row` and `.b-group-state-icon`: the Group feature has no variables for its rows, the service view's group
-  headers style its internal classes (service.css)
-* `.b-tree-cell-inner` and `.b-tree-cell-value`: the tree cell has no variable to let its content fill the width
-  left by the indent (program.css)
-* `.b-gantt-task-content::before` and the milestone restyle: the default milestone shape has no variable or config to
-  replace it, the milestone diamond overrides the internal markup (program.css)
-* `.b-sch-dependency-arrow path` and `:not(.b-click-area)`: the arrow head is styled through the internal marker
-  path, and the invisible click area shares `.b-sch-dependency` (program.css)
-* Gantt has no per-row bar size: getRowHeight sizes rows only, bars use one canvas-wide `--b-event-size`. The slimmer
-  group and milestone rows set it on their bars (program.css)
-* The status legend hides the List's `.b-selected-icon`: it toggles statuses through List multiSelect, but wants no
-  checkmark (legend.css)
-* `queueMicrotask` in `SimulatedView`: the project's `dataReady` fires mid-commit, the store edits that follow it are
-  deferred, a nested commit would start otherwise
-* `bryntum/support#14015`: the default dependency marker is shared by all views, the Gantt uses its own `markerDef`
-* `bryntum/support#14016`: `clickWidth : 1` on the gap dependencies, a wider click area would render the gap twice
-* `bryntum/support#14017`: the Gantt dependency renderer receives the boxes swapped. `renderDependency` detects which
-  box is the predecessor's from its row, so the route stays right once the issue is fixed
-* `bryntum/support#14018`: the EventResize `validatorFn` receives `eventRecord`, not the documented `record`
