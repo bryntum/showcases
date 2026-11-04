@@ -11,30 +11,19 @@ without changing any record data. Click a bar for its details, double-click it t
 
 **[Live demo](https://bryntum.github.io/showcases/ev-operations/)**
 
-## Running it
+To run it locally, see the [root README](../README.md#running-locally).
 
-From the repository root:
+## Bryntum packages
 
-```shell
-npm install
-npm run dev
-```
-
-and open http://localhost:5173/ev-operations/. See the [root README](../README.md) for the build.
-
-The showcase imports the public npm packages of Bryntum 8 by their bare names, Vite resolves them. Each package
-exports its own classes only, so `Scheduler` comes from `@bryntum/scheduler-enterprise`, `Gantt` from
-`@bryntum/gantt-enterprise` and the helpers and widgets from `@bryntum/core-enterprise`. Importing a package also
-registers its features, which is why `OperationsScheduler` imports the Grid package (for the Group feature) and
-`ProgramGantt` the Scheduler package (for the TimeRanges feature). The packages it imports are its
-`peerDependencies`, installed once by the root `package.json`. Without a licence key the components run in trial
-mode and show a watermark.
+Each Bryntum 8 package exports its own classes only, so `Scheduler` comes from `@bryntum/scheduler-enterprise`,
+`Gantt` from `@bryntum/gantt-enterprise` and the helpers and widgets from `@bryntum/core-enterprise`. Importing a
+package also registers its features, which is why `OperationsScheduler` imports the Grid package (for the Group
+feature) and `ProgramGantt` the Scheduler package (for the TimeRanges feature).
 
 ## Files
 
 * `app.js` the scenario and view configs. It imports the CSS (`gantt.css`, the structural CSS of Gantt and the products
-  it builds on, the Svalbard theme, then `resources/app.css`) and the data files as `?url`, so their URLs survive the
-  build
+  it builds on, the Svalbard theme, then `resources/app.css`) and the data files
 * `lib/` the classes, one per file, and the modules they are split into:
   * `OperationsApp.js`, `DetailPanel.js`, `SimulationControls.js`, `StatusLegend.js`, `StatusKey.js` the app's widgets
   * `OperationsScheduler.js`, `ProgramGantt.js` the views, `SimulatedView.js` and `TimeSpanEditing.js` the mixins
@@ -53,11 +42,6 @@ mode and show a watermark.
 * `data/` the three datasets, loaded by each view's project (`loadUrl`)
 
 Mixins own stateful lifecycle; plain functions taking `view` do pure rendering.
-
-The header, the light / dark switch and the source link come from the shared showcase shell,
-[`@showcases/shared`](../shared/shell.js): `createShell()` builds the header and returns the container the app renders
-into. The shell frames the app panel (its border, radius and shadow), and the page font comes from the shared tokens,
-so the header lines up with the app's content.
 
 ## Code tour
 
