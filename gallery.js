@@ -58,6 +58,7 @@ function cardHtml({ title, description, url, source, products : names, thumb }) 
     return `
         <article class="card">
             <div class="thumb">
+                <a href="${url}" tabindex="-1" aria-hidden="true">
                 <picture>
                     <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
                         srcset="${thumb.light.webp}" sizes="(max-width: 40rem) 100vw, (max-width: 64rem) 50vw, 23rem">
@@ -67,6 +68,7 @@ function cardHtml({ title, description, url, source, products : names, thumb }) 
                     <img src="${thumb.dark.png}" width="${thumb.width}" height="${thumb.height}" loading="lazy"
                         alt="${encodeHtml(title)} screenshot">
                 </picture>
+                </a>
             </div>
             <div class="body">
                 <ul class="tags" aria-label="Built with">

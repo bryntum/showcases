@@ -584,6 +584,12 @@ a {
         overflow         : hidden;
         border-block-end : 1px solid var(--g-border);
 
+        /* The screenshot links to the demo too, a mouse shortcut next to the card's own links */
+        a {
+            display : block;
+            height  : 100%;
+        }
+
         img {
             display         : block;
             width           : 100%;
