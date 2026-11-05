@@ -70,9 +70,9 @@ lists the Bryntum packages it imports as `peerDependencies` at the same pin. Dep
 | `@showcases/shared/fonts.css` | The Montserrat font, bundled from `@fontsource` |
 | `@showcases/shared/color-scheme.js` | `createColorSchemeToggle({ apply })`: the sun / moon button and the one stored light / dark choice, shared by the gallery and the showcases. No Bryntum dependency |
 | `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (light / dark toggle, GitHub link) |
-| `@showcases/shared/brand.css` | `.sc-brand`, the header lockup: the Bryntum mark, "Bryntum", a divider and the page name, or on a showcase the breadcrumb `.sc-crumbs` (Showcases / title) |
+| `@showcases/shared/brand.css` | `.sc-brand`, the header lockup: the official Bryntum logo, a divider and the page name, or on a showcase the breadcrumb `.sc-crumbs` (Showcases / title) |
 | `@showcases/shared/logo-round.svg` | The round Bryntum logo, the favicon |
-| `@showcases/shared/logo-mark.svg` | The bare Bryntum mark, the mask brand.css colours with the accent |
+| `@showcases/shared/logo.svg` | The official Bryntum logo, mark and wordmark, the mask brand.css colours brand blue on light and white on dark |
 | `@showcases/shared/github-mark.svg` | The GitHub mark, filled with `currentColor` |
 
 The shell imports the tokens, the icon buttons, the brand lockup and the font itself. The showcase imports its Bryntum

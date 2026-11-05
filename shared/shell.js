@@ -1,4 +1,4 @@
-import { DomHelper, Toolbar } from '@bryntum/core-enterprise';
+import { DomHelper } from '@bryntum/core-enterprise';
 import { createColorSchemeToggle, storedColorScheme } from './color-scheme.js';
 // Icons of the Bryntum widgets, from the Core package's own Font Awesome build
 import '@bryntum/core-enterprise/fontawesome/css/fontawesome.css';
@@ -7,11 +7,12 @@ import '@bryntum/core-enterprise/fontawesome/css/solid.css';
 import './fonts.css';
 import './shell.css';
 import githubMark from './github-mark.svg?raw';
+import externalLink from './external-link.svg?raw';
 
 /**
- * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum mark and name, then a
- * breadcrumb from the gallery to the showcase title), a light / dark switch and links to the source on GitHub and to
- * bryntum.com, above the container the app renders into.
+ * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum logo, linking to
+ * bryntum.com, then a breadcrumb from the gallery to the showcase title), a light / dark switch and a link to the
+ * source on GitHub, above the container the app renders into.
  *
  * ```javascript
  * import { createShell } from '@showcases/shared';
@@ -90,17 +91,15 @@ export function createShell({ title, source, gallery = '../' }) {
             parent    : body,
             children  : [
                 {
-                    // The lockup of brand.css. The mark and the name link to bryntum.com, the breadcrumb to the gallery
+                    // The lockup of brand.css. The logo links to bryntum.com, the breadcrumb to the gallery
                     className : 'sc-brand',
                     children  : [
                         {
-                            tag          : 'a',
-                            className    : 'sc-brand-home',
-                            href         : 'https://bryntum.com',
-                            'aria-label' : 'Bryntum home page',
-                            children     : [
-                                { tag : 'span', className : 'sc-brand-mark', 'aria-hidden' : 'true' },
-                                { tag : 'span', className : 'sc-brand-name', text : 'Bryntum' }
+                            tag       : 'a',
+                            className : 'sc-brand-home',
+                            href      : 'https://bryntum.com',
+                            children  : [
+                                { tag : 'span', className : 'sc-brand-logo', role : 'img', 'aria-label' : 'Bryntum' }
                             ]
                         },
                         { tag : 'span', className : 'sc-brand-divider', 'aria-hidden' : 'true' },
@@ -128,24 +127,16 @@ export function createShell({ title, source, gallery = '../' }) {
             'aria-label' : 'View source on GitHub',
             // The trusted GitHub mark of this package
             html         : githubMark.trim()
+        }),
+        DomHelper.createElement({
+            tag       : 'a',
+            className : 'sc-icon-button sc-external',
+            href      : 'https://bryntum.com',
+            target    : '_blank',
+            // The label, then this package's trusted external arrow
+            html      : `bryntum.com ${externalLink.trim()}`
         })
     );
-
-    // The bryntum.com link. Rendered into the header, which owns it, no reference is kept
-    // eslint-disable-next-line no-new
-    new Toolbar({
-        appendTo  : header,
-        cls       : 'sc-tools',
-        ariaLabel : 'Showcase tools',
-        items     : {
-            bryntum : {
-                type   : 'button',
-                text   : 'bryntum.com',
-                href   : 'https://bryntum.com',
-                target : '_blank'
-            }
-        }
-    });
 
     return container;
 }
