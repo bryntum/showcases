@@ -1005,6 +1005,11 @@ a {
             color : var(--g-text);
         }
     }
+
+    /* The copyright link reads as part of the line until hovered */
+    p a {
+        color : inherit;
+    }
 }
 
 /* Phone width: links on their own row, GitHub as an icon button */

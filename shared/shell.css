@@ -56,10 +56,14 @@ body {
             }
         }
 
-        /* Phone widths, the mark alone stands for Bryntum and a chevron for the gallery, so the title fits in full.
-         * The link text stays for screen readers, as the link's name */
+        /* Phone widths, the logo's mark alone stands for Bryntum and a chevron for the gallery, so the title fits in
+         * full. The link text stays for screen readers, as the link's name */
         @media (width < 30rem) {
-            .sc-brand-name, .sc-brand-divider, .sc-crumb-separator {
+            .sc-brand-logo {
+                aspect-ratio : 354.91 / 190.08;
+            }
+
+            .sc-brand-divider, .sc-crumb-separator {
                 display : none;
             }
 
@@ -92,20 +96,6 @@ body {
         }
     }
 
-    .sc-tools {
-        flex      : none;
-        font-size : 0.9em;
-
-        --b-toolbar-padding    : 0.7em 0;
-        --b-toolbar-background : transparent;
-
-        /* Below the wide breakpoint the Bryntum mark links to bryntum.com, out-specifying the toolbar's own `display` */
-        @media (width < 1000px) {
-            &.b-toolbar {
-                display : none;
-            }
-        }
-    }
 }
 
 .sc-container {

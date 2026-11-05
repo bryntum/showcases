@@ -1,18 +1,18 @@
-/* The brand lockup of the page headers, alike on the gallery and in the showcases: the Bryntum mark, "Bryntum", a
+/* The brand lockup of the page headers, alike on the gallery and in the showcases: the official Bryntum logo, a
  * divider and the page name ("Showcases" or the showcase title). Markup, see shell.js and index.html:
  *
  * <a class="sc-brand" href="./">
- *     <span class="sc-brand-mark" aria-hidden="true"></span>
- *     <span class="sc-brand-name">Bryntum</span>
+ *     <span class="sc-brand-logo" role="img" aria-label="Bryntum"></span>
  *     <span class="sc-brand-divider" aria-hidden="true"></span>
  *     <span class="sc-brand-title">Showcases</span>
  * </a>
  *
- * `.sc-brand-home` optionally wraps the mark and the name in their own link, laid out alike. On the showcase pages the
+ * `.sc-brand-home` optionally wraps the logo in its own link, laid out alike. Narrowing the logo's box to the mark's
+ * aspect ratio (354.91 / 190.08) shows the mark alone, see shell.css. On the showcase pages the
  * page name is a breadcrumb instead, `.sc-crumbs`: the gallery link, a separator and the title (see shell.js) */
 
 .sc-brand {
-    /* Mark to name, and either side of the divider */
+    /* Between the breadcrumb parts, and either side of the divider */
     --sc-brand-gap         : 0.5em;
     --sc-brand-divider-gap : 0.85em;
 
@@ -34,23 +34,26 @@
         text-decoration : none;
     }
 
-    /* A mask, so one SVG file takes the accent colour of either mode */
-    .sc-brand-mark {
-        flex             : none;
-        height           : 1.1cap;
-        aspect-ratio     : 354.91 / 144.52;
-        background-color : var(--sc-accent);
-        mask             : url('./logo-mark.svg') center / contain no-repeat;
+    /* The logo, a mask so one SVG file takes the logo colour of either mode. logo.svg is 1000 x 190.08: the mark, the
+     * "b" with its bars, ends at x 354.91, the wordmark below it reaches from the cap line (y 0) to the baseline (y 144.52)
+     * and on to the descender of the "y" */
+    .sc-brand-logo {
+        /* The logo's cap line to baseline, a little over the page name's cap height as the mark has no overshoot */
+        --sc-logo-cap : 1.1cap;
 
-        /* Forced colours drop backgrounds, keep the mark in the text colour */
+        flex             : none;
+        height           : calc(var(--sc-logo-cap) * 190.08 / 144.52);
+        aspect-ratio     : 1000 / 190.08;
+        /* Centred by its cap height, not by its box, which takes the descender too. 1px up is optical */
+        translate        : 0 calc(var(--sc-logo-cap) * (190.08 - 144.52) / 2 / 144.52 - 1px);
+        background-color : var(--sc-logo);
+        mask             : url('./logo.svg') left center / auto 100% no-repeat;
+
+        /* Forced colours drop backgrounds, keep the logo in the text colour */
         @media (forced-colors: active) {
             forced-color-adjust : none;
             background-color    : CanvasText;
         }
-    }
-
-    .sc-brand-name {
-        font-weight : 700;
     }
 
     .sc-brand-divider {

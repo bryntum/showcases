@@ -38,4 +38,24 @@
         outline        : 2px solid var(--sc-accent);
         outline-offset : 2px;
     }
+
+    /* A text link leaving the site, e.g. bryntum.com, with a small external arrow after the label */
+    &.sc-external {
+        font-size : 0.875rem;
+        color     : var(--sc-text-muted);
+
+        svg {
+            width  : 0.8em;
+            height : 0.8em;
+        }
+
+        &:hover {
+            color : var(--sc-text);
+        }
+
+        /* Phones keep the header for the page title, the logo still links to bryntum.com */
+        @media (width < 30rem) {
+            display : none;
+        }
+    }
 }

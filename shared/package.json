@@ -14,8 +14,9 @@
         "./brand.css": "./brand.css",
         "./color-scheme.js": "./color-scheme.js",
         "./logo-round.svg": "./logo-round.svg",
-        "./logo-mark.svg": "./logo-mark.svg",
-        "./github-mark.svg": "./github-mark.svg"
+        "./logo.svg": "./logo.svg",
+        "./github-mark.svg": "./github-mark.svg",
+        "./external-link.svg": "./external-link.svg"
     },
     "dependencies": {
         "@fontsource-variable/montserrat": "^5.3.0"
