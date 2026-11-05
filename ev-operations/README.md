@@ -9,7 +9,7 @@ One app, three views of an EV operation, switched by the buttons in the toolbar:
 **Simulate** advances a simulated "now". Bars, locked columns, the status legend and the detail panel follow it live,
 without changing any record data. Click a bar for its details, double-click it to edit it in a drawer.
 
-**[Live demo](https://bryntum.github.io/showcases/ev-operations/)**
+**[Live demo](https://showcase.bryntum.com/ev-operations/)**
 
 To run it locally, see the [root README](../README.md#running-locally).
 

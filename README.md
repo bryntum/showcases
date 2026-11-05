@@ -3,13 +3,13 @@
 Realistic, fully front-end use cases of the [Bryntum](https://bryntum.com) components, built on the public npm
 packages. No backend: each showcase loads its data from static JSON files and runs in the browser.
 
-**Live gallery: https://bryntum.github.io/showcases/**
+**Live gallery: https://showcase.bryntum.com/**
 
 ## Showcases
 
 | Showcase | Products | Live | Source |
 |----------|----------|------|--------|
-| **EV Operations**: a production line, a service center with DC fast chargers and a vehicle program, with a live simulation | Scheduler (Enterprise tier), Gantt | [Live demo](https://bryntum.github.io/showcases/ev-operations/) | [ev-operations/](ev-operations/) |
+| **EV Operations**: a production line, a service center with DC fast chargers and a vehicle program, with a live simulation | Scheduler (Enterprise tier), Gantt | [Live demo](https://showcase.bryntum.com/ev-operations/) | [ev-operations/](ev-operations/) |
 
 ## Running locally
 
