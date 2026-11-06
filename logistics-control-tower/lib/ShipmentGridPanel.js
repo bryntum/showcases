@@ -78,10 +78,11 @@ export default class ShipmentGridPanel extends Panel {
             });
         });
 
-        // Rows changed, filtered or searched: the shown count in the title, once per frame (Delayable, cancelled on
-        // destroy). The footer's totals panel follows the grid on its own
+        // Rows changed, filtered or searched: the shown count in the title, counted when the browser is idle, not in
+        // a frame of the gliding playhead (Delayable, cancelled on destroy). The footer's totals panel follows the
+        // grid on its own
         gridApi.addEventListener('modelUpdated', () => {
-            me.countFrame ??= me.requestAnimationFrame(me.refreshCount);
+            me.countIdle ??= me.requestIdleCallback(me.refreshCount);
         });
 
         return gridApi;
@@ -91,7 +92,7 @@ export default class ShipmentGridPanel extends Panel {
     refreshCount() {
         const { shown, total } = ShipmentTotalsPanel.count(this.gridApi);
 
-        this.countFrame = null;
+        this.countIdle = null;
         this.widgetMap.count.html = `${shown.toLocaleString('en-US')} of ${total.toLocaleString('en-US')}`;
     }
 

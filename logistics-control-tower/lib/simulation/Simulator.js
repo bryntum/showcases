@@ -332,6 +332,18 @@ export default class Simulator extends Events(Delayable(Base)) {
     refreshStatuses() {
         const { now, schedule } = this;
 
+        // The doors redraw once for all changed slots, not per slot
+        schedule.suspendRefresh();
+
+        try {
+            this.mirrorStatuses(now, schedule);
+        }
+        finally {
+            schedule.resumeRefresh(true);
+        }
+    }
+
+    mirrorStatuses(now, schedule) {
         for (const shipment of this.shipmentStore) {
             const
                 slot      = schedule.eventStore.getById(shipment.id),

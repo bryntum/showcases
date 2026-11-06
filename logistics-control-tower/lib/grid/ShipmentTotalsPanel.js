@@ -3,7 +3,7 @@ import { formatMinutes } from '../util/Time.js';
 /**
  * A custom AG Grid status bar panel, on the left of the footer: the shipments shown of all of them, their pallets and
  * their average delay. It follows the grid itself, through `modelUpdated` (rows changed, filtered or searched), and
- * counts at most once per frame, as a tick can update the model more than once.
+ * counts once the browser is idle, as a tick can update the model more than once and the playhead glides meanwhile.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/component-status-bar/
@@ -56,8 +56,8 @@ export default class ShipmentTotalsPanel {
         item('Avg delay', me.delay);
 
         me.onModelUpdated = () => {
-            me.frame ||= requestAnimationFrame(() => {
-                me.frame = 0;
+            me.idle ||= requestIdleCallback(() => {
+                me.idle = 0;
                 me.update();
             });
         };
@@ -87,9 +87,9 @@ export default class ShipmentTotalsPanel {
     }
 
     destroy() {
-        const { api, onModelUpdated, frame } = this;
+        const { api, onModelUpdated, idle } = this;
 
-        cancelAnimationFrame(frame);
+        cancelIdleCallback(idle);
 
         if (!api.isDestroyed()) {
             api.removeEventListener('modelUpdated', onModelUpdated);

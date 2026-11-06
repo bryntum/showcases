@@ -140,7 +140,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         });
 
         me.widgetMap.controls.simulator = me.simulator;
-        me.simulator.on({ tick : 'refreshKpis', shipmentDelay : 'onSimulatedDelay', thisObj : me });
+        me.simulator.on({ tick : 'requestKpiRefresh', shipmentDelay : 'onSimulatedDelay', thisObj : me });
     }
 
     get schedule() {
@@ -181,7 +181,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
 
         Object.assign(me, { gridApi, gridContext : context });
 
-        me.gridSync = new GridSync({ gridApi, shipmentStore, schedule, onFlush : () => me.refreshKpis() });
+        me.gridSync = new GridSync({ gridApi, shipmentStore, schedule, onFlush : () => me.requestKpiRefresh() });
         me.dropZone = simulator.dropZone = new GridDropZone({ gridApi, schedule, shipmentStore });
 
         // The status bar panel is created with the grid
@@ -232,14 +232,21 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         this.schedule.revealSlot(this.schedule.eventStore.getById(shipment.id));
     }
 
+    // A tick sends several batches to the grid. The KPIs are counted once for them all, when the browser is idle, not
+    // in a frame of the gliding playhead (Delayable, cancelled on destroy)
+    requestKpiRefresh() {
+        this.kpiIdle ??= this.requestIdleCallback(this.refreshKpis);
+    }
+
     /**
-     * The KPI header, the footer's late and conflict counts and the live countdowns, after each tick or batch of
-     * changes
+     * The KPI header, the footer's late and conflict counts and the live countdowns
      */
     refreshKpis() {
         const
             me                                  = this,
             { simulator, gridApi, gridContext } = me;
+
+        me.kpiIdle = null;
 
         if (!gridApi || gridApi.isDestroyed()) {
             return;

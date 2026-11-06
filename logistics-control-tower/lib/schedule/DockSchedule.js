@@ -80,8 +80,9 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         // Slots are booked from the shipments, not drawn on the timeline
         autoCreate                : false,
         useInitialAnimation       : false,
-        // Slots move with the data as is, animating every tick would add drift to the gliding timeline
-        enableEventAnimations     : false,
+        // Slots move with the data as is, animating every tick would add drift to the gliding timeline. A transition
+        // also reads the running animations before and after each change, a style recalculation per changed slot
+        transition                : { changeEvent : false, removeEvent : false },
         // The timeline follows the playhead and scrolls with the wheel, the utilization strip has no scrollbar under it
         hideHorizontalScrollbar   : true,
 
