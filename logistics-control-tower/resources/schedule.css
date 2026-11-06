@@ -45,6 +45,9 @@
 
 /* Slot bars, coloured by the theme's event colours (eventColor per status). The label adapts to the bar's width */
 .lct-slot {
+    /* Tighter start, the load icon sits close to the bar's edge */
+    --b-sch-event-padding-inline : 0.45em;
+
     container-type : inline-size;
 
     .lct-slot-icon {
@@ -67,8 +70,10 @@
         text-overflow : ellipsis;
     }
 
+    /* The carrier and pallets below the reference, quieter */
     .lct-slot-meta {
-        font-size     : 0.85em;
+        font-size     : 0.78em;
+        font-weight   : 400;
         white-space   : nowrap;
         overflow      : hidden;
         text-overflow : ellipsis;
