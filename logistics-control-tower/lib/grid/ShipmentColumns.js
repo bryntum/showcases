@@ -128,7 +128,7 @@ export const shipmentColumns = [
         field                 : 'dockName',
         headerName            : 'Dock slot',
         // Fits the widest badge, a conflict with its warning
-        width                 : 108,
+        width                 : 122,
         cellRenderer          : DockSlotCellRenderer,
         // Flashes when the slot moves, is booked or unbooked
         valueGetter           : ({ data }) => data && (data.dockId ? `${data.dockName} ${data.slotStart}` : data.onHold ? 'hold' : ''),
@@ -141,7 +141,7 @@ export const shipmentColumns = [
         field                 : 'temperature',
         headerName            : 'Temp',
         // As wide as −17.3 °C, the numbers line up on the right
-        width                 : 96,
+        width                 : 87,
         type                  : 'rightAligned',
         cellRenderer          : TemperatureCellRenderer,
         enableCellChangeFlash : true,
