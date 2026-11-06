@@ -276,6 +276,212 @@ a {
     .button-row {
         margin-block-start : 2.25rem;
     }
+
+    /* The text left, the component stack right */
+    @media (min-width: 60rem) {
+        display               : grid;
+        grid-template-columns : minmax(0, 1fr) minmax(0, 1.08fr);
+        align-items           : center;
+        gap                   : 2rem;
+        padding-block         : 4.5rem 4rem;
+
+        h1 {
+            font-size : clamp(2.6rem, 0.8rem + 3.4vw, 3.75rem);
+        }
+    }
+}
+
+/* The hero's stack of component screenshots, tilted like bricks on a baseplate. Each tile sits at its own height
+ * (`--z`), floats a little and lifts under the pointer; gallery.js leans the scene towards the pointer (`--px`, `--py`
+ * from -1 to 1). Positions and widths are percentages of the stack, so it scales as one picture */
+.hero-stack {
+    --px             : 0;
+    --py             : 0;
+    --g-tile-radius  : 0.6rem;
+    --g-tile-border  : light-dark(rgb(15 23 42 / 10%), rgb(255 255 255 / 9%));
+    --g-tile-shadow  : light-dark(rgb(20 30 60 / 18%), rgb(0 0 0 / 55%));
+    --g-chip-bryntum : var(--g-accent);
+    --g-chip-ag      : light-dark(#0f8f84, #3fd0c0);
+
+    position     : relative;
+    aspect-ratio : 1 / 0.86;
+    perspective  : 2400px;
+
+    /* Below the text on tablets, gone on phones where it would be too small to read as anything */
+    @media (width < 60rem) {
+        max-width          : 38rem;
+        margin-block-start : 3rem;
+        margin-inline      : auto;
+    }
+
+    @media (max-width: 40rem) {
+        display : none;
+    }
+
+    /* A soft glow of the accent under the stack */
+    &::before {
+        content    : '';
+        position   : absolute;
+        inset      : 20% 8% 0;
+        z-index    : -1;
+        background : radial-gradient(closest-side, color-mix(in srgb, var(--g-accent) 16%, transparent), transparent);
+        filter     : blur(2rem);
+    }
+}
+
+.stack-scene {
+    position        : absolute;
+    inset           : 0;
+    padding         : 0;
+    list-style      : none;
+    transform-style : preserve-3d;
+    transform       : rotateX(calc(22deg - var(--py) * 4deg)) rotateY(calc(-18deg + var(--px) * 5deg)) rotateZ(5deg);
+    transition      : transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.tile {
+    position           : absolute;
+    inset-inline-start : var(--x);
+    inset-block-start  : var(--y);
+    width              : var(--w);
+    transform-style    : preserve-3d;
+    transform          : translateZ(var(--z));
+    transition         : transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    animation          : tile-float 7s ease-in-out var(--delay, 0s) infinite alternate;
+
+    img {
+        display       : block;
+        width         : 100%;
+        height        : auto;
+        border        : 1px solid var(--g-tile-border);
+        border-radius : var(--g-tile-radius);
+        background    : var(--g-surface);
+        /* A contact shadow and a soft one, both deeper for the higher tiles */
+        box-shadow    : 0 1px 2px var(--g-tile-shadow),
+            0 calc(0.6rem + var(--lift) * 1.6rem) calc(1.4rem + var(--lift) * 2.6rem) -0.4rem var(--g-tile-shadow);
+        transition    : box-shadow 0.35s;
+    }
+
+    &:hover {
+        transform : translateZ(calc(var(--z) + 3.5rem));
+
+        img {
+            box-shadow : 0 1px 2px var(--g-tile-shadow), 0 3.5rem 5rem -1rem var(--g-tile-shadow);
+        }
+    }
+
+    /* Back to front, the AG Grid and AG Charts tiles biggest and highest */
+    &[data-tile="gantt"] {
+        --x     : 0%;
+        --y     : 4%;
+        --w     : 40%;
+        --z     : 0rem;
+        --lift  : 0;
+        --delay : -1s;
+    }
+
+    &[data-tile="calendar"] {
+        --x     : 35%;
+        --y     : -2%;
+        --w     : 38%;
+        --z     : 0.5rem;
+        --lift  : 0.1;
+        --delay : -3s;
+    }
+
+    &[data-tile="taskboard"] {
+        --x     : 68%;
+        --y     : 9%;
+        --w     : 32%;
+        --z     : 1.5rem;
+        --lift  : 0.2;
+        --delay : -5s;
+    }
+
+    &[data-tile="ag-studio"] {
+        --x     : 54%;
+        --y     : 31%;
+        --w     : 46%;
+        --z     : 3.5rem;
+        --lift  : 0.45;
+        --delay : -2s;
+    }
+
+    &[data-tile="scheduler"] {
+        --x     : 0%;
+        --y     : 35%;
+        --w     : 36%;
+        --z     : 2.5rem;
+        --lift  : 0.35;
+        --delay : -6s;
+    }
+
+    &[data-tile="ag-charts"] {
+        --x     : 54%;
+        --y     : 58%;
+        --w     : 46%;
+        --z     : 6rem;
+        --lift  : 0.75;
+        --delay : -4s;
+    }
+
+    &[data-tile="ag-grid"] {
+        --x     : 4%;
+        --y     : 55%;
+        --w     : 53%;
+        --z     : 8rem;
+        --lift  : 1;
+        --delay : 0s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        animation  : none;
+        transition : none;
+
+        img {
+            transition : none;
+        }
+    }
+}
+
+/* The product name, a tag on the tile's top edge: a dot in Bryntum's or AG's colour */
+.chip {
+    position           : absolute;
+    inset-block-start  : -0.65rem;
+    inset-inline-start : 0.75rem;
+    z-index            : 1;
+    display            : inline-flex;
+    align-items        : center;
+    gap                : 0.4em;
+    padding            : 0.25em 0.65em;
+    border             : 1px solid var(--g-tile-border);
+    border-radius      : 999px;
+    font-size          : 0.7rem;
+    font-weight        : 600;
+    line-height        : 1.2;
+    white-space        : nowrap;
+    color              : var(--g-text);
+    background         : var(--g-surface);
+    box-shadow         : 0 0.25rem 0.75rem -0.25rem var(--g-tile-shadow);
+    transform          : translateZ(1px);
+
+    &::before {
+        content       : '';
+        width         : 0.45em;
+        height        : 0.45em;
+        border-radius : 50%;
+        background    : var(--g-chip-bryntum);
+    }
+
+    [data-family="ag"] > &::before {
+        background : var(--g-chip-ag);
+    }
+}
+
+@keyframes tile-float {
+    to {
+        translate : 0 -0.35rem 0.6rem;
+    }
 }
 
 /* The time axis above the featured showcase, with a slowly advancing "now" marker */

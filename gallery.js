@@ -170,3 +170,41 @@ document.querySelector('.site-actions').prepend(createColorSchemeToggle({
         syncScreenshots(scheme);
     }
 }));
+
+/**
+ * Leans the hero's component stack towards the pointer, as `--px` / `--py` from -1 to 1 (gallery.css). Not for touch,
+ * nor with reduced motion. One write per frame
+ * @param {HTMLElement} stack The `.hero-stack`
+ */
+function leanTowardsPointer(stack) {
+    const
+        hero   = stack.closest('.hero'),
+        motion = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover)');
+
+    let frame = 0;
+
+    hero.addEventListener('pointermove', ({ clientX, clientY }) => {
+        if (!motion.matches || frame) {
+            return;
+        }
+
+        frame = requestAnimationFrame(() => {
+            const
+                { left, top, width, height } = hero.getBoundingClientRect(),
+                clamp                        = value => Math.max(-1, Math.min(1, value));
+
+            stack.style.setProperty('--px', clamp((clientX - left) / width * 2 - 1).toFixed(3));
+            stack.style.setProperty('--py', clamp((clientY - top) / height * 2 - 1).toFixed(3));
+            frame = 0;
+        });
+    });
+
+    hero.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        stack.style.removeProperty('--px');
+        stack.style.removeProperty('--py');
+    });
+}
+
+leanTowardsPointer(document.querySelector('.hero-stack'));

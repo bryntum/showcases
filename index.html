@@ -63,21 +63,87 @@
 
     <main id="main">
         <section class="hero wrap" aria-labelledby="hero-title">
-            <!-- The headline, swap it here (the page title and og:title are in the head) -->
-            <h1 id="hero-title">Real-world use cases. <em>Source included.</em></h1>
-            <p class="lede">
-                Realistic, fully front-end use cases built on the public Bryntum and AG Grid npm packages. Try one live,
-                then point your AI assistant at the repo and make it your own.
-            </p>
-            <div class="button-row">
-                <a class="button primary" href="#showcases">
-                    Browse showcases
-                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
-                </a>
-                <a class="button" href="./ev-operations/">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
-                    Try the latest demo
-                </a>
+            <div class="hero-text">
+                <!-- The headline, swap it here (the page title and og:title are in the head) -->
+                <h1 id="hero-title">Real-world use cases. <em>Source included.</em></h1>
+                <p class="lede">
+                    Realistic, fully front-end use cases built on the public Bryntum and AG Grid npm packages. Try one live,
+                    then point your AI assistant at the repo and make it your own.
+                </p>
+                <div class="button-row">
+                    <a class="button primary" href="#showcases">
+                        Browse showcases
+                        <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
+                    </a>
+                    <a class="button" href="./ev-operations/">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
+                        Try the latest demo
+                    </a>
+                </div>
+            </div>
+
+            <!-- Decorative stack of the components the showcases are built from, one light and one dark screenshot per tile,
+                 swapped like the card thumbnails (gallery.js). Back to front in source order -->
+            <div class="hero-stack" role="img"
+                aria-label="Bryntum Gantt, Scheduler, Calendar and Task Board with AG Grid, AG Charts and AG Studio">
+                <ul class="stack-scene" aria-hidden="true">
+                    <li class="tile" data-tile="gantt" data-family="bryntum">
+                        <span class="chip">Gantt</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-gantt-light.webp">
+                            <img src="./gallery/hero-gantt-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="calendar" data-family="bryntum">
+                        <span class="chip">Calendar</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-calendar-light.webp">
+                            <img src="./gallery/hero-calendar-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="taskboard" data-family="bryntum">
+                        <span class="chip">Task Board</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-taskboard-light.webp">
+                            <img src="./gallery/hero-taskboard-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-studio" data-family="ag">
+                        <span class="chip">AG Studio</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-studio-light.webp">
+                            <img src="./gallery/hero-ag-studio-dark.webp" width="760" height="363" loading="lazy" fetchpriority="low" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="scheduler" data-family="bryntum">
+                        <span class="chip">Scheduler</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-scheduler-light.webp">
+                            <img src="./gallery/hero-scheduler-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-charts" data-family="ag">
+                        <span class="chip">AG Charts</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-charts-light.webp">
+                            <img src="./gallery/hero-ag-charts-dark.webp" width="640" height="457" decoding="async" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-grid" data-family="ag">
+                        <span class="chip">AG Grid</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-grid-light.webp">
+                            <img src="./gallery/hero-ag-grid-dark.webp" width="720" height="460" fetchpriority="high" decoding="async" alt="">
+                        </picture>
+                    </li>
+                </ul>
             </div>
         </section>
 

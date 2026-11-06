@@ -16,6 +16,30 @@ test.describe('Gallery', () => {
         expect(errors).toEqual([]);
     });
 
+    test('the hero stack shows the seven components, in the dark screenshots in dark mode', async({ page }) => {
+        const
+            stack = page.getByRole('img', { name : /Bryntum Gantt.*AG Studio/ }),
+            tiles = stack.locator('.tile');
+
+        await expect(tiles).toHaveCount(7);
+        await expect(tiles.locator('.chip')).toHaveText(['Gantt', 'Calendar', 'Task Board', 'AG Studio', 'Scheduler',
+            'AG Charts', 'AG Grid']);
+
+        // The toggle picks the mode the page is not in, then the tiles show its screenshots
+        const
+            toggle = page.locator('.sc-scheme-toggle'),
+            grid   = stack.locator('[data-tile="ag-grid"] img');
+
+        if (await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme) !== 'dark') {
+            await toggle.click();
+        }
+
+        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-dark/);
+
+        await toggle.click();
+        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-light/);
+    });
+
     test('shows the EV Operations card', async({ page }) => {
         const card = page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' });
 
