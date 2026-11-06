@@ -2,8 +2,9 @@ import { Scheduler } from '@bryntum/scheduler-enterprise';
 import DockBooking from './DockBooking.js';
 import DockModel from '../model/DockModel.js';
 import SlotModel from '../model/SlotModel.js';
-import { renderDock, renderSlot, slotTip } from './SlotRendering.js';
+import { renderDock, renderSlot, renderUtilization, slotTip } from './SlotRendering.js';
 import { formatTime } from '../util/Time.js';
+import { icon } from '../util/Icons.js';
 
 const
     // Bar colour per shipment status, Bryntum palette names
@@ -12,11 +13,21 @@ const
         'at-risk' : 'orange',
         late      : 'red',
         yard      : 'cyan',
-        unloading : 'blue',
+        unloading : 'purple',
         done      : 'gray'
     },
     // The playhead is kept this far into the visible timeline
-    nowAnchor    = 0.25;
+    nowAnchor    = 0.25,
+    // The zoom levels, one header row each, as tall as the grid's column headers. Hours labelled at their start, so a
+    // time under the pointer reads off the axis. `hour` is the default, the Day button goes back to it
+    timeHeader   = (unit, increment, dateFormat) => [{ unit, increment, dateFormat, align : 'start' }],
+    presets      = [
+        { id : 'lct-6h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 6, 'ddd HH:mm') },
+        { id : 'lct-2h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 2, 'HH:mm') },
+        { id : 'lct-hour', base : 'hourAndDay', tickWidth : 120, headers : timeHeader('hour', 1, 'HH:mm') },
+        { id : 'lct-30m', base : 'minuteAndHour', tickWidth : 110, headers : timeHeader('minute', 30, 'HH:mm') },
+        { id : 'lct-15m', base : 'minuteAndHour', tickWidth : 100, headers : timeHeader('minute', 15, 'HH:mm') }
+    ];
 
 /**
  * The dock door timeline, a Scheduler on the Enterprise tier (formerly Scheduler Pro), which schedules with the engine:
@@ -26,13 +37,18 @@ const
  * - A playhead (two time ranges, the shaded past and the now line) the view follows by delta scrolling: the timeline
  *   scrolls by the distance the clock moved, so wherever the user scrolled it to, it stays there relative to now
  * - Slots move between doors with the right equipment only, and not into the past (`eventDrag.validatorFn`)
- * - Slots ending after the shipment's due time are conflicts, outlined in red
+ * - Slots ending after the shipment's due time are conflicts, outlined dashed. Resolve conflicts moves them to doors
+ *   where they end in time (DockBooking#resolveConflicts)
+ * - A utilization strip below the doors, the Summary feature: per hour the share of the doors' time booked
+ * - Zooming around the playhead, through custom presets with one header row each
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TimeRanges
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventMenu
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Summary
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/TimelineViewPresets#config-presets
  */
 export default class DockSchedule extends DockBooking(Scheduler) {
     static $name = 'DockSchedule';
@@ -62,18 +78,20 @@ export default class DockSchedule extends DockBooking(Scheduler) {
          */
         shipmentStore : null,
 
+        /**
+         * The slots in conflict, shown on the Resolve conflicts button. Set from the KPIs
+         * @prp {Number}
+         */
+        conflictCount : 0,
+
         // The shipment grid's row height, the two sides share one rhythm
-        rowHeight  : 44,
+        rowHeight                 : 44,
         // Room for the two line label inside an even 5px padding
-        barMargin  : 4,
-        tickSize   : 170,
-        // Hours labelled at their start, so a time under the pointer reads off the axis
-        viewPreset : {
-            base    : 'hourAndDay',
-            headers : [
-                { unit : 'hour', dateFormat : 'HH:mm', align : 'start' }
-            ]
-        },
+        barMargin                 : 4,
+        presets,
+        viewPreset                : 'lct-hour',
+        // Zooming changes the scale, not the days the timeline spans
+        zoomKeepsOriginalTimespan : true,
         // Slots on a door are kept apart by the engine (the dependency chain), not by overlap prevention
         allowOverlap              : true,
         multiEventSelect          : false,
@@ -90,14 +108,25 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             cls   : 'lct-panel-bar',
             items : {
                 title  : { type : 'widget', cls : 'lct-panel-title', html : 'Dock doors' },
+                doors  : { type : 'widget', cls : 'lct-panel-count' },
                 spacer : '->',
-                now    : {
-                    type    : 'button',
-                    cls     : 'lct-now-button',
-                    icon    : 'fa fa-location-crosshairs',
-                    text    : 'Now',
-                    tooltip : 'Scroll back to the current time',
-                    onClick : 'up.scrollToNow'
+                zoom   : {
+                    type  : 'buttongroup',
+                    cls   : 'lct-zoom',
+                    items : {
+                        zoomOut : { icon : icon('minus'), tooltip : 'Zoom out', onAction : 'up.onZoomOut' },
+                        zoomDay : { text : 'Day', tooltip : 'Hours of the day, back to now', onAction : 'up.onZoomDay' },
+                        zoomIn  : { icon : icon('plus'), tooltip : 'Zoom in', onAction : 'up.onZoomIn' }
+                    }
+                },
+                resolve : {
+                    type      : 'button',
+                    cls       : 'lct-resolve',
+                    rendition : 'outlined',
+                    text      : 'Resolve conflicts',
+                    tooltip   : 'Moves each slot in conflict to a door where it ends in time',
+                    disabled  : true,
+                    onAction  : 'up.onResolveClick'
                 }
             }
         },
@@ -108,11 +137,14 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         },
 
         columns : [{
-            text     : 'Door',
-            field    : 'name',
-            width    : 140,
-            cellCls  : 'lct-dock-cell',
-            renderer : renderDock
+            text            : 'Door',
+            field           : 'name',
+            width           : 140,
+            cellCls         : 'lct-dock-cell',
+            renderer        : renderDock,
+            // The label of the utilization strip, the Summary feature's footer
+            sum             : 'count',
+            summaryRenderer : () => 'Utilization'
         }],
 
         features : {
@@ -125,6 +157,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             eventDragCreate : false,
             cellMenu        : false,
             cellEdit        : false,
+            // The utilization strip, a bar per tick of the time axis
+            summary         : { renderer : renderUtilization },
             timeRanges      : {
                 enableResizing      : false,
                 showHeaderElements  : true,
@@ -138,8 +172,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
                     cutEvent      : false,
                     unassignEvent : false,
                     splitEvent    : false,
-                    expedite      : { text : 'Expedite', icon : 'fa fa-bolt', weight : 100 },
-                    unbook        : { text : 'Unbook', icon : 'fa fa-calendar-xmark', weight : 110 }
+                    expedite      : { text : 'Expedite', icon : icon('lightning'), weight : 100 },
+                    unbook        : { text : 'Unbook', icon : icon('calendar-x'), weight : 110 }
                 },
                 processItems({ eventRecord, items }) {
                     items.expedite.disabled = items.unbook.disabled = eventRecord.isStarted;
@@ -174,6 +208,13 @@ export default class DockSchedule extends DockBooking(Scheduler) {
 
         // The tooltip reaches the shipments through the event store
         me.eventStore.shipmentStore = me.shipmentStore;
+
+        me.resourceStore.on({ change : 'updateDoorCount', thisObj : me });
+        me.updateDoorCount();
+
+        // The utilization strip follows the slots: booked, moved by the engine, unbooked. Batched, a tick changes many
+        // slots at once. The playhead's glide only touches the time ranges, it does not redraw the strip
+        me.eventStore.on({ change : 'refreshUtilization', buffer : 250, thisObj : me });
 
         me.scrollRemainder = 0;
 
@@ -309,6 +350,94 @@ export default class DockSchedule extends DockBooking(Scheduler) {
                 edgeOffset : Math.round(me.timeAxisSubGrid.width * nowAnchor)
             };
         }
+    }
+
+    //endregion
+
+    refreshUtilization() {
+        this.features.summary?.refresh();
+    }
+
+    //region Toolbar
+
+    // 12 doors · 5 cold
+    updateDoorCount() {
+        const
+            doors = this.resourceStore.records,
+            cold  = doors.filter(door => door.capability === 'reefer').length;
+
+        this.widgetMap.doors.html = `${doors.length} doors · ${cold} cold`;
+    }
+
+    updateConflictCount(count) {
+        // The button is configured disabled, without a count
+        if (!this.isConfiguring) {
+            const { resolve } = this.widgetMap;
+
+            // The count is the button's badge, drawn after the text, see schedule.css
+            resolve.badge    = count || null;
+            resolve.disabled = !count;
+        }
+    }
+
+    /**
+     * Moves the slots in conflict to doors where they end in time, a few passes, as each settles the chains the next
+     * one sees. Fires `conflictsResolve`
+     * @returns {Promise<SlotModel[]>} The moved slots
+     */
+    async resolveAllConflicts() {
+        const
+            me    = this,
+            moved = new Set();
+
+        for (let pass = 0; pass < 3; pass++) {
+            const slots = me.resolveConflicts();
+
+            if (!slots.length) {
+                break;
+            }
+
+            slots.forEach(slot => moved.add(slot));
+            await me.project.commitAsync();
+
+            if (me.isDestroyed) {
+                return [];
+            }
+        }
+
+        /**
+         * Fired after Resolve conflicts moved the slots
+         * @event conflictsResolve
+         * @param {SlotModel[]} slots The moved slots
+         */
+        me.trigger('conflictsResolve', { slots : [...moved] });
+
+        return [...moved];
+    }
+
+    onResolveClick() {
+        this.resolveAllConflicts();
+    }
+
+    // Zooms keep the playhead where the view keeps it, a quarter in
+    async zoomAroundNow(zoom) {
+        await zoom();
+
+        if (!this.isDestroyed) {
+            this.scrollToNow();
+        }
+    }
+
+    onZoomIn() {
+        this.zoomAroundNow(() => this.zoomIn(1, { centerDate : this.now }));
+    }
+
+    onZoomOut() {
+        this.zoomAroundNow(() => this.zoomOut(1, { centerDate : this.now }));
+    }
+
+    onZoomDay() {
+        this.zoomAroundNow(() => this.zoomToLevel('lct-hour', { centerDate : this.now }));
     }
 
     //endregion

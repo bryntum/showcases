@@ -6,24 +6,22 @@
     gap         : 0.7em;
     min-width   : 0;
 
+    /* The door's equipment, a line icon on a tinted square */
     .lct-dock-icon {
         display          : grid;
+        flex             : none;
         place-items      : center;
-        width            : 2em;
-        height           : 2em;
-        border-radius    : 0.5em;
+        inline-size      : 1.75em;
+        block-size       : 1.75em;
+        border-radius    : 0.35em;
+        font-size        : 1.05em;
         color            : var(--lct-ink-sub);
         background-color : var(--b-neutral-95);
     }
 
     &.lct-load-reefer .lct-dock-icon {
-        color            : var(--b-color-cyan);
-        background-color : color-mix(in srgb, var(--b-color-cyan) 14%, transparent);
-    }
-
-    &.lct-load-oversize .lct-dock-icon {
-        color            : var(--b-color-purple);
-        background-color : color-mix(in srgb, var(--b-color-purple) 14%, transparent);
+        color            : var(--lct-cold);
+        background-color : color-mix(in srgb, var(--lct-cold) 16%, transparent);
     }
 
     .lct-dock-text {
@@ -43,63 +41,68 @@
     }
 }
 
-/* Slot bars, coloured by the theme's event colours (eventColor per status). The label adapts to the bar's width */
-.lct-slot {
+/* Slot bars: a dark tint of the status colour, a 1px border in it, the load icon in it. The label adapts to the
+ * bar's width */
+.b-sch-event.lct-slot {
+    --lct-slot-tint                  : 16%;
+    --b-sch-event-background         : color-mix(in srgb, var(--lct-color) var(--lct-slot-tint), var(--lct-surface));
+    --b-sch-event-border-width       : 1px;
+    --b-sch-event-border-style       : solid;
+    --b-sch-event-border-color       : color-mix(in srgb, var(--lct-color) 70%, transparent);
+    --b-sch-event-border-radius      : 4px;
+    --b-sch-event-color              : var(--lct-ink);
     /* One padding all round, the label sits as far from the top and bottom as from the start */
-    --b-sch-event-padding-inline : 5px;
-    --b-sch-event-padding-block  : 5px;
+    --b-sch-event-padding-inline     : 5px;
+    --b-sch-event-padding-block      : 5px;
 
-    container-type : inline-size;
-    /* The shipment grid's font size, the reference reads alike in both views */
+    /* Named, the bar's content element is a container of its own */
+    container      : lct-slot / inline-size;
+    /* The shipment grid's font size, the number reads alike in both views */
     font-size      : 13px;
 
     .lct-slot-icon {
-        flex-shrink : 0;
-        font-size   : 0.9em;
+        font-size : 1.1em;
+        color     : var(--lct-color);
     }
 
     .lct-slot-text {
         display        : flex;
         flex-direction : column;
         min-width      : 0;
-        line-height    : 1.1;
+        line-height    : 1.15;
         overflow       : hidden;
     }
 
     .lct-slot-ref {
-        font-weight   : 600;
-        white-space   : nowrap;
-        overflow      : hidden;
-        text-overflow : ellipsis;
+        font-weight          : 700;
+        font-variant-numeric : tabular-nums;
+        white-space          : nowrap;
+        overflow             : hidden;
+        text-overflow        : ellipsis;
     }
 
-    /* The carrier and pallets below the reference, quieter */
+    /* The pallets, the delay or At yard below the number, quieter */
     .lct-slot-meta {
         font-size     : 11px;
-        font-weight   : 400;
         white-space   : nowrap;
         overflow      : hidden;
         text-overflow : ellipsis;
-        opacity       : 0.8;
+        color         : var(--lct-ink-sub);
     }
 
-    /* Narrower: the number only, SHP-10044 reads 10044 */
-    @container (width < 112px) {
-        .lct-slot-prefix {
+    &:is(.lct-status-late, .lct-status-at-risk) .lct-slot-meta {
+        color : var(--lct-color);
+    }
+
+    /* Narrower: the number only, never cut short. The container is the bar inside its border */
+    @container lct-slot (width < 78px) {
+        .lct-slot-icon {
             display : none;
         }
     }
 
-    /* Narrower still: the number, on one line */
-    @container (width < 84px) {
-        .lct-slot-icon,
-        .lct-slot-meta {
-            display : none;
-        }
-    }
-
-    /* Too narrow for text: the load icon only */
-    @container (width < 64px) {
+    /* Too narrow for the number: the load icon only */
+    @container lct-slot (width < 56px) {
         .lct-slot-icon {
             display : revert;
         }
@@ -108,17 +111,39 @@
             display : none;
         }
     }
-}
 
-.b-sch-event {
-    /* Unloading ends after the shipment's due time: a conflict */
-    &.lct-slot-breach {
-        outline        : 2px solid var(--lct-late);
-        outline-offset : 1px;
+    /* Unloaded: grey, quiet, no icon */
+    &.lct-status-done {
+        --b-sch-event-border-color : var(--lct-border);
+        --b-sch-event-color        : var(--lct-ink-faint);
+
+        .lct-slot-icon {
+            display : none;
+        }
+
+        .lct-slot-meta {
+            color : inherit;
+        }
     }
 
-    &.lct-status-done {
-        opacity : 0.6;
+    /* Unloading ends after the shipment's due time: a conflict, outlined dashed */
+    &.lct-slot-breach {
+        --b-sch-event-border-color : transparent;
+
+        outline        : 1px dashed var(--lct-conflict);
+        outline-offset : 0;
+    }
+}
+
+.b-sch-event-wrap {
+    &:is(:hover, .b-hover) > .lct-slot {
+        --lct-slot-tint : 24%;
+    }
+
+    &.b-selected > .lct-slot {
+        --lct-slot-tint : 30%;
+
+        box-shadow : 0 0 0 2px color-mix(in srgb, var(--lct-playhead) 55%, transparent);
     }
 }
 
@@ -174,27 +199,27 @@
     }
 }
 
-/* Where a dragged shipment would be booked */
+/* Where a dragged shipment would be booked, a dashed blue box, red where the door can not take it */
 .lct-drop-preview {
+    --lct-drop : var(--lct-playhead);
+
     position         : absolute;
     z-index          : 20;
     display          : flex;
     align-items      : center;
     padding-inline   : 0.5em;
     box-sizing       : border-box;
-    border           : 2px dashed var(--lct-on-time);
-    border-radius    : var(--b-widget-border-radius, 0.4em);
-    font-size        : 0.85em;
+    border           : 1px dashed var(--lct-drop);
+    border-radius    : 4px;
+    font-size        : 13px;
     font-weight      : 600;
     white-space      : nowrap;
-    color            : var(--lct-on-time);
-    background-color : color-mix(in srgb, var(--lct-on-time) 14%, var(--lct-surface));
+    color            : var(--lct-drop);
+    background-color : color-mix(in srgb, var(--lct-drop) 12%, transparent);
     pointer-events   : none;
 
     &.lct-drop-invalid {
-        border-color     : var(--lct-late);
-        color            : var(--lct-late);
-        background-color : color-mix(in srgb, var(--lct-late) 12%, var(--lct-surface));
+        --lct-drop : var(--lct-late);
     }
 }
 
@@ -232,6 +257,97 @@
     }
 }
 
+/* The zoom buttons, one segmented control: a frame, Day on a raised background. Compact, like the Resolve button */
+.lct-zoom {
+    --b-button-height : 2.1em;
+
+    padding          : 2px;
+    border           : 1px solid var(--lct-border);
+    border-radius    : var(--sc-radius);
+    background-color : var(--lct-sunken);
+
+    .b-button {
+        --b-button-color : var(--lct-ink);
+
+        min-inline-size : 2em;
+        padding-inline  : 0.5em;
+        border          : none;
+    }
+
+    [data-ref='zoomDay'] {
+        padding-inline   : 0.8em;
+        background-color : var(--b-neutral-90);
+    }
+
+    .lct-icon {
+        font-size : 1.1em;
+    }
+}
+
+/* A narrow dock schedule leaves out the door count, Resolve conflicts keeps its place in the bar */
+@container lct-bar (width < 560px) {
+    .b-dock-schedule .lct-panel-count {
+        display : none;
+    }
+}
+
+/* As tall as the zoom buttons */
+.lct-resolve {
+    --b-button-height : 2.4em;
+}
+
+/* The conflicts to resolve, the button's badge as a red count after the text */
+.lct-resolve.b-badge::after {
+    position             : static;
+    block-size           : auto;
+    min-inline-size      : 0;
+    margin-inline-start  : 0.6em;
+    padding              : 0.05em 0.45em;
+    border-radius        : 0.3em;
+    font-size            : 0.9em;
+    font-weight          : 600;
+    font-variant-numeric : tabular-nums;
+    color                : var(--lct-late);
+    background           : color-mix(in srgb, var(--lct-late) 16%, transparent);
+}
+
+/* The utilization strip, the Summary feature's footer: a bar per hour, from the bottom, orange when over 90% */
+.b-dock-schedule .b-grid-footer-container {
+    .b-grid-footer {
+        box-sizing  : border-box;
+        block-size  : var(--lct-footer-height);
+        align-items : center;
+        font-weight : 400;
+        color       : var(--lct-ink-sub);
+    }
+
+    .b-sch-summary-bar .b-time-axis-tick {
+        box-sizing        : border-box;
+        block-size        : 100%;
+        justify-content   : flex-end;
+        padding           : 10px 3px 0;
+        border-inline-end : none;
+    }
+
+    .b-time-axis-summary-value {
+        display         : flex;
+        flex-direction  : column;
+        justify-content : flex-end;
+        block-size      : 100%;
+    }
+}
+
+.lct-util-bar {
+    min-block-size            : 2px;
+    border-start-start-radius : 2px;
+    border-start-end-radius   : 2px;
+    background-color          : var(--lct-util);
+
+    &.lct-util-high {
+        background-color : var(--lct-util-high);
+    }
+}
+
 /* The splitter between the grid and the schedule */
 .lct-splitter {
     --b-splitter-color : var(--lct-border);
@@ -244,7 +360,7 @@
     }
 
     /* Room for the clock and the counters, the grid and the timeline */
-    .lct-splitter, .lct-panel-title, .lct-speed, .lct-legend-hint {
+    .lct-splitter, .lct-panel-title, .lct-speed {
         display : none;
     }
 

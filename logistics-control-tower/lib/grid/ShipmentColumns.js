@@ -1,12 +1,13 @@
 import {
-    formatDelay, formatTimeValue, renderCarrier, renderCarrierGroup, renderCountdown, renderDockSlot, renderGps,
-    renderLoad, renderStatus, renderTemperature
+    formatDelay, formatTimeValue, renderCarrier, renderCarrierGroup, renderDockSlot, renderEta, renderGps, renderLoad,
+    renderStatus, renderTemperature
 } from './CellRenderers.js';
 import { gpsText, loadText, statusText } from '../util/Status.js';
 
 /**
  * The column definitions of the shipment grid. Columns with `enableCellChangeFlash` flash when the simulation (or a
- * change on the dock schedule) updates their value.
+ * change on the dock schedule) updates their value. GPS, load, pallets, origin and the planned ETA are hidden to start
+ * with, they can be shown from the column tool panel or the API.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/column-definitions/
@@ -28,13 +29,44 @@ const
     // Status order for sorting, in transit first, then on site
     statusOrder = Object.keys(statusText),
     // Booked slots by start, unbooked last
-    slotSortValue = node => node.data?.slotStart ?? Infinity;
+    slotSortValue = node => node.data?.slotStart ?? Infinity,
+    // ETA drift line colours by status, mid tones readable on light and dark (the sparkline draws on a canvas, which
+    // does not resolve CSS variables)
+    driftColors   = {
+        'on-time' : '#2fb36b',
+        'at-risk' : '#f08c2e',
+        late      : '#e5484d'
+    },
+    // One series array per history and status, so a status change alone gives the cell a new value and redraws its
+    // line in the new colour, and an unchanged row keeps its array (AG Grid compares by reference)
+    driftSeries   = new WeakMap(),
+    drift         = ({ etaHistory, status }) => {
+        let byStatus = driftSeries.get(etaHistory);
+
+        if (!byStatus) {
+            driftSeries.set(etaHistory, byStatus = new Map([[status, etaHistory]]));
+        }
+
+        if (!byStatus.has(status)) {
+            byStatus.set(status, etaHistory.slice());
+        }
+
+        return byStatus.get(status);
+    },
+    // A thin line, no area
+    sparkline     = status => ({
+        type        : 'line',
+        stroke      : driftColors[status] ?? '#8b9099',
+        strokeWidth : 1.25,
+        marker      : { enabled : false },
+        padding     : { top : 12, bottom : 12, left : 2, right : 2 }
+    });
 
 export const shipmentColumns = [
     {
         field      : 'ref',
         headerName : 'Shipment',
-        width      : 140,
+        width      : 124,
         pinned     : 'left',
         // Drag a shipment by its handle onto a dock door, unless it is being unloaded or done
         rowDrag    : ({ data }) => Boolean(data) && data.status !== 'unloading' && data.status !== 'done',
@@ -43,7 +75,7 @@ export const shipmentColumns = [
     {
         field                 : 'status',
         headerName            : 'Status',
-        width                 : 108,
+        width                 : 114,
         cellRenderer          : renderStatus,
         enableCellChangeFlash : true,
         comparator            : (a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b),
@@ -52,25 +84,16 @@ export const shipmentColumns = [
     {
         field                 : 'eta',
         headerName            : 'ETA',
-        width                 : 66,
-        valueFormatter        : formatTimeValue,
+        width                 : 158,
+        // The time and how long until arrival (or since), relative to the simulated now, refreshed on every tick
+        cellRenderer          : renderEta,
         enableCellChangeFlash : true,
         filter                : false
     },
     {
-        colId        : 'arrives',
-        headerName   : 'Arrives',
-        width        : 108,
-        // Relative to the simulated now, refreshed on every tick. Sorts by the ETA
-        valueGetter  : ({ data }) => data?.eta,
-        cellRenderer : renderCountdown,
-        filter       : false
-    },
-    {
         field                 : 'delay',
         headerName            : 'Delay',
-        width                 : 82,
-        type                  : 'rightAligned',
+        width                 : 68,
         valueFormatter        : formatDelay,
         enableCellChangeFlash : true,
         cellClassRules        : {
@@ -80,22 +103,17 @@ export const shipmentColumns = [
         filter : 'agNumberColumnFilter'
     },
     {
-        field              : 'etaHistory',
-        headerName         : 'ETA drift',
-        width              : 96,
-        sortable           : false,
-        filter             : false,
-        cellRenderer       : 'agSparklineCellRenderer',
-        cellRendererParams : {
-            sparklineOptions : {
-                type        : 'area',
-                // Mid tones, readable on light and dark
-                stroke      : '#e07b39',
-                fill        : 'rgb(224 123 57 / 18%)',
-                strokeWidth : 1.5,
-                padding     : { top : 6, bottom : 6, left : 2, right : 2 }
-            }
-        }
+        colId                : 'drift',
+        headerName           : 'ETA drift',
+        width                : 84,
+        sortable             : false,
+        filter               : false,
+        valueGetter          : ({ data }) => data && drift(data),
+        // A line coloured by status, the selector runs again when the value changes
+        cellRendererSelector : ({ data }) => ({
+            component : 'agSparklineCellRenderer',
+            params    : { sparklineOptions : sparkline(data?.status) }
+        })
     },
     {
         field                 : 'dockName',
@@ -113,7 +131,6 @@ export const shipmentColumns = [
         field                 : 'temperature',
         headerName            : 'Temp',
         width                 : 92,
-        type                  : 'rightAligned',
         cellRenderer          : renderTemperature,
         enableCellChangeFlash : true,
         filter                : 'agNumberColumnFilter'
@@ -122,6 +139,7 @@ export const shipmentColumns = [
         field        : 'gps',
         headerName   : 'GPS',
         width        : 96,
+        hide         : true,
         cellRenderer : renderGps,
         ...setFilter(gpsText)
     },
@@ -129,6 +147,7 @@ export const shipmentColumns = [
         field        : 'loadType',
         headerName   : 'Load',
         width        : 112,
+        hide         : true,
         cellRenderer : renderLoad,
         ...setFilter(loadText)
     },
@@ -136,6 +155,7 @@ export const shipmentColumns = [
         field      : 'pallets',
         headerName : 'Pallets',
         width      : 90,
+        hide       : true,
         type       : 'rightAligned',
         aggFunc    : 'sum',
         filter     : 'agNumberColumnFilter'
@@ -144,6 +164,7 @@ export const shipmentColumns = [
         field      : 'origin',
         headerName : 'Origin',
         width      : 118,
+        hide       : true,
         filter     : 'agSetColumnFilter'
     },
     {
@@ -164,6 +185,7 @@ export const shipmentColumns = [
         field          : 'plannedEta',
         headerName     : 'Planned',
         width          : 84,
+        hide           : true,
         valueFormatter : formatTimeValue,
         filter         : false
     }

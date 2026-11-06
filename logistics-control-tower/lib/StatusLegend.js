@@ -2,8 +2,9 @@ import { DomHelper, Widget } from '@bryntum/core-enterprise';
 import { statusText } from './util/Status.js';
 
 /**
- * The legend below the app: a swatch per shipment status (the colours of the grid pills and the slot bars), the
- * conflict outline, a hint on drag and drop, and the third-party note for AG Grid.
+ * The legend below the app: a dot per shipment status (the colours of the grid pills and the slot bars), the dashed
+ * conflict outline, the overloaded hour of the utilization strip, and the credits, linking AG Grid Enterprise to its
+ * licence terms.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
@@ -20,34 +21,29 @@ export default class StatusLegend extends Widget {
     construct(config) {
         super.construct(config);
 
+        const item = (cls, text) => ({
+            tag      : 'li',
+            class    : `lct-legend-item ${cls}`,
+            children : [{ tag : 'span', class : 'lct-swatch', 'aria-hidden' : 'true' }, text]
+        });
+
         [
             {
                 tag          : 'ul',
                 class        : 'lct-legend-items',
-                'aria-label' : 'Shipment statuses',
+                'aria-label' : 'Legend',
                 children     : [
-                    ...Object.entries(statusText).map(([status, text]) => ({
-                        tag      : 'li',
-                        class    : `lct-legend-item lct-status-${status}`,
-                        children : [{ tag : 'span', class : 'lct-swatch', 'aria-hidden' : 'true' }, text]
-                    })),
-                    {
-                        tag      : 'li',
-                        class    : 'lct-legend-item lct-legend-conflict',
-                        children : [{ tag : 'span', class : 'lct-swatch', 'aria-hidden' : 'true' }, 'Conflict: ends after due time']
-                    }
+                    ...Object.entries(statusText).map(([status, text]) => item(`lct-legend-status lct-status-${status}`, text)),
+                    item('lct-legend-conflict', 'Conflict'),
+                    item('lct-legend-busy', 'Door over 90%')
                 ]
-            },
-            {
-                class : 'lct-legend-hint',
-                text  : 'Drag shipments onto doors · right-click for actions'
             },
             {
                 class    : 'lct-legend-note',
                 children : [
-                    'Grid by ',
+                    'Shipments: ',
                     { tag : 'a', href : 'https://www.ag-grid.com/license-pricing/', target : '_blank', text : 'AG Grid Enterprise' },
-                    ', separately licensed'
+                    ' · Dock schedule: Bryntum Scheduler'
                 ]
             }
         ].forEach(child => DomHelper.createElement({ ...child, parent : this.element }));

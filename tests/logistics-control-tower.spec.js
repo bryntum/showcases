@@ -44,7 +44,7 @@ test.describe('Logistics Control Tower', () => {
 
         await expect(grid(page)).toBeVisible();
         await expect(page.locator('.lct-grid-panel .lct-carrier-group').first()).toBeVisible();
-        await expect(page.locator('.lct-grid-panel .ag-status-bar')).toContainText(/Total Rows\s*:\s*2,000/);
+        await expect(page.locator('.lct-grid-panel .ag-status-bar')).toContainText(/of 2,000 shown/);
         await expect(schedule(page)).toHaveClass(/\bb-scheduler\b/);
         await expect(schedule(page).locator('.lct-dock-name').first()).toHaveText('Door 01');
     });
@@ -94,6 +94,68 @@ test.describe('Logistics Control Tower', () => {
         await menu.getByText('Unbook').click();
         await expect(schedule(page).locator(`.b-sch-event-wrap[data-event-id="${bookedId}"]`)).toHaveCount(0);
         await expect(grid(page).locator(`.ag-row[row-id="${bookedId}"] [col-id="dockName"]`)).toHaveText('On hold');
+    });
+});
+
+test.describe('Logistics Control Tower dock tools', () => {
+    let errors;
+
+    test.beforeEach(({ page }) => {
+        errors = collectErrors(page, { ignore : agGridLicenseNotice });
+    });
+
+    test.afterEach(() => {
+        expect(errors).toEqual([]);
+    });
+
+    test('the utilization strip renders a bar per hour under the doors', async({ page }) => {
+        await openPaused(page);
+
+        const footer = schedule(page).locator('.b-grid-footer-container');
+
+        await expect(footer).toContainText('Utilization');
+        expect(await footer.locator('.b-sch-summary-bar .lct-util-bar').count()).toBeGreaterThan(24);
+    });
+
+    test('Resolve conflicts moves a slot ending after its due time back in time', async({ page }) => {
+        await openPaused(page);
+
+        // Pushes a booked slot to start at its due time, a conflict
+        const breached = await page.evaluate(async id => {
+            const
+                { schedule, shipmentStore } = globalThis.bryntum.query('controltowerapp'),
+                slot                        = schedule.eventStore.getById(id);
+
+            schedule.bookAt(shipmentStore.getById(id), slot.resource, slot.dueBy);
+            await schedule.project.commitAsync();
+
+            return slot.slaBreach;
+        }, bookedId);
+
+        expect(breached).toBe(true);
+
+        const resolve = page.locator('.lct-resolve');
+
+        await expect(resolve).toBeEnabled();
+        await resolve.click();
+
+        await expect.poll(() => page.evaluate(id => globalThis.bryntum.query('controltowerapp').schedule.eventStore
+            .getById(id).slaBreach, bookedId), { message : 'The slot ends in time again' }).toBe(false);
+    });
+
+    test('Simulate delay makes a truck late and selects its slot', async({ page }) => {
+        await openPaused(page);
+
+        await page.locator('.lct-delay').click();
+
+        const selected = schedule(page).locator('.b-sch-event-wrap.b-selected');
+
+        await expect(selected).toHaveCount(1);
+
+        const delay = await page.evaluate(id => globalThis.bryntum.query('controltowerapp').shipmentStore.getById(id)
+            .delayMinutes, await selected.getAttribute('data-event-id'));
+
+        expect(delay).toBeGreaterThanOrEqual(30);
     });
 });
 

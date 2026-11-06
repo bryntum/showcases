@@ -1,6 +1,11 @@
 import { StringHelper } from '@bryntum/core-enterprise';
-import { formatTime } from '../util/Time.js';
+import DockPlanner from '../simulation/DockPlanner.js';
+import { formatMinutes, formatTime, minuteMs } from '../util/Time.js';
 import { loadIcons, statusText } from '../util/Status.js';
+import { icon } from '../util/Icons.js';
+
+// Above this share of door time booked an hour reads as overloaded
+const busyShare = 0.9;
 
 /**
  * The dock schedule's cells, bars and tooltip, plain functions.
@@ -15,7 +20,10 @@ export function renderDock({ record }) {
     return {
         class    : `lct-dock lct-load-${record.capability}`,
         children : [
-            { tag : 'i', class : `lct-dock-icon ${loadIcons[record.capability]}`, 'aria-hidden' : 'true' },
+            {
+                class    : 'lct-dock-icon',
+                children : [{ tag : 'i', class : loadIcons[record.capability], 'aria-hidden' : 'true' }]
+            },
             {
                 class    : 'lct-dock-text',
                 children : [
@@ -28,16 +36,17 @@ export function renderDock({ record }) {
 }
 
 /**
- * A slot bar: the load type (or the expedite bolt), the shipment reference, the carrier and the pallets. Coloured by
- * status, outlined when it breaches its due time (a conflict)
+ * A slot bar: the load type (or the expedite bolt), the shipment number and below it the pallets, or the delay of a
+ * truck at risk or late, or that it is waiting at the yard. Tinted by status, outlined dashed when it ends after its
+ * due time (a conflict)
  * @param {Object} renderData
  * @returns {Object[]} DomConfig
  */
 export function renderSlot({ eventRecord, renderData }) {
     const
-        { status, loadType, expedited, carrierCode, pallets, name, slaBreach } = eventRecord,
-        // SHP-10044 -> SHP- and 10044, narrow bars show the number only (see schedule.css)
-        [, prefix = '', number = name] = /^(\D+-)?(.*)$/.exec(name);
+        { status, loadType, expedited, pallets, name, delayMinutes, slaBreach } = eventRecord,
+        // SHP-10044 reads 10044, the full reference is in the tooltip
+        number = name.replace(/^\D+-/, '');
 
     Object.assign(renderData.cls, {
         'lct-slot'               : 1,
@@ -47,22 +56,48 @@ export function renderSlot({ eventRecord, renderData }) {
     });
 
     return [
-        {
-            tag           : 'i',
-            class         : `lct-slot-icon ${expedited ? 'fa fa-bolt' : loadIcons[loadType]}`,
-            'aria-hidden' : 'true'
-        },
+        { tag : 'i', class : `lct-slot-icon ${expedited ? icon('lightning') : loadIcons[loadType]}`, 'aria-hidden' : 'true' },
         {
             class    : 'lct-slot-text',
             children : [
-                {
-                    class    : 'lct-slot-ref',
-                    children : [{ tag : 'span', class : 'lct-slot-prefix', text : prefix }, number]
-                },
-                { class : 'lct-slot-meta', text : `${carrierCode} · ${pallets} plt` }
+                { class : 'lct-slot-ref', text : number },
+                { class : 'lct-slot-meta', text : slotMeta(status, pallets, delayMinutes) }
             ]
         }
     ];
+}
+
+// The second line of a slot bar
+function slotMeta(status, pallets, delay) {
+    if (status === 'late' || status === 'at-risk') {
+        return formatMinutes(delay, true);
+    }
+
+    return status === 'yard' ? 'At yard' : `${pallets} plt`;
+}
+
+/**
+ * The utilization strip, the Summary feature's renderer for one tick of the time axis: the share of the doors' time
+ * booked in it, a slot and the turnaround after it, as a bar. Orange above 90%
+ * @param {Object} context
+ * @param {Date} context.startDate
+ * @param {Date} context.endDate
+ * @param {SlotModel[]} context.events The slots in the tick
+ * @param {Scheduler.data.ResourceStore} context.resourceStore The doors
+ * @returns {String} HTML
+ */
+export function renderUtilization({ startDate, endDate, events, resourceStore }) {
+    const
+        start    = startDate.getTime(),
+        end      = endDate.getTime(),
+        gap      = DockPlanner.TURNAROUND * minuteMs,
+        booked   = events.reduce((sum, slot) =>
+            sum + Math.max(0, Math.min(end, slot.plannedEnd + gap) - Math.max(start, slot.startDate.getTime())), 0),
+        share    = Math.min(1, booked / ((end - start) * (resourceStore.count || 1))),
+        percent  = Math.round(share * 100);
+
+    return `<div class="lct-util-bar${share > busyShare ? ' lct-util-high' : ''}" style="block-size: ${percent}%" ` +
+        `data-btip="${percent}% of door time booked, ${formatTime(startDate)} – ${formatTime(endDate)}"></div>`;
 }
 
 /**

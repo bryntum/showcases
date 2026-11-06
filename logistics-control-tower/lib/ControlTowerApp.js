@@ -74,7 +74,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
             tbar : {
                 cls   : 'lct-toolbar',
                 items : {
-                    kpis     : { type : 'kpibar', flex : '1 1 auto' },
+                    kpis     : { type : 'kpibar', flex : '1 1 auto', site : site.name },
                     controls : { type : 'simulationcontrols', flex : 'none' }
                 }
             },
@@ -107,6 +107,21 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
             bbar : { cls : 'lct-legend-bar', items : { legend : { type : 'statuslegend' } } }
         });
 
+        me.createSimulator(site, endDate);
+        me.schedule.on({ conflictsResolve : 'refreshKpis', thisObj : me });
+
+        // A hidden tab pauses the simulation, it does not play on in the background
+        EventHelper.on({
+            element          : document,
+            visibilitychange : () => document.hidden && me.simulator.pause(),
+            thisObj          : me
+        });
+    }
+
+    // The simulation, driven by the header's controls, refreshing the KPIs as it goes
+    createSimulator(site, endDate) {
+        const me = this;
+
         me.simulator = new Simulator({
             now           : site.now,
             endDate,
@@ -116,14 +131,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         });
 
         me.widgetMap.controls.simulator = me.simulator;
-        me.simulator.on({ tick : 'refreshKpis', thisObj : me });
-
-        // A hidden tab pauses the simulation, it does not play on in the background
-        EventHelper.on({
-            element          : document,
-            visibilitychange : () => document.hidden && me.simulator.pause(),
-            thisObj          : me
-        });
+        me.simulator.on({ tick : 'refreshKpis', shipmentDelay : 'onSimulatedDelay', thisObj : me });
     }
 
     get schedule() {
@@ -186,20 +194,22 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
     }
 
     bookShipment(id) {
-        const
-            { schedule } = this,
-            slot         = schedule.book(this.shipmentStore.getById(id));
-
-        if (slot) {
-            schedule.selectEvent(slot);
-            schedule.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
-        }
+        this.showSlot(this.schedule.book(this.shipmentStore.getById(id)));
     }
 
     expediteShipment(id) {
-        const
-            { schedule } = this,
-            slot         = schedule.expedite(id);
+        this.showSlot(this.schedule.expedite(id));
+    }
+
+    // The truck made late by Simulate delay: its slot, moved by the engine, selected and scrolled into view
+    onSimulatedDelay({ shipment }) {
+        this.refreshKpis();
+        this.showSlot(this.schedule.eventStore.getById(shipment.id));
+    }
+
+    // Selects a slot, which selects its row, and scrolls it into view
+    showSlot(slot) {
+        const { schedule } = this;
 
         if (slot) {
             schedule.selectEvent(slot);
@@ -208,7 +218,8 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
     }
 
     /**
-     * The KPI header, the status bar's late count and the live countdowns, after each tick or batch of changes
+     * The KPI header, the footer's late count, the conflicts to resolve and the live countdowns, after each tick or
+     * batch of changes
      */
     refreshKpis() {
         const
@@ -223,17 +234,20 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
 
         me.widgetMap.kpis.setValues(simulator.now, counts);
         gridApi.getStatusPanel('lateCount')?.setCounts(counts);
+        me.schedule.conflictCount = counts.conflicts;
 
         if (gridContext.now !== simulator.now) {
             gridContext.now = simulator.now;
-            // The countdowns of the rendered rows, relative to the new now
-            gridApi.refreshCells({ columns : ['arrives'], force : true });
+            // The countdowns of the rendered rows, relative to the new now. Not flashed, the ETA did not change
+            gridApi.refreshCells({ columns : ['eta'], force : true, suppressFlash : true });
         }
     }
 
-    // The grid and the schedule stack on narrow screens, see app.css
+    // The grid and the schedule stack on narrow screens, see app.css. Simulate delay is its icon, the counters keep
+    // the room
     updateCompact(compact) {
         this.element.classList.toggle('lct-compact', compact);
+        this.widgetMap.delay.text = compact ? null : 'Simulate delay';
     }
 }
 

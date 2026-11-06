@@ -1,6 +1,6 @@
 import { DomHelper } from '@bryntum/core-enterprise';
 import DockPlanner from '../simulation/DockPlanner.js';
-import { formatTime, minuteMs } from '../util/Time.js';
+import { minuteMs } from '../util/Time.js';
 
 /**
  * Makes the dock schedule's timeline a drop zone for the rows of the shipment grid (AG Grid's `addRowDropZone`). While
@@ -61,7 +61,8 @@ export default class GridDropZone {
             startDate,
             minutes,
             valid   : accepts,
-            message : accepts ? `${door.name} · ${formatTime(startDate)}` : `${door.name} cannot take ${shipment.loadType} loads`
+            // Drop 10151, the slot's start reads off the axis
+            message : accepts ? `Drop ${shipment.ref.replace(/^\D+-/, '')}` : `${door.name} cannot take ${shipment.loadType} loads`
         };
     }
 
@@ -101,7 +102,7 @@ export default class GridDropZone {
         }
     }
 
-    // A bar where the slot would be booked, green or red, in the scrolling foreground of the timeline
+    // A dashed box where the slot would be booked, blue or red, in the scrolling foreground of the timeline
     showPreview({ door, startDate, minutes, valid, message }) {
         const
             me           = this,

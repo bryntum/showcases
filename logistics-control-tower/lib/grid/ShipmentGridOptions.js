@@ -1,10 +1,12 @@
 import LateCountPanel from './LateCountPanel.js';
+import ShipmentTotalsPanel from './ShipmentTotalsPanel.js';
 import { carrierGroupRows, shipmentColumns } from './ShipmentColumns.js';
 import { agTheme } from './AgGridSetup.js';
+import { icon } from '../util/Icons.js';
 
 /**
- * The AG Grid options of the shipment grid: row ids, selection, grouping by carrier, row styling by status, the
- * context menu and the status bar.
+ * The AG Grid options of the shipment grid: row ids, selection, grouping by carrier, faded unloaded rows, the context
+ * menu and the status bar as the grid's footer (custom panels for the totals and the alerts).
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/grid-options/
@@ -29,17 +31,17 @@ function contextMenu(actions) {
 
         const
             started = data.status === 'unloading' || data.status === 'done',
-            item    = (name, icon, action, disabled) => ({
+            item    = (name, iconName, action, disabled) => ({
                 name,
                 disabled,
-                icon   : `<i class="fa fa-${icon}" aria-hidden="true"></i>`,
+                icon   : `<i class="${icon(iconName)}" aria-hidden="true"></i>`,
                 action : () => actions[action](data.id)
             });
 
         return [
             item('Book dock', 'calendar-plus', 'book', started || Boolean(data.dockId)),
-            item('Unbook', 'calendar-xmark', 'unbook', started || !data.dockId),
-            item('Expedite', 'bolt', 'expedite', started)
+            item('Unbook', 'calendar-x', 'unbook', started || !data.dockId),
+            item('Expedite', 'lightning', 'expedite', started)
         ];
     };
 }
@@ -64,8 +66,10 @@ export function shipmentGridOptions({ rowData, context, actions }) {
             resizable                : true,
             filter                   : 'agTextColumnFilter'
         },
-        // Dock slot as wide as its badges, the conflict warning included
-        autoSizeStrategy           : { type : 'fitCellContents', colIds : ['dockName'] },
+        // Dock slot as wide as its badges, the conflict warning included. The header is shorter
+        autoSizeStrategy           : { type : 'fitCellContents', colIds : ['dockName'], skipHeader : true },
+        // The measured cell includes its padding, no room added on top
+        autoSizePadding            : 2,
         getRowId                   : ({ data }) => data.id,
         // Live updates are batched by AG Grid (asyncTransactionWaitMillis), see GridSync
         asyncTransactionWaitMillis : 60,
@@ -84,17 +88,12 @@ export function shipmentGridOptions({ rowData, context, actions }) {
         // A drag onto the dock schedule books a slot, the grid itself does not reorder
         suppressMoveWhenRowDragging : true,
         rowClassRules               : {
-            'lct-row-late'    : ({ data }) => data?.status === 'late' || Boolean(data?.slaBreach),
-            'lct-row-at-risk' : ({ data }) => data?.status === 'at-risk',
-            'lct-row-on-time' : ({ data }) => data?.status === 'on-time',
-            'lct-row-done'    : ({ data }) => data?.status === 'done'
+            'lct-row-done' : ({ data }) => data?.status === 'done'
         },
         getContextMenuItems : contextMenu(actions),
         statusBar           : {
             statusPanels : [
-                { statusPanel : 'agTotalRowCountComponent', align : 'left' },
-                { statusPanel : 'agFilteredRowCountComponent', align : 'left' },
-                { statusPanel : 'agSelectedRowCountComponent', align : 'left' },
+                { statusPanel : ShipmentTotalsPanel, key : 'totals', align : 'left' },
                 { statusPanel : LateCountPanel, key : 'lateCount', align : 'right' }
             ]
         }

@@ -1,20 +1,25 @@
+import { DomHelper } from '@bryntum/core-enterprise';
+
 /**
- * A custom AG Grid status bar panel: the late trucks and the slot conflicts, among all shipments. Set from the app on
- * every tick through `setCounts()`, reached with `api.getStatusPanel('lateCount')`.
+ * A custom AG Grid status bar panel, on the right of the footer: the late trucks and the slot conflicts among all
+ * shipments. Set from the app on every tick through `setCounts()`, reached with `api.getStatusPanel('lateCount')`.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/component-status-bar/
  */
 export default class LateCountPanel {
     init() {
-        const gui = this.gui = document.createElement('div');
+        const
+            me      = this,
+            counter = (parent, label) => {
+                const item = DomHelper.createElement({ parent, class : 'lct-footer-item', children : [label] });
 
-        gui.className = 'ag-status-name-value lct-late-panel';
-        gui.innerHTML = '<span>Late:&nbsp;</span><span class="ag-status-name-value-value" data-late>0</span>' +
-            '<span class="lct-late-panel-sep">Conflicts:&nbsp;</span><span class="ag-status-name-value-value" data-conflicts>0</span>';
+                return DomHelper.createElement({ parent : item, tag : 'strong', class : 'lct-footer-alert', text : '0' });
+            };
 
-        this.late      = gui.querySelector('[data-late]');
-        this.conflicts = gui.querySelector('[data-conflicts]');
+        me.gui       = DomHelper.createElement({ class : 'lct-footer lct-late-panel' });
+        me.late      = counter(me.gui, 'Late');
+        me.conflicts = counter(me.gui, 'Conflicts');
     }
 
     getGui() {

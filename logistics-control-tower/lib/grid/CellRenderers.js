@@ -1,6 +1,7 @@
 import { DomHelper } from '@bryntum/core-enterprise';
 import { formatMinutes, formatTime, minuteMs } from '../util/Time.js';
 import { gpsText, loadIcons, loadText, statusText } from '../util/Status.js';
+import { icon } from '../util/Icons.js';
 
 /**
  * AG Grid cell renderers of the shipment grid, plain functions returning elements built with Bryntum's DomHelper (text
@@ -14,7 +15,7 @@ import { gpsText, loadIcons, loadText, statusText } from '../util/Status.js';
 const element = config => DomHelper.createElement(config);
 
 /**
- * Status pill
+ * Status pill, a dot in the status colour and its text
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */
@@ -44,7 +45,7 @@ const carrierChip = (data, name) => ({
 });
 
 /**
- * The group row of a carrier: its chip, the shipments, the pallets and the late ones (aggregated)
+ * The group row of a carrier: its chip, the shipments and pallets, and a pill with the late ones (aggregated)
  * @param {Object} params AG Grid group cell inner renderer params
  * @returns {HTMLElement}
  */
@@ -59,19 +60,23 @@ export function renderCarrierGroup({ node, value }) {
         class    : 'lct-carrier-group',
         children : [
             first ? carrierChip(first, value) : { tag : 'span', text : value },
-            { tag : 'span', class : 'lct-group-count', text : `${node.allChildrenCount} shipments` },
-            { tag : 'span', class : 'lct-group-count', text : `${pallets.toLocaleString('en-US')} pallets` },
-            late ? { tag : 'span', class : 'lct-group-late', text : `${late} late` } : null
+            {
+                tag   : 'span',
+                class : 'lct-group-count',
+                text  : `${node.allChildrenCount.toLocaleString('en-US')} shipments · ${pallets.toLocaleString('en-US')} pallets`
+            },
+            late ? { tag : 'span', class : 'lct-pill lct-status-late', text : `${late} late` } : null
         ]
     });
 }
 
 /**
- * Time to arrival relative to the simulated now (`context.now`), or the time since the truck arrived
+ * The ETA, and after it how long until the truck arrives relative to the simulated now (`context.now`), or how long
+ * it has been on site
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */
-export function renderCountdown({ data, context }) {
+export function renderEta({ data, context }) {
     if (!data) {
         return '';
     }
@@ -80,23 +85,22 @@ export function renderCountdown({ data, context }) {
         minutes = (data.eta - context.now) / minuteMs,
         arrived = minutes <= 0;
 
-    if (data.status === 'done') {
-        return element({ tag : 'span', class : 'lct-countdown lct-countdown-done', text : '—' });
-    }
-
     return element({
-        tag   : 'span',
-        class : {
-            'lct-countdown'        : 1,
-            'lct-countdown-soon'   : !arrived && minutes <= 60,
-            'lct-countdown-onsite' : arrived
-        },
-        text : arrived ? `on site ${formatMinutes(-minutes)}` : `in ${formatMinutes(minutes)}`
+        tag      : 'span',
+        class    : 'lct-eta',
+        children : [
+            { tag : 'span', class : 'lct-eta-time', text : formatTime(data.eta) },
+            data.status === 'done' ? null : {
+                tag   : 'span',
+                class : { 'lct-eta-relative' : 1, 'lct-eta-soon' : !arrived && minutes <= 60 },
+                text  : arrived ? `on site ${formatMinutes(-minutes)}` : `in ${formatMinutes(minutes)}`
+            }
+        ]
     });
 }
 
 /**
- * Dock slot badge: the door and the slot start, a warning when it breaches the due time, or the booking state
+ * Dock slot badge: the door and the slot start, red with a warning when it breaches the due time, or the booking state
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */
@@ -113,25 +117,13 @@ export function renderDockSlot({ data }) {
         });
     }
 
-    // The badge, then the conflict warning outside it, in a slot of its own so every badge has the same width
     return element({
         tag      : 'span',
-        class    : 'lct-dock-slot',
+        class    : { 'lct-badge' : 1, 'lct-badge-booked' : 1, 'lct-badge-breach' : data.slaBreach },
         title    : data.slaBreach ? `Unloading ends after the due time, ${formatTime(data.dueBy)}` : null,
         children : [
-            {
-                tag      : 'span',
-                class    : { 'lct-badge' : 1, 'lct-badge-booked' : 1, 'lct-badge-breach' : data.slaBreach },
-                children : [
-                    { tag : 'span', class : 'lct-badge-door', text : data.dockId },
-                    { tag : 'span', text : formatTime(data.slotStart) }
-                ]
-            },
-            {
-                tag           : 'i',
-                class         : { 'lct-dock-slot-warning' : 1, 'fa fa-triangle-exclamation' : data.slaBreach },
-                'aria-hidden' : 'true'
-            }
+            `${data.dockId} · ${formatTime(data.slotStart)}`,
+            data.slaBreach ? { tag : 'i', class : icon('warning'), 'aria-hidden' : 'true' } : null
         ]
     });
 }
@@ -153,20 +145,30 @@ export function renderLoad({ value }) {
 }
 
 /**
- * Reefer temperature, flagged when more than 2 °C off its set point
+ * Reefer temperature after a snowflake, an amber warning chip when it is more than 2 °C off its set point, a dash for
+ * the loads which are not chilled
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */
 export function renderTemperature({ data, value }) {
-    if (value == null || !data) {
+    if (!data) {
         return '';
     }
 
+    if (value == null) {
+        return element({ tag : 'span', class : 'lct-none', text : '—' });
+    }
+
+    const off = Math.abs(value - data.setpoint) > 2;
+
     return element({
-        tag   : 'span',
-        class : { 'lct-temp' : 1, 'lct-temp-off' : Math.abs(value - data.setpoint) > 2 },
-        title : `Set point ${data.setpoint} °C`,
-        text  : `${value.toFixed(1).replace('-', '−')} °C`
+        tag      : 'span',
+        class    : { 'lct-temp' : 1, 'lct-temp-off' : off },
+        title    : `Set point ${data.setpoint} °C`,
+        children : [
+            { tag : 'i', class : icon(off ? 'warning' : 'snowflake'), 'aria-hidden' : 'true' },
+            `${value.toFixed(1).replace('-', '−')} °C`
+        ]
     });
 }
 

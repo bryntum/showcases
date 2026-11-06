@@ -1,10 +1,12 @@
 import { Panel } from '@bryntum/core-enterprise';
 import { createGrid } from 'ag-grid-community';
 import { shipmentGridOptions } from './grid/ShipmentGridOptions.js';
+import { icon } from './util/Icons.js';
 
 /**
- * A Bryntum Panel hosting the AG Grid of inbound shipments. The panel's toolbar holds the title, the quick search and
- * the carrier grouping switch, the body is AG Grid's own DOM. The grid is themed on the Bryntum theme's CSS variables,
+ * A Bryntum Panel hosting the AG Grid of inbound shipments. The panel's toolbar holds the title with the shipments
+ * shown of all of them, the quick search and the carrier grouping switch, the body is AG Grid's own DOM, its status
+ * bar the footer with the totals of the shown shipments. The grid is themed on the Bryntum theme's CSS variables,
  * see grid/AgGridSetup.js, so it follows light and dark mode with the rest of the app.
  *
  * Learn more:
@@ -29,6 +31,7 @@ export default class ShipmentGridPanel extends Panel {
                     cls  : 'lct-panel-title',
                     html : 'Inbound shipments'
                 },
+                count  : { type : 'widget', cls : 'lct-panel-count' },
                 spacer : '->',
                 search : {
                     type                 : 'textfield',
@@ -37,12 +40,12 @@ export default class ShipmentGridPanel extends Panel {
                     clearable            : true,
                     width                : '14em',
                     keyStrokeChangeDelay : 150,
-                    triggers             : { search : { cls : 'fa fa-magnifying-glass', align : 'start' } },
+                    triggers             : { search : { cls : icon('magnifying-glass'), align : 'start' } },
                     onChange             : 'up.onSearchChange'
                 },
                 group : {
                     type     : 'slidetoggle',
-                    text     : 'By carrier',
+                    text     : 'Group by carrier',
                     checked  : true,
                     onChange : 'up.onGroupChange'
                 }
@@ -56,7 +59,37 @@ export default class ShipmentGridPanel extends Panel {
      * @returns {Object} The AG Grid API, also the `gridApi` property
      */
     createGrid(options) {
-        return this.gridApi = createGrid(this.contentElement, shipmentGridOptions(options));
+        const gridApi = this.gridApi = createGrid(this.contentElement, shipmentGridOptions(options));
+
+        // Rows changed, filtered or searched
+        gridApi.addEventListener('modelUpdated', () => this.refreshTotals());
+
+        return gridApi;
+    }
+
+    /**
+     * The shipments shown of all of them in the title, and in the footer with their pallets and average delay
+     */
+    refreshTotals() {
+        const { gridApi, widgetMap } = this;
+
+        if (!gridApi || gridApi.isDestroyed()) {
+            return;
+        }
+
+        let total = 0, shown = 0, pallets = 0, delay = 0;
+
+        gridApi.forEachLeafNode(() => total++);
+        gridApi.forEachNodeAfterFilter(({ group, data }) => {
+            if (!group && data) {
+                shown++;
+                pallets += data.pallets;
+                delay += data.delay;
+            }
+        });
+
+        widgetMap.count.html = `${shown.toLocaleString('en-US')} of ${total.toLocaleString('en-US')}`;
+        gridApi.getStatusPanel('totals')?.setTotals({ shown, total, pallets, delay : shown ? delay / shown : 0 });
     }
 
     doDestroy() {

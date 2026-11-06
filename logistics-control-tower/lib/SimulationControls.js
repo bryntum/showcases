@@ -1,10 +1,12 @@
 import { Container } from '@bryntum/core-enterprise';
+import { icon } from './util/Icons.js';
 
 // Simulated minutes per tick, by button
 const speeds = { speed1 : 1, speed5 : 5, speed15 : 15 };
 
 /**
- * Play / pause and the speed of the simulation, bound to a Simulator through its `simulator` config. Follows the
+ * The speed of the simulation, a button making a truck run late, and play / pause, bound to a Simulator through its
+ * `simulator` config. Follows the
  * simulator's `playStateChange` event, so the button also flips when the simulation pauses on its own (end of the
  * timeline, hidden tab). Play keeps one width for both labels (toolbar.css).
  *
@@ -39,11 +41,20 @@ export default class SimulationControls extends Container {
                     speed15 : { text : '15×', tooltip : '15 simulated minutes per tick', onToggle : 'up.onSpeedToggle' }
                 }
             },
+            delay : {
+                type      : 'button',
+                cls       : 'lct-delay',
+                rendition : 'outlined',
+                icon      : icon('lightning'),
+                text      : 'Simulate delay',
+                tooltip   : 'Makes a truck with a booked slot run 30 to 75 minutes late',
+                onAction  : 'up.onDelayClick'
+            },
             play : {
                 type      : 'button',
                 cls       : 'lct-play',
                 rendition : 'filled',
-                icon      : 'fa fa-pause',
+                icon      : icon('pause'),
                 text      : 'Pause',
                 onAction  : 'up.onPlayClick'
             }
@@ -66,6 +77,10 @@ export default class SimulationControls extends Container {
         this.simulator.toggle();
     }
 
+    onDelayClick() {
+        this.simulator.simulateDelay();
+    }
+
     onSpeedToggle({ source, pressed }) {
         if (pressed) {
             this.simulator.speed = speeds[source.ref];
@@ -81,7 +96,7 @@ export default class SimulationControls extends Container {
         if (play && simulator) {
             Object.assign(play, {
                 text      : running ? 'Pause' : 'Play',
-                icon      : running ? 'fa fa-pause' : 'fa fa-play',
+                icon      : icon(running ? 'pause' : 'play'),
                 rendition : running ? 'filled' : 'tonal'
             });
         }
