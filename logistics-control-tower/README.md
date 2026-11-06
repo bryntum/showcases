@@ -1,8 +1,9 @@
 # Logistics Control Tower
 
 The inbound control tower of a distribution centre: 2,000 shipments on their way, in an AG Grid on the left, and the
-12 dock doors of the site (5 cold store, 7 ambient), in a Bryntum Scheduler (Enterprise tier) on the right. A simulation streams live updates
-into both: ETAs drift, GPS signals drop, reefer temperatures wander, trucks arrive, unload and leave.
+12 dock doors of the site (5 cold store, 7 ambient), in a Bryntum Scheduler (Enterprise tier) on the right. A
+simulation streams live updates into both: ETAs drift, GPS signals drop, reefer temperatures wander, trucks arrive,
+unload and leave.
 
 * **Shipments**: AG Grid Enterprise, grouped by carrier (shipments, pallets and late trucks per carrier), with set
   filters, a quick search, sparklines of the ETA drift coloured by status, cells that flash when they change, and a
@@ -102,10 +103,10 @@ ranges, so it does not redraw the strip.
 ### Drag from the grid: `lib/sync/GridDropZone.js`
 
 The rows have a drag handle (`rowDrag`), shown on the row under the pointer. `gridApi.addRowDropZone()` makes the
-Scheduler's timeline a drop zone. While
-dragging, the door under the pointer is found by position (the event's target is AG Grid's drag layer), the time by
-`getDateFromCoordinate()`, and a dashed preview box shows where the slot goes, or why the door refuses the load. A drop books the slot
-with `bookAt()`, or moves the slot if the shipment was booked already.
+Scheduler's timeline a drop zone. While dragging, the door under the pointer is found by position (the event's target
+is AG Grid's drag layer), the time by `getDateFromCoordinate()`, and a dashed preview box shows where the slot goes, or
+why the door refuses the load. A drop books the slot with `bookAt()`, or moves the slot if the shipment was booked
+already. The simulation holds its clock while a row is dragged.
 
 ### The clock: `lib/simulation/Simulator.js` and `DockSchedule#updateNow`
 
