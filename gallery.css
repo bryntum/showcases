@@ -944,7 +944,7 @@ a {
     }
 }
 
-/* Window chrome around the screenshot */
+/* The featured screenshot, framed */
 .frame {
     margin        : 0;
     overflow      : hidden;
@@ -952,32 +952,6 @@ a {
     border-radius : 0.6rem;
     background    : var(--g-surface);
     box-shadow    : var(--g-shadow);
-
-    figcaption {
-        display          : flex;
-        align-items      : center;
-        justify-content  : space-between;
-        gap              : 1rem;
-        padding          : 0.6rem 0.9rem;
-        border-block-end : 1px solid var(--g-border);
-        font-family      : var(--g-mono);
-        font-size        : 0.72rem;
-        color            : var(--g-sub);
-    }
-
-    .live {
-        display     : flex;
-        align-items : center;
-        gap         : 0.5em;
-
-        &::before {
-            content       : '';
-            width         : 0.5rem;
-            height        : 0.5rem;
-            border-radius : 50%;
-            background    : var(--g-running);
-        }
-    }
 
     img {
         display : block;
