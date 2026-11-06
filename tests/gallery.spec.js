@@ -16,30 +16,6 @@ test.describe('Gallery', () => {
         expect(errors).toEqual([]);
     });
 
-    test('the hero stack shows the seven components, in the dark screenshots in dark mode', async({ page }) => {
-        const
-            stack = page.getByRole('img', { name : /Bryntum Gantt.*AG Studio/ }),
-            tiles = stack.locator('.tile');
-
-        await expect(tiles).toHaveCount(7);
-        await expect(tiles.locator('.chip')).toHaveText(['Gantt', 'Calendar', 'Task Board', 'AG Studio', 'Scheduler',
-            'AG Charts', 'AG Grid']);
-
-        // The toggle picks the mode the page is not in, then the tiles show its screenshots
-        const
-            toggle = page.locator('.sc-scheme-toggle'),
-            grid   = stack.locator('[data-tile="ag-grid"] img');
-
-        if (await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme) !== 'dark') {
-            await toggle.click();
-        }
-
-        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-dark/);
-
-        await toggle.click();
-        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-light/);
-    });
-
     test('shows the EV Operations card', async({ page }) => {
         const card = page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' });
 
@@ -82,5 +58,51 @@ test.describe('Gallery', () => {
             .toHaveAttribute('href', 'https://www.npmjs.com/package/ag-charts-community');
         await expect(section.getByRole('link', { name : 'Source on GitHub' }))
             .toHaveAttribute('href', 'https://github.com/bryntum/showcases');
+    });
+});
+
+// The hero's stack of component tiles
+test.describe('Gallery hero', () => {
+    test.beforeEach(async({ page }) => {
+        await page.goto('./');
+    });
+
+    test('the hero stack shows the seven components, in the dark screenshots in dark mode', async({ page }) => {
+        const
+            stack = page.getByRole('img', { name : /Bryntum Gantt.*AG Studio/ }),
+            tiles = stack.locator('.tile');
+
+        await expect(tiles).toHaveCount(7);
+        await expect(tiles.locator('.chip')).toHaveText(['Gantt', 'Calendar', 'Task Board', 'AG Studio', 'Scheduler',
+            'AG Charts', 'AG Grid']);
+
+        // The toggle picks the mode the page is not in, then the tiles show its screenshots
+        const
+            toggle = page.locator('.sc-scheme-toggle'),
+            grid   = stack.locator('[data-tile="ag-grid"] img');
+
+        if (await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme) !== 'dark') {
+            await toggle.click();
+        }
+
+        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-dark/);
+
+        await toggle.click();
+        await expect.poll(() => grid.evaluate(img => img.currentSrc)).toMatch(/hero-ag-grid-light/);
+    });
+
+    test('hovering the AG Grid tile bands the row under the pointer', async({ page }) => {
+        const
+            tile = page.locator('[data-tile="ag-grid"]'),
+            box  = await tile.locator('img').boundingBox();
+
+        // The highest tile, so its middle is one of its rows. It lifts on hover, the second move is on the lifted tile
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.move(box.x + box.width / 2 + 4, box.y + box.height / 2 + 4);
+
+        const band = tile.locator('.hot[data-kind="row"][data-on] .spot');
+
+        await expect(band).toBeVisible();
+        await expect.poll(() => band.evaluate(spot => getComputedStyle(spot).opacity)).toBe('1');
     });
 });

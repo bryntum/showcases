@@ -13,6 +13,8 @@ import lctLightThumbPng from './gallery/logistics-control-tower-light-1200.png';
 import lctDarkThumb800 from './gallery/logistics-control-tower-dark-800.webp';
 import lctDarkThumb1600 from './gallery/logistics-control-tower-dark-1600.webp';
 import lctDarkThumbPng from './gallery/logistics-control-tower-dark-1200.png';
+// Generated with the hero tiles, see `hoverHotspots()`
+import hotspots from './gallery/hero-hotspots.json';
 
 const
     // Every product a showcase can be built on, in filter order, with the page its tag links to
@@ -208,3 +210,135 @@ function leanTowardsPointer(stack) {
 }
 
 leanTowardsPointer(document.querySelector('.hero-stack'));
+
+// The hover micro-interactions on the hero tiles, see `hoverHotspots()`
+const setVars = (element, values) => Object.entries(values).forEach(([name, value]) =>
+    element.style.setProperty(`--${name}`, value));
+
+/**
+ * The hotspot of a tile at a point of its screenshot: the rectangle of a `box` tile, the row of a `row` tile, `true`
+ * inside the plot of the `chart` tile
+ * @param {Object} spec The tile's entry in hero-hotspots.json
+ * @param {Number} px Percentage across the screenshot
+ * @param {Number} py Percentage down the screenshot
+ * @returns {Number[]|Boolean|undefined}
+ */
+function hotspotAt({ kind, r, plot }, px, py) {
+    const inside = ([x, y, w, h]) => px >= x && px <= x + w && py >= y && py <= y + h;
+
+    if (kind === 'chart') {
+        return inside(plot);
+    }
+
+    return r.find(rect => kind === 'row' ? py >= rect[0] && py < rect[0] + rect[1] : inside(rect));
+}
+
+/**
+ * Moves the chart's crosshair to the nearest month, the dot to the nearest series point on it, and shows its value
+ */
+function showChartPoint({ spot, dot, bubble }, { x : months, cats, series }, px, py) {
+    const
+        i       = months.reduce((best, x, index) => Math.abs(x - px) < Math.abs(months[best] - px) ? index : best, 0),
+        nearest = series.reduce((best, s) => Math.abs(s.y[i] - py) < Math.abs(best.y[i] - py) ? s : best),
+        x       = months[i],
+        y       = nearest.y[i];
+
+    setVars(spot, { x });
+    setVars(dot, { x, y });
+    // Kept inside the tile at the ends of the axis
+    setVars(bubble, { x, y, shift : x < 20 ? '-15%' : x > 80 ? '-85%' : '-50%' });
+    bubble.textContent = `${cats[i]} · ${nearest.name} ${nearest.v[i]}k`;
+}
+
+/**
+ * `?hotspots`: outlines every hotspot of every tile at once, to check them against the screenshots
+ * @param {Function} layerOf Returns the hotspot layer of a tile
+ */
+function outlineHotspots(stack, layerOf) {
+    stack.querySelectorAll('.tile').forEach(tile => {
+        const
+            { layer, spec } = layerOf(tile),
+            outline         = (values, point) => {
+                const element = document.createElement('i');
+
+                element.className = point ? 'outline point' : 'outline';
+                setVars(element, values);
+                layer.append(element);
+            };
+
+        layer.dataset.debug = '';
+
+        if (spec.kind === 'chart') {
+            const [x, y, w, h] = spec.plot;
+
+            outline({ x, y, w, h });
+            spec.series.forEach(series => series.y.forEach((y, i) => outline({ x : spec.x[i], y }, true)));
+        }
+        else {
+            spec.r.forEach(r => outline(spec.kind === 'row' ? { x : 0, y : r[0], w : 100, h : r[1] } :
+                { x : r[0], y : r[1], w : r[2], h : r[3] }));
+        }
+    });
+}
+
+/**
+ * Lights up the real element under the pointer on the hovered hero tile: a card, a bar or a day glows, the grid row
+ * gets a band, the chart a crosshair with the nearest point's value. The positions come from the rendered components
+ * (gallery/hero-hotspots.json, percentages of the screenshot, made by the tile render script), in a layer inside the
+ * tile so the tilt moves it too. Mouse only and not with reduced motion; CSS shows it on the hovered tile only
+ * @param {HTMLElement} stack The `.hero-stack`
+ */
+function hoverHotspots(stack) {
+    const
+        enabled = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)'),
+        layers  = new Map(),
+        // The layer over a tile's screenshot with the elements the effect moves, made on first use
+        layerOf = tile => {
+            if (!layers.has(tile)) {
+                const
+                    spec  = hotspots[tile.dataset.tile],
+                    layer = document.createElement('span');
+
+                layer.className    = 'hot';
+                layer.dataset.kind = spec.kind;
+                layer.innerHTML    = '<i class="spot"></i><i class="dot"></i><b class="bubble"></b>';
+                spec.plot && setVars(layer, { top : spec.plot[1], height : spec.plot[3] });
+                tile.append(layer);
+
+                const [spot, dot, bubble] = layer.children;
+
+                layers.set(tile, { layer, spec, spot, dot, bubble });
+            }
+
+            return layers.get(tile);
+        };
+
+    if (new URLSearchParams(location.search).has('hotspots')) {
+        outlineHotspots(stack, layerOf);
+    }
+
+    stack.addEventListener('pointermove', ({ target, pointerType, offsetX, offsetY }) => {
+        if (!enabled.matches || pointerType !== 'mouse' || target.localName !== 'img') {
+            return;
+        }
+
+        // The offset is in the image's own, untilted coordinates
+        const
+            parts = layerOf(target.closest('.tile')),
+            px    = offsetX / target.clientWidth * 100,
+            py    = offsetY / target.clientHeight * 100,
+            hit   = hotspotAt(parts.spec, px, py);
+
+        parts.layer.toggleAttribute('data-on', Boolean(hit));
+
+        if (hit === true) {
+            showChartPoint(parts, parts.spec, px, py);
+        }
+        else if (hit) {
+            setVars(parts.spot, parts.spec.kind === 'row' ? { y : hit[0], h : hit[1] } :
+                { x : hit[0], y : hit[1], w : hit[2], h : hit[3] });
+        }
+    });
+}
+
+hoverHotspots(document.querySelector('.hero-stack'));

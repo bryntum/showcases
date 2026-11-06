@@ -302,6 +302,11 @@ a {
     --g-tile-shadow  : light-dark(rgb(20 30 60 / 18%), rgb(0 0 0 / 55%));
     --g-chip-bryntum : var(--g-accent);
     --g-chip-ag      : light-dark(#0f8f84, #3fd0c0);
+    /* The hover micro-interactions (gallery.js): the glow, how far it reaches past the element, the outlines of
+     * `?hotspots` */
+    --g-hot          : var(--g-accent);
+    --g-hot-pad      : 0.2rem;
+    --g-hot-debug    : light-dark(#c026d3, #f0abfc);
 
     position     : relative;
     aspect-ratio : 1 / 0.86;
@@ -476,6 +481,110 @@ a {
 
     [data-family="ag"] > &::before {
         background : var(--g-chip-ag);
+    }
+}
+
+/* Over the hovered tile's screenshot, inside the tile so it shares the tilt. Positions are percentages of the
+ * screenshot (`--x`, `--y`, `--w`, `--h`, set by gallery.js). Just above the image, under the chip */
+.hot {
+    position       : absolute;
+    inset          : 1px;
+    overflow       : clip;
+    border-radius  : calc(var(--g-tile-radius) - 1px);
+    pointer-events : none;
+    transform      : translateZ(0.5px);
+
+    i,
+    b {
+        position           : absolute;
+        inset-inline-start : calc(var(--x) * 1%);
+        inset-block-start  : calc(var(--y) * 1%);
+        inline-size        : calc(var(--w) * 1%);
+        block-size         : calc(var(--h) * 1%);
+        opacity            : 0;
+        transition         : opacity 0.2s, inset 0.12s ease-out, inline-size 0.12s ease-out, block-size 0.12s ease-out;
+    }
+
+    .tile:hover > &[data-on] :is(.spot, .dot, .bubble) {
+        opacity : 1;
+    }
+
+    /* A soft glow a little larger than the card, bar, day or figure */
+    &[data-kind="box"] {
+        .spot {
+            margin        : calc(var(--g-hot-pad) * -1);
+            padding       : var(--g-hot-pad);
+            box-sizing    : content-box;
+            border-radius : calc(var(--g-hot-pad) * 2);
+            background    : color-mix(in srgb, var(--g-hot) 10%, transparent);
+            box-shadow    : 0 0 0.6rem 0.1rem color-mix(in srgb, var(--g-hot) 40%, transparent);
+        }
+    }
+
+    /* A band across the grid row */
+    &[data-kind="row"] .spot {
+        inset-inline : 0;
+        inline-size  : auto;
+        background   : color-mix(in srgb, var(--g-hot) 14%, transparent);
+    }
+
+    /* A crosshair over the plot, a dot on the nearest point and its value */
+    &[data-kind="chart"] {
+        .spot {
+            inset-block-start : calc(var(--top) * 1%);
+            inline-size       : 1px;
+            block-size        : calc(var(--height) * 1%);
+            background        : color-mix(in srgb, var(--g-text) 30%, transparent);
+            translate         : -50% 0;
+        }
+
+        .dot {
+            inline-size   : 0.4rem;
+            block-size    : 0.4rem;
+            border        : 2px solid var(--g-hot);
+            border-radius : 50%;
+            background    : var(--g-surface);
+            translate     : -50% -50%;
+        }
+
+        .bubble {
+            inline-size   : auto;
+            block-size    : auto;
+            padding       : 0.1em 0.55em;
+            border-radius : 999px;
+            font-size     : 0.5rem;
+            font-weight   : 500;
+            white-space   : nowrap;
+            color         : var(--g-bg);
+            background    : var(--g-text);
+            translate     : var(--shift) calc(-100% - 0.45rem);
+        }
+    }
+
+    &:not([data-kind="chart"]) :is(.dot, .bubble) {
+        display : none;
+    }
+
+    /* `?hotspots`: every hotspot outlined at once */
+    &[data-debug] .outline {
+        opacity    : 1;
+        outline    : 1px solid var(--g-hot-debug);
+        background : color-mix(in srgb, var(--g-hot-debug) 12%, transparent);
+        transition : none;
+
+        &.point {
+            inline-size   : 0.3rem;
+            block-size    : 0.3rem;
+            border-radius : 50%;
+            translate     : -50% -50%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        i,
+        b {
+            transition : none;
+        }
     }
 }
 
