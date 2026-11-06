@@ -66,7 +66,9 @@
 }
 
 html {
-    scroll-behavior : smooth;
+    scroll-behavior            : smooth;
+    /* In-page links land below the sticky header */
+    scroll-padding-block-start : 5rem;
 
     @media (prefers-reduced-motion: reduce) {
         scroll-behavior : auto;
@@ -193,7 +195,13 @@ a {
 
 /* Top navigation */
 .site-header {
-    border-block-end : 1px solid var(--g-border-soft);
+    position          : sticky;
+    inset-block-start : 0;
+    z-index           : 10;
+    border-block-end  : 1px solid var(--g-border-soft);
+    /* Translucent so the page scrolls visibly under it */
+    background        : color-mix(in srgb, var(--g-bg) 85%, transparent);
+    backdrop-filter   : blur(12px);
 
     .wrap {
         display       : flex;
