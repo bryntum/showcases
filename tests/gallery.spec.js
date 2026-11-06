@@ -75,6 +75,35 @@ test.describe('Gallery', () => {
     });
 });
 
+/**
+ * In the page: a point where the `upper` image covers the `lower` one, and one where the `lower` one shows
+ * @param {String[]} selectors The `lower` and `upper` images
+ * @returns {{ overlap : Number[], visible : Number[] }}
+ */
+function overlapOf([lower, upper]) {
+    const
+        [below, above]               = [lower, upper].map(selector => document.querySelector(selector)),
+        { left, top, width, height } = below.getBoundingClientRect(),
+        found                        = {};
+
+    for (let fy = 0.05; fy < 1; fy += 0.05) {
+        for (let fx = 0.05; fx < 1; fx += 0.05) {
+            const
+                point = [left + width * fx, top + height * fy],
+                hit   = document.elementsFromPoint(...point);
+
+            if (hit[0] === above && hit.includes(below)) {
+                found.overlap ??= point;
+            }
+            else if (hit[0] === below) {
+                found.visible ??= point;
+            }
+        }
+    }
+
+    return found;
+}
+
 // The hero's stack of component tiles
 test.describe('Gallery hero', () => {
     test.beforeEach(async({ page }) => {
@@ -118,5 +147,34 @@ test.describe('Gallery hero', () => {
 
         await expect(band).toBeVisible();
         await expect.poll(() => band.evaluate(spot => getComputedStyle(spot).opacity)).toBe('1');
+    });
+
+    test('hovering a tile brings it to the front, the Scheduler above AG Grid', async({ page }) => {
+        // No lean nor transitions, so the tiles stay where they are measured
+        await page.emulateMedia({ reducedMotion : 'reduce' });
+        await page.reload();
+
+        const
+            points = await page.evaluate(overlapOf, ['[data-tile="scheduler"] img', '[data-tile="ag-grid"] img']),
+            topAt  = point => page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('.tile')?.dataset.tile,
+                point);
+
+        expect(points.overlap).toBeDefined();
+        expect(await topAt(points.overlap)).toBe('ag-grid');
+
+        await page.mouse.move(...points.visible);
+        await expect.poll(() => topAt(points.overlap)).toBe('scheduler');
+
+        // Settles back when the pointer leaves
+        await page.mouse.move(1, 1);
+        await expect.poll(() => topAt(points.overlap)).toBe('ag-grid');
+    });
+
+    test('the hero screenshots cannot be dragged', async({ page }) => {
+        const images = page.locator('.hero-stack img');
+
+        await expect(images).toHaveCount(7);
+        expect(await images.evaluateAll(all => all.map(image => image.getAttribute('draggable'))))
+            .toEqual(Array(7).fill('false'));
     });
 });

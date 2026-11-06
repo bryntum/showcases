@@ -307,10 +307,21 @@ a {
     --g-hot          : var(--g-accent);
     --g-hot-pad      : 0.2rem;
     --g-hot-debug    : light-dark(#c026d3, #f0abfc);
+    /* The viewer's distance (rem, the perspective) and the height the hovered tile rises to (rem, above the AG Grid
+     * tile and its float). The tile rises and settles softly, the glow is quick */
+    --g-eye          : 150;
+    --g-rise-top     : 10;
+    --g-rise         : 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+    --g-glow         : 0.12s ease-out;
 
-    position     : relative;
-    aspect-ratio : 1 / 0.86;
-    perspective  : 2400px;
+    position          : relative;
+    aspect-ratio      : 1 / 0.86;
+    perspective       : calc(var(--g-eye) * 1rem);
+    /* The tiles find the eye in `cqi` of the stack */
+    container-type    : inline-size;
+    /* Decorative: dragging a tile shows no ghost image and selects nothing */
+    user-select       : none;
+    -webkit-user-drag : none;
 
     /* Below the text on tablets, gone on phones where it would be too small to read as anything */
     @media (width < 60rem) {
@@ -335,23 +346,53 @@ a {
 }
 
 .stack-scene {
+    /* The tilt, shared with the tiles */
+    --tilt-x        : calc(22deg - var(--py) * 4deg);
+    --tilt-y        : calc(-18deg + var(--px) * 5deg);
+    --tilt-z        : 5deg;
+
     position        : absolute;
     inset           : 0;
     padding         : 0;
     list-style      : none;
     transform-style : preserve-3d;
-    transform       : rotateX(calc(22deg - var(--py) * 4deg)) rotateY(calc(-18deg + var(--px) * 5deg)) rotateZ(5deg);
+    transform       : rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(var(--tilt-z));
+    /* Only the tiles take the pointer: the Gantt tile lies in the scene's own plane, which could win the hit test */
+    pointer-events  : none;
     transition      : transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .tile {
     position           : absolute;
-    inset-inline-start : var(--x);
-    inset-block-start  : var(--y);
+    inset-inline-start : calc(var(--x) * 1%);
+    inset-block-start  : calc(var(--y) * 1%);
     width              : var(--w);
+    /* The line of sight in the scene's own coordinates (the screen's z axis turned back by the tilt), and the eye on
+     * it relative to the tile. Scaling the tile about the eye moves it towards the viewer without changing what the
+     * viewer sees: hovered, it rises to `--g-rise-top`, in front of every other tile and still under the pointer.
+     * `--pop` grows it a touch about its centre */
+    --sight-x          : calc(sin(var(--tilt-x)) * sin(var(--tilt-z)) -
+        cos(var(--tilt-x)) * sin(var(--tilt-y)) * cos(var(--tilt-z)));
+    --sight-y          : calc(sin(var(--tilt-x)) * cos(var(--tilt-z)) +
+        cos(var(--tilt-x)) * sin(var(--tilt-y)) * sin(var(--tilt-z)));
+    --sight-z          : calc(cos(var(--tilt-x)) * cos(var(--tilt-y)));
+    --eye-x            : calc(50cqi - var(--x) * 1cqi + var(--g-eye) * var(--sight-x) * 1rem);
+    --eye-y            : calc(43cqi - var(--y) * 0.86cqi + var(--g-eye) * var(--sight-y) * 1rem);
+    --eye-z            : calc((var(--g-eye) * var(--sight-z) - var(--z)) * 1rem);
+    --scale            : 1;
+    --pop              : 1;
+
+    pointer-events     : auto;
     transform-style    : preserve-3d;
-    transform          : translateZ(var(--z));
-    transition         : transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transform-origin   : 0 0;
+    transform          : translateZ(calc(var(--z) * 1rem))
+        translate3d(var(--eye-x), var(--eye-y), var(--eye-z))
+        scale3d(var(--scale), var(--scale), var(--scale))
+        translate3d(calc(var(--eye-x) * -1), calc(var(--eye-y) * -1), calc(var(--eye-z) * -1))
+        translate(50%, 50%) scale(var(--pop)) translate(-50%, -50%);
+    /* Depth changes with the movement, so the tile passes the others smoothly. An interrupted rise turns back from
+     * where it is */
+    transition         : transform var(--g-rise);
     animation          : tile-float 7s ease-in-out var(--delay, 0s) infinite alternate;
 
     img {
@@ -364,77 +405,91 @@ a {
         /* A contact shadow and a soft one, both deeper for the higher tiles */
         box-shadow    : 0 1px 2px var(--g-tile-shadow),
             0 calc(0.6rem + var(--lift) * 1.6rem) calc(1.4rem + var(--lift) * 2.6rem) -0.4rem var(--g-tile-shadow);
-        transition    : box-shadow 0.35s;
+    }
+
+    /* The deep shadow of the risen tile, faded in: animating the image's own shadow would repaint it every frame */
+    &::after {
+        content        : '';
+        position       : absolute;
+        inset          : 0;
+        border-radius  : var(--g-tile-radius);
+        box-shadow     : 0 3.5rem 5rem -1rem var(--g-tile-shadow);
+        opacity        : 0;
+        pointer-events : none;
+        transition     : opacity var(--g-rise);
     }
 
     &:hover {
-        transform : translateZ(calc(var(--z) + 3.5rem));
+        --scale : calc((var(--g-eye) * var(--sight-z) - var(--g-rise-top)) /
+            (var(--g-eye) * var(--sight-z) - var(--z)));
+        --pop   : 1.03;
 
-        img {
-            box-shadow : 0 1px 2px var(--g-tile-shadow), 0 3.5rem 5rem -1rem var(--g-tile-shadow);
+        &::after {
+            opacity : 1;
         }
     }
 
-    /* Back to front, the AG Grid and AG Charts tiles biggest and highest */
+    /* Back to front, the AG Grid and AG Charts tiles biggest and highest. `--x` and `--y` are percentages of
+     * the stack, `--z` the height in rem */
     &[data-tile="gantt"] {
-        --x     : 0%;
-        --y     : 4%;
+        --x     : 0;
+        --y     : 4;
         --w     : 40%;
-        --z     : 0rem;
+        --z     : 0;
         --lift  : 0;
         --delay : -1s;
     }
 
     &[data-tile="calendar"] {
-        --x     : 35%;
-        --y     : -2%;
+        --x     : 35;
+        --y     : -2;
         --w     : 38%;
-        --z     : 0.5rem;
+        --z     : 0.5;
         --lift  : 0.1;
         --delay : -3s;
     }
 
     &[data-tile="taskboard"] {
-        --x     : 68%;
-        --y     : 9%;
+        --x     : 68;
+        --y     : 9;
         --w     : 32%;
-        --z     : 1.5rem;
+        --z     : 1.5;
         --lift  : 0.2;
         --delay : -5s;
     }
 
     &[data-tile="ag-studio"] {
-        --x     : 54%;
-        --y     : 31%;
+        --x     : 54;
+        --y     : 31;
         --w     : 46%;
-        --z     : 3.5rem;
+        --z     : 3.5;
         --lift  : 0.45;
         --delay : -2s;
     }
 
     &[data-tile="scheduler"] {
-        --x     : 0%;
-        --y     : 35%;
+        --x     : 0;
+        --y     : 35;
         --w     : 36%;
-        --z     : 2.5rem;
+        --z     : 2.5;
         --lift  : 0.35;
         --delay : -6s;
     }
 
     &[data-tile="ag-charts"] {
-        --x     : 54%;
-        --y     : 58%;
+        --x     : 54;
+        --y     : 58;
         --w     : 46%;
-        --z     : 6rem;
+        --z     : 6;
         --lift  : 0.75;
         --delay : -4s;
     }
 
     &[data-tile="ag-grid"] {
-        --x     : 4%;
-        --y     : 55%;
+        --x     : 4;
+        --y     : 55;
         --w     : 53%;
-        --z     : 8rem;
+        --z     : 8;
         --lift  : 1;
         --delay : 0s;
     }
@@ -443,7 +498,7 @@ a {
         animation  : none;
         transition : none;
 
-        img {
+        &::after {
             transition : none;
         }
     }
@@ -502,7 +557,8 @@ a {
         inline-size        : calc(var(--w) * 1%);
         block-size         : calc(var(--h) * 1%);
         opacity            : 0;
-        transition         : opacity 0.2s, inset 0.12s ease-out, inline-size 0.12s ease-out, block-size 0.12s ease-out;
+        /* Only the glow fades, it jumps to the next element: animating its box would lay out every frame */
+        transition         : opacity var(--g-glow);
     }
 
     .tile:hover > &[data-on] :is(.spot, .dot, .bubble) {

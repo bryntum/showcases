@@ -175,39 +175,75 @@ document.querySelector('.site-actions').prepend(createColorSchemeToggle({
 }));
 
 /**
- * Leans the hero's component stack towards the pointer, as `--px` / `--py` from -1 to 1 (gallery.css). Not for touch,
- * nor with reduced motion. One write per frame
+ * Leans the hero's component stack towards the pointer anywhere in the hero's band of the page, margins included,
+ * as `--px` / `--py` from -1 to 1 (gallery.css): from the stack's centre to the band's edge on each side. Eases back
+ * to rest when the pointer leaves the band or the hero scrolls away. Not for touch, nor with reduced motion. The
+ * rectangles are read once per scroll or resize, one write per frame
  * @param {HTMLElement} stack The `.hero-stack`
  */
 function leanTowardsPointer(stack) {
     const
         hero   = stack.closest('.hero'),
-        motion = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover)');
+        motion = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover)'),
+        clamp  = value => Math.max(-1, Math.min(1, value)),
+        // -1 at the near edge, 0 at the centre, 1 at the far edge
+        along  = (value, start, centre, end) =>
+            clamp((value - centre) / (value < centre ? centre - start : end - centre)),
+        rest   = () => {
+            cancelAnimationFrame(frame);
+            frame = 0;
+            stack.style.removeProperty('--px');
+            stack.style.removeProperty('--py');
+        };
 
-    let frame = 0;
+    let frame = 0, inView = false, rects = null, pointer = null;
 
-    hero.addEventListener('pointermove', ({ clientX, clientY }) => {
-        if (!motion.matches || frame) {
+    const measure = () => {
+        const
+            { top, bottom } = hero.getBoundingClientRect(),
+            centre          = stack.getBoundingClientRect();
+
+        // The hero's height, the window's width
+        return {
+            area : { left : 0, right : document.documentElement.clientWidth, top, bottom },
+            cx   : centre.left + centre.width / 2,
+            cy   : centre.top + centre.height / 2
+        };
+    };
+
+    addEventListener('scroll', () => rects = null, { passive : true });
+    addEventListener('resize', () => rects = null);
+    new IntersectionObserver(([entry]) => {
+        inView = entry.isIntersecting;
+        inView || rest();
+    }).observe(hero);
+
+    addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+        if (!motion.matches || !inView || pointerType !== 'mouse') {
             return;
         }
 
-        frame = requestAnimationFrame(() => {
-            const
-                { left, top, width, height } = hero.getBoundingClientRect(),
-                clamp                        = value => Math.max(-1, Math.min(1, value));
-
-            stack.style.setProperty('--px', clamp((clientX - left) / width * 2 - 1).toFixed(3));
-            stack.style.setProperty('--py', clamp((clientY - top) / height * 2 - 1).toFixed(3));
+        pointer = [clientX, clientY];
+        frame ||= requestAnimationFrame(() => {
             frame = 0;
-        });
-    });
+            rects ??= measure();
 
-    hero.addEventListener('pointerleave', () => {
-        cancelAnimationFrame(frame);
-        frame = 0;
-        stack.style.removeProperty('--px');
-        stack.style.removeProperty('--py');
-    });
+            const
+                { area, cx, cy } = rects,
+                [x, y]           = pointer;
+
+            if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
+                rest();
+                return;
+            }
+
+            stack.style.setProperty('--px', along(x, area.left, cx, area.right).toFixed(3));
+            stack.style.setProperty('--py', along(y, area.top, cy, area.bottom).toFixed(3));
+        });
+    }, { passive : true });
+
+    // Out of the window
+    document.documentElement.addEventListener('pointerleave', rest);
 }
 
 leanTowardsPointer(document.querySelector('.hero-stack'));
@@ -217,8 +253,8 @@ const setVars = (element, values) => Object.entries(values).forEach(([name, valu
     element.style.setProperty(`--${name}`, value));
 
 /**
- * The hotspot of a tile at a point of its screenshot: the rectangle of a `box` tile, the row of a `row` tile, `true`
- * inside the plot of the `chart` tile
+ * The hotspot of a tile at a point of its screenshot: the smallest rectangle of a `box` tile there, the row of a `row`
+ * tile, `true` inside the plot of the `chart` tile
  * @param {Object} spec The tile's entry in hero-hotspots.json
  * @param {Number} px Percentage across the screenshot
  * @param {Number} py Percentage down the screenshot
@@ -231,7 +267,13 @@ function hotspotAt({ kind, r, plot }, px, py) {
         return inside(plot);
     }
 
-    return r.find(rect => kind === 'row' ? py >= rect[0] && py < rect[0] + rect[1] : inside(rect));
+    if (kind === 'row') {
+        return r.find(([y, h]) => py >= y && py < y + h);
+    }
+
+    // The innermost of nested ones, like a chart inside a dashboard panel: the smallest
+    return r.filter(inside).reduce((best, rect) => !best || rect[2] * rect[3] < best[2] * best[3] ? rect : best,
+        undefined);
 }
 
 /**
@@ -316,6 +358,10 @@ function hoverHotspots(stack) {
 
     if (new URLSearchParams(location.search).has('hotspots')) {
         outlineHotspots(stack, layerOf);
+    }
+    // Built ahead, so the first hover only moves a glow
+    else if (enabled.matches) {
+        (globalThis.requestIdleCallback ?? setTimeout)(() => stack.querySelectorAll('.tile').forEach(layerOf));
     }
 
     stack.addEventListener('pointermove', ({ target, pointerType, offsetX, offsetY }) => {
