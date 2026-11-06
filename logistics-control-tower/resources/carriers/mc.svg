@@ -1,6 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-<defs><linearGradient id="g-MC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9333ea"/><stop offset="1" stop-color="#581c87"/></linearGradient></defs>
-<rect width="100" height="100" rx="22" fill="url(#g-MC)"/>
-<g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="40" r="22"/></g><path d="M50 22 L56 40 L50 58 L44 40 Z" fill="#fff"/><path d="M50 40 L56 40 L50 58 L44 40 Z" fill="#fff" opacity=".45"/>
-<text x="50" y="84" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="17" letter-spacing="2" fill="#fff">MC</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" role="img" aria-label="Meridian Cargo">
+<rect width="100" height="100" rx="22" fill="#8e24aa"/>
+<rect x="23" y="51" width="25" height="25" rx="3" fill="#fff"/><rect x="52" y="51" width="25" height="25" rx="3" fill="#fff"/><rect x="37.5" y="23" width="25" height="25" rx="3" fill="#fff"/>
 </svg>

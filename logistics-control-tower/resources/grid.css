@@ -119,6 +119,11 @@
     align-items : center;
     gap         : 0.75em;
 
+    /* Room for the longest name, so the counts after it line up from one carrier to the next */
+    .lct-carrier-name {
+        min-inline-size : 8em;
+    }
+
     /* More room after the name than between the rest, so the name stands apart */
     .lct-group-count {
         margin-inline-start  : 0.5em;

@@ -1,6 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-<defs><linearGradient id="g-BX" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#134e4a"/></linearGradient></defs>
-<rect width="100" height="100" rx="22" fill="url(#g-BX)"/>
-<g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M54 18 L36 42 H50 L44 62 L64 36 H50 Z" fill="#fff"/><path d="M20 34 H30 M16 44 H28"/></g>
-<text x="50" y="84" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="17" letter-spacing="2" fill="#fff">BX</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" role="img" aria-label="Baltic Express">
+<rect width="100" height="100" rx="22" fill="#00897b"/>
+<path d="M20 32 q7.5 -8 15 0 t15 0 t15 0 t15 0M20 50 q7.5 -8 15 0 t15 0 t15 0 t15 0M20 70 H76M66 60 L78 70 L66 80" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

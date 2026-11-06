@@ -190,7 +190,7 @@ export const shipmentColumns = [
     {
         field        : 'carrier',
         headerName   : 'Carrier',
-        width        : 170,
+        width        : 190,
         rowGroup     : true,
         hide         : true,
         cellRenderer : renderCarrier,
