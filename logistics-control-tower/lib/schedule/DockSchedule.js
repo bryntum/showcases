@@ -17,16 +17,14 @@ const
         unloading : 'purple',
         done      : 'gray'
     },
-    // The zoom levels, one header row each, as tall as the grid's column headers. Times are labelled at the start of
-    // their tick, so the time under the pointer reads off the axis. `lct-hour` is the default the Day button returns
-    // to, at which a 40 minute slot is wide enough for its number (see the container queries in schedule.css)
+    // The three zoom levels, an overview, the hours of the day and the detail, one header row each, as tall as the
+    // grid's column headers. Times are labelled at the start of their tick, so the time under the pointer reads off the
+    // axis. `lct-hour` is the default the Day button returns to
     timeHeader   = (unit, increment, dateFormat) => [{ unit, increment, dateFormat, align : 'start' }],
     presets      = [
-        { id : 'lct-6h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 6, 'ddd HH:mm') },
         { id : 'lct-2h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 2, 'HH:mm') },
         { id : 'lct-hour', base : 'hourAndDay', tickWidth : 80, headers : timeHeader('hour', 1, 'HH:mm') },
-        { id : 'lct-30m', base : 'minuteAndHour', tickWidth : 70, headers : timeHeader('minute', 30, 'HH:mm') },
-        { id : 'lct-15m', base : 'minuteAndHour', tickWidth : 70, headers : timeHeader('minute', 15, 'HH:mm') }
+        { id : 'lct-30m', base : 'minuteAndHour', tickWidth : 70, headers : timeHeader('minute', 30, 'HH:mm') }
     ];
 
 /**
@@ -72,6 +70,8 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         viewPreset                : 'lct-hour',
         // Zooming changes the scale, not the days the timeline spans
         zoomKeepsOriginalTimespan : true,
+        // Zooming glides between the presets instead of jumping, see onZoomIn / onZoomOut
+        smoothZoom                : true,
         // Slots on a door are kept apart by the engine (the dependency chain), not by overlap prevention
         allowOverlap              : true,
         multiEventSelect          : false,
@@ -247,25 +247,35 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         this.widgetMap.doors.html = `${doors.length} doors · ${cold} cold`;
     }
 
-    // Zooms keep the playhead where the view keeps it, a quarter in
-    async zoomAroundNow(zoom) {
-        await zoom();
+    // The buttons step between the three presets, gliding (smoothZoom with `animate`). Stepping by preset rather than
+    // by smooth zoom's own continuous levels keeps exactly three, each with its own tick. The playhead stays where the
+    // view keeps it, a quarter in, and at either end the button is disabled rather than doing nothing
+    async zoomToPreset(index) {
+        const me = this;
 
-        if (!this.isDestroyed) {
-            this.scrollToNow();
+        await me.zoomToLevel(presets[index].id, { centerDate : me.now, animate : true });
+
+        if (!me.isDestroyed) {
+            me.scrollToNow();
+            me.widgetMap.zoomOut.disabled = index === 0;
+            me.widgetMap.zoomIn.disabled  = index === presets.length - 1;
         }
     }
 
+    get presetIndex() {
+        return presets.findIndex(preset => preset.id === this.viewPreset.id);
+    }
+
     onZoomIn() {
-        this.zoomAroundNow(() => this.zoomIn(1, { centerDate : this.now }));
+        this.zoomToPreset(Math.min(this.presetIndex + 1, presets.length - 1));
     }
 
     onZoomOut() {
-        this.zoomAroundNow(() => this.zoomOut(1, { centerDate : this.now }));
+        this.zoomToPreset(Math.max(this.presetIndex - 1, 0));
     }
 
     onZoomDay() {
-        this.zoomAroundNow(() => this.zoomToLevel('lct-hour', { centerDate : this.now }));
+        this.zoomToPreset(presets.findIndex(preset => preset.id === 'lct-hour'));
     }
 
     //endregion
