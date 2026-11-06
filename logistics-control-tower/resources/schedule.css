@@ -327,7 +327,7 @@
         box-sizing        : border-box;
         block-size        : 100%;
         justify-content   : flex-end;
-        padding           : 10px 10px 0;
+        padding           : 10px 6px 0;
         border-inline-end : none;
     }
 
@@ -343,12 +343,11 @@
     --lct-util-color : var(--lct-util);
 
     min-block-size            : 2px;
-    border-block-start        : 2px solid color-mix(in srgb, var(--lct-util-color) 85%, var(--lct-surface));
     border-start-start-radius : 4px;
     border-start-end-radius   : 4px;
     background                : linear-gradient(
-        color-mix(in srgb, var(--lct-util-color) 42%, var(--lct-surface)),
-        color-mix(in srgb, var(--lct-util-color) 14%, var(--lct-surface))
+        color-mix(in srgb, var(--lct-util-color) 36%, var(--lct-surface)),
+        color-mix(in srgb, var(--lct-util-color) 20%, var(--lct-surface))
     );
 
     &.lct-util-over {
