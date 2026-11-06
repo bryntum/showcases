@@ -120,7 +120,7 @@ export const shipmentColumns = [
         headerName           : 'ETA drift',
         // The largest share of any room to spare, a longer line reads better
         flex                 : 160,
-        minWidth             : 82,
+        minWidth             : 76,
         maxWidth             : 260,
         sortable             : false,
         filter               : false,
@@ -146,8 +146,10 @@ export const shipmentColumns = [
     {
         field                 : 'temperature',
         headerName            : 'Temp',
-        // As wide as −17.3 °C, the numbers line up on the right
-        width                 : 96,
+        // −17.9 °C with room before the grid's edge, more where the grid has it. The numbers line up on the right
+        flex                  : 102,
+        minWidth              : 102,
+        maxWidth              : 140,
         type                  : 'rightAligned',
         cellRenderer          : TemperatureCellRenderer,
         enableCellChangeFlash : true,
