@@ -928,11 +928,31 @@ a {
             border-block-end      : 1px solid var(--g-border-soft);
         }
 
-        .index {
-            font-family : var(--g-mono);
-            font-size   : 0.75rem;
-            line-height : 1.9;
-            color       : var(--g-faint);
+        /* A thin icon per feature, Phosphor Light like the showcase, in the muted text colour */
+        .view-icon {
+            inline-size        : 1.15rem;
+            block-size         : 1.15rem;
+            margin-block-start : 0.15rem;
+            background-color   : var(--g-faint);
+            mask-position      : center;
+            mask-size          : contain;
+            mask-repeat        : no-repeat;
+
+            &[data-icon="truck"] {
+                mask-image : url('./gallery/icons/truck.svg');
+            }
+
+            &[data-icon="warehouse"] {
+                mask-image : url('./gallery/icons/warehouse.svg');
+            }
+
+            &[data-icon="chart-bar"] {
+                mask-image : url('./gallery/icons/chart-bar.svg');
+            }
+
+            &[data-icon="clock-countdown"] {
+                mask-image : url('./gallery/icons/clock-countdown.svg');
+            }
         }
 
         strong {
