@@ -853,7 +853,8 @@ a {
     .featured-grid {
         display               : grid;
         grid-template-columns : minmax(0, 1.65fr) minmax(0, 1fr);
-        align-items           : center;
+        /* Both columns start at the top: the screenshot lines up with the title, not centred against the text */
+        align-items           : start;
         gap                   : 3rem 4rem;
 
         @media (max-width: 56rem) {
