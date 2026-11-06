@@ -50,7 +50,7 @@
     }
 
     .lct-legend-busy .lct-swatch {
-        background-color : var(--lct-util-high);
+        background-color : var(--lct-util-over);
     }
 
     .lct-legend-note {

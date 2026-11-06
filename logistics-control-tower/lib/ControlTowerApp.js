@@ -22,7 +22,8 @@ import './schedule/DockSchedule.js';
  * Scheduler's project the dock doors and the booked slots. GridSync mirrors both into AG Grid, GridDropZone lets
  * shipments be dragged from the grid onto a door.
  *
- * Below 900px wide the app is `compact` (the Responsive mixin): the grid and the schedule stack.
+ * Below 900px wide the app is `compact` (the Responsive mixin): the grid and the schedule stack. Below 1280px the
+ * header makes room for the counters, Simulate delay shows its icon only.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
@@ -47,11 +48,19 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
          */
         compact : null,
 
-        // Both of the default narrow states (small, medium) are compact, below 900px
+        /**
+         * `true` while there is room in the header for the Simulate delay label, set by the `responsive` states
+         * @prp {Boolean}
+         */
+        delayLabel : null,
+
+        // Both of the default narrow states (small, medium) are compact, below 900px. Below 1280px the counters need
+        // the room of the Simulate delay label
         responsive : {
-            small  : { when : 400, compact : true },
-            medium : { when : 900, compact : true },
-            '*'    : { compact : false }
+            small  : { when : 400, compact : true, delayLabel : false },
+            medium : { when : 900, compact : true, delayLabel : false },
+            large  : { when : 1280, compact : false, delayLabel : false },
+            '*'    : { compact : false, delayLabel : true }
         },
 
         cls     : 'lct-app',
@@ -250,15 +259,18 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
     }
 
     // The grid and the schedule stack on narrow screens, half the height each, see schedule.css. Wide, they share
-    // the width 12 to 9. Simulate delay is its icon, the counters keep the room. The flex is the widgets' own, a
-    // stylesheet can not override their inline flex
+    // the width 12 to 9. The flex is the widgets' own, a stylesheet can not override their inline flex
     updateCompact(compact) {
-        const { grid, schedule, delay } = this.widgetMap;
+        const { grid, schedule } = this.widgetMap;
 
         this.toggleCls('lct-compact', compact);
         grid.flex     = compact ? '1 1 50%' : 12;
         schedule.flex = compact ? '1 1 50%' : 9;
-        delay.text    = compact ? null : 'Simulate delay';
+    }
+
+    // Without its label Simulate delay is its icon, the tooltip tells what it does
+    updateDelayLabel(delayLabel) {
+        this.widgetMap.delay.text = delayLabel ? 'Simulate delay' : null;
     }
 }
 

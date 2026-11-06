@@ -5,7 +5,7 @@ const
     url      = './logistics-control-tower/',
     // A shipment with a dock slot booked at load, the same in every run (seeded data)
     bookedId = 'SHP-10069',
-    otherId  = 'SHP-10061',
+    otherId  = 'SHP-10066',
     // The quick search narrows the grid to SHP-10060 - SHP-10069, so both rows render
     search   = 'SHP-1006',
     // The app's widgets, once rendered

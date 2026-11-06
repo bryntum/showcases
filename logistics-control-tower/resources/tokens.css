@@ -17,27 +17,28 @@
     /* Reefer loads and cold store doors */
     --lct-cold      : light-dark(color-mix(in srgb, var(--b-color-blue) 85%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-blue) 70%, var(--b-color-white)));
-    /* The utilization bars, orange above 90% */
-    --lct-util      : var(--b-neutral-85);
-    --lct-util-high : var(--b-color-orange);
+    /* The utilization bars: a soft slate, the neutral the theme draws borders with tinted towards the playhead's
+     * blue, and over 90% the orange of at risk */
+    --lct-util      : color-mix(in srgb, var(--b-color-blue) 14%, var(--b-neutral-85));
+    --lct-util-over : var(--lct-at-risk);
 
     /* Neutrals, from the theme */
-    --lct-surface   : var(--b-neutral-100);
-    --lct-sunken    : var(--b-neutral-98);
-    --lct-border    : var(--b-border-7);
-    --lct-ink       : var(--b-text-1);
-    --lct-ink-sub   : var(--b-text-2);
-    --lct-ink-faint : var(--b-neutral-55);
-    --lct-past      : light-dark(color-mix(in srgb, var(--b-color-black) 4%, transparent),
+    --lct-surface       : var(--b-neutral-100);
+    --lct-sunken        : var(--b-neutral-98);
+    --lct-border        : var(--b-border-7);
+    --lct-ink           : var(--b-text-1);
+    --lct-ink-sub       : var(--b-text-2);
+    --lct-ink-faint     : var(--b-neutral-55);
+    --lct-past          : light-dark(color-mix(in srgb, var(--b-color-black) 4%, transparent),
         color-mix(in srgb, var(--b-color-black) 22%, transparent));
     /* The panel title bars, the column headers and the rows of both views: one rhythm, see AgGridSetup.js and
      * DockSchedule.js for the rows */
-    --lct-bar-height : 44px;
+    --lct-bar-height    : 44px;
     /* The grid's footer and the schedule's utilization strip, side by side */
     --lct-footer-height : 56px;
 
     /* Blue, red means late and conflicts */
-    --lct-playhead  : var(--b-color-blue);
+    --lct-playhead : var(--b-color-blue);
 
     /* Status colour of any element with a status class */
     .lct-status-on-time { --lct-color : var(--lct-on-time); }

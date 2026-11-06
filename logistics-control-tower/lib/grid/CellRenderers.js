@@ -145,18 +145,14 @@ export function renderLoad({ value }) {
 }
 
 /**
- * Reefer temperature after a snowflake, an amber warning chip when it is more than 2 °C off its set point, a dash for
+ * Reefer temperature after a snowflake, an amber warning chip when it is more than 2 °C off its set point, nothing for
  * the loads which are not chilled
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */
 export function renderTemperature({ data, value }) {
-    if (!data) {
+    if (!data || value == null) {
         return '';
-    }
-
-    if (value == null) {
-        return element({ tag : 'span', class : 'lct-none', text : '—' });
     }
 
     const off = Math.abs(value - data.setpoint) > 2;

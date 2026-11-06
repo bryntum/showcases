@@ -8,6 +8,7 @@
  * schedule's time axis line up */
 .lct-panel-bar {
     --b-toolbar-padding : 0 var(--sc-panel-padding);
+    --b-toolbar-gap     : 0.7em;
 
     /* Its tools can give way to the room it has, see schedule.css */
     container        : lct-bar / inline-size;
@@ -15,8 +16,6 @@
     block-size       : var(--lct-bar-height);
     /* Inside the height, the line the grid's column headers have too */
     border-block-end : 1px solid var(--b-border-6);
-
-    --b-toolbar-gap     : 0.7em;
 
     .lct-panel-title {
         font-weight : 600;
@@ -101,10 +100,6 @@
     .lct-delay-risk {
         font-weight : 600;
         color       : var(--lct-at-risk);
-    }
-
-    .lct-none {
-        color : var(--lct-ink-faint);
     }
 
     /* The status bar is the grid's footer, as tall as the dock schedule's utilization strip */

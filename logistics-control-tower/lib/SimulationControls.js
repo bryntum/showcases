@@ -41,10 +41,11 @@ export default class SimulationControls extends Container {
                     speed15 : { text : '15×', tooltip : '15 simulated minutes per tick', onToggle : 'up.onSpeedToggle' }
                 }
             },
+            // Secondary, Play / Pause is the one primary button
             delay : {
                 type      : 'button',
                 cls       : 'lct-delay',
-                rendition : 'outlined',
+                rendition : 'text',
                 icon      : icon('lightning'),
                 text      : 'Simulate delay',
                 tooltip   : 'Makes a truck with a booked slot run 30 to 75 minutes late',

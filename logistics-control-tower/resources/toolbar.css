@@ -20,12 +20,12 @@
 
     /* The date and the site above the clock */
     .lct-clock {
-        flex               : none;
-        display            : flex;
-        flex-direction     : column;
-        gap                : 0.15em;
-        margin-inline-end  : 2em;
-        white-space        : nowrap;
+        flex              : none;
+        display           : flex;
+        flex-direction    : column;
+        gap               : 0.15em;
+        margin-inline-end : 2em;
+        white-space       : nowrap;
     }
 
     .lct-clock-day {
@@ -52,7 +52,7 @@
         column-gap            : 0.45em;
         row-gap               : 0.1em;
         min-width             : 5.6em;
-        padding               : 0.4em 0.85em;
+        padding               : 0.35em 0.7em;
         border-radius         : var(--sc-radius);
         white-space           : nowrap;
     }
@@ -129,8 +129,16 @@
     }
 }
 
-/* The outlined buttons of the header and the dock schedule read as neutral, the filled Play / Pause is the accent */
-.lct-delay, .lct-resolve {
+/* Simulate delay is a quiet secondary action, neutral text until hovered. The text rendition's own variables are set
+ * by the theme on the button, so the resolved ones are set here */
+.lct-controls .lct-delay.b-button-text {
+    --b-button-color             : var(--lct-ink-sub);
+    --b-button-hover-background  : var(--b-neutral-95);
+    --b-button-active-background : var(--b-neutral-90);
+}
+
+/* The outlined Resolve conflicts button reads as neutral, the filled Play / Pause is the accent */
+.lct-resolve {
     --b-button-outlined-color        : var(--lct-ink);
     --b-button-outlined-border-color : var(--lct-border);
 }

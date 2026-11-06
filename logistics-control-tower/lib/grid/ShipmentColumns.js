@@ -130,7 +130,9 @@ export const shipmentColumns = [
     {
         field                 : 'temperature',
         headerName            : 'Temp',
-        width                 : 92,
+        // As wide as −17.3 °C, the numbers line up on the right
+        width                 : 96,
+        type                  : 'rightAligned',
         cellRenderer          : renderTemperature,
         enableCellChangeFlash : true,
         filter                : 'agNumberColumnFilter'

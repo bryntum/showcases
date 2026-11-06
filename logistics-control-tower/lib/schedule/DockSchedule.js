@@ -19,14 +19,16 @@ const
     // The playhead is kept this far into the visible timeline
     nowAnchor    = 0.25,
     // The zoom levels, one header row each, as tall as the grid's column headers. Hours labelled at their start, so a
-    // time under the pointer reads off the axis. `hour` is the default, the Day button goes back to it
+    // time under the pointer reads off the axis. `hour` is the default, the Day button goes back to it: five and a
+    // quarter hours across the timeline at 1440px wide, where a slot of 40 minutes shows its number, one of 45 its
+    // pallets too
     timeHeader   = (unit, increment, dateFormat) => [{ unit, increment, dateFormat, align : 'start' }],
     presets      = [
         { id : 'lct-6h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 6, 'ddd HH:mm') },
         { id : 'lct-2h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 2, 'HH:mm') },
-        { id : 'lct-hour', base : 'hourAndDay', tickWidth : 120, headers : timeHeader('hour', 1, 'HH:mm') },
-        { id : 'lct-30m', base : 'minuteAndHour', tickWidth : 110, headers : timeHeader('minute', 30, 'HH:mm') },
-        { id : 'lct-15m', base : 'minuteAndHour', tickWidth : 100, headers : timeHeader('minute', 15, 'HH:mm') }
+        { id : 'lct-hour', base : 'hourAndDay', tickWidth : 80, headers : timeHeader('hour', 1, 'HH:mm') },
+        { id : 'lct-30m', base : 'minuteAndHour', tickWidth : 70, headers : timeHeader('minute', 30, 'HH:mm') },
+        { id : 'lct-15m', base : 'minuteAndHour', tickWidth : 70, headers : timeHeader('minute', 15, 'HH:mm') }
     ];
 
 /**
@@ -102,6 +104,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         useInitialAnimation       : false,
         // Slots move with the data as is, animating every tick would add drift to the gliding timeline
         enableEventAnimations     : false,
+        // The timeline follows the playhead and scrolls with the wheel, the utilization strip has no scrollbar under it
+        hideHorizontalScrollbar   : true,
 
         // Lined up with the shipment grid's bar, the time axis header with the grid's column headers
         tbar : {

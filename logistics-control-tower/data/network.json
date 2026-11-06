@@ -10,12 +10,12 @@
     "loads": [
         {
             "type": "reefer",
-            "share": 0.3,
+            "share": 0.38,
             "pallets": [6, 26]
         },
         {
             "type": "dry",
-            "share": 0.7,
+            "share": 0.62,
             "pallets": [4, 33]
         }
     ],

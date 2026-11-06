@@ -88,16 +88,16 @@ function slotMeta(status, pallets, delay) {
  */
 export function renderUtilization({ startDate, endDate, events, resourceStore }) {
     const
-        start    = startDate.getTime(),
-        end      = endDate.getTime(),
-        gap      = DockPlanner.TURNAROUND * minuteMs,
-        booked   = events.reduce((sum, slot) =>
+        start   = startDate.getTime(),
+        end     = endDate.getTime(),
+        gap     = DockPlanner.TURNAROUND * minuteMs,
+        booked  = events.reduce((sum, slot) =>
             sum + Math.max(0, Math.min(end, slot.plannedEnd + gap) - Math.max(start, slot.startDate.getTime())), 0),
-        share    = Math.min(1, booked / ((end - start) * (resourceStore.count || 1))),
-        percent  = Math.round(share * 100);
+        share   = Math.min(1, booked / ((end - start) * (resourceStore.count || 1))),
+        percent = Math.round(share * 100);
 
-    return `<div class="lct-util-bar${share > busyShare ? ' lct-util-high' : ''}" style="block-size: ${percent}%" ` +
-        `data-btip="${percent}% of door time booked, ${formatTime(startDate)} – ${formatTime(endDate)}"></div>`;
+    return `<div class="lct-util-bar${share > busyShare ? ' lct-util-over' : ''}" style="block-size: ${percent}%" ` +
+        `data-btip="${formatTime(startDate)}–${formatTime(endDate)} · ${percent}% busy"></div>`;
 }
 
 /**

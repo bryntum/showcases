@@ -73,12 +73,12 @@
         overflow       : hidden;
     }
 
+    /* Proportional figures, the number never changes and a narrow slot still fits it */
     .lct-slot-ref {
-        font-weight          : 700;
-        font-variant-numeric : tabular-nums;
-        white-space          : nowrap;
-        overflow             : hidden;
-        text-overflow        : ellipsis;
+        font-weight   : 700;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
     }
 
     /* The pallets, the delay or At yard below the number, quieter */
@@ -94,15 +94,16 @@
         color : var(--lct-color);
     }
 
-    /* Narrower: the number only, never cut short. The container is the bar inside its border */
-    @container lct-slot (width < 78px) {
+    /* Narrower: the number only, never cut short. The container is the bar inside its border, the padding and the
+     * widest number (10888) take 50px, the icon and its gap 21px more. A 40 minute slot is 50px at the default zoom */
+    @container lct-slot (width < 71px) {
         .lct-slot-icon {
             display : none;
         }
     }
 
     /* Too narrow for the number: the load icon only */
-    @container lct-slot (width < 56px) {
+    @container lct-slot (width < 50px) {
         .lct-slot-icon {
             display : revert;
         }
@@ -228,10 +229,10 @@
     min-width : 15em;
 
     header {
-        display         : flex;
-        align-items     : center;
-        justify-content : space-between;
-        gap             : 1em;
+        display          : flex;
+        align-items      : center;
+        justify-content  : space-between;
+        gap              : 1em;
         margin-block-end : 0.5em;
     }
 
@@ -321,12 +322,14 @@
         color       : var(--lct-ink-sub);
     }
 
+    /* A bar per hour, as wide as the hour less a small gap, under a faint line at full capacity */
     .b-sch-summary-bar .b-time-axis-tick {
         box-sizing        : border-box;
         block-size        : 100%;
         justify-content   : flex-end;
-        padding           : 10px 3px 0;
+        padding           : 10px 2px 0;
         border-inline-end : none;
+        background        : linear-gradient(var(--lct-border), var(--lct-border)) no-repeat 0 9px / 100% 1px;
     }
 
     .b-time-axis-summary-value {
@@ -339,12 +342,12 @@
 
 .lct-util-bar {
     min-block-size            : 2px;
-    border-start-start-radius : 2px;
-    border-start-end-radius   : 2px;
+    border-start-start-radius : 3px;
+    border-start-end-radius   : 3px;
     background-color          : var(--lct-util);
 
-    &.lct-util-high {
-        background-color : var(--lct-util-high);
+    &.lct-util-over {
+        background-color : var(--lct-util-over);
     }
 }
 
