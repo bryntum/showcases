@@ -94,7 +94,6 @@ function cardHtml({ title, description, url, source, products : names, thumb }) 
                     <img src="${thumb.dark.png}" width="${thumb.width}" height="${thumb.height}" loading="lazy"
                         alt="${encodeHtml(title)} screenshot">
                 </picture>
-                <span class="open-hint">Open live demo →</span>
                 </a>
             </div>
             <div class="body">

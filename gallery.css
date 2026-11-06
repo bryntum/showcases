@@ -952,30 +952,7 @@ a {
     }
 }
 
-/* "Open live demo", shown on a hovered screenshot link (featured and cards) */
-.open-hint {
-    position         : absolute;
-    inset-block-end  : 0.75rem;
-    inset-inline-end : 0.75rem;
-    padding          : 0.3rem 0.65rem;
-    border-radius    : 999px;
-    font-size        : 0.78rem;
-    font-weight      : 600;
-    color            : var(--g-on-accent);
-    background       : var(--g-accent-fill);
-    box-shadow       : var(--g-shadow-lift);
-    opacity          : 0;
-    translate        : 0 calc(var(--g-lift-y) * -1);
-    transition       : opacity var(--g-lift), translate var(--g-lift);
-    pointer-events   : none;
-
-    a:hover > & {
-        opacity   : 1;
-        translate : 0 0;
-    }
-}
-
-/* The featured screenshot, framed. It links to the demo: on hover it lifts a little and says where the click goes */
+/* The featured screenshot, framed. It links to the demo: on hover it lifts a little */
 .frame {
     margin        : 0;
     overflow      : hidden;
