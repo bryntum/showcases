@@ -10,6 +10,7 @@ packages. No backend: each showcase loads its data from static JSON files and ru
 | Showcase | Products | Live | Source |
 |----------|----------|------|--------|
 | **EV Operations**: a production line, a service center with DC fast chargers and a vehicle program, with a live simulation | Scheduler (Enterprise tier), Gantt | [Live demo](https://showcase.bryntum.com/ev-operations/) | [ev-operations/](ev-operations/) |
+| **Logistics Control Tower**: 2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a distribution centre scheduled by the engine | Scheduler (Enterprise tier), with AG Grid Enterprise | [Live demo](https://showcase.bryntum.com/logistics-control-tower/) | [logistics-control-tower/](logistics-control-tower/) |
 
 ## Running locally
 
@@ -42,13 +43,19 @@ there, in case your npm config sends it to npm.bryntum.com, which serves Bryntum
 
 Without a licence key the Bryntum components run in trial mode and show a watermark.
 
+The Logistics Control Tower uses AG Grid Enterprise, a separately licensed third-party library. Its key is read at
+build time from `VITE_AG_LICENSE_KEY`, for example in a `.env.local` file at the repository root, which git ignores.
+Without it AG Grid runs unlicensed: it shows its watermark and logs a licence notice in the console. The tests always
+run without it.
+
 ## Repository layout
 
 ```
 ├── index.html, gallery.*     The gallery: page, styles, card list (gallery.js), images (gallery/, public/gallery/)
 ├── shared/                   @showcases/shared: the shell (header, light / dark switch, source link), design
 │                             tokens, the font and the logos, used by every showcase and the gallery
-├── ev-operations/            One folder per showcase, an npm workspace with its own README
+├── ev-operations/,           One folder per showcase, an npm workspace with its own README
+│   logistics-control-tower/
 ├── tests/                    Playwright smoke tests, one spec per page
 ├── vite.config.js            One multi-page build, every workspace but shared/ is a showcase
 └── eslint.config.js,         The code style of the Bryntum sources
@@ -147,6 +154,9 @@ do not have. Such a banner would call `gtag('consent', 'update', { … })` once 
 ## License
 
 The showcase code in this repository is MIT licensed, see [LICENSE](LICENSE).
+
+AG Grid Enterprise (`ag-grid-enterprise`), used by the Logistics Control Tower, is a separately licensed third-party
+product, not part of Bryntum, see the [AG Grid licence](https://www.ag-grid.com/license-pricing/).
 
 The Bryntum packages it depends on (`@bryntum/*-enterprise`) hold the Enterprise tier, which is commercially licensed,
 see `license.pdf` in each package. The Community tier of each product is MIT licensed, see `LICENSE-MIT` in each

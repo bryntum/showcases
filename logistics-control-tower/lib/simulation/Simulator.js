@@ -1,0 +1,318 @@
+import { Base, Events } from '@bryntum/core-enterprise';
+import DockPlanner from './DockPlanner.js';
+import Random from './Random.js';
+import { minuteMs } from '../util/Time.js';
+
+const
+    // Delay values kept for the sparkline
+    historyLength = 16,
+    // In transit statuses by minutes of delay
+    lateAfter     = 30,
+    atRiskAfter   = 10;
+
+/**
+ * Drives the live part of the showcase. Every tick it advances the simulated clock, lets truck ETAs drift, moves reefer
+ * temperatures and GPS states, moves the slot of a truck that will not make it in time (the engine pushes the slots
+ * after it), updates the shipment statuses and books docks for the trucks about to arrive.
+ *
+ * Shipment changes go to the shipment store, slot changes to the Scheduler's event store. The views pick them up from
+ * there, see GridSync.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/Base
+ * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
+ */
+export default class Simulator extends Events(Base) {
+    static $name = 'Simulator';
+
+    static configurable = {
+        /**
+         * The simulated current time
+         * @prp {Date}
+         */
+        now : null,
+
+        /**
+         * Simulated minutes per tick
+         * @prp {Number}
+         */
+        speed : 1,
+
+        /**
+         * Real milliseconds between ticks
+         * @config {Number}
+         */
+        tickInterval : 300,
+
+        /**
+         * Docks are booked automatically for the trucks arriving within this many hours
+         * @config {Number}
+         */
+        autoBookHours : 6,
+
+        /**
+         * Seed of the random drift, the same run every time
+         * @config {Number}
+         */
+        seed : 1,
+
+        /**
+         * The simulation ends here, the end of the timeline
+         * @config {Date}
+         */
+        endDate : null,
+
+        /**
+         * Store of ShipmentModel records
+         * @config {Core.data.Store}
+         */
+        shipmentStore : null,
+
+        /**
+         * The dock schedule, its event store holds the slots
+         * @config {DockSchedule}
+         */
+        schedule : null
+    };
+
+    construct(config) {
+        super.construct(config);
+
+        this.random = new Random(this.seed);
+    }
+
+    changeNow(now) {
+        return new Date(now);
+    }
+
+    /**
+     * `true` while the simulation plays
+     * @property {Boolean}
+     */
+    get isRunning() {
+        return Boolean(this.timer);
+    }
+
+    play() {
+        const me = this;
+
+        if (!me.timer && me.now < me.endDate) {
+            me.timer = setInterval(() => me.tick(), me.tickInterval);
+            me.trigger('playStateChange', { running : true });
+        }
+    }
+
+    pause() {
+        const me = this;
+
+        if (me.timer) {
+            clearInterval(me.timer);
+            me.timer = null;
+            me.trigger('playStateChange', { running : false });
+        }
+    }
+
+    toggle() {
+        this.isRunning ? this.pause() : this.play();
+    }
+
+    doDestroy() {
+        this.pause();
+        super.doDestroy();
+    }
+
+    /**
+     * Advances the simulation one tick. Skipped while the previous one is still being scheduled by the engine, or while
+     * a slot is dragged
+     * @returns {Promise}
+     */
+    async tick() {
+        const
+            me           = this,
+            { schedule } = me;
+
+        if (me.ticking || schedule.isDraggingSlot) {
+            return;
+        }
+
+        me.ticking = true;
+
+        try {
+            const
+                now      = me.now = new Date(Math.min(me.now.getTime() + me.speed * minuteMs, me.endDate.getTime())),
+                shipping = me.shipmentStore.records.filter(shipment => shipment.isInTransit);
+
+            // More happens per tick when time runs faster
+            me.driftEtas(shipping, Math.min(80, 20 * me.speed));
+            me.driftTemperatures(shipping.filter(shipment => shipment.loadType === 'reefer'), 6);
+            me.flickerGps(shipping, 2);
+            me.pushLateSlots();
+            me.bookArrivals(Math.max(3, me.speed));
+
+            // The engine schedules the moved and the new slots, then the statuses follow the scheduled times
+            await schedule.project.commitAsync();
+
+            if (!me.isDestroyed) {
+                me.refreshStatuses();
+                schedule.now = now;
+
+                /**
+                 * Fired after each tick
+                 * @event tick
+                 * @param {Date} now
+                 */
+                me.trigger('tick', { now });
+
+                if (now >= me.endDate) {
+                    me.pause();
+                }
+            }
+        }
+        finally {
+            me.ticking = false;
+        }
+    }
+
+    driftEtas(shipping, count) {
+        const { random } = this;
+
+        for (let i = 0; i < count && shipping.length; i++) {
+            const
+                shipment = random.pick(shipping),
+                // Drift slightly late on average, now and then an incident (traffic, border control) adds a lot
+                drift    = Math.round(random.normal(0.3, 1.4)) + (random.chance(0.015) ? random.int(12, 40) : 0);
+
+            if (drift) {
+                const delay = Math.min(240, Math.max(-20, shipment.delayMinutes + drift));
+
+                shipment.set({
+                    delayMinutes : delay,
+                    eta          : new Date(shipment.plannedEta.getTime() + delay * minuteMs),
+                    etaHistory   : [...shipment.etaHistory.slice(1 - historyLength), delay]
+                });
+            }
+        }
+    }
+
+    driftTemperatures(reefers, count) {
+        const { random } = this;
+
+        for (let i = 0; i < count && reefers.length; i++) {
+            const
+                shipment                  = random.pick(reefers),
+                { setpoint, temperature } = shipment,
+                // Pulled back towards the set point, with an occasional excursion (door opened, unit fault)
+                excursion                 = random.chance(0.02) ? random.between(2.5, 5) : 0,
+                next                      = temperature + (setpoint - temperature) * 0.2 + random.normal(0, 0.3) +
+                    excursion;
+
+            shipment.temperature = Math.round(next * 10) / 10;
+        }
+    }
+
+    flickerGps(shipping, count) {
+        const
+            { random } = this,
+            next       = {
+                live  : () => random.chance(0.3) ? 'stale' : 'live',
+                stale : () => random.chance(0.6) ? 'live' : random.chance(0.4) ? 'lost' : 'stale',
+                lost  : () => random.chance(0.5) ? 'live' : 'lost'
+            };
+
+        for (let i = 0; i < count && shipping.length; i++) {
+            const shipment = random.pick(shipping);
+
+            shipment.gps = next[shipment.gps]?.() ?? 'live';
+        }
+    }
+
+    // A truck that will not be at the door in time gets its slot moved to its ETA. The door is re-sequenced, a very
+    // late truck lets the next ones go first, and the engine pushes the slots after it at the same door
+    pushLateSlots() {
+        const
+            { schedule, shipmentStore } = this,
+            doors                       = new Set();
+
+        for (const slot of schedule.eventStore) {
+            const shipment = shipmentStore.getById(slot.id);
+
+            if (!slot.isStarted && shipment && shipment.eta > slot.startDate) {
+                slot.startDate = new Date(DockPlanner.ceilToFiveMinutes(shipment.eta.getTime()));
+                doors.add(slot.resource);
+            }
+        }
+
+        doors.forEach(door => schedule.chainDoor(door));
+    }
+
+    /**
+     * The status of a shipment at the passed time
+     * @param {ShipmentModel} shipment
+     * @param {SlotModel} slot Its dock slot, if booked
+     * @param {Date} now
+     * @returns {String}
+     */
+    static statusOf(shipment, slot, now) {
+        if (slot?.plannedEnd <= now) {
+            return 'done';
+        }
+
+        if (slot?.startDate <= now && shipment.eta <= now) {
+            return 'unloading';
+        }
+
+        if (shipment.eta <= now) {
+            return 'yard';
+        }
+
+        return shipment.delayMinutes > lateAfter ? 'late' : shipment.delayMinutes > atRiskAfter ? 'at-risk' : 'on-time';
+    }
+
+    /**
+     * Recalculates the status of all shipments and mirrors it onto their slots
+     */
+    refreshStatuses() {
+        const { now, schedule } = this;
+
+        for (const shipment of this.shipmentStore) {
+            const
+                slot   = schedule.eventStore.getById(shipment.id),
+                status = Simulator.statusOf(shipment, slot, now);
+
+            if (shipment.status !== status) {
+                shipment.set({
+                    status,
+                    gps : status === 'yard' || status === 'unloading' || status === 'done' ? 'arrived' : shipment.gps
+                });
+            }
+
+            if (slot && (slot.status !== status || slot.expedited !== shipment.expedited)) {
+                const started = status === 'unloading' || status === 'done';
+
+                slot.set({
+                    status,
+                    expedited : shipment.expedited,
+                    // A slot which has started cannot be moved any more
+                    draggable : !started,
+                    resizable : !started
+                });
+            }
+        }
+    }
+
+    // Books the trucks arriving soon which have no slot yet, earliest arrival first
+    bookArrivals(count) {
+        const
+            { schedule, now } = this,
+            horizon           = now.getTime() + this.autoBookHours * 60 * minuteMs,
+            candidates        = this.shipmentStore.records
+                .filter(shipment => !shipment.isFinished && !shipment.onHold && shipment.eta.getTime() < horizon &&
+                    !schedule.eventStore.getById(shipment.id))
+                .sort((a, b) => a.eta - b.eta)
+                .slice(0, count);
+
+        candidates.forEach(shipment => schedule.book(shipment));
+    }
+}
+
+Simulator.initClass();

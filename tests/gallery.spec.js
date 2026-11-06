@@ -32,6 +32,17 @@ test.describe('Gallery', () => {
         await expect(page.locator('.b-scheduler').first()).toBeVisible();
     });
 
+    test('the Logistics Control Tower card opens the showcase', async({ page }) => {
+        const card = page.locator('[data-cards] .card').filter({ hasText : 'Logistics Control Tower' });
+
+        await expect(card.getByRole('heading', { name : 'Logistics Control Tower' })).toBeVisible();
+        await card.getByRole('link', { name : 'Live demo' }).click();
+
+        await expect(page).toHaveURL(/\/showcases\/logistics-control-tower\/$/);
+        await expect(page.locator('.b-scheduler').first()).toBeVisible();
+        await expect(page.locator('.ag-root').first()).toBeVisible();
+    });
+
     test('shows the three how built cards', async({ page }) => {
         const section = page.getByRole('region', { name : /Built the way you'd build it/ });
 

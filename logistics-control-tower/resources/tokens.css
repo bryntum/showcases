@@ -1,0 +1,55 @@
+/* Design tokens of the showcase, mapped onto the theme palette so they follow the theme and light / dark mode. The
+ * app panel's frame and the font are the shell's */
+
+.lct-app, .b-tooltip, .ag-popup {
+    /* Status colours, the theme palette darkened in light mode for contrast on white, lightened in dark mode */
+    --lct-on-time   : light-dark(color-mix(in srgb, var(--b-color-green) 80%, var(--b-color-black)), var(--b-color-green));
+    --lct-at-risk   : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)),
+        var(--b-color-orange));
+    --lct-late      : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
+    --lct-yard      : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
+    --lct-unloading : light-dark(color-mix(in srgb, var(--b-color-blue) 90%, var(--b-color-black)), var(--b-color-blue));
+    --lct-done      : var(--b-neutral-50);
+
+    /* Neutrals, from the theme */
+    --lct-surface   : var(--b-neutral-100);
+    --lct-sunken    : var(--b-neutral-98);
+    --lct-border    : var(--b-border-7);
+    --lct-ink       : var(--b-text-1);
+    --lct-ink-sub   : var(--b-text-2);
+    --lct-ink-faint : var(--b-neutral-55);
+    --lct-past      : light-dark(color-mix(in srgb, var(--b-color-black) 4%, transparent),
+        color-mix(in srgb, var(--b-color-black) 22%, transparent));
+    --lct-playhead  : light-dark(color-mix(in srgb, var(--b-color-red) 85%, var(--b-color-black)), var(--b-color-red));
+
+    /* Status colour of any element with a status class */
+    .lct-status-on-time { --lct-color : var(--lct-on-time); }
+    .lct-status-at-risk { --lct-color : var(--lct-at-risk); }
+    .lct-status-late { --lct-color : var(--lct-late); }
+    .lct-status-yard { --lct-color : var(--lct-yard); }
+    .lct-status-unloading { --lct-color : var(--lct-unloading); }
+    .lct-status-done { --lct-color : var(--lct-done); }
+}
+
+/* The app panel's body (its bodyCls): no padding, the grid and the schedule meet at the splitter */
+.lct-app-body {
+    border-radius : 0;
+
+    --b-panel-padding : 0;
+    --b-panel-gap     : 0;
+}
+
+/* A status pill, in the grid and the tooltip */
+.lct-pill {
+    display          : inline-flex;
+    align-items      : center;
+    padding          : 0.15em 0.65em;
+    border-radius    : 1em;
+    font-size        : 0.92em;
+    font-weight      : 600;
+    line-height      : 1.5;
+    white-space      : nowrap;
+    color            : var(--lct-color);
+    background-color : color-mix(in srgb, var(--lct-color) 14%, transparent);
+}

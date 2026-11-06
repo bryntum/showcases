@@ -1,0 +1,170 @@
+{
+    "site": {
+        "name": "Gävle DC North",
+        "startDate": "2026-11-09T00:00",
+        "now": "2026-11-09T07:30",
+        "days": 7,
+        "seed": 20261109,
+        "shipments": 2000
+    },
+    "carriers": [
+        {
+            "name": "Nordic Freight",
+            "code": "NF",
+            "color": "blue"
+        },
+        {
+            "name": "Baltic Express",
+            "code": "BX",
+            "color": "teal"
+        },
+        {
+            "name": "Atlas Haulage",
+            "code": "AH",
+            "color": "orange"
+        },
+        {
+            "name": "Fjord Logistics",
+            "code": "FL",
+            "color": "cyan"
+        },
+        {
+            "name": "Meridian Cargo",
+            "code": "MC",
+            "color": "purple"
+        },
+        {
+            "name": "Polar Line",
+            "code": "PL",
+            "color": "indigo"
+        },
+        {
+            "name": "Cobalt Transport",
+            "code": "CT",
+            "color": "pink"
+        },
+        {
+            "name": "Swift Arctic",
+            "code": "SA",
+            "color": "lime"
+        }
+    ],
+    "origins": [
+        "Gothenburg",
+        "Oslo",
+        "Hamburg",
+        "Rotterdam",
+        "Copenhagen",
+        "Gdańsk",
+        "Tallinn",
+        "Helsinki",
+        "Malmö",
+        "Aarhus",
+        "Bremen",
+        "Antwerp",
+        "Stockholm",
+        "Turku",
+        "Riga",
+        "Kiel",
+        "Lübeck",
+        "Szczecin"
+    ],
+    "docks": [
+        {
+            "id": "D01",
+            "name": "Door 01",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D02",
+            "name": "Door 02",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D03",
+            "name": "Door 03",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D04",
+            "name": "Door 04",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D05",
+            "name": "Door 05",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D06",
+            "name": "Door 06",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D07",
+            "name": "Door 07",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D08",
+            "name": "Door 08",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D09",
+            "name": "Door 09",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D10",
+            "name": "Door 10",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D11",
+            "name": "Door 11",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D12",
+            "name": "Door 12",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D13",
+            "name": "Door 13",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D14",
+            "name": "Door 14",
+            "capability": "oversize",
+            "zone": "Heavy goods"
+        },
+        {
+            "id": "D15",
+            "name": "Door 15",
+            "capability": "oversize",
+            "zone": "Heavy goods"
+        },
+        {
+            "id": "D16",
+            "name": "Door 16",
+            "capability": "oversize",
+            "zone": "Heavy goods"
+        }
+    ]
+}

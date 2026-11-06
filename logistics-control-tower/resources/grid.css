@@ -1,0 +1,223 @@
+/* The shipment grid: the panel hosting AG Grid, the cell renderers and the row styling by status */
+
+.lct-grid-panel {
+    min-width : 0;
+}
+
+/* The panels' toolbars: a title and the tools */
+.lct-panel-bar {
+    --b-toolbar-padding : 0.5em var(--sc-panel-padding);
+
+    .lct-panel-title {
+        font-weight : 600;
+    }
+
+    .lct-search {
+        --b-text-field-input-padding : 0.4em 0.6em;
+    }
+}
+
+/* AG Grid fills the panel's body */
+.lct-grid-body {
+    display        : flex;
+    flex-direction : column;
+    padding        : 0;
+
+    > div {
+        flex       : 1;
+        min-height : 0;
+    }
+
+    .ag-root-wrapper {
+        height : 100%;
+    }
+
+    .lct-ref {
+        font-weight : 600;
+    }
+
+    /* Rows by status, a bar on the leading edge */
+    .ag-row {
+        &.lct-row-late {
+            background-color : color-mix(in srgb, var(--lct-late) 7%, var(--ag-background-color));
+            box-shadow       : inset 3px 0 0 var(--lct-late);
+        }
+
+        &.lct-row-at-risk {
+            box-shadow : inset 3px 0 0 var(--lct-at-risk);
+        }
+
+        &.lct-row-on-time {
+            box-shadow : inset 3px 0 0 color-mix(in srgb, var(--lct-on-time) 55%, transparent);
+        }
+
+        &.lct-row-done {
+            color : var(--lct-ink-faint);
+        }
+
+        &.ag-row-selected {
+            background-color : var(--ag-selected-row-background-color);
+        }
+    }
+
+    .lct-delay-late {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+
+    .lct-delay-risk {
+        color : var(--lct-at-risk);
+    }
+}
+
+/* Carrier chip, a swatch in the carrier's colour */
+.lct-carrier {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.5em;
+    min-width   : 0;
+
+    .lct-carrier-code {
+        display          : inline-grid;
+        place-items      : center;
+        min-width        : 2.2em;
+        padding          : 0.1em 0.3em;
+        border-radius    : 0.35em;
+        font-size        : 0.82em;
+        font-weight      : 700;
+        line-height      : 1.4;
+        color            : var(--b-color-white);
+        background-color : var(--lct-carrier);
+    }
+
+    .lct-carrier-name {
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        font-weight   : 600;
+    }
+}
+
+/* Group rows: the carrier and its aggregates */
+.lct-carrier-group {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 1em;
+
+    .lct-group-count {
+        color : var(--lct-ink-sub);
+    }
+
+    .lct-group-late {
+        padding          : 0 0.6em;
+        border-radius    : 1em;
+        font-weight      : 600;
+        color            : var(--lct-late);
+        background-color : color-mix(in srgb, var(--lct-late) 12%, transparent);
+    }
+}
+
+.lct-countdown {
+    font-variant-numeric : tabular-nums;
+    color                : var(--lct-ink-sub);
+
+    &.lct-countdown-soon {
+        font-weight : 600;
+        color       : var(--lct-ink);
+    }
+
+    &.lct-countdown-onsite {
+        color : var(--lct-yard);
+    }
+}
+
+/* The dock slot badge */
+.lct-badge {
+    display              : inline-flex;
+    align-items          : center;
+    gap                  : 0.45em;
+    padding              : 0.1em 0.55em;
+    border               : 1px solid var(--lct-border);
+    border-radius        : 0.4em;
+    font-size            : 0.92em;
+    line-height          : 1.5;
+    font-variant-numeric : tabular-nums;
+    white-space          : nowrap;
+
+    .lct-badge-door {
+        font-weight : 700;
+    }
+
+    &.lct-badge-none {
+        border-style : dashed;
+        color        : var(--lct-ink-faint);
+    }
+
+    &.lct-badge-hold {
+        color        : var(--lct-at-risk);
+        border-color : color-mix(in srgb, var(--lct-at-risk) 50%, transparent);
+    }
+
+    &.lct-badge-breach {
+        color            : var(--lct-late);
+        border-color     : color-mix(in srgb, var(--lct-late) 55%, transparent);
+        background-color : color-mix(in srgb, var(--lct-late) 8%, transparent);
+    }
+}
+
+.lct-load {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.5em;
+
+    i {
+        width      : 1.1em;
+        text-align : center;
+        color      : var(--lct-ink-faint);
+    }
+
+    &.lct-load-reefer i {
+        color : var(--b-color-cyan);
+    }
+
+    &.lct-load-oversize i {
+        color : var(--b-color-purple);
+    }
+}
+
+.lct-temp {
+    font-variant-numeric : tabular-nums;
+
+    &.lct-temp-off {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+}
+
+.lct-gps {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.45em;
+
+    .lct-gps-dot {
+        width            : 0.5em;
+        height           : 0.5em;
+        border-radius    : 50%;
+        background-color : var(--lct-on-time);
+    }
+
+    &.lct-gps-stale .lct-gps-dot { background-color : var(--lct-at-risk); }
+    &.lct-gps-lost .lct-gps-dot { background-color : var(--lct-late); }
+    &.lct-gps-arrived .lct-gps-dot { background-color : var(--lct-done); }
+}
+
+/* The status bar's late and conflict counts */
+.lct-late-panel {
+    .ag-status-name-value-value {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+
+    .lct-late-panel-sep {
+        margin-inline-start : 1em;
+    }
+}

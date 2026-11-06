@@ -7,6 +7,12 @@ import lightThumbPng from './gallery/ev-operations-light-1200.png';
 import darkThumb800 from './gallery/ev-operations-dark-800.webp';
 import darkThumb1600 from './gallery/ev-operations-dark-1600.webp';
 import darkThumbPng from './gallery/ev-operations-dark-1200.png';
+import lctLightThumb800 from './gallery/logistics-control-tower-light-800.webp';
+import lctLightThumb1600 from './gallery/logistics-control-tower-light-1600.webp';
+import lctLightThumbPng from './gallery/logistics-control-tower-light-1200.png';
+import lctDarkThumb800 from './gallery/logistics-control-tower-dark-800.webp';
+import lctDarkThumb1600 from './gallery/logistics-control-tower-dark-1600.webp';
+import lctDarkThumbPng from './gallery/logistics-control-tower-dark-1200.png';
 
 const
     // Product pages the tags link to
@@ -27,6 +33,20 @@ const
             thumb    : {
                 light  : { webp : `${lightThumb800} 800w, ${lightThumb1600} 1600w`, png : lightThumbPng },
                 dark   : { webp : `${darkThumb800} 800w, ${darkThumb1600} 1600w`, png : darkThumbPng },
+                width  : 1200,
+                height : 741
+            }
+        },
+        {
+            title       : 'Logistics Control Tower',
+            description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
+                'distribution centre, scheduled by the Bryntum engine.',
+            products : ['Scheduler'],
+            url      : './logistics-control-tower/',
+            source   : 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower',
+            thumb    : {
+                light  : { webp : `${lctLightThumb800} 800w, ${lctLightThumb1600} 1600w`, png : lctLightThumbPng },
+                dark   : { webp : `${lctDarkThumb800} 800w, ${lctDarkThumb1600} 1600w`, png : lctDarkThumbPng },
                 width  : 1200,
                 height : 741
             }

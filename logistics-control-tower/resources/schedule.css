@@ -1,0 +1,210 @@
+/* The dock schedule: the door column, the slot bars, the playhead and the drop preview */
+
+.lct-dock {
+    display     : flex;
+    align-items : center;
+    gap         : 0.7em;
+    min-width   : 0;
+
+    .lct-dock-icon {
+        display          : grid;
+        place-items      : center;
+        width            : 2em;
+        height           : 2em;
+        border-radius    : 0.5em;
+        color            : var(--lct-ink-sub);
+        background-color : var(--b-neutral-95);
+    }
+
+    &.lct-load-reefer .lct-dock-icon {
+        color            : var(--b-color-cyan);
+        background-color : color-mix(in srgb, var(--b-color-cyan) 14%, transparent);
+    }
+
+    &.lct-load-oversize .lct-dock-icon {
+        color            : var(--b-color-purple);
+        background-color : color-mix(in srgb, var(--b-color-purple) 14%, transparent);
+    }
+
+    .lct-dock-text {
+        display        : flex;
+        flex-direction : column;
+        min-width      : 0;
+        line-height    : 1.25;
+    }
+
+    .lct-dock-name {
+        font-weight : 600;
+    }
+
+    .lct-dock-zone {
+        font-size : 0.85em;
+        color     : var(--lct-ink-sub);
+    }
+}
+
+/* Slot bars, coloured by the theme's event colours (eventColor per status) */
+.lct-slot {
+    .lct-slot-icon {
+        flex-shrink : 0;
+        font-size   : 0.9em;
+    }
+
+    .lct-slot-text {
+        display        : flex;
+        flex-direction : column;
+        min-width      : 0;
+        line-height    : 1.2;
+        overflow       : hidden;
+    }
+
+    .lct-slot-ref {
+        font-weight   : 600;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    .lct-slot-meta {
+        font-size     : 0.85em;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        opacity       : 0.8;
+    }
+}
+
+.b-sch-event {
+    /* Unloading ends after the shipment's due time: a conflict */
+    &.lct-slot-breach {
+        outline        : 2px solid var(--lct-late);
+        outline-offset : 1px;
+    }
+
+    &.lct-status-done {
+        opacity : 0.6;
+    }
+}
+
+/* The past, shaded, and the playhead, two time ranges */
+.b-sch-time-range {
+    &.lct-past {
+        background-color : var(--lct-past);
+    }
+
+    &.lct-now {
+        z-index             : 5;
+        overflow            : visible;
+        background-color    : transparent;
+        border-inline-start : 2px solid var(--lct-playhead);
+    }
+}
+
+/* In the time axis header only the playhead's time shows, a pill centred on the line with fixed width digits */
+.b-time-ranges-header-canvas {
+    .lct-past {
+        display : none;
+    }
+
+    .lct-now {
+        border : none;
+
+        label {
+            position             : absolute;
+            inset-block-end      : 0.3em;
+            inset-inline-start   : 0;
+            translate            : -50% 0;
+            padding              : 0.15em 0.6em;
+            border-radius        : 1em;
+            font-size            : 0.85em;
+            font-weight          : 700;
+            font-variant-numeric : tabular-nums;
+            color                : var(--b-color-white);
+            background-color     : var(--lct-playhead);
+            /* A halo in the header colour hides the hour labels it passes over */
+            box-shadow           :
+                0 0 0 0.5em var(--b-neutral-100),
+                1.5em 0 0 0.5em var(--b-neutral-100),
+                -1.5em 0 0 0.5em var(--b-neutral-100);
+        }
+    }
+}
+
+/* Where a dragged shipment would be booked */
+.lct-drop-preview {
+    position         : absolute;
+    z-index          : 20;
+    display          : flex;
+    align-items      : center;
+    padding-inline   : 0.5em;
+    box-sizing       : border-box;
+    border           : 2px dashed var(--lct-on-time);
+    border-radius    : var(--b-widget-border-radius, 0.4em);
+    font-size        : 0.85em;
+    font-weight      : 600;
+    white-space      : nowrap;
+    color            : var(--lct-on-time);
+    background-color : color-mix(in srgb, var(--lct-on-time) 14%, var(--lct-surface));
+    pointer-events   : none;
+
+    &.lct-drop-invalid {
+        border-color     : var(--lct-late);
+        color            : var(--lct-late);
+        background-color : color-mix(in srgb, var(--lct-late) 12%, var(--lct-surface));
+    }
+}
+
+/* The slot tooltip */
+.lct-tip {
+    min-width : 15em;
+
+    header {
+        display         : flex;
+        align-items     : center;
+        justify-content : space-between;
+        gap             : 1em;
+        margin-block-end : 0.5em;
+    }
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 0.2em 1em;
+        margin                : 0;
+    }
+
+    dt {
+        color : var(--lct-ink-sub);
+    }
+
+    dd {
+        margin               : 0;
+        font-variant-numeric : tabular-nums;
+    }
+
+    .lct-tip-breach {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+}
+
+/* The splitter between the grid and the schedule */
+.lct-splitter {
+    --b-splitter-color : var(--lct-border);
+}
+
+/* Narrow screens (ControlTowerApp#compact): the grid above the schedule */
+.lct-app.lct-compact {
+    .lct-main {
+        flex-direction : column;
+    }
+
+    /* Room for the clock and the counters, the grid and the timeline */
+    .lct-splitter, .lct-panel-title, .lct-speed, .lct-legend-hint {
+        display : none;
+    }
+
+    .lct-grid-panel, .lct-main > .b-scheduler {
+        flex : 1 1 50%;
+    }
+}

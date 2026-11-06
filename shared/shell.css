@@ -85,6 +85,13 @@ body {
                 rotate              : -45deg;
             }
 
+            /* A long title wraps onto a second line rather than run under the tools */
+            .sc-brand-title[aria-current] {
+                flex        : 0 1 auto;
+                white-space : normal;
+                text-wrap   : balance;
+            }
+
             .sc-crumb-text {
                 position    : absolute;
                 width       : 1px;

@@ -1,0 +1,90 @@
+/* The app toolbar: the clock, the KPI counters and the simulation controls */
+
+.lct-toolbar {
+    /* Its content edge is the one the page header lines up with, see shared/tokens.css */
+    --b-toolbar-padding : var(--sc-panel-padding);
+    --b-toolbar-gap     : 1em;
+
+    border-block-end : 1px solid var(--lct-border);
+}
+
+.lct-kpis {
+    display     : flex;
+    align-items : center;
+    gap         : 0.4em;
+    min-width   : 0;
+    overflow-x  : auto;
+    /* Fixed width digits, the counters do not shift as they change */
+    font-variant-numeric : tabular-nums;
+    scrollbar-width      : none;
+
+    .lct-clock {
+        flex                 : none;
+        display              : flex;
+        flex-direction       : column;
+        padding-inline-end   : 1em;
+        margin-inline-end    : 0.6em;
+        border-inline-end    : 1px solid var(--lct-border);
+        white-space          : nowrap;
+    }
+
+    .lct-clock-day {
+        font-size      : 0.78em;
+        font-weight    : 600;
+        letter-spacing : 0.04em;
+        text-transform : uppercase;
+        color          : var(--lct-ink-sub);
+    }
+
+    .lct-clock-time {
+        /* Fits 00:00 to 23:59 */
+        min-width   : 3.1em;
+        font-size   : 1.6em;
+        font-weight : 700;
+        line-height : 1.1;
+    }
+
+    .lct-kpi {
+        display        : flex;
+        flex-direction : column;
+        min-width      : 5.4em;
+        padding        : 0.25em 0.7em;
+        border-radius  : var(--sc-radius);
+        white-space    : nowrap;
+    }
+
+    .lct-kpi-value {
+        font-size   : 1.25em;
+        font-weight : 700;
+        line-height : 1.2;
+    }
+
+    .lct-kpi-label {
+        font-size : 0.78em;
+        color     : var(--lct-ink-sub);
+    }
+
+    .lct-kpi-onTime .lct-kpi-value { color : var(--lct-on-time); }
+    .lct-kpi-yard .lct-kpi-value { color : var(--lct-yard); }
+    .lct-kpi-unloading .lct-kpi-value { color : var(--lct-unloading); }
+
+    /* Late trucks and conflicts, when there are any */
+    .lct-kpi-alert {
+        background-color : color-mix(in srgb, var(--lct-late) 10%, transparent);
+
+        .lct-kpi-value {
+            color : var(--lct-late);
+        }
+    }
+}
+
+.lct-controls {
+    align-items : center;
+    gap         : 0.5em;
+
+    /* One width for Play and Pause */
+    .lct-play {
+        min-width       : 6.6em;
+        justify-content : center;
+    }
+}
