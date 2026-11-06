@@ -5,13 +5,11 @@ const nowAnchor = 0.25;
 
 /**
  * Mixin of the dock schedule drawing the simulated now: two time ranges, the shaded past and the now line with its time
- * in the header. The simulation sets `now` once a tick, the playhead glides there frame by frame, and the timeline
- * follows it by delta scrolling: it scrolls by the distance the clock moved, so wherever the user scrolled it to, it
- * stays there relative to now.
+ * in the header. The simulation sets `now` once a tick and the timeline follows it by delta scrolling: it scrolls by
+ * the distance the clock moved, so wherever the user scrolled it to, it stays there relative to now.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Delayable#function-requestAnimationFrame
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#property-visibleDate
  */
 export default Target => class Playhead extends Target {
@@ -22,14 +20,7 @@ export default Target => class Playhead extends Target {
          * The simulated current time, drawn as the playhead
          * @prp {Date}
          */
-        now : null,
-
-        /**
-         * The playhead glides from one simulated time to the next over this many milliseconds, the simulation's tick
-         * interval, so it moves at a steady pace instead of hopping a tick at a time
-         * @config {Number}
-         */
-        glideDuration : 300
+        now : null
     };
 
     changeNow(now) {
@@ -39,49 +30,10 @@ export default Target => class Playhead extends Target {
     updateNow(now, oldNow) {
         const me = this;
 
-        if (!oldNow || !me.isPainted || !me.shownNow) {
-            me.showNow(now);
-
-            return;
-        }
-
-        me.glide = { from : me.shownNow.getTime(), to : now.getTime(), start : performance.now() };
-
-        // The widget's own animation frames (Delayable), cancelled when it is destroyed
-        me.glideFrame ??= me.requestAnimationFrame(me.glideStep);
-    }
-
-    glideStep() {
-        const
-            me                  = this,
-            { from, to, start } = me.glide,
-            progress            = Math.min(1, (performance.now() - start) / me.glideDuration);
-
-        me.glideFrame = null;
-        me.showNow(new Date(from + (to - from) * progress));
-
-        if (progress < 1) {
-            me.glideFrame = me.requestAnimationFrame(me.glideStep);
-        }
-    }
-
-    /**
-     * Draws the playhead at a time and delta scrolls the timeline by the distance it moved, without animation, so the
-     * playhead stays put on screen
-     * @param {Date} time
-     */
-    showNow(time) {
-        const
-            me       = this,
-            previous = me.shownNow;
-
-        me.shownNow = time;
-
-        // Scrolled before the time ranges change: reading the scroll position after a DOM write would force a layout
-        // in every frame of the glide
-        if (previous && me.isPainted) {
+        // The fraction of a pixel left over is carried to the next tick, so the view keeps exact pace with the clock
+        if (oldNow && me.isPainted) {
             const
-                distance = (me.scrollRemainder ?? 0) + me.timeAxisViewModel.getDistanceForDuration(time - previous),
+                distance = (me.scrollRemainder ?? 0) + me.timeAxisViewModel.getDistanceForDuration(now - oldNow),
                 whole    = Math.trunc(distance);
 
             me.scrollRemainder = distance - whole;
@@ -91,11 +43,11 @@ export default Target => class Playhead extends Target {
             }
         }
 
-        me.syncPlayhead(time);
+        me.syncPlayhead(now);
     }
 
     /**
-     * The shaded past and the now line, two time ranges, rendered once per frame (a store batch). Display state:
+     * The shaded past and the now line, two time ranges, rendered at once (a store batch). Display state:
      * `clearChanges()` keeps the records out of the store's added and modified records, suspending the change tracking
      * keeps the CrudManager's `hasChanges` from flagging them
      * @param {Date} now The time shown

@@ -15,9 +15,8 @@ unload and leave.
   out is tentative, dashed grey. Striped blocks are door downtime (defrost, maintenance, cleaning), where nothing can be
   booked. Below the doors a utilization strip (the Summary feature) shows per hour the share of door time taken,
   orange above 90%. Zoom around the playhead
-* **Header**: the site, the simulated clock and live counters (on time with its trend over the last hour), the speed
-  (1, 5 or 15 simulated minutes per tick), Simulate delay, which makes a truck with a booked slot run 30 to 75 minutes
-  late, and play / pause
+* **Header**: the site, the simulated clock and live counters (on time with its trend over the last hour),
+  Simulate delay, which makes a truck with a booked slot run 30 to 75 minutes late, and play / pause
 
 Drag a shipment by its handle onto a door to book a slot there (a door without the right equipment refuses it), drag
 a slot to move it, right-click a row or a slot to book, unbook or expedite. Selecting a row selects its slot and the
@@ -146,7 +145,7 @@ already. The simulation holds its clock while a row is dragged.
 
 ### The clock: `lib/simulation/Simulator.js` and `lib/schedule/Playhead.js`
 
-A tick every 300 ms advances the simulated now by the speed, drifts ETAs, temperatures and GPS states, moves the slots
+A tick every 300 ms advances the simulated now by one minute, drifts ETAs, temperatures and GPS states, moves the slots
 of late trucks, books the trucks arriving within six hours, then waits for the engine (`project.commitAsync()`) and
 moves slots out of downtime before it derives the statuses. The clock holds while a slot is dragged or resized. The playhead is two time ranges, the
 shaded past and the now line, edited without change tracking. The timeline follows it by delta scrolling: it scrolls

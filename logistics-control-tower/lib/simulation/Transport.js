@@ -16,12 +16,11 @@ export default class Transport {
     }
 
     /**
-     * One tick of drift for the shipments in transit. More happens per tick when time runs faster
+     * One tick of drift for the shipments in transit
      * @param {ShipmentModel[]} shipping
-     * @param {Number} speed Simulated minutes per tick
      */
-    drift(shipping, speed) {
-        this.driftEtas(shipping, Math.min(80, 20 * speed));
+    drift(shipping) {
+        this.driftEtas(shipping, 20);
         this.driftTemperatures(shipping.filter(shipment => shipment.loadType === 'reefer'), 6);
         this.flickerGps(shipping, 2);
     }

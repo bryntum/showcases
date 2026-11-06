@@ -34,7 +34,7 @@ const
  * the slots booked at a door are chained with dependencies, so when a truck runs late its slot moves to the new ETA
  * and the engine pushes the later slots at the same door.
  *
- * - A gliding playhead the view follows (Playhead)
+ * - A playhead the view follows (Playhead)
  * - Slots move between doors with the right equipment only, not into the past and not into a door's downtime
  *   (`eventDrag.validatorFn`, Downtime)
  * - Slots ending after the shipment's due time are conflicts, outlined dashed
@@ -200,7 +200,7 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         me.updateDoorCount();
 
         // The utilization strip follows the slots: booked, moved by the engine, unbooked. Batched, a tick changes many
-        // slots at once. The playhead's glide only touches the time ranges, it does not redraw the strip
+        // slots at once
         me.eventStore.on({ change : 'refreshUtilization', buffer : 250, thisObj : me });
 
         me.downtimeTip = createDowntimeTip(me);

@@ -232,8 +232,8 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         this.schedule.revealSlot(this.schedule.eventStore.getById(shipment.id));
     }
 
-    // A tick sends several batches to the grid. The KPIs are counted once for them all, when the browser is idle, not
-    // in a frame of the gliding playhead (Delayable, cancelled on destroy)
+    // A tick sends several batches to the grid. The KPIs are counted once for them all, when the browser is idle
+    // (Delayable, cancelled on destroy)
     requestKpiRefresh() {
         this.kpiIdle ??= this.requestIdleCallback(this.refreshKpis);
     }

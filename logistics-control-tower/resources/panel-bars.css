@@ -54,8 +54,8 @@
     }
 }
 
-/* The zoom buttons, the speed control's padded rendition (SimulationControls), so the two read as one family. Actions,
- * not options to pick from: at full strength, where the rendition dims the buttons not pressed */
+/* The zoom buttons are actions, not options to pick from: at full strength, where the padded rendition dims the buttons
+ * not pressed */
 .lct-zoom {
     --b-button-group-padded-button-opacity : 1;
 

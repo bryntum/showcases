@@ -3,7 +3,7 @@ import { formatMinutes } from '../util/Time.js';
 /**
  * A custom AG Grid status bar panel, on the left of the footer: the shipments shown of all of them, their pallets and
  * their average delay. It follows the grid itself, through `modelUpdated` (rows changed, filtered or searched), and
- * counts once the browser is idle, as a tick can update the model more than once and the playhead glides meanwhile.
+ * counts once the browser is idle, as a tick can update the model more than once.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/component-status-bar/

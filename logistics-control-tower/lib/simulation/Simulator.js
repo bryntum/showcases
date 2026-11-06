@@ -40,12 +40,6 @@ export default class Simulator extends Events(Delayable(Base)) {
         now : null,
 
         /**
-         * Simulated minutes per tick
-         * @prp {Number}
-         */
-        speed : 1,
-
-        /**
          * Real milliseconds between ticks
          * @config {Number}
          */
@@ -153,12 +147,12 @@ export default class Simulator extends Events(Delayable(Base)) {
 
         try {
             const
-                now      = me.now = new Date(Math.min(me.now.getTime() + me.speed * minuteMs, me.endDate.getTime())),
+                now      = me.now = new Date(Math.min(me.now.getTime() + minuteMs, me.endDate.getTime())),
                 shipping = me.shipmentStore.records.filter(shipment => shipment.isInTransit);
 
-            me.transport.drift(shipping, me.speed);
+            me.transport.drift(shipping);
             me.pushLateSlots();
-            me.bookArrivals(Math.max(3, me.speed));
+            me.bookArrivals(3);
 
             // The engine schedules the moved and the new slots, then the statuses follow the scheduled times
             await schedule.project.commitAsync();
