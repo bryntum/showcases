@@ -109,7 +109,7 @@
 
     /* Sized like the status pills, not stretched to the row's line height */
     .lct-group-late {
-        padding          : 0.1em 0.6em;
+        padding          : 0.1em 0.8em;
         border-radius    : 1em;
         font-size        : 0.88em;
         font-weight      : 600;
