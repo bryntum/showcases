@@ -35,12 +35,27 @@ function iconElement(className) {
     return element;
 }
 
-// The carrier chip, its colour from the theme palette
+// The carrier logos (fictional), keyed by their file name, the lower case carrier code
+const carrierLogos = Object.fromEntries(Object.entries(
+    import.meta.glob('../../resources/carriers/*.svg', { eager : true, query : '?url', import : 'default' })
+).map(([path, url]) => [path.match(/(\w+)\.svg$/)[1], url]));
+
+// The carrier logo, decorative since the name follows it
+function logoElement(code) {
+    const element = document.createElement('img');
+
+    element.className = 'lct-carrier-logo';
+    element.src       = carrierLogos[code.toLowerCase()];
+    element.alt       = '';
+
+    return element;
+}
+
+// The carrier chip, its logo and name
 function carrierChip(data, name) {
-    const chip = span('lct-carrier', span('lct-carrier-code', data.carrierCode), span('lct-carrier-name', name));
+    const chip = span('lct-carrier', logoElement(data.carrierCode), span('lct-carrier-name', name));
 
     chip.title = data.carrier;
-    chip.style.setProperty('--lct-carrier', `var(--b-color-${data.carrierColor})`);
 
     return chip;
 }
