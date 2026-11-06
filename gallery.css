@@ -444,8 +444,9 @@ a {
     }
 }
 
-/* The product name, a tag on the tile's top edge: a dot in Bryntum's or AG's colour */
-.chip {
+/* The product name, a tag on the tile's top edge: a dot in Bryntum's or AG's colour. Scoped to the tiles, the how built
+ * cards have chips of their own */
+.tile > .chip {
     position           : absolute;
     inset-block-start  : -0.65rem;
     inset-inline-start : 0.75rem;

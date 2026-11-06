@@ -76,6 +76,10 @@ test.describe('Gallery', () => {
 
         await expect(section.getByRole('link', { name : /gantt-enterprise on npm/ }))
             .toHaveAttribute('href', 'https://www.npmjs.com/package/@bryntum/gantt-enterprise');
+        await expect(section.getByRole('link', { name : /ag-grid-enterprise on npm/ }))
+            .toHaveAttribute('href', 'https://www.npmjs.com/package/ag-grid-enterprise');
+        await expect(section.getByRole('link', { name : /ag-charts-community on npm/ }))
+            .toHaveAttribute('href', 'https://www.npmjs.com/package/ag-charts-community');
         await expect(section.getByRole('link', { name : 'Source on GitHub' }))
             .toHaveAttribute('href', 'https://github.com/bryntum/showcases');
     });
