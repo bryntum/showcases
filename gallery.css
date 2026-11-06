@@ -41,6 +41,14 @@
     --g-running     : light-dark(#1f8a35, #3fb950);
     --g-focus       : light-dark(#0a6ad6, #6cb2ff);
     --g-shadow      : 0 1.5rem 3rem -1rem rgb(0 0 0 / 60%);
+    /* Added under a screenshot that is hovered, a faint lift in the accent */
+    --g-shadow-lift : 0 0.75rem 2rem -0.75rem color-mix(in srgb, var(--g-accent) 35%, transparent);
+    --g-lift        : 0.2s ease-out;
+    --g-lift-y      : -3px;
+
+    @media (prefers-reduced-motion: reduce) {
+        --g-lift-y : 0px;
+    }
 
     font-family : var(--g-font);
     font-weight : 400;
@@ -944,7 +952,30 @@ a {
     }
 }
 
-/* The featured screenshot, framed */
+/* "Open live demo", shown on a hovered screenshot link (featured and cards) */
+.open-hint {
+    position         : absolute;
+    inset-block-end  : 0.75rem;
+    inset-inline-end : 0.75rem;
+    padding          : 0.3rem 0.65rem;
+    border-radius    : 999px;
+    font-size        : 0.78rem;
+    font-weight      : 600;
+    color            : var(--g-on-accent);
+    background       : var(--g-accent-fill);
+    box-shadow       : var(--g-shadow-lift);
+    opacity          : 0;
+    translate        : 0 calc(var(--g-lift-y) * -1);
+    transition       : opacity var(--g-lift), translate var(--g-lift);
+    pointer-events   : none;
+
+    a:hover > & {
+        opacity   : 1;
+        translate : 0 0;
+    }
+}
+
+/* The featured screenshot, framed. It links to the demo: on hover it lifts a little and says where the click goes */
 .frame {
     margin        : 0;
     overflow      : hidden;
@@ -952,6 +983,18 @@ a {
     border-radius : 0.6rem;
     background    : var(--g-surface);
     box-shadow    : var(--g-shadow);
+    transition    : translate var(--g-lift), box-shadow var(--g-lift), border-color var(--g-lift);
+
+    a {
+        position : relative;
+        display  : block;
+    }
+
+    &:hover {
+        translate    : 0 var(--g-lift-y);
+        border-color : color-mix(in srgb, var(--g-accent) 40%, var(--g-border));
+        box-shadow   : var(--g-shadow), var(--g-shadow-lift);
+    }
 
     img {
         display : block;
@@ -1067,6 +1110,13 @@ a {
     border         : 1px solid var(--g-border);
     border-radius  : 0.5rem;
     background     : var(--g-surface);
+    transition     : translate var(--g-lift), box-shadow var(--g-lift), border-color var(--g-lift);
+
+    &:has(.thumb a:hover) {
+        translate    : 0 var(--g-lift-y);
+        border-color : color-mix(in srgb, var(--g-accent) 40%, var(--g-border));
+        box-shadow   : var(--g-shadow-lift);
+    }
 
     .thumb {
         position         : relative;
@@ -1076,8 +1126,9 @@ a {
 
         /* The screenshot links to the demo too, a mouse shortcut next to the card's own links */
         a {
-            display : block;
-            height  : 100%;
+            position : relative;
+            display  : block;
+            height   : 100%;
         }
 
         img {
