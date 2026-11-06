@@ -132,7 +132,7 @@
                         <picture>
                             <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
                                 srcset="./gallery/hero-ag-charts-light.webp">
-                            <img src="./gallery/hero-ag-charts-dark.webp" width="640" height="457" decoding="async" draggable="false" alt="">
+                            <img src="./gallery/hero-ag-charts-dark.webp" width="640" height="457" loading="lazy" decoding="async" draggable="false" alt="">
                         </picture>
                     </li>
                     <li class="tile" data-tile="ag-grid" data-family="ag">
@@ -140,27 +140,52 @@
                         <picture>
                             <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
                                 srcset="./gallery/hero-ag-grid-light.webp">
-                            <img src="./gallery/hero-ag-grid-dark.webp" width="720" height="460" fetchpriority="high" decoding="async" draggable="false" alt="">
+                            <img src="./gallery/hero-ag-grid-dark.webp" width="720" height="460" loading="lazy" decoding="async" draggable="false" alt="">
                         </picture>
                     </li>
                 </ul>
             </div>
         </section>
 
-        <section class="featured wrap" aria-labelledby="featured-title">
-            <!-- Decorative time axis, a hairline, the "now" dot creeps along -->
-            <div class="timeline" aria-hidden="true">
-                <ol>
-                    <li>09:00</li><li>10:00</li><li>11:00</li><li>12:00</li>
-                    <li>13:00</li><li>14:00</li><li>15:00</li><li>16:00</li>
-                </ol>
-                <div class="now-track">
-                    <div class="now-marker">
-                        <span class="now-dot"></span>
-                    </div>
-                </div>
+        <!-- Customers, from bryntum.com/company/customers. The logos scroll slowly, the second list repeats the first so
+             the loop is seamless; still and wrapped with reduced motion -->
+        <section class="trusted wrap" aria-labelledby="trusted-title">
+            <p id="trusted-title" class="trusted-title">Trusted by teams at</p>
+            <div class="marquee">
+                <ul class="logos">
+                    <li><span class="logo" data-logo="airbus" role="img" aria-label="Airbus"></span></li>
+                    <li><span class="logo" data-logo="boeing" role="img" aria-label="Boeing"></span></li>
+                    <li><span class="logo" data-logo="bosch" role="img" aria-label="Bosch"></span></li>
+                    <li><span class="logo" data-logo="ericsson" role="img" aria-label="Ericsson"></span></li>
+                    <li><span class="logo" data-logo="ferrari" role="img" aria-label="Ferrari"></span></li>
+                    <li><span class="logo" data-logo="intel" role="img" aria-label="Intel"></span></li>
+                    <li><span class="logo" data-logo="microsoft" role="img" aria-label="Microsoft"></span></li>
+                    <li><span class="logo" data-logo="nvidia" role="img" aria-label="NVIDIA"></span></li>
+                    <li><span class="logo" data-logo="samsung" role="img" aria-label="Samsung"></span></li>
+                    <li><span class="logo" data-logo="siemens" role="img" aria-label="Siemens"></span></li>
+                    <li><span class="logo" data-logo="sony" role="img" aria-label="Sony"></span></li>
+                    <li><span class="logo" data-logo="spacex" role="img" aria-label="SpaceX"></span></li>
+                    <li><span class="logo" data-logo="toyota" role="img" aria-label="Toyota"></span></li>
+                </ul>
+                <ul class="logos" aria-hidden="true">
+                    <li><span class="logo" data-logo="airbus"></span></li>
+                    <li><span class="logo" data-logo="boeing"></span></li>
+                    <li><span class="logo" data-logo="bosch"></span></li>
+                    <li><span class="logo" data-logo="ericsson"></span></li>
+                    <li><span class="logo" data-logo="ferrari"></span></li>
+                    <li><span class="logo" data-logo="intel"></span></li>
+                    <li><span class="logo" data-logo="microsoft"></span></li>
+                    <li><span class="logo" data-logo="nvidia"></span></li>
+                    <li><span class="logo" data-logo="samsung"></span></li>
+                    <li><span class="logo" data-logo="siemens"></span></li>
+                    <li><span class="logo" data-logo="sony"></span></li>
+                    <li><span class="logo" data-logo="spacex"></span></li>
+                    <li><span class="logo" data-logo="toyota"></span></li>
+                </ul>
             </div>
+        </section>
 
+        <section class="featured wrap" aria-labelledby="featured-title">
             <div class="featured-grid">
                 <figure class="frame">
                     <figcaption>

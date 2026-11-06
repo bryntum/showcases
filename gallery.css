@@ -32,6 +32,9 @@
     --g-border      : light-dark(#dde1e7, #2a2e35);
     --g-border-soft : light-dark(#e7eaef, #22252b);
     --g-faint       : light-dark(#6b7280, #6c737e);
+    /* Customer logos: the faint text sunk into the page, readable but quiet */
+    --g-logo        : light-dark(color-mix(in srgb, var(--g-faint) 55%, var(--g-bg)),
+        color-mix(in srgb, var(--g-faint) 50%, var(--g-bg)));
     --g-on-accent   : #fff;
     --g-tag-bg      : light-dark(#e5effc, #1c2a3d);
     --g-tag-text    : light-dark(#0a4f9e, #9cc8ff);
@@ -355,11 +358,15 @@ a {
     inset           : 0;
     padding         : 0;
     list-style      : none;
-    transform-style : preserve-3d;
-    transform       : rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(var(--tilt-z));
     /* Only the tiles take the pointer: the Gantt tile lies in the scene's own plane, which could win the hit test */
     pointer-events  : none;
-    transition      : transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    /* Tilted with a mouse, flat for touch */
+    @media (pointer: fine) {
+        transform-style : preserve-3d;
+        transform       : rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(var(--tilt-z));
+        transition      : transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
 }
 
 .tile {
@@ -383,17 +390,28 @@ a {
     --pop              : 1;
 
     pointer-events     : auto;
-    transform-style    : preserve-3d;
-    transform-origin   : 0 0;
-    transform          : translateZ(calc(var(--z) * 1rem))
-        translate3d(var(--eye-x), var(--eye-y), var(--eye-z))
-        scale3d(var(--scale), var(--scale), var(--scale))
-        translate3d(calc(var(--eye-x) * -1), calc(var(--eye-y) * -1), calc(var(--eye-z) * -1))
-        translate(50%, 50%) scale(var(--pop)) translate(-50%, -50%);
-    /* Depth changes with the movement, so the tile passes the others smoothly. An interrupted rise turns back from
-     * where it is */
-    transition         : transform var(--g-rise);
-    animation          : tile-float 7s ease-in-out var(--delay, 0s) infinite alternate;
+
+    @media (pointer: fine) {
+        transform-style  : preserve-3d;
+        transform-origin : 0 0;
+        transform        : translateZ(calc(var(--z) * 1rem))
+            translate3d(var(--eye-x), var(--eye-y), var(--eye-z))
+            scale3d(var(--scale), var(--scale), var(--scale))
+            translate3d(calc(var(--eye-x) * -1), calc(var(--eye-y) * -1), calc(var(--eye-z) * -1))
+            translate(50%, 50%) scale(var(--pop)) translate(-50%, -50%);
+    }
+
+    /* Floating and rising under the pointer only beside the text with a mouse: below it on tablets the tilt stays
+     * still. Depth changes with the movement, so a rising tile passes the others smoothly, and an interrupted rise
+     * turns back from where it is */
+    @media (width >= 60rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+        transition : transform var(--g-rise);
+        animation  : tile-float 7s ease-in-out var(--delay, 0s) infinite alternate;
+
+        &::after {
+            transition : opacity var(--g-rise);
+        }
+    }
 
     img {
         display       : block;
@@ -416,16 +434,17 @@ a {
         box-shadow     : 0 3.5rem 5rem -1rem var(--g-tile-shadow);
         opacity        : 0;
         pointer-events : none;
-        transition     : opacity var(--g-rise);
     }
 
-    &:hover {
-        --scale : calc((var(--g-eye) * var(--sight-z) - var(--g-rise-top)) /
-            (var(--g-eye) * var(--sight-z) - var(--z)));
-        --pop   : 1.03;
+    @media (width >= 60rem) and (hover: hover) and (pointer: fine) {
+        &:hover {
+            --scale : calc((var(--g-eye) * var(--sight-z) - var(--g-rise-top)) /
+                (var(--g-eye) * var(--sight-z) - var(--z)));
+            --pop   : 1.03;
 
-        &::after {
-            opacity : 1;
+            &::after {
+                opacity : 1;
+            }
         }
     }
 
@@ -493,15 +512,6 @@ a {
         --lift  : 1;
         --delay : 0s;
     }
-
-    @media (prefers-reduced-motion: reduce) {
-        animation  : none;
-        transition : none;
-
-        &::after {
-            transition : none;
-        }
-    }
 }
 
 /* The product name, a tag on the tile's top edge: a dot in Bryntum's or AG's colour. Scoped to the tiles, the how built
@@ -540,8 +550,10 @@ a {
 }
 
 /* Over the hovered tile's screenshot, inside the tile so it shares the tilt. Positions are percentages of the
- * screenshot (`--x`, `--y`, `--w`, `--h`, set by gallery.js). Just above the image, under the chip */
+ * screenshot (`--x`, `--y`, `--w`, `--h`, set by gallery.js). Just above the image, under the chip. Only where the
+ * tiles rise, and for `?hotspots` */
 .hot {
+    display        : none;
     position       : absolute;
     inset          : 1px;
     overflow       : clip;
@@ -561,8 +573,16 @@ a {
         transition         : opacity var(--g-glow);
     }
 
-    .tile:hover > &[data-on] :is(.spot, .dot, .bubble) {
-        opacity : 1;
+    @media (width >= 60rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+        display : block;
+
+        .tile:hover > &[data-on] :is(.spot, .dot, .bubble) {
+            opacity : 1;
+        }
+    }
+
+    &[data-debug] {
+        display : block;
     }
 
     /* A soft glow a little larger than the card, bar, day or figure */
@@ -650,72 +670,179 @@ a {
     }
 }
 
-/* A quiet time axis above the featured showcase: a hairline with hour ticks and a slowly advancing "now" dot */
-.timeline {
-    position : relative;
+/* Customers: a quiet strip of logos between the hero and the featured showcase. Single colour masks in `--g-logo`,
+ * scrolling slowly in a loop (two copies of the list, the track moves by one) and fading out at the edges. Logos are
+ * `--g-logo-height` high, wordmarks a little lower and SpaceX closer to its neighbours, like bryntum.com's banner */
+.trusted {
+    --g-logo-height : 1.25rem;
+    --g-logo-gap    : 3.5rem;
 
-    ol {
-        display               : grid;
-        grid-template-columns : repeat(8, minmax(0, 1fr));
-        padding               : 0;
-        border-block-start    : 1px solid var(--g-border-soft);
-        list-style            : none;
+    padding-block : 0.5rem 3rem;
+    text-align    : center;
+
+    @media (max-width: 40rem) {
+        --g-logo-height : 1rem;
+        --g-logo-gap    : 2.5rem;
+
+        padding-block : 0 2.5rem;
+    }
+}
+
+.trusted-title {
+    margin-block-end : 1.25rem;
+    font-size        : 0.78rem;
+    color            : var(--g-faint);
+}
+
+.marquee {
+    display    : flex;
+    overflow-x : clip;
+    mask-image : linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+
+    @media (prefers-reduced-motion: reduce) {
+        mask-image : none;
+    }
+}
+
+.logos {
+    display     : flex;
+    flex        : none;
+    align-items : center;
+    gap         : var(--g-logo-gap);
+    padding     : 0 var(--g-logo-gap) 0 0;
+    list-style  : none;
+    animation   : logos-scroll 40s linear infinite;
+
+    .marquee:hover > & {
+        animation-play-state : paused;
     }
 
     li {
-        padding             : 0.3rem 0.45rem 0;
-        border-inline-start : 1px solid var(--g-border-soft);
-        white-space         : nowrap;
-        font-family         : var(--g-mono);
-        font-size           : 0.65rem;
-        line-height         : 1;
-        color               : var(--g-faint);
+        display : flex;
     }
 
-    /* Every second hour on narrow screens */
-    @media (max-width: 40rem) {
-        li:nth-child(even) {
-            color : transparent;
+    /* Still, centred and wrapped, without the copy */
+    @media (prefers-reduced-motion: reduce) {
+        flex-wrap       : wrap;
+        justify-content : center;
+        flex            : 1 1 auto;
+        padding         : 0;
+        row-gap         : 1.5rem;
+        animation       : none;
+
+        &[aria-hidden] {
+            display : none;
         }
     }
 }
 
-/* Spans the axis */
-.now-track {
-    position       : absolute;
-    inset          : 0;
-    overflow-x     : clip;
-    pointer-events : none;
-}
+.logo {
+    --size         : 1;
+    --space        : 1;
 
-/* As wide as the axis, so a translate percentage is a position on the axis (11:40 at load) */
-.now-marker {
-    width     : 100%;
-    height    : 100%;
-    translate : 34% 0;
-    animation : now-creep 1800s linear forwards;
+    display        : block;
+    block-size     : calc(var(--g-logo-height) * var(--size));
+    aspect-ratio   : var(--ratio);
+    margin-inline  : calc((var(--space) - 1) * var(--g-logo-gap) / 2);
+    background     : var(--g-logo);
+    opacity        : 0.9;
+    mask-position  : center;
+    mask-size      : contain;
+    mask-repeat    : no-repeat;
+    transition     : opacity 0.2s;
 
-    @media (prefers-reduced-motion: reduce) {
-        animation : none;
+    &:hover {
+        opacity : 1;
+    }
+
+    &[data-logo="airbus"] {
+        --ratio    : 24.001 / 4.448;
+        --size     : 0.75;
+
+        mask-image : url('./gallery/logos/airbus.svg');
+    }
+
+    &[data-logo="boeing"] {
+        --ratio    : 169.56 / 38.78;
+
+        mask-image : url('./gallery/logos/boeing.svg');
+    }
+
+    &[data-logo="bosch"] {
+        --ratio    : 433 / 97;
+
+        mask-image : url('./gallery/logos/bosch.svg');
+    }
+
+    &[data-logo="ericsson"] {
+        --ratio    : 214 / 44.5;
+
+        mask-image : url('./gallery/logos/ericsson.svg');
+    }
+
+    &[data-logo="ferrari"] {
+        --ratio    : 93.751 / 20.66;
+
+        mask-image : url('./gallery/logos/ferrari.svg');
+    }
+
+    &[data-logo="intel"] {
+        --ratio    : 24 / 9.311;
+
+        mask-image : url('./gallery/logos/intel.svg');
+    }
+
+    &[data-logo="microsoft"] {
+        --ratio    : 337.6 / 72;
+
+        mask-image : url('./gallery/logos/microsoft.svg');
+    }
+
+    &[data-logo="nvidia"] {
+        --ratio    : 162.45 / 29.953;
+
+        mask-image : url('./gallery/logos/nvidia.svg');
+    }
+
+    &[data-logo="samsung"] {
+        --ratio    : 24 / 3.668;
+        --size     : 0.75;
+
+        mask-image : url('./gallery/logos/samsung.svg');
+    }
+
+    &[data-logo="siemens"] {
+        --ratio    : 24 / 3.968;
+        --size     : 0.75;
+
+        mask-image : url('./gallery/logos/siemens.svg');
+    }
+
+    &[data-logo="sony"] {
+        --ratio    : 24 / 4.224;
+        --size     : 0.75;
+
+        mask-image : url('./gallery/logos/sony.svg');
+    }
+
+    &[data-logo="spacex"] {
+        --ratio    : 331.644 / 40.825;
+        --size     : 0.833;
+        --space    : 0.6;
+
+        mask-image : url('./gallery/logos/spacex.svg');
+    }
+
+    &[data-logo="toyota"] {
+        --ratio    : 251.35 / 41.55;
+
+        mask-image : url('./gallery/logos/toyota.svg');
     }
 }
 
-/* A dot on the hairline */
-.now-dot {
-    position           : absolute;
-    inset-block-start  : 0;
-    inset-inline-start : 0;
-    width              : 0.4rem;
-    height             : 0.4rem;
-    border-radius      : 50%;
-    background         : var(--g-accent-fill);
-    box-shadow         : 0 0 0 0.2rem color-mix(in srgb, var(--g-accent-fill) 20%, transparent);
-    translate          : -50% calc(-50% - 0.5px);
-}
-
-@keyframes now-creep {
+@keyframes logos-scroll {
     to {
-        translate : 92% 0;
+        translate : -100% 0;
     }
 }
 
@@ -728,7 +855,6 @@ a {
         grid-template-columns : minmax(0, 1.65fr) minmax(0, 1fr);
         align-items           : center;
         gap                   : 3rem 4rem;
-        margin-block-start    : 2.5rem;
 
         @media (max-width: 56rem) {
             grid-template-columns : minmax(0, 1fr);
@@ -873,7 +999,7 @@ a {
     }
 
     button {
-        min-height    : 2.25rem;
+        min-height    : 2.5rem;
         padding       : 0 0.8rem;
         border        : 0;
         border-radius : 0.25rem;
@@ -1147,6 +1273,7 @@ a {
             align-items     : center;
             justify-content : space-between;
             gap             : 1rem;
+            min-block-size  : 2.5rem;
             padding         : 0.4rem 0.85rem;
             border          : 1px solid transparent;
             border-radius   : var(--g-radius);
@@ -1391,6 +1518,19 @@ a {
     .hero {
         padding-block : 3.5rem 3rem;
     }
+
+    /* Closer sections, the screen is short */
+    .featured {
+        padding-block-end : 4rem;
+    }
+
+    :is(.showcases, .built) {
+        padding-block : 3.5rem 4rem;
+    }
+
+    .cta {
+        padding-block : 3.5rem;
+    }
 }
 
 @media (max-width: 26rem) {
@@ -1414,6 +1554,29 @@ a {
 
     .hero .button-row .button {
         flex : 1 1 100%;
+    }
+}
+
+/* Touch: text links get a hit area of at least 2.5rem without moving the text, the header's icon buttons grow to it */
+@media (pointer: coarse) {
+    :is(.site-links, .site-footer, .card .links, .tags) a,
+    .site-header .brand {
+        display         : inline-flex;
+        align-items     : center;
+        justify-content : center;
+        min-block-size  : 2.5rem;
+        min-inline-size : 2.5rem;
+        margin-block    : calc((2.5rem - 1lh) / -2);
+    }
+
+    .site-actions .sc-icon-button {
+        min-inline-size : 2.5rem;
+        min-block-size  : 2.5rem;
+    }
+
+    /* A title link may wrap, padding an inline box grows its hit area and leaves the lines alone */
+    h3 a {
+        padding-block : 0.65rem;
     }
 }
 

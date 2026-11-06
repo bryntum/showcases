@@ -178,3 +178,66 @@ test.describe('Gallery hero', () => {
             .toEqual(Array(7).fill('false'));
     });
 });
+
+// The customer logos between the hero and the featured showcase
+test.describe('Gallery customers', () => {
+    test('shows the thirteen customer logos once to assistive technology, the loop copy hidden', async({ page }) => {
+        await page.goto('./');
+
+        const strip = page.getByRole('region', { name : 'Trusted by teams at' });
+
+        await expect(strip.getByRole('img')).toHaveCount(13);
+        await expect(strip.getByRole('img', { name : 'Airbus' })).toBeAttached();
+        await expect(strip.locator('.logos')).toHaveCount(2);
+        await expect(strip.locator('.logos').nth(1)).toHaveAttribute('aria-hidden', 'true');
+        await expect(strip.locator('.logos').nth(1).locator('.logo')).toHaveCount(13);
+        // Masks of a token colour, not images
+        expect(await strip.locator('.logo').first().evaluate(logo => getComputedStyle(logo).maskImage))
+            .toMatch(/^url\(/);
+    });
+
+    test('with reduced motion the logos stand still, wrapped, without the copy', async({ page }) => {
+        await page.emulateMedia({ reducedMotion : 'reduce' });
+        await page.goto('./');
+
+        const lists = page.locator('.trusted .logos');
+
+        await expect(lists.nth(1)).toBeHidden();
+        expect(await lists.first().evaluate(list => getComputedStyle(list).animationName)).toBe('none');
+    });
+});
+
+// Phones and touch tablets: a still picture, or none
+test.describe('Gallery hero on touch', () => {
+    test.use({ viewport : { width : 768, height : 1024 }, isMobile : true, hasTouch : true });
+
+    test('the stack lies flat and does not follow the pointer', async({ page }) => {
+        await page.goto('./');
+
+        const
+            stack = page.locator('.hero-stack'),
+            box   = await stack.boundingBox();
+
+        expect(await page.locator('.stack-scene').evaluate(scene => getComputedStyle(scene).transform)).toBe('none');
+
+        await page.mouse.move(box.x + box.width / 4, box.y + box.height / 4);
+        await page.mouse.move(box.x + box.width / 3, box.y + box.height / 3);
+
+        expect(await stack.evaluate(element => element.style.getPropertyValue('--px'))).toBe('');
+        await expect(page.locator('.hero-stack .hot')).toHaveCount(0);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(768);
+    });
+});
+
+test.describe('Gallery on a phone', () => {
+    test.use({ viewport : { width : 390, height : 844 }, isMobile : true, hasTouch : true });
+
+    test('hides the stack, keeps the call to action in view and the page as wide as the screen', async({ page }) => {
+        await page.goto('./');
+
+        await expect(page.locator('.hero-stack')).toBeHidden();
+        await expect(page.getByRole('link', { name : 'Try the latest demo' })).toBeInViewport();
+        await expect(page.getByRole('region', { name : 'Trusted by teams at' }).getByRole('img')).toHaveCount(13);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+    });
+});

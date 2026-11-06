@@ -174,76 +174,110 @@ document.querySelector('.site-actions').prepend(createColorSchemeToggle({
     }
 }));
 
+// Where the hero's tiles lean, float and light up: beside the text, with a mouse, without reduced motion. Elsewhere,
+// phones and touch tablets included, they are a still picture and no pointer listener is attached (gallery.css agrees)
+const pointerEffects = matchMedia(
+    '(width >= 60rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+
+/**
+ * Runs `attach` while `pointerEffects` matches, with a signal that removes its listeners when it stops matching
+ * @param {Function} attach Called with an `AbortSignal` for its `addEventListener` calls, returns an optional cleanup
+ */
+function whilePointerEffects(attach) {
+    let controller, cleanup;
+
+    const sync = () => {
+        controller?.abort();
+        cleanup?.();
+        controller = cleanup = null;
+
+        if (pointerEffects.matches) {
+            controller = new AbortController();
+            cleanup    = attach(controller.signal);
+        }
+    };
+
+    pointerEffects.addEventListener('change', sync);
+    sync();
+}
+
 /**
  * Leans the hero's component stack towards the pointer anywhere in the hero's band of the page, margins included,
  * as `--px` / `--py` from -1 to 1 (gallery.css): from the stack's centre to the band's edge on each side. Eases back
- * to rest when the pointer leaves the band or the hero scrolls away. Not for touch, nor with reduced motion. The
- * rectangles are read once per scroll or resize, one write per frame
+ * to rest when the pointer leaves the band or the hero scrolls away. The rectangles are read once per scroll or
+ * resize, one write per frame
  * @param {HTMLElement} stack The `.hero-stack`
  */
 function leanTowardsPointer(stack) {
     const
-        hero   = stack.closest('.hero'),
-        motion = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover)'),
-        clamp  = value => Math.max(-1, Math.min(1, value)),
+        hero  = stack.closest('.hero'),
+        clamp = value => Math.max(-1, Math.min(1, value)),
         // -1 at the near edge, 0 at the centre, 1 at the far edge
-        along  = (value, start, centre, end) =>
+        along = (value, start, centre, end) =>
             clamp((value - centre) / (value < centre ? centre - start : end - centre)),
-        rest   = () => {
-            cancelAnimationFrame(frame);
-            frame = 0;
-            stack.style.removeProperty('--px');
-            stack.style.removeProperty('--py');
-        };
-
-    let frame = 0, inView = false, rects = null, pointer = null;
-
-    const measure = () => {
-        const
-            { top, bottom } = hero.getBoundingClientRect(),
-            centre          = stack.getBoundingClientRect();
-
         // The hero's height, the window's width
-        return {
-            area : { left : 0, right : document.documentElement.clientWidth, top, bottom },
-            cx   : centre.left + centre.width / 2,
-            cy   : centre.top + centre.height / 2
-        };
-    };
-
-    addEventListener('scroll', () => rects = null, { passive : true });
-    addEventListener('resize', () => rects = null);
-    new IntersectionObserver(([entry]) => {
-        inView = entry.isIntersecting;
-        inView || rest();
-    }).observe(hero);
-
-    addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
-        if (!motion.matches || !inView || pointerType !== 'mouse') {
-            return;
-        }
-
-        pointer = [clientX, clientY];
-        frame ||= requestAnimationFrame(() => {
-            frame = 0;
-            rects ??= measure();
-
+        measure = () => {
             const
-                { area, cx, cy } = rects,
-                [x, y]           = pointer;
+                { top, bottom } = hero.getBoundingClientRect(),
+                centre          = stack.getBoundingClientRect();
 
-            if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
-                rest();
+            return {
+                area : { left : 0, right : document.documentElement.clientWidth, top, bottom },
+                cx   : centre.left + centre.width / 2,
+                cy   : centre.top + centre.height / 2
+            };
+        };
+
+    whilePointerEffects(signal => {
+        let frame = 0, inView = false, rects = null, pointer = null;
+
+        const
+            rest     = () => {
+                cancelAnimationFrame(frame);
+                frame = 0;
+                stack.style.removeProperty('--px');
+                stack.style.removeProperty('--py');
+            },
+            observer = new IntersectionObserver(([entry]) => {
+                inView = entry.isIntersecting;
+                inView || rest();
+            });
+
+        observer.observe(hero);
+        addEventListener('scroll', () => rects = null, { passive : true, signal });
+        addEventListener('resize', () => rects = null, { signal });
+        // Out of the window
+        document.documentElement.addEventListener('pointerleave', rest, { signal });
+
+        addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+            if (!inView || pointerType !== 'mouse') {
                 return;
             }
 
-            stack.style.setProperty('--px', along(x, area.left, cx, area.right).toFixed(3));
-            stack.style.setProperty('--py', along(y, area.top, cy, area.bottom).toFixed(3));
-        });
-    }, { passive : true });
+            pointer = [clientX, clientY];
+            frame ||= requestAnimationFrame(() => {
+                frame = 0;
+                rects ??= measure();
 
-    // Out of the window
-    document.documentElement.addEventListener('pointerleave', rest);
+                const
+                    { area, cx, cy } = rects,
+                    [x, y]           = pointer;
+
+                if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
+                    rest();
+                    return;
+                }
+
+                stack.style.setProperty('--px', along(x, area.left, cx, area.right).toFixed(3));
+                stack.style.setProperty('--py', along(y, area.top, cy, area.bottom).toFixed(3));
+            });
+        }, { passive : true, signal });
+
+        return () => {
+            observer.disconnect();
+            rest();
+        };
+    });
 }
 
 leanTowardsPointer(document.querySelector('.hero-stack'));
@@ -328,12 +362,11 @@ function outlineHotspots(stack, layerOf) {
  * Lights up the real element under the pointer on the hovered hero tile: a card, a bar or a day glows, the grid row
  * gets a band, the chart a crosshair with the nearest point's value. The positions come from the rendered components
  * (gallery/hero-hotspots.json, percentages of the screenshot, made by the tile render script), in a layer inside the
- * tile so the tilt moves it too. Mouse only and not with reduced motion; CSS shows it on the hovered tile only
+ * tile so the tilt moves it too. Only with `pointerEffects`; CSS shows it on the hovered tile only
  * @param {HTMLElement} stack The `.hero-stack`
  */
 function hoverHotspots(stack) {
     const
-        enabled = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)'),
         layers  = new Map(),
         // The layer over a tile's screenshot with the elements the effect moves, made on first use
         layerOf = tile => {
@@ -359,32 +392,33 @@ function hoverHotspots(stack) {
     if (new URLSearchParams(location.search).has('hotspots')) {
         outlineHotspots(stack, layerOf);
     }
-    // Built ahead, so the first hover only moves a glow
-    else if (enabled.matches) {
+
+    whilePointerEffects(signal => {
+        // Built ahead, so the first hover only moves a glow
         (globalThis.requestIdleCallback ?? setTimeout)(() => stack.querySelectorAll('.tile').forEach(layerOf));
-    }
 
-    stack.addEventListener('pointermove', ({ target, pointerType, offsetX, offsetY }) => {
-        if (!enabled.matches || pointerType !== 'mouse' || target.localName !== 'img') {
-            return;
-        }
+        stack.addEventListener('pointermove', ({ target, pointerType, offsetX, offsetY }) => {
+            if (pointerType !== 'mouse' || target.localName !== 'img') {
+                return;
+            }
 
-        // The offset is in the image's own, untilted coordinates
-        const
-            parts = layerOf(target.closest('.tile')),
-            px    = offsetX / target.clientWidth * 100,
-            py    = offsetY / target.clientHeight * 100,
-            hit   = hotspotAt(parts.spec, px, py);
+            // The offset is in the image's own, untilted coordinates
+            const
+                parts = layerOf(target.closest('.tile')),
+                px    = offsetX / target.clientWidth * 100,
+                py    = offsetY / target.clientHeight * 100,
+                hit   = hotspotAt(parts.spec, px, py);
 
-        parts.layer.toggleAttribute('data-on', Boolean(hit));
+            parts.layer.toggleAttribute('data-on', Boolean(hit));
 
-        if (hit === true) {
-            showChartPoint(parts, parts.spec, px, py);
-        }
-        else if (hit) {
-            setVars(parts.spot, parts.spec.kind === 'row' ? { y : hit[0], h : hit[1] } :
-                { x : hit[0], y : hit[1], w : hit[2], h : hit[3] });
-        }
+            if (hit === true) {
+                showChartPoint(parts, parts.spec, px, py);
+            }
+            else if (hit) {
+                setVars(parts.spot, parts.spec.kind === 'row' ? { y : hit[0], h : hit[1] } :
+                    { x : hit[0], y : hit[1], w : hit[2], h : hit[3] });
+            }
+        }, { signal });
     });
 }
 
