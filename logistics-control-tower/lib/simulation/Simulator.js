@@ -1,12 +1,11 @@
 import { Base, Delayable, Events } from '@bryntum/core-enterprise';
 import DockPlanner from './DockPlanner.js';
 import Random from './Random.js';
+import Transport from './Transport.js';
 import { downtimeAt, downtimeIntervals } from '../schedule/Downtime.js';
 import { hourMs, minuteMs } from '../util/Time.js';
 
 const
-    // Delay values kept for the sparkline
-    historyLength  = 16,
     // In transit statuses by minutes of delay
     lateAfter      = 30,
     atRiskAfter    = 10,
@@ -17,8 +16,9 @@ const
 
 /**
  * Drives the live part of the showcase. Every tick it advances the simulated clock, lets truck ETAs drift, moves reefer
- * temperatures and GPS states, moves the slot of a truck that will not make it in time (the engine pushes the slots
- * after it), updates the shipment statuses and books docks for the trucks about to arrive.
+ * temperatures and GPS states (Transport), moves the slot of a truck that will not make it in time (the engine pushes
+ * the slots after it, `moveOutOfDowntime()` keeps them out of door downtime), updates the shipment statuses and books
+ * docks for the trucks about to arrive.
  *
  * Shipment changes go to the shipment store, slot changes to the Scheduler's event store. The views pick them up from
  * there, see GridSync. The clock holds while a slot is dragged on the schedule or a shipment from the grid. The tick
@@ -91,7 +91,8 @@ export default class Simulator extends Events(Delayable(Base)) {
     construct(config) {
         super.construct(config);
 
-        this.random = new Random(this.seed);
+        this.random    = new Random(this.seed);
+        this.transport = new Transport(this.random);
     }
 
     changeNow(now) {
@@ -155,10 +156,7 @@ export default class Simulator extends Events(Delayable(Base)) {
                 now      = me.now = new Date(Math.min(me.now.getTime() + me.speed * minuteMs, me.endDate.getTime())),
                 shipping = me.shipmentStore.records.filter(shipment => shipment.isInTransit);
 
-            // More happens per tick when time runs faster
-            me.driftEtas(shipping, Math.min(80, 20 * me.speed));
-            me.driftTemperatures(shipping.filter(shipment => shipment.loadType === 'reefer'), 6);
-            me.flickerGps(shipping, 2);
+            me.transport.drift(shipping, me.speed);
             me.pushLateSlots();
             me.bookArrivals(Math.max(3, me.speed));
 
@@ -208,7 +206,7 @@ export default class Simulator extends Events(Delayable(Base)) {
             return null;
         }
 
-        me.delay(shipment, Math.max(0, shipment.delayMinutes) + random.int(30, 75));
+        me.transport.delay(shipment, Math.max(0, shipment.delayMinutes) + random.int(30, 75));
         me.pushLateSlots();
 
         await schedule.project.commitAsync();
@@ -228,64 +226,6 @@ export default class Simulator extends Events(Delayable(Base)) {
         me.trigger('shipmentDelay', { shipment });
 
         return shipment;
-    }
-
-    // Sets the delay of a shipment, its ETA and the sparkline history follow
-    delay(shipment, minutes) {
-        const delay = Math.min(240, Math.max(-20, minutes));
-
-        shipment.set({
-            delayMinutes : delay,
-            eta          : new Date(shipment.plannedEta.getTime() + delay * minuteMs),
-            etaHistory   : [...shipment.etaHistory.slice(1 - historyLength), delay]
-        });
-    }
-
-    driftEtas(shipping, count) {
-        const { random } = this;
-
-        for (let i = 0; i < count && shipping.length; i++) {
-            const
-                shipment = random.pick(shipping),
-                // Drift slightly late on average, now and then an incident (traffic, border control) adds a lot
-                drift    = Math.round(random.normal(0.3, 1.4)) + (random.chance(0.015) ? random.int(12, 40) : 0);
-
-            if (drift) {
-                this.delay(shipment, shipment.delayMinutes + drift);
-            }
-        }
-    }
-
-    driftTemperatures(reefers, count) {
-        const { random } = this;
-
-        for (let i = 0; i < count && reefers.length; i++) {
-            const
-                shipment                  = random.pick(reefers),
-                { setpoint, temperature } = shipment,
-                // Pulled back towards the set point, with an occasional excursion (door opened, unit fault)
-                excursion                 = random.chance(0.02) ? random.between(2.5, 5) : 0,
-                next                      = temperature + (setpoint - temperature) * 0.2 + random.normal(0, 0.3) +
-                    excursion;
-
-            shipment.temperature = Math.round(next * 10) / 10;
-        }
-    }
-
-    flickerGps(shipping, count) {
-        const
-            { random } = this,
-            next       = {
-                live  : () => random.chance(0.3) ? 'stale' : 'live',
-                stale : () => random.chance(0.6) ? 'live' : random.chance(0.4) ? 'lost' : 'stale',
-                lost  : () => random.chance(0.5) ? 'live' : 'lost'
-            };
-
-        for (let i = 0; i < count && shipping.length; i++) {
-            const shipment = random.pick(shipping);
-
-            shipment.gps = next[shipment.gps]?.() ?? 'live';
-        }
     }
 
     // A truck that will not be at the door in time gets its slot moved to its ETA. The door is re-sequenced, a very

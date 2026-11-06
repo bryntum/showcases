@@ -45,6 +45,7 @@ the doors, their downtime and the booked slots. AG Grid only shows flat rows bui
 | How the data is generated, how much is booked up front | `lib/simulation/ShipmentData.js` |
 | Unloading times, turnaround, which door takes which load | `lib/simulation/DockPlanner.js` |
 | What happens per tick, the statuses, when a slot is tentative | `lib/simulation/Simulator.js` |
+| How ETAs, reefer temperatures and GPS drift | `lib/simulation/Transport.js` |
 | Booking, unbooking, expediting | `lib/schedule/DockBooking.js` |
 | How a slot bar looks at each width, the utilization strip | `lib/schedule/SlotRendering.js`, `resources/schedule.css` |
 | The grid's columns and cells | `lib/grid/ShipmentColumns.js`, `lib/grid/*CellRenderer.js` |
@@ -81,7 +82,7 @@ The sparklines are drawn by AG Charts Community (`ag-charts-community`), MIT lic
     (`SimulationControls.js`), the grid panel (`ShipmentGridPanel.js`), the dock schedule and the legend
     (`StatusLegend.js`)
   * `simulation/` the seeded random generator, the data generator (`ShipmentData`), the slot finding rules
-    (`DockPlanner`) and the `Simulator`
+    (`DockPlanner`), the trucks on the road (`Transport`) and the `Simulator`
   * `schedule/` the dock schedule (`DockSchedule`), its mixins for booking (`DockBooking`) and the playhead
     (`Playhead`), the door downtime (`Downtime`) and the rendering of the cells, slots and utilization
   * `grid/` AG Grid: the licence key, modules and theme (`AgGridSetup`), the columns, the cell renderers (component

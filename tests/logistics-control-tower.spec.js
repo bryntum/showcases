@@ -179,7 +179,7 @@ test.describe('Logistics Control Tower downtime', () => {
                 door                                   = range.resource;
 
             // The tick moves the slot to the truck's ETA, into the window
-            simulator.delay(shipment, delayInto(range, shipment));
+            simulator.transport.delay(shipment, delayInto(range, shipment));
             await simulator.tick();
 
             return {
