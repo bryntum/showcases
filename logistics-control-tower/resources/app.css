@@ -1,6 +1,7 @@
 /* Logistics Control Tower styles, one file per part of the app, in cascade order. The theme comes first, see app.js */
 
 @import './tokens.css';
+@import './icons.css';
 @import './toolbar.css';
 @import './grid.css';
 @import './schedule.css';

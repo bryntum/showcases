@@ -1,0 +1,21 @@
+/* The icons, Phosphor Light SVGs as masks over the text colour. lib/util/Icons.js gives each `.lct-icon-{name}` its
+ * `--lct-icon` */
+
+.lct-icon {
+    display     : inline-block;
+    flex        : none;
+    inline-size : 1em;
+    block-size  : 1em;
+
+    /* The mask is drawn by a pseudo element, in place of Bryntum's icon glyph. The element itself stays transparent:
+     * the Scheduler's event bar layout check takes a coloured child of a bar for content meant to fill it */
+    &::before {
+        content          : '';
+        display          : block;
+        flex             : none;
+        inline-size      : 1em;
+        block-size       : 1em;
+        background-color : currentcolor;
+        mask             : var(--lct-icon) center / contain no-repeat;
+    }
+}
