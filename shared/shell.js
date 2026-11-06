@@ -73,15 +73,42 @@ function breadcrumb(title, gallery) {
 }
 
 /**
+ * The partner product next to the Bryntum logo: a times sign and its logo, linking to the partner's site
+ * @param {Object} partner `{ name, href, logo }`, see createShell
+ * @returns {Object} DomConfig
+ */
+function partnerLink({ name, href, logo }) {
+    return {
+        tag       : 'a',
+        className : 'sc-brand-partner',
+        href,
+        target    : '_blank',
+        children  : [
+            { tag : 'span', className : 'sc-brand-plus', 'aria-hidden' : 'true', text : '×' },
+            {
+                tag          : 'span',
+                className    : 'sc-brand-partner-logo',
+                role         : 'img',
+                'aria-label' : name,
+                // Double quoted and escaped, an inlined SVG data URL holds single quotes
+                style        : `--sc-partner-logo: url(${JSON.stringify(logo)})`
+            }
+        ]
+    };
+}
+
+/**
  * Builds the page shell: the header, and the container the app renders into. Call it once, before creating the app
  * @param {Object} options
  * @param {String} options.title The showcase title, shown in the header
  * @param {String} options.source The showcase folder in the repository, the target of the GitHub source link
  * @param {String} [options.gallery] The gallery URL, the breadcrumb's first link. Relative, as every showcase lives one
  * folder below the gallery, so it works under any base path
+ * @param {Object} [options.partner] A partner product shown next to the Bryntum logo, `{ name, href, logo }`. `logo` is
+ * the URL of a single colour SVG, used as a mask so it takes the logo colour of either mode, see brand.css
  * @returns {HTMLElement} The container to render the app into (`appendTo`)
  */
-export function createShell({ title, source, gallery = '../' }) {
+export function createShell({ title, source, gallery = '../', partner }) {
     const
         { body } = document,
         scheme   = storedColorScheme(),
@@ -102,6 +129,7 @@ export function createShell({ title, source, gallery = '../' }) {
                                 { tag : 'span', className : 'sc-brand-logo', role : 'img', 'aria-label' : 'Bryntum' }
                             ]
                         },
+                        partner && partnerLink(partner),
                         { tag : 'span', className : 'sc-brand-divider', 'aria-hidden' : 'true' },
                         breadcrumb(title, gallery)
                     ]

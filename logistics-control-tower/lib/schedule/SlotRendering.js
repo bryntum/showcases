@@ -34,7 +34,10 @@ export function renderDock({ record }) {
  * @returns {Object[]} DomConfig
  */
 export function renderSlot({ eventRecord, renderData }) {
-    const { status, loadType, expedited, carrierCode, pallets, name, slaBreach } = eventRecord;
+    const
+        { status, loadType, expedited, carrierCode, pallets, name, slaBreach } = eventRecord,
+        // SHP-10044 -> SHP- and 10044, narrow bars show the number only (see schedule.css)
+        [, prefix = '', number = name] = /^(\D+-)?(.*)$/.exec(name);
 
     Object.assign(renderData.cls, {
         'lct-slot'               : 1,
@@ -52,7 +55,10 @@ export function renderSlot({ eventRecord, renderData }) {
         {
             class    : 'lct-slot-text',
             children : [
-                { class : 'lct-slot-ref', text : name },
+                {
+                    class    : 'lct-slot-ref',
+                    children : [{ tag : 'span', class : 'lct-slot-prefix', text : prefix }, number]
+                },
                 { class : 'lct-slot-meta', text : `${carrierCode} · ${pallets} plt` }
             ]
         }

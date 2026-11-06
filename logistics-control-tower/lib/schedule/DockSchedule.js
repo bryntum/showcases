@@ -122,8 +122,10 @@ export default class DockSchedule extends DockBooking(Scheduler) {
                 }
             },
             eventTooltip : {
+                // The timeline scrolls with the playhead under a still pointer, the tooltip follows its slot
+                scrollAction : 'realign',
                 // The shipment behind the slot
-                template : ({ eventRecord }) => {
+                template     : ({ eventRecord }) => {
                     const shipment = eventRecord.eventStore?.shipmentStore?.getById(eventRecord.id);
 
                     return shipment ? slotTip(shipment, eventRecord) : '';
@@ -139,6 +141,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             ...config,
             features : {
                 ...config.features,
+                // The Enterprise tier brings its task editor back, slots are edited by dragging and from the menus
+                taskEdit  : false,
                 // Slots move between doors with the right equipment only, and not into the past
                 eventDrag : { validatorFn : context => me.validateSlotDrop(context) }
             }

@@ -107,10 +107,13 @@
         color : var(--lct-ink-sub);
     }
 
+    /* Sized like the status pills, not stretched to the row's line height */
     .lct-group-late {
-        padding          : 0 0.6em;
+        padding          : 0.1em 0.6em;
         border-radius    : 1em;
+        font-size        : 0.88em;
         font-weight      : 600;
+        line-height      : 1.5;
         color            : var(--lct-late);
         background-color : color-mix(in srgb, var(--lct-late) 12%, transparent);
     }
@@ -219,5 +222,13 @@
 
     .lct-late-panel-sep {
         margin-inline-start : 1em;
+    }
+}
+
+/* Narrow screens (ControlTowerApp#compact): the status bar keeps the totals and the late count */
+.lct-compact .ag-status-bar {
+    .ag-status-panel-filtered-row-count,
+    .ag-status-panel-selected-row-count {
+        display : none;
     }
 }

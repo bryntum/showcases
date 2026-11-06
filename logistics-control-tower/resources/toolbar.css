@@ -78,6 +78,11 @@
     }
 }
 
+/* Narrow screens (ControlTowerApp#compact): the counters scroll sideways, fading out at the edge */
+.lct-compact .lct-kpis {
+    mask-image : linear-gradient(to right, #000 calc(100% - 2.5em), transparent);
+}
+
 .lct-controls {
     align-items : center;
     gap         : 0.5em;

@@ -64,6 +64,8 @@ export function shipmentGridOptions({ rowData, context, actions }) {
             resizable                : true,
             filter                   : 'agTextColumnFilter'
         },
+        // Dock slot as wide as its badges, the conflict warning included
+        autoSizeStrategy           : { type : 'fitCellContents', colIds : ['dockName'] },
         getRowId                   : ({ data }) => data.id,
         // Live updates are batched by AG Grid (asyncTransactionWaitMillis), see GridSync
         asyncTransactionWaitMillis : 60,

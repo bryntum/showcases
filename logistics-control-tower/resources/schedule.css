@@ -43,8 +43,10 @@
     }
 }
 
-/* Slot bars, coloured by the theme's event colours (eventColor per status) */
+/* Slot bars, coloured by the theme's event colours (eventColor per status). The label adapts to the bar's width */
 .lct-slot {
+    container-type : inline-size;
+
     .lct-slot-icon {
         flex-shrink : 0;
         font-size   : 0.9em;
@@ -71,6 +73,32 @@
         overflow      : hidden;
         text-overflow : ellipsis;
         opacity       : 0.8;
+    }
+
+    /* Narrower: the number only, SHP-10044 reads 10044 */
+    @container (width < 112px) {
+        .lct-slot-prefix {
+            display : none;
+        }
+    }
+
+    /* Narrower still: the number, on one line */
+    @container (width < 84px) {
+        .lct-slot-icon,
+        .lct-slot-meta {
+            display : none;
+        }
+    }
+
+    /* Too narrow for text: the load icon only */
+    @container (width < 64px) {
+        .lct-slot-icon {
+            display : revert;
+        }
+
+        .lct-slot-text {
+            display : none;
+        }
     }
 }
 
@@ -111,12 +139,13 @@
 
         label {
             position             : absolute;
-            inset-block-end      : 0.3em;
+            inset-block-start    : 50%;
             inset-inline-start   : 0;
-            translate            : -50% 0;
-            padding              : 0.15em 0.6em;
+            translate            : -50% -50%;
+            padding              : 0.1em 0.5em;
             border-radius        : 1em;
-            font-size            : 0.85em;
+            font-size            : 0.75em;
+            line-height          : 1.4;
             font-weight          : 700;
             font-variant-numeric : tabular-nums;
             color                : var(--b-color-white);

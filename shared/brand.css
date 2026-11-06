@@ -56,6 +56,35 @@
         }
     }
 
+    /* A partner product next to the logo (createShell's `partner`): a times sign, then its logo as a mask in the same
+     * colour and at the same height, top of the tallest letter to the baseline. The SVG's viewBox is cropped to the
+     * logo, its baseline 0.39 units above the bottom of a 28.8 unit tall box (AG Grid's) */
+    .sc-brand-partner {
+        display         : flex;
+        flex            : none;
+        align-items     : center;
+        gap             : var(--sc-brand-gap);
+        color           : var(--sc-text-muted);
+        text-decoration : none;
+    }
+
+    .sc-brand-plus {
+        font-size : 0.9em;
+    }
+
+    .sc-brand-partner-logo {
+        flex             : none;
+        height           : calc(1.1cap * 28.8 / 28.41);
+        aspect-ratio     : 141.58 / 28.8;
+        background-color : var(--sc-logo);
+        mask             : var(--sc-partner-logo) left center / auto 100% no-repeat;
+
+        @media (forced-colors: active) {
+            forced-color-adjust : none;
+            background-color    : CanvasText;
+        }
+    }
+
     .sc-brand-divider {
         flex          : none;
         width         : 1px;

@@ -85,11 +85,11 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
                     flex   : 1,
                     layout : 'hbox',
                     items  : {
-                        grid     : { type : 'shipmentgridpanel', flex : 11 },
+                        grid     : { type : 'shipmentgridpanel', flex : 12 },
                         splitter : { type : 'splitter', cls : 'lct-splitter' },
                         schedule : {
                             type          : 'dockschedule',
-                            flex          : 10,
+                            flex          : 9,
                             startDate,
                             endDate,
                             now           : site.now,

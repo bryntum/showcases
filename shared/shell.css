@@ -63,7 +63,8 @@ body {
                 aspect-ratio : 354.91 / 190.08;
             }
 
-            .sc-brand-divider, .sc-crumb-separator {
+            /* The partner logo too, the title needs the room */
+            .sc-brand-divider, .sc-crumb-separator, .sc-brand-partner {
                 display : none;
             }
 

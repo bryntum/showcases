@@ -19,7 +19,11 @@ const
     // A set filter listing the display texts of a keyed value
     setFilter = labels => ({
         filter       : 'agSetColumnFilter',
-        filterParams : { valueFormatter : ({ value }) => labels[value] ?? value }
+        filterParams : {
+            // Every status, also those no row has yet
+            values         : Object.keys(labels),
+            valueFormatter : ({ value }) => labels[value] ?? value
+        }
     }),
     // Status order for sorting, in transit first, then on site
     statusOrder = Object.keys(statusText),
@@ -30,7 +34,7 @@ export const shipmentColumns = [
     {
         field      : 'ref',
         headerName : 'Shipment',
-        width      : 128,
+        width      : 140,
         pinned     : 'left',
         // Drag a shipment by its handle onto a dock door, unless it is being unloaded or done
         rowDrag    : ({ data }) => Boolean(data) && data.status !== 'unloading' && data.status !== 'done',
@@ -39,7 +43,7 @@ export const shipmentColumns = [
     {
         field                 : 'status',
         headerName            : 'Status',
-        width                 : 112,
+        width                 : 108,
         cellRenderer          : renderStatus,
         enableCellChangeFlash : true,
         comparator            : (a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b),
@@ -48,7 +52,7 @@ export const shipmentColumns = [
     {
         field                 : 'eta',
         headerName            : 'ETA',
-        width                 : 78,
+        width                 : 66,
         valueFormatter        : formatTimeValue,
         enableCellChangeFlash : true,
         filter                : false
@@ -56,7 +60,7 @@ export const shipmentColumns = [
     {
         colId        : 'arrives',
         headerName   : 'Arrives',
-        width        : 124,
+        width        : 108,
         // Relative to the simulated now, refreshed on every tick. Sorts by the ETA
         valueGetter  : ({ data }) => data?.eta,
         cellRenderer : renderCountdown,
@@ -65,7 +69,7 @@ export const shipmentColumns = [
     {
         field                 : 'delay',
         headerName            : 'Delay',
-        width                 : 86,
+        width                 : 82,
         type                  : 'rightAligned',
         valueFormatter        : formatDelay,
         enableCellChangeFlash : true,
@@ -78,7 +82,7 @@ export const shipmentColumns = [
     {
         field              : 'etaHistory',
         headerName         : 'ETA drift',
-        width              : 116,
+        width              : 96,
         sortable           : false,
         filter             : false,
         cellRenderer       : 'agSparklineCellRenderer',
@@ -96,7 +100,7 @@ export const shipmentColumns = [
     {
         field                 : 'dockName',
         headerName            : 'Dock slot',
-        width                 : 132,
+        width                 : 120,
         cellRenderer          : renderDockSlot,
         // Flashes when the slot moves, is booked or unbooked
         valueGetter           : ({ data }) => data && (data.dockId ? `${data.dockName} ${data.slotStart}` : data.onHold ? 'hold' : ''),

@@ -38,13 +38,15 @@
     }
 
     .lct-legend-conflict .lct-swatch {
+        margin-inline : 0.15em;
         outline        : 2px solid var(--lct-late);
         outline-offset : 1px;
         background     : none;
     }
 
     .lct-legend-hint {
-        flex : 1;
+        flex        : 1;
+        white-space : nowrap;
     }
 
     .lct-legend-note {

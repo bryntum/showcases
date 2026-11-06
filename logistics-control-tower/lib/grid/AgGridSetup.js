@@ -1,7 +1,8 @@
 import {
-    CellStyleModule, ClientSideRowModelApiModule, ClientSideRowModelModule, ColumnApiModule, EventApiModule,
-    HighlightChangesModule, ModuleRegistry, NumberFilterModule, QuickFilterModule, RenderApiModule, RowApiModule,
-    RowDragModule, RowSelectionModule, RowStyleModule, ScrollApiModule, TextFilterModule, ValidationModule, themeQuartz
+    CellStyleModule, ClientSideRowModelApiModule, ClientSideRowModelModule, ColumnApiModule, ColumnAutoSizeModule,
+    EventApiModule, HighlightChangesModule, ModuleRegistry, NumberFilterModule, QuickFilterModule, RenderApiModule,
+    RowApiModule, RowDragModule, RowSelectionModule, RowStyleModule, ScrollApiModule, TextFilterModule,
+    ValidationModule, themeQuartz
 } from 'ag-grid-community';
 import {
     ContextMenuModule, LicenseManager, RowGroupingModule, SetFilterModule, SparklinesModule,
@@ -34,6 +35,7 @@ ModuleRegistry.registerModules([
     ClientSideRowModelApiModule,
     RowApiModule,
     ColumnApiModule,
+    ColumnAutoSizeModule,
     RenderApiModule,
     ScrollApiModule,
     EventApiModule,

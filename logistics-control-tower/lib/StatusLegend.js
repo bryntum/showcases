@@ -40,7 +40,7 @@ export default class StatusLegend extends Widget {
             },
             {
                 class : 'lct-legend-hint',
-                text  : 'Drag a shipment onto a door to book it, right-click for more'
+                text  : 'Drag shipments onto doors · right-click for actions'
             },
             {
                 class    : 'lct-legend-note',
