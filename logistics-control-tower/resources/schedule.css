@@ -322,14 +322,13 @@
         color       : var(--lct-ink-sub);
     }
 
-    /* A bar per hour, as wide as the hour less a small gap, under a faint line at full capacity */
+    /* A bar per hour, as wide as the hour less a gap either side */
     .b-sch-summary-bar .b-time-axis-tick {
         box-sizing        : border-box;
         block-size        : 100%;
         justify-content   : flex-end;
-        padding           : 10px 2px 0;
+        padding           : 10px 10px 0;
         border-inline-end : none;
-        background        : linear-gradient(var(--lct-border), var(--lct-border)) no-repeat 0 9px / 100% 1px;
     }
 
     .b-time-axis-summary-value {
@@ -341,13 +340,19 @@
 }
 
 .lct-util-bar {
+    --lct-util-color : var(--lct-util);
+
     min-block-size            : 2px;
-    border-start-start-radius : 3px;
-    border-start-end-radius   : 3px;
-    background-color          : var(--lct-util);
+    border-block-start        : 2px solid color-mix(in srgb, var(--lct-util-color) 85%, var(--lct-surface));
+    border-start-start-radius : 4px;
+    border-start-end-radius   : 4px;
+    background                : linear-gradient(
+        color-mix(in srgb, var(--lct-util-color) 42%, var(--lct-surface)),
+        color-mix(in srgb, var(--lct-util-color) 14%, var(--lct-surface))
+    );
 
     &.lct-util-over {
-        background-color : var(--lct-util-over);
+        --lct-util-color : var(--lct-util-over);
     }
 }
 
