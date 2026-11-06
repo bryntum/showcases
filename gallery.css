@@ -694,13 +694,38 @@ a {
     color            : var(--g-faint);
 }
 
+/* The edges fade into the page under two gradient overlays. A mask on the strip would also flatten the logos' glow into
+ * a rectangle */
 .marquee {
+    position   : relative;
     display    : flex;
     overflow-x : clip;
-    mask-image : linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+
+    &::before,
+    &::after {
+        content        : '';
+        position       : absolute;
+        z-index        : 1;
+        inset-block    : 0;
+        inline-size    : 12%;
+        pointer-events : none;
+    }
+
+    &::before {
+        inset-inline-start : 0;
+        background         : linear-gradient(to right, var(--g-bg), transparent);
+    }
+
+    &::after {
+        inset-inline-end : 0;
+        background       : linear-gradient(to left, var(--g-bg), transparent);
+    }
 
     @media (prefers-reduced-motion: reduce) {
-        mask-image : none;
+        &::before,
+        &::after {
+            display : none;
+        }
     }
 }
 
@@ -713,12 +738,21 @@ a {
     list-style  : none;
     animation   : logos-scroll 40s linear infinite;
 
-    .marquee:hover > & {
-        animation-play-state : paused;
-    }
-
+    /* The logo under the pointer lights up a little in the accent blue, with a faint glow. The glow is a drop shadow on
+     * the item, so it follows the logo's shape: on the logo itself the mask would clip it away */
     li {
-        display : flex;
+        display    : flex;
+        transition : filter 0.25s ease-out;
+
+        &:hover {
+            filter : drop-shadow(0 0 0.45rem color-mix(in srgb, var(--g-accent) 30%, transparent));
+
+            .logo {
+                opacity    : 1;
+                scale      : 1.08;
+                background : color-mix(in srgb, var(--g-accent) 40%, var(--g-logo));
+            }
+        }
     }
 
     /* Still, centred and wrapped, without the copy */
@@ -749,11 +783,7 @@ a {
     mask-position  : center;
     mask-size      : contain;
     mask-repeat    : no-repeat;
-    transition     : opacity 0.2s;
-
-    &:hover {
-        opacity : 1;
-    }
+    transition     : opacity 0.25s ease-out, scale 0.25s ease-out, background-color 0.25s ease-out;
 
     &[data-logo="airbus"] {
         --ratio    : 24.001 / 4.448;
