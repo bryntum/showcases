@@ -1,11 +1,11 @@
 /* The app toolbar: the clock, the KPI counters and the simulation controls */
 
 .lct-toolbar {
+    border-block-end : 1px solid var(--lct-border);
+
     /* Its content edge is the one the page header lines up with, see shared/tokens.css */
     --b-toolbar-padding : var(--sc-panel-padding);
     --b-toolbar-gap     : 1em;
-
-    border-block-end : 1px solid var(--lct-border);
 }
 
 .lct-kpis {
@@ -101,9 +101,10 @@
 }
 
 /* Narrow screens (ControlTowerApp#compact): the counters scroll sideways, fading out at the edge, the date leaves
- * the site out */
+ * the site out. The mask only reads the alpha, its colour is any opaque one. `to right`, gradients have no logical
+ * direction, the showcase is left to right only */
 .lct-compact .lct-kpis {
-    mask-image : linear-gradient(to right, #000 calc(100% - 2.5em), transparent);
+    mask-image : linear-gradient(to right, black calc(100% - 2.5em), transparent);
 
     .lct-clock {
         margin-inline-end : 0.5em;
@@ -127,18 +128,17 @@
     .b-button .lct-icon {
         font-size : 1.15em;
     }
+
+    /* Simulate delay is a quiet secondary action, neutral text until hovered. The text rendition's own variables are
+     * set by the theme on the button, so the resolved ones are set here */
+    .lct-delay.b-button-text {
+        --b-button-color             : var(--lct-ink-sub);
+        --b-button-hover-background  : var(--b-neutral-95);
+        --b-button-active-background : var(--b-neutral-90);
+    }
 }
 
-/* Simulate delay is a quiet secondary action, neutral text until hovered. The text rendition's own variables are set
- * by the theme on the button, so the resolved ones are set here */
-.lct-controls .lct-delay.b-button-text {
-    --b-button-color             : var(--lct-ink-sub);
-    --b-button-hover-background  : var(--b-neutral-95);
-    --b-button-active-background : var(--b-neutral-90);
-}
-
-/* The outlined Resolve conflicts button reads as neutral, the filled Play / Pause is the accent */
-.lct-resolve {
-    --b-button-outlined-color        : var(--lct-ink);
-    --b-button-outlined-border-color : var(--lct-border);
+/* Narrow screens: room for the clock and the counters, the speed stays at what it was */
+.lct-app.lct-compact .lct-speed {
+    display : none;
 }

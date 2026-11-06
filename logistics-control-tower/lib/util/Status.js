@@ -1,7 +1,7 @@
 import { icon } from './Icons.js';
 
 /**
- * Shipment statuses and load types, shared by the grid, the schedule and the KPI bar.
+ * Shipment statuses, load types and references, shared by the grid, the schedule and the KPI bar.
  */
 
 export const
@@ -31,4 +31,7 @@ export const
         stale   : 'Stale',
         lost    : 'Lost',
         arrived : 'On site'
-    };
+    },
+
+    // The number of a shipment reference, SHP-10044 reads 10044, where the full reference does not fit
+    shipmentNumber = ref => ref.replace(/^\D+-/, '');

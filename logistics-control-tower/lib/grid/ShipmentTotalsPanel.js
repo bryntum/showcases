@@ -52,6 +52,8 @@ export default class ShipmentTotalsPanel {
     }
 
     destroy() {
-        this.gui = this.shown = this.of = this.pallets = this.delay = null;
+        const me = this;
+
+        me.gui = me.shown = me.of = me.pallets = me.delay = null;
     }
 }

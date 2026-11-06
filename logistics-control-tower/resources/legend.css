@@ -1,9 +1,9 @@
 /* The legend below the app: the statuses, the conflict outline, the overloaded hour, and the credits */
 
 .lct-legend-bar {
-    --b-toolbar-padding : 0.6em var(--sc-panel-padding);
-
     border-block-start : 1px solid var(--lct-border);
+
+    --b-toolbar-padding : 0.6em var(--sc-panel-padding);
 }
 
 .lct-legend {

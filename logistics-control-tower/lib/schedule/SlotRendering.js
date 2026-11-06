@@ -1,14 +1,21 @@
 import { StringHelper } from '@bryntum/core-enterprise';
 import DockPlanner from '../simulation/DockPlanner.js';
 import { formatMinutes, formatTime, minuteMs } from '../util/Time.js';
-import { loadIcons, statusText } from '../util/Status.js';
+import { loadIcons, shipmentNumber, statusText } from '../util/Status.js';
 import { icon } from '../util/Icons.js';
 
 // Above this share of door time booked an hour reads as overloaded
 const busyShare = 0.9;
 
 /**
- * The dock schedule's cells, bars and tooltip, plain functions.
+ * The dock schedule's cells, bars, utilization strip and tooltip, plain functions returning DomConfigs, or encoded HTML
+ * (`StringHelper.xss`) where a string is expected. Classes are styled in resources/schedule.css.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-renderer
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Summary#config-renderer
+ * https://bryntum.com/products/scheduler/docs/api/Core/helper/StringHelper#function-xss-static
  */
 
 /**
@@ -44,15 +51,12 @@ export function renderDock({ record }) {
  */
 export function renderSlot({ eventRecord, renderData }) {
     const
-        { status, loadType, expedited, pallets, name, delayMinutes, slaBreach } = eventRecord,
-        // SHP-10044 reads 10044, the full reference is in the tooltip
-        number = name.replace(/^\D+-/, '');
+        { status, loadType, expedited, pallets, name, delayMinutes, slaBreach } = eventRecord;
 
     Object.assign(renderData.cls, {
         'lct-slot'               : 1,
         [`lct-status-${status}`] : 1,
-        'lct-slot-breach'        : slaBreach,
-        'lct-slot-expedited'     : expedited
+        'lct-slot-breach'        : slaBreach
     });
 
     return [
@@ -60,7 +64,8 @@ export function renderSlot({ eventRecord, renderData }) {
         {
             class    : 'lct-slot-text',
             children : [
-                { class : 'lct-slot-ref', text : number },
+                // The number only, the full reference is in the tooltip
+                { class : 'lct-slot-ref', text : shipmentNumber(name) },
                 { class : 'lct-slot-meta', text : slotMeta(status, pallets, delayMinutes) }
             ]
         }

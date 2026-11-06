@@ -23,20 +23,23 @@ async function openPaused(page) {
     await expect(grid(page).locator(`.ag-row[row-id="${bookedId}"]`)).toBeVisible();
 }
 
+let errors;
+
+// Every test fails on a console or page error. AG Grid runs without a licence key in the tests and logs its licence
+// notice, nothing else is tolerated
+test.beforeEach(({ page }) => {
+    errors = collectErrors(page, { ignore : agGridLicenseNotice });
+});
+
+test.afterEach(() => {
+    expect(errors).toEqual([]);
+});
+
 test.describe('Logistics Control Tower', () => {
-    let errors;
-
-    test.beforeEach(({ page }) => {
-        // AG Grid runs without a licence key in the tests and logs its licence notice, nothing else is tolerated
-        errors = collectErrors(page, { ignore : agGridLicenseNotice });
-    });
-
     test('loads without console or page errors', async({ page }) => {
         await page.goto(url);
         await expect(grid(page).locator('.ag-row').first()).toBeVisible();
         await page.waitForLoadState('load');
-
-        expect(errors).toEqual([]);
     });
 
     test('renders the shipment grid and the dock schedule', async({ page }) => {
@@ -98,16 +101,6 @@ test.describe('Logistics Control Tower', () => {
 });
 
 test.describe('Logistics Control Tower dock tools', () => {
-    let errors;
-
-    test.beforeEach(({ page }) => {
-        errors = collectErrors(page, { ignore : agGridLicenseNotice });
-    });
-
-    test.afterEach(() => {
-        expect(errors).toEqual([]);
-    });
-
     test('the utilization strip renders a bar per hour under the doors', async({ page }) => {
         await openPaused(page);
 
@@ -160,16 +153,6 @@ test.describe('Logistics Control Tower dock tools', () => {
 });
 
 test.describe('Logistics Control Tower drag and drop', () => {
-    let errors;
-
-    test.beforeEach(({ page }) => {
-        errors = collectErrors(page, { ignore : agGridLicenseNotice });
-    });
-
-    test.afterEach(() => {
-        expect(errors).toEqual([]);
-    });
-
     test('dragging a shipment row onto a dock door books a slot there, the clock holds meanwhile', async({ page }) => {
         await openPaused(page);
 
@@ -218,6 +201,7 @@ test.describe('Logistics Control Tower drag and drop', () => {
 
         const held = await now();
 
+        // A fixed wait, nothing is meant to happen: three ticks of 300 ms would have moved the clock
         await page.waitForTimeout(1000);
         expect(await now(), 'the clock holds during the drag').toBe(held);
 

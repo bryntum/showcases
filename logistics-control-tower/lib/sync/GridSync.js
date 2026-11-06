@@ -108,14 +108,15 @@ export default class GridSync {
 
     // A row selected in the grid selects its slot and scrolls it into view
     onRowSelected({ node, source }) {
-        const
-            me           = this,
-            { schedule } = me,
-            slot         = node.isSelected() && node.data && schedule.eventStore.getById(node.data.id);
+        const me = this;
 
         if (me.syncingSelection || !node.isSelected() || source === 'api') {
             return;
         }
+
+        const
+            { schedule } = me,
+            slot         = node.data && schedule.eventStore.getById(node.data.id);
 
         me.syncingSelection = true;
 

@@ -1,6 +1,7 @@
 import { DomHelper } from '@bryntum/core-enterprise';
 import DockPlanner from '../simulation/DockPlanner.js';
 import { minuteMs } from '../util/Time.js';
+import { shipmentNumber } from '../util/Status.js';
 
 /**
  * Makes the dock schedule's timeline a drop zone for the rows of the shipment grid (AG Grid's `addRowDropZone`). While
@@ -94,7 +95,7 @@ export default class GridDropZone {
             minutes,
             valid   : !message,
             // Drop 10151, the slot's start reads off the axis
-            message : message ?? `Drop ${shipment.ref.replace(/^\D+-/, '')}`
+            message : message ?? `Drop ${shipmentNumber(shipment.ref)}`
         };
     }
 
@@ -125,7 +126,13 @@ export default class GridDropZone {
         const target = this.resolveTarget(params);
 
         this.isDragging = true;
-        target ? this.showPreview(target) : this.hidePreview();
+
+        if (target) {
+            this.showPreview(target);
+        }
+        else {
+            this.hidePreview();
+        }
     }
 
     // Left the schedule, cancelled or dropped

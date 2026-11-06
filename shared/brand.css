@@ -72,14 +72,15 @@
     }
 
     .sc-brand-partner-logo {
+        /* The logo's cap height, as the Bryntum logo's */
         --sc-partner-cap : 1.1cap;
 
-        flex       : none;
-        height     : calc(var(--sc-partner-cap) * 40 / 28.8);
+        flex         : none;
+        height       : calc(var(--sc-partner-cap) * 40 / 28.8);
         aspect-ratio : 235 / 40;
         /* Centred by the wordmark, not by the box, which has room below the baseline */
-        translate  : 0 calc(var(--sc-partner-cap) * (20 - 23.5) / 28.8);
-        background : var(--sc-partner-logo-light) left center / contain no-repeat;
+        translate    : 0 calc(var(--sc-partner-cap) * (20 - 23.5) / 28.8);
+        background   : var(--sc-partner-logo-light) left center / contain no-repeat;
 
         :root[data-theme='dark'] & {
             background-image : var(--sc-partner-logo-dark);

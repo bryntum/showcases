@@ -6,9 +6,8 @@ const speeds = { speed1 : 1, speed5 : 5, speed15 : 15 };
 
 /**
  * The speed of the simulation, a button making a truck run late, and play / pause, bound to a Simulator through its
- * `simulator` config. Follows the
- * simulator's `playStateChange` event, so the button also flips when the simulation pauses on its own (end of the
- * timeline, hidden tab). Play keeps one width for both labels (toolbar.css).
+ * `simulator` config. Follows the simulator's `playStateChange` event, so the button also flips when the simulation
+ * pauses on its own (end of the timeline, hidden tab). Play keeps one width for both labels (toolbar.css).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
@@ -72,6 +71,11 @@ export default class SimulationControls extends Container {
         });
 
         me.syncButtons();
+    }
+
+    doDestroy() {
+        this.detachSimulatorListeners?.();
+        super.doDestroy();
     }
 
     onPlayClick() {

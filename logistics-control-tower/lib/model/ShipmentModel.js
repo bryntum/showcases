@@ -86,7 +86,6 @@ export default class ShipmentModel extends Model {
             dockId     : dock?.id ?? null,
             dockName   : dock?.name ?? null,
             slotStart  : slot ? slot.startDate.getTime() : null,
-            slotEnd    : slot ? slot.plannedEnd : null,
             slaBreach  : Boolean(slot?.slaBreach)
         };
     }

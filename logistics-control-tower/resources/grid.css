@@ -7,15 +7,15 @@
 /* The panels' toolbars: a title and the tools. One height for both panels, so the grid's column headers and the
  * schedule's time axis line up */
 .lct-panel-bar {
-    --b-toolbar-padding : 0 var(--sc-panel-padding);
-    --b-toolbar-gap     : 0.7em;
-
     /* Its tools can give way to the room it has, see schedule.css */
     container        : lct-bar / inline-size;
     box-sizing       : border-box;
     block-size       : var(--lct-bar-height);
     /* Inside the height, the line the grid's column headers have too */
     border-block-end : 1px solid var(--b-border-6);
+
+    --b-toolbar-padding : 0 var(--sc-panel-padding);
+    --b-toolbar-gap     : 0.7em;
 
     .lct-panel-title {
         font-weight : 600;
@@ -24,6 +24,11 @@
     .lct-panel-title, .lct-panel-count {
         flex-shrink : 0;
         white-space : nowrap;
+    }
+
+    /* Narrow screens (ControlTowerApp#compact): the room goes to the counts and the tools */
+    .lct-app.lct-compact & .lct-panel-title {
+        display : none;
     }
 
     /* After the title: the shipments shown, the doors */
@@ -73,6 +78,10 @@
         &.ag-row-selected {
             background-color : var(--ag-selected-row-background-color);
         }
+
+        &:not(:hover) .ag-row-drag {
+            opacity : 0;
+        }
     }
 
     /* The drag handle sits at the end of the reference and shows on the row under the pointer, so the references
@@ -80,10 +89,6 @@
     .ag-row-drag {
         order               : 1;
         margin-inline-start : auto;
-    }
-
-    .ag-row:not(:hover) .ag-row-drag {
-        opacity : 0;
     }
 
     /* The filter buttons show on the header under the pointer only, they take no room from the header text
@@ -265,8 +270,8 @@
     gap         : 0.45em;
 
     .lct-gps-dot {
-        width            : 0.5em;
-        height           : 0.5em;
+        inline-size      : 0.5em;
+        block-size       : 0.5em;
         border-radius    : 50%;
         background-color : var(--lct-on-time);
     }

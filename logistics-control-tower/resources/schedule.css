@@ -42,23 +42,24 @@
 }
 
 /* Slot bars: a dark tint of the status colour, a 1px border in it, the load icon in it. The label adapts to the
- * bar's width */
+ * bar's width. Sized in px: the font matches the grid's (AgGridSetup.js), the padding fits the 44px rows, and the
+ * container query widths below are measured against both */
 .b-sch-event.lct-slot {
-    --lct-slot-tint                  : 16%;
-    --b-sch-event-background         : color-mix(in srgb, var(--lct-color) var(--lct-slot-tint), var(--lct-surface));
-    --b-sch-event-border-width       : 1px;
-    --b-sch-event-border-style       : solid;
-    --b-sch-event-border-color       : color-mix(in srgb, var(--lct-color) 70%, transparent);
-    --b-sch-event-border-radius      : 4px;
-    --b-sch-event-color              : var(--lct-ink);
-    /* One padding all round, the label sits as far from the top and bottom as from the start */
-    --b-sch-event-padding-inline     : 5px;
-    --b-sch-event-padding-block      : 5px;
-
     /* Named, the bar's content element is a container of its own */
-    container      : lct-slot / inline-size;
+    container : lct-slot / inline-size;
     /* The shipment grid's font size, the number reads alike in both views */
-    font-size      : 13px;
+    font-size : 13px;
+
+    --lct-slot-tint              : 16%;
+    --b-sch-event-background     : color-mix(in srgb, var(--lct-color) var(--lct-slot-tint), var(--lct-surface));
+    --b-sch-event-border-width   : 1px;
+    --b-sch-event-border-style   : solid;
+    --b-sch-event-border-color   : color-mix(in srgb, var(--lct-color) 70%, transparent);
+    --b-sch-event-border-radius  : 4px;
+    --b-sch-event-color          : var(--lct-ink);
+    /* One padding all round, the label sits as far from the top and bottom as from the start */
+    --b-sch-event-padding-inline : 5px;
+    --b-sch-event-padding-block  : 5px;
 
     .lct-slot-icon {
         font-size : 1.1em;
@@ -200,10 +201,9 @@
     }
 }
 
-/* Where a dragged shipment would be booked, a dashed blue box, red where the door can not take it */
+/* Where a dragged shipment would be booked, a dashed blue box, red where the door can not take it. The slot bars'
+ * font size and radius */
 .lct-drop-preview {
-    --lct-drop : var(--lct-playhead);
-
     position         : absolute;
     z-index          : 20;
     display          : flex;
@@ -218,6 +218,8 @@
     color            : var(--lct-drop);
     background-color : color-mix(in srgb, var(--lct-drop) 12%, transparent);
     pointer-events   : none;
+
+    --lct-drop : var(--lct-playhead);
 
     &.lct-drop-invalid {
         --lct-drop : var(--lct-late);
@@ -260,19 +262,19 @@
 
 /* The zoom buttons, one segmented control: a frame, Day on a raised background. Compact, like the Resolve button */
 .lct-zoom {
-    --b-button-height : 2.1em;
-
     padding          : 2px;
     border           : 1px solid var(--lct-border);
     border-radius    : var(--sc-radius);
     background-color : var(--lct-sunken);
 
-    .b-button {
-        --b-button-color : var(--lct-ink);
+    --b-button-height : 2.1em;
 
+    .b-button {
         min-inline-size : 2em;
         padding-inline  : 0.5em;
         border          : none;
+
+        --b-button-color : var(--lct-ink);
     }
 
     [data-ref='zoomDay'] {
@@ -292,24 +294,26 @@
     }
 }
 
-/* As tall as the zoom buttons */
+/* Resolve conflicts: outlined and neutral, the filled Play / Pause is the accent. As tall as the zoom buttons */
 .lct-resolve {
-    --b-button-height : 2.4em;
-}
+    --b-button-height                : 2.4em;
+    --b-button-outlined-color        : var(--lct-ink);
+    --b-button-outlined-border-color : var(--lct-border);
 
-/* The conflicts to resolve, the button's badge as a red count after the text */
-.lct-resolve.b-badge::after {
-    position             : static;
-    block-size           : auto;
-    min-inline-size      : 0;
-    margin-inline-start  : 0.6em;
-    padding              : 0.05em 0.45em;
-    border-radius        : 0.3em;
-    font-size            : 0.9em;
-    font-weight          : 600;
-    font-variant-numeric : tabular-nums;
-    color                : var(--lct-late);
-    background           : color-mix(in srgb, var(--lct-late) 16%, transparent);
+    /* The conflicts to resolve, the button's badge as a red count after the text */
+    &.b-badge::after {
+        position             : static;
+        block-size           : auto;
+        min-inline-size      : 0;
+        margin-inline-start  : 0.6em;
+        padding              : 0.05em 0.45em;
+        border-radius        : 0.3em;
+        font-size            : 0.9em;
+        font-weight          : 600;
+        font-variant-numeric : tabular-nums;
+        color                : var(--lct-late);
+        background           : color-mix(in srgb, var(--lct-late) 16%, transparent);
+    }
 }
 
 /* The utilization strip, the Summary feature's footer: a bar per hour, from the bottom, orange when over 90% */
@@ -322,9 +326,9 @@
         box-sizing         : border-box;
         block-size         : var(--lct-footer-height);
         border-block-start : 1px solid var(--b-border-6);
-        align-items : center;
-        font-weight : 400;
-        color       : var(--lct-ink-sub);
+        align-items        : center;
+        font-weight        : 400;
+        color              : var(--lct-ink-sub);
     }
 
     /* A bar per hour, as wide as the hour less a gap either side */
@@ -370,20 +374,18 @@
     }
 }
 
-
 /* The splitter between the grid and the schedule */
 .lct-splitter {
     --b-splitter-color : var(--lct-border);
 }
 
-/* Narrow screens (ControlTowerApp#compact): the grid above the schedule */
+/* Narrow screens (ControlTowerApp#compact): the grid above the schedule, without the splitter */
 .lct-app.lct-compact {
     .lct-main {
         flex-direction : column;
     }
 
-    /* Room for the clock and the counters, the grid and the timeline */
-    .lct-splitter, .lct-panel-title, .lct-speed {
+    .lct-splitter {
         display : none;
     }
 }
@@ -395,12 +397,9 @@
     --b-grid-cell-border-color   : var(--b-border-6);
     --b-grid-header-border-color : var(--b-border-6);
     --b-grid-header-background   : var(--b-neutral-98);
-}
 
-/* The time axis header and the dock door column header, as tall as the grid's column headers */
-.b-dock-schedule .b-grid-header-container {
-    .b-grid-header,
-    .b-sch-header-row {
+    /* The time axis header and the dock door column header, as tall as the grid's column headers */
+    .b-grid-header-container :is(.b-grid-header, .b-sch-header-row) {
         box-sizing : border-box;
         min-height : 0;
         block-size : var(--lct-bar-height);

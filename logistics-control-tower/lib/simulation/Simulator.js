@@ -1,7 +1,7 @@
 import { Base, Delayable, Events } from '@bryntum/core-enterprise';
 import DockPlanner from './DockPlanner.js';
 import Random from './Random.js';
-import { minuteMs } from '../util/Time.js';
+import { hourMs, minuteMs } from '../util/Time.js';
 
 const
     // Delay values kept for the sparkline
@@ -121,7 +121,12 @@ export default class Simulator extends Events(Delayable(Base)) {
     }
 
     toggle() {
-        this.isRunning ? this.pause() : this.play();
+        if (this.isRunning) {
+            this.pause();
+        }
+        else {
+            this.play();
+        }
     }
 
     /**
@@ -186,7 +191,7 @@ export default class Simulator extends Events(Delayable(Base)) {
         const
             me                                  = this,
             { random, schedule, shipmentStore } = me,
-            soon                                = me.now.getTime() + 4 * 60 * minuteMs,
+            soon                                = me.now.getTime() + 4 * hourMs,
             // Trucks in transit with a slot have not started unloading
             booked                              = shipmentStore.records.filter(shipment =>
                 shipment.isInTransit && shipment.status !== 'late' && schedule.eventStore.getById(shipment.id)),
@@ -356,7 +361,7 @@ export default class Simulator extends Events(Delayable(Base)) {
     bookArrivals(count) {
         const
             { schedule, now } = this,
-            horizon           = now.getTime() + this.autoBookHours * 60 * minuteMs,
+            horizon           = now.getTime() + this.autoBookHours * hourMs,
             candidates        = this.shipmentStore.records
                 .filter(shipment => !shipment.isFinished && !shipment.onHold && shipment.eta.getTime() < horizon &&
                     !schedule.eventStore.getById(shipment.id))

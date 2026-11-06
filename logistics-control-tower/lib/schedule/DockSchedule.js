@@ -18,10 +18,9 @@ const
     },
     // The playhead is kept this far into the visible timeline
     nowAnchor    = 0.25,
-    // The zoom levels, one header row each, as tall as the grid's column headers. Hours labelled at their start, so a
-    // time under the pointer reads off the axis. `hour` is the default, the Day button goes back to it: five and a
-    // quarter hours across the timeline at 1440px wide, where a slot of 40 minutes shows its number, one of 45 its
-    // pallets too
+    // The zoom levels, one header row each, as tall as the grid's column headers. Times are labelled at the start of
+    // their tick, so the time under the pointer reads off the axis. `lct-hour` is the default the Day button returns
+    // to, at which a 40 minute slot is wide enough for its number (see the container queries in schedule.css)
     timeHeader   = (unit, increment, dateFormat) => [{ unit, increment, dateFormat, align : 'start' }],
     presets      = [
         { id : 'lct-6h', base : 'hourAndDay', tickWidth : 90, headers : timeHeader('hour', 6, 'ddd HH:mm') },
@@ -193,8 +192,7 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             features : {
                 ...config.features,
                 // Slots are edited by dragging and from the menus. Turned off here, not in the static features: the
-                // Enterprise tier's tierConfigs override a subclass's static `taskEdit : false` (Core/Tierable), a
-                // product bug, issue TBD
+                // Enterprise tier's tierConfigs override a subclass's static `taskEdit : false` (Core/Tierable)
                 taskEdit     : false,
                 // Slots move between doors with the right equipment only, and not into the past
                 eventDrag    : { validatorFn : context => me.validateSlotDrop(context) },
@@ -483,19 +481,6 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         doors.forEach(door => this.chainDoor(door));
     }
 
-    /**
-     * Selects a slot, which selects its row in the grid, and scrolls it to the middle of the view, highlighted
-     * @param {SlotModel} slot
-     */
-    revealSlot(slot) {
-        const me = this;
-
-        if (slot && !me.isDestroyed && me.eventStore.includes(slot)) {
-            me.selectEvent(slot);
-            me.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
-        }
-    }
-
     onSlotResizeEnd({ eventRecord }) {
         this.chainDoor(eventRecord.resource);
     }
@@ -510,6 +495,19 @@ export default class DockSchedule extends DockBooking(Scheduler) {
     }
 
     //endregion
+
+    /**
+     * Selects a slot, which selects its row in the grid, and scrolls it to the middle of the view, highlighted
+     * @param {SlotModel} slot
+     */
+    revealSlot(slot) {
+        const me = this;
+
+        if (slot && !me.isDestroyed && me.eventStore.includes(slot)) {
+            me.selectEvent(slot);
+            me.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
+        }
+    }
 
     eventRenderer(args) {
         args.renderData.eventColor = statusColors[args.eventRecord.status] ?? 'gray';

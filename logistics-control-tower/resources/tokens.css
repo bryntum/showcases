@@ -18,8 +18,8 @@
     --lct-cold      : light-dark(color-mix(in srgb, var(--b-color-blue) 85%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-blue) 70%, var(--b-color-white)));
     /* The utilization bars: the playhead's blue, and over 90% the orange of at risk */
-    --lct-util          : var(--b-color-blue);
-    --lct-util-over     : var(--lct-at-risk);
+    --lct-util      : var(--b-color-blue);
+    --lct-util-over : var(--lct-at-risk);
 
     /* Neutrals, from the theme */
     --lct-surface       : var(--b-neutral-100);
