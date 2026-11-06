@@ -66,10 +66,6 @@ export function shipmentGridOptions({ rowData, context, actions }) {
             resizable                : true,
             filter                   : 'agTextColumnFilter'
         },
-        // Dock slot as wide as its badges, the conflict warning included. The header is shorter
-        autoSizeStrategy           : { type : 'fitCellContents', colIds : ['dockName'], skipHeader : true },
-        // The measured cell includes its padding, no room added on top
-        autoSizePadding            : 2,
         getRowId                   : ({ data }) => data.id,
         // Live updates are batched by AG Grid (asyncTransactionWaitMillis), see GridSync
         asyncTransactionWaitMillis : 60,

@@ -1,5 +1,5 @@
 import {
-    CellStyleModule, ClientSideRowModelApiModule, ClientSideRowModelModule, ColumnApiModule, ColumnAutoSizeModule,
+    CellStyleModule, ClientSideRowModelApiModule, ClientSideRowModelModule, ColumnApiModule,
     EventApiModule, HighlightChangesModule, ModuleRegistry, NumberFilterModule, QuickFilterModule, RenderApiModule,
     RowApiModule, RowDragModule, RowSelectionModule, RowStyleModule, ScrollApiModule, TextFilterModule,
     ValidationModule, themeQuartz
@@ -35,7 +35,6 @@ ModuleRegistry.registerModules([
     ClientSideRowModelApiModule,
     RowApiModule,
     ColumnApiModule,
-    ColumnAutoSizeModule,
     RenderApiModule,
     ScrollApiModule,
     EventApiModule,

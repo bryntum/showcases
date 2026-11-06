@@ -62,6 +62,8 @@ const
         padding     : { top : 12, bottom : 12, left : 2, right : 2 }
     });
 
+// The visible columns share the room the grid has to spare, each in proportion to its `flex` (its natural width), up
+// to its `maxWidth`. Below the sum of their `minWidth`s the grid scrolls
 export const shipmentColumns = [
     {
         field      : 'ref',
@@ -75,7 +77,9 @@ export const shipmentColumns = [
     {
         field                 : 'status',
         headerName            : 'Status',
-        width                 : 114,
+        flex                  : 114,
+        minWidth              : 114,
+        maxWidth              : 150,
         cellRenderer          : renderStatus,
         enableCellChangeFlash : true,
         comparator            : (a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b),
@@ -84,7 +88,9 @@ export const shipmentColumns = [
     {
         field                 : 'eta',
         headerName            : 'ETA',
-        width                 : 158,
+        flex                  : 158,
+        minWidth              : 158,
+        maxWidth              : 210,
         // The time and how long until arrival (or since), relative to the simulated now, refreshed on every tick
         cellRenderer          : renderEta,
         enableCellChangeFlash : true,
@@ -93,7 +99,9 @@ export const shipmentColumns = [
     {
         field                 : 'delay',
         headerName            : 'Delay',
-        width                 : 68,
+        flex                  : 68,
+        minWidth              : 68,
+        maxWidth              : 96,
         valueFormatter        : formatDelay,
         enableCellChangeFlash : true,
         cellClassRules        : {
@@ -105,7 +113,10 @@ export const shipmentColumns = [
     {
         colId                : 'drift',
         headerName           : 'ETA drift',
-        width                : 84,
+        // The largest share of any room to spare, a longer line reads better
+        flex                 : 160,
+        minWidth             : 84,
+        maxWidth             : 260,
         sortable             : false,
         filter               : false,
         valueGetter          : ({ data }) => data && drift(data),
@@ -118,7 +129,8 @@ export const shipmentColumns = [
     {
         field                 : 'dockName',
         headerName            : 'Dock slot',
-        width                 : 120,
+        // Fits the widest badge, a conflict with its warning
+        width                 : 108,
         cellRenderer          : renderDockSlot,
         // Flashes when the slot moves, is booked or unbooked
         valueGetter           : ({ data }) => data && (data.dockId ? `${data.dockName} ${data.slotStart}` : data.onHold ? 'hold' : ''),
