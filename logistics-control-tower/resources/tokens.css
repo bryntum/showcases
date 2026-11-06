@@ -21,7 +21,12 @@
     --lct-ink-faint : var(--b-neutral-55);
     --lct-past      : light-dark(color-mix(in srgb, var(--b-color-black) 4%, transparent),
         color-mix(in srgb, var(--b-color-black) 22%, transparent));
-    --lct-playhead  : light-dark(color-mix(in srgb, var(--b-color-red) 85%, var(--b-color-black)), var(--b-color-red));
+    /* The panel title bars, the column headers and the rows of both views: one rhythm, see AgGridSetup.js and
+     * DockSchedule.js for the rows */
+    --lct-bar-height : 44px;
+
+    /* Blue, red means late and conflicts */
+    --lct-playhead  : var(--b-color-blue);
 
     /* Status colour of any element with a status class */
     .lct-status-on-time { --lct-color : var(--lct-on-time); }

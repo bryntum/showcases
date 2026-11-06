@@ -84,8 +84,9 @@ export const agTheme = themeQuartz.withParams({
     // Flashes of the cells that changed live
     valueChangeValueHighlightBackgroundColor : 'color-mix(in srgb, var(--b-color-amber) 35%, transparent)',
     rangeSelectionBorderColor                : 'var(--b-primary)',
-    rowHeight                                : 36,
-    headerHeight                             : 38,
+    rowHeight                                : 44,
+    // 43 plus its 1px border, the 44px of the schedule's time axis
+    headerHeight                             : 43,
     spacing                                  : 6,
     wrapperBorder                            : false,
     wrapperBorderRadius                      : 0,

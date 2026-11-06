@@ -1,5 +1,3 @@
-// The Stripe feature is a Grid feature, importing the package registers it
-import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
 import DockBooking from './DockBooking.js';
 import DockModel from '../model/DockModel.js';
@@ -57,14 +55,14 @@ export default class DockSchedule extends DockBooking(Scheduler) {
          */
         shipmentStore : null,
 
-        rowHeight  : 48,
-        barMargin  : 6,
+        // The shipment grid's row height, the two sides share one rhythm
+        rowHeight  : 44,
+        barMargin  : 5,
         tickSize   : 170,
         // Hours labelled at their start, so a time under the pointer reads off the axis
         viewPreset : {
             base    : 'hourAndDay',
             headers : [
-                { unit : 'day', dateFormat : 'ddd D MMM' },
                 { unit : 'hour', dateFormat : 'HH:mm', align : 'start' }
             ]
         },
@@ -77,13 +75,30 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         autoCreate                : false,
         useInitialAnimation       : false,
 
+        // Lined up with the shipment grid's bar, the time axis header with the grid's column headers
+        tbar : {
+            cls   : 'lct-panel-bar',
+            items : {
+                title  : { type : 'widget', cls : 'lct-panel-title', html : 'Dock doors' },
+                spacer : '->',
+                now    : {
+                    type    : 'button',
+                    cls     : 'lct-now-button',
+                    icon    : 'fa fa-location-crosshairs',
+                    text    : 'Now',
+                    tooltip : 'Scroll back to the current time',
+                    onClick : 'up.scrollToNow'
+                }
+            }
+        },
+
         project : {
             eventModelClass    : SlotModel,
             resourceModelClass : DockModel
         },
 
         columns : [{
-            text     : 'Dock door',
+            text     : 'Door',
             field    : 'name',
             width    : 140,
             cellCls  : 'lct-dock-cell',
@@ -91,7 +106,6 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         }],
 
         features : {
-            stripe          : true,
             // The engine uses the dependencies, drawing hundreds of chain lines would only add noise
             dependencies    : false,
             dependencyEdit  : false,

@@ -113,14 +113,25 @@ export function renderDockSlot({ data }) {
         });
     }
 
+    // The badge, then the conflict warning outside it, in a slot of its own so every badge has the same width
     return element({
         tag      : 'span',
-        class    : { 'lct-badge' : 1, 'lct-badge-booked' : 1, 'lct-badge-breach' : data.slaBreach },
+        class    : 'lct-dock-slot',
         title    : data.slaBreach ? `Unloading ends after the due time, ${formatTime(data.dueBy)}` : null,
         children : [
-            { tag : 'span', class : 'lct-badge-door', text : data.dockId },
-            { tag : 'span', text : formatTime(data.slotStart) },
-            data.slaBreach ? { tag : 'i', class : 'fa fa-triangle-exclamation', 'aria-hidden' : 'true' } : null
+            {
+                tag      : 'span',
+                class    : { 'lct-badge' : 1, 'lct-badge-booked' : 1, 'lct-badge-breach' : data.slaBreach },
+                children : [
+                    { tag : 'span', class : 'lct-badge-door', text : data.dockId },
+                    { tag : 'span', text : formatTime(data.slotStart) }
+                ]
+            },
+            {
+                tag           : 'i',
+                class         : { 'lct-dock-slot-warning' : 1, 'fa fa-triangle-exclamation' : data.slaBreach },
+                'aria-hidden' : 'true'
+            }
         ]
     });
 }

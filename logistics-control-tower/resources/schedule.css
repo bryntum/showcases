@@ -124,7 +124,7 @@
         z-index             : 5;
         overflow            : visible;
         background-color    : transparent;
-        border-inline-start : 2px solid var(--lct-playhead);
+        border-inline-start : 1px solid var(--lct-playhead);
     }
 }
 
@@ -235,5 +235,24 @@
 
     .lct-grid-panel, .lct-main > .b-scheduler {
         flex : 1 1 50%;
+    }
+}
+
+/* The shipment grid's lines and header colours (AgGridSetup.js), the two views read as one */
+.b-dock-schedule {
+    --b-grid-row-border-color    : var(--b-border-6);
+    --b-grid-row-border-width    : 1px;
+    --b-grid-cell-border-color   : var(--b-border-6);
+    --b-grid-header-border-color : var(--b-border-6);
+    --b-grid-header-background   : var(--b-neutral-98);
+}
+
+/* The time axis header and the dock door column header, as tall as the grid's column headers */
+.b-dock-schedule .b-grid-header-container {
+    .b-grid-header,
+    .b-sch-header-row {
+        box-sizing : border-box;
+        min-height : 0;
+        block-size : var(--lct-bar-height);
     }
 }
