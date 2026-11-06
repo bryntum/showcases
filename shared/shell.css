@@ -19,11 +19,14 @@ body {
     color            : var(--b-text-1);
     background-color : var(--b-neutral-97);
     background-image :
+        /* Behind the header, top centre, wide and soft so it does not band */
+        radial-gradient(ellipse 55% 22rem at 50% -6rem, var(--sc-glow-header), transparent),
         radial-gradient(circle, var(--sc-glow-sky), transparent 70%),
         radial-gradient(circle, var(--sc-glow-violet), transparent 70%),
         radial-gradient(circle at right bottom, color-mix(in srgb, var(--b-primary), transparent 90%), transparent 70%);
-    background-position : bottom, right, bottom right;
-    background-size     : 50% 50%, 75% 75%, 100% 100%;
+    background-position : top, bottom, right, bottom right;
+    background-size     : 100% 100%, 50% 50%, 75% 75%, 100% 100%;
+    background-repeat   : no-repeat, repeat, repeat, repeat;
     /* The mode the widgets render. A theme family leaves it unset, so the page's `color-scheme` comes through */
     color-scheme        : var(--b-widget-color-scheme);
     transition          : background-color var(--b-default-transition-duration);

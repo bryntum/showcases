@@ -29,4 +29,6 @@
     /* The soft glows behind the showcase shell (shell.css) */
     --sc-glow-sky      : light-dark(rgb(108 207 250 / 30%), rgb(55 104 122 / 30%));
     --sc-glow-violet   : light-dark(rgb(78 34 191 / 10%), rgb(47 21 115 / 10%));
+    /* A soft blue light behind the header, dark mode only */
+    --sc-glow-header   : light-dark(transparent, color-mix(in srgb, var(--sc-brand) 16%, transparent));
 }

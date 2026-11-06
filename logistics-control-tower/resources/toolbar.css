@@ -2,6 +2,8 @@
 
 .lct-toolbar {
     border-block-end : 1px solid var(--lct-border);
+    /* A step above the panels, the status overview apart from the work area */
+    background-color : var(--lct-raised);
 
     /* Its content edge is the one the page header lines up with, see shared/tokens.css */
     --b-toolbar-padding : var(--sc-panel-padding);
