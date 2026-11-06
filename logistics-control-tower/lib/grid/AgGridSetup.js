@@ -91,7 +91,7 @@ export const agTheme = themeQuartz.withParams({
     headerHeight                             : 43,
     spacing                                  : 6,
     // A little tighter than Quartz, the columns of the mock fit next to the dock schedule
-    cellHorizontalPadding                    : 9,
+    cellHorizontalPadding                    : 8,
     wrapperBorder                            : false,
     wrapperBorderRadius                      : 0,
     borderRadius                             : 4

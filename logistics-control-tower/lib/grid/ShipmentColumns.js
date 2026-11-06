@@ -73,7 +73,7 @@ export const shipmentColumns = [
     {
         field      : 'ref',
         headerName : 'Shipment',
-        width      : 124,
+        width      : 120,
         pinned     : 'left',
         // Drag a shipment by its handle onto a dock door, unless it is being unloaded or done
         rowDrag    : ({ data }) => Boolean(data) && data.status !== 'unloading' && data.status !== 'done',
@@ -82,8 +82,8 @@ export const shipmentColumns = [
     {
         field                 : 'status',
         headerName            : 'Status',
-        flex                  : 114,
-        minWidth              : 114,
+        flex                  : 110,
+        minWidth              : 110,
         maxWidth              : 150,
         cellRenderer          : StatusCellRenderer,
         enableCellChangeFlash : true,
@@ -93,8 +93,8 @@ export const shipmentColumns = [
     {
         field                 : 'eta',
         headerName            : 'ETA',
-        flex                  : 158,
-        minWidth              : 158,
+        flex                  : 154,
+        minWidth              : 154,
         maxWidth              : 210,
         // The time and how long until arrival (or since), relative to the simulated now, refreshed on every tick
         cellRenderer          : EtaCellRenderer,
@@ -104,8 +104,8 @@ export const shipmentColumns = [
     {
         field                 : 'delay',
         headerName            : 'Delay',
-        flex                  : 68,
-        minWidth              : 68,
+        flex                  : 70,
+        minWidth              : 70,
         maxWidth              : 96,
         valueFormatter        : formatDelay,
         enableCellChangeFlash : true,
@@ -120,7 +120,7 @@ export const shipmentColumns = [
         headerName           : 'ETA drift',
         // The largest share of any room to spare, a longer line reads better
         flex                 : 160,
-        minWidth             : 84,
+        minWidth             : 82,
         maxWidth             : 260,
         sortable             : false,
         filter               : false,
@@ -132,7 +132,7 @@ export const shipmentColumns = [
         field                 : 'dockName',
         headerName            : 'Dock slot',
         // Fits the widest badge, a conflict with its warning
-        width                 : 122,
+        width                 : 118,
         cellRenderer          : DockSlotCellRenderer,
         valueGetter           : dockSlotValue,
         enableCellChangeFlash : true,
@@ -147,7 +147,7 @@ export const shipmentColumns = [
         field                 : 'temperature',
         headerName            : 'Temp',
         // As wide as −17.3 °C, the numbers line up on the right
-        width                 : 87,
+        width                 : 96,
         type                  : 'rightAligned',
         cellRenderer          : TemperatureCellRenderer,
         enableCellChangeFlash : true,
