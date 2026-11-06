@@ -120,25 +120,37 @@
         background-color : var(--lct-past);
     }
 
+    /* Solid, time ranges are drawn half transparent by default */
     &.lct-now {
         z-index             : 5;
         overflow            : visible;
+        opacity             : 1;
         background-color    : transparent;
         border-inline-start : 1px solid var(--lct-playhead);
     }
 }
 
-/* In the time axis header only the playhead's time shows, a pill centred on the line with fixed width digits */
+/* In the time axis header the line runs on up to the playhead's time, a pill centred on it with fixed width digits */
 .b-time-ranges-header-canvas {
     .lct-past {
         display : none;
     }
 
+    /* The line starts at the pill, so it runs down from it into the body */
     .lct-now {
-        border : none;
+        border-inline-start : none;
+
+        &::after {
+            content             : '';
+            position            : absolute;
+            inset-block         : 50% 0;
+            inset-inline-start  : 0;
+            border-inline-start : 1px solid var(--lct-playhead);
+        }
 
         label {
             position             : absolute;
+            z-index              : 1;
             inset-block-start    : 50%;
             inset-inline-start   : 0;
             translate            : -50% -50%;
@@ -150,11 +162,6 @@
             font-variant-numeric : tabular-nums;
             color                : var(--b-color-white);
             background-color     : var(--lct-playhead);
-            /* A halo in the header colour hides the hour labels it passes over */
-            box-shadow           :
-                0 0 0 0.5em var(--b-neutral-100),
-                1.5em 0 0 0.5em var(--b-neutral-100),
-                -1.5em 0 0 0.5em var(--b-neutral-100);
         }
     }
 }
