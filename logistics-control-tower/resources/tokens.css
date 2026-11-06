@@ -39,8 +39,6 @@
     --lct-bar-height    : 44px;
     /* The grid's footer and the schedule's utilization strip, side by side */
     --lct-footer-height : 56px;
-    /* How strongly a slot too short for text is filled with its status colour */
-    --lct-chip-tint     : 38%;
     /* The slot bars, their drop preview, downtime and the utilization bars */
     --lct-radius        : 4px;
     /* The slot bars' inset in their 44px row, DockSchedule's barMargin */

@@ -14,25 +14,39 @@ const
     compactFrame  = 8,
     iconWidth     = 21,
     iconOnlyWidth = 28,
+    // A mini slot (too short for its number): a status icon, then the delay where it fits. Icon 14px, gap 3px, 2px
+    // padding either side, 2px to spare
+    miniIcon      = 14,
+    miniFrame     = 9,
+    statusIcons   = {
+        'on-time' : 'truck',
+        'at-risk' : 'clock',
+        late      : 'warning',
+        yard      : 'map-pin',
+        unloading : 'tray-arrow-down',
+        done      : 'check'
+    },
     // The number in the meta line's 11px instead of 13px, the next step down
     smallRatio    = 11 / 13,
     // The widest number, 10888 in bold 13px, until the font is there to measure them
     widestNumber  = 40,
-    numberWidths  = new Map(),
+    textWidths  = new Map(),
     measure       = new OffscreenCanvas(1, 1).getContext('2d');
 
-// The width of a slot's number in the bars' bold 13px (schedule.css), measured once per number with the web font
-function numberWidth(number) {
-    let width = numberWidths.get(number);
+// The width of a text in the bars' font (schedule.css), bold 13px for a number, 11px for the short text of a mini slot,
+// measured once per text and font with the web font
+function textWidth(text, font = '700 13px', fallback = widestNumber) {
+    const key = `${font} ${text}`;
+    let width = textWidths.get(key);
 
     if (width === undefined) {
-        measure.font = `700 13px ${getComputedStyle(document.body).fontFamily}`;
+        measure.font = `${font} ${getComputedStyle(document.body).fontFamily}`;
 
-        if (!document.fonts.check(measure.font, number)) {
-            return widestNumber;
+        if (!document.fonts.check(measure.font, text)) {
+            return fallback;
         }
 
-        numberWidths.set(number, width = Math.ceil(measure.measureText(number).width));
+        textWidths.set(key, width = Math.ceil(measure.measureText(text).width));
     }
 
     return width;
@@ -86,7 +100,7 @@ export function renderSlot({ eventRecord, renderData }) {
         { status, loadType, expedited, pallets, name, delayMinutes, slaBreach, tentative } = eventRecord,
         { width }  = renderData,
         number     = shipmentNumber(name),
-        text       = numberWidth(number),
+        text       = textWidth(number),
         // Dry loads are the default, they need no marker
         iconName   = status === 'done' ? 'check' : expedited ? 'lightning' : loadType === 'reefer' ? 'snowflake' : null,
         // The number before an icon alone, with less padding where it is tight, then in the meta line's smaller size
@@ -104,8 +118,12 @@ export function renderSlot({ eventRecord, renderData }) {
         'lct-slot-compact'       : showText && width < text + roomyFrame,
         'lct-slot-small'         : smallText,
         'lct-slot-icon-only'     : showIcon && !showText,
-        'lct-slot-sliver'        : !showText && !showIcon
+        'lct-slot-mini'          : !showText && !showIcon
     });
+
+    if (!showText && !showIcon) {
+        return renderMiniSlot(status, delayMinutes, width);
+    }
 
     return [
         showIcon ? { tag : 'i', class : `lct-slot-icon ${icon(iconName)}`, 'aria-hidden' : 'true' } : null,
@@ -118,6 +136,19 @@ export function renderSlot({ eventRecord, renderData }) {
                 smallText ? null : slotMeta(status, pallets, delayMinutes)
             ]
         } : null
+    ];
+}
+
+// A slot too short for its number: the minimal style, an icon for its status over a line in its colour, and the delay
+// of a truck at risk or late where that fits too. A bare pallet count would read as anything, it is in the tooltip
+function renderMiniSlot(status, delay, width) {
+    const
+        short     = status === 'late' || status === 'at-risk' ? formatMinutes(delay, true) : null,
+        showShort = short && width >= miniIcon + miniFrame + textWidth(short, '600 11px', Infinity);
+
+    return [
+        { tag : 'i', class : `lct-slot-icon ${icon(statusIcons[status])}`, 'aria-hidden' : 'true' },
+        showShort ? { class : 'lct-slot-short', text : short } : null
     ];
 }
 

@@ -147,17 +147,34 @@
         --b-sch-event-padding-inline : 0;
     }
 
-    /* Too narrow for anything inside: a solid chip in the status colour, no outline. It reads as a short booking, a
-     * filled style next to the outlined slots with text, not as an empty frame */
-    &.lct-slot-sliver {
-        --lct-slot-tint              : var(--lct-chip-tint);
+    /* Too short for its number: the minimal style, no box. An icon for the status and a short text over a line in the
+     * status colour (renderMiniSlot) */
+    &.lct-slot-mini {
+        --b-sch-event-background     : transparent;
         --b-sch-event-border-color   : transparent;
-        --b-sch-event-padding-inline : 0;
+        --b-sch-event-padding-inline : 2px;
+
+        justify-content    : center;
+        gap                : 3px;
+        border-block-end   : 2px solid var(--lct-color);
+        border-radius      : 0;
+
+        .lct-slot-icon {
+            font-size : 14px;
+            color     : var(--lct-color);
+        }
+
+        .lct-slot-short {
+            font-size   : 11px;
+            font-weight : 600;
+            white-space : nowrap;
+            color       : var(--lct-ink-sub);
+        }
     }
 }
 
 .b-sch-event-wrap {
-    &:is(:hover, .b-hover) > .lct-slot:not(.lct-slot-sliver) {
+    &:is(:hover, .b-hover) > .lct-slot:not(.lct-slot-mini) {
         --lct-slot-tint : 24%;
     }
 

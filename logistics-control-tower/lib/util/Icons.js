@@ -3,15 +3,19 @@
 import calendarPlus from '@phosphor-icons/core/assets/light/calendar-plus-light.svg?url';
 import calendarX from '@phosphor-icons/core/assets/light/calendar-x-light.svg?url';
 import check from '@phosphor-icons/core/assets/light/check-light.svg?url';
+import clock from '@phosphor-icons/core/assets/light/clock-light.svg?url';
 import cube from '@phosphor-icons/core/assets/light/cube-light.svg?url';
 import lightning from '@phosphor-icons/core/assets/light/lightning-light.svg?url';
 import magnifyingGlass from '@phosphor-icons/core/assets/light/magnifying-glass-light.svg?url';
+import mapPin from '@phosphor-icons/core/assets/light/map-pin-light.svg?url';
 import minus from '@phosphor-icons/core/assets/light/minus-light.svg?url';
 import packageIcon from '@phosphor-icons/core/assets/light/package-light.svg?url';
 import pause from '@phosphor-icons/core/assets/light/pause-light.svg?url';
 import play from '@phosphor-icons/core/assets/light/play-light.svg?url';
 import plus from '@phosphor-icons/core/assets/light/plus-light.svg?url';
 import snowflake from '@phosphor-icons/core/assets/light/snowflake-light.svg?url';
+import trayArrowDown from '@phosphor-icons/core/assets/light/tray-arrow-down-light.svg?url';
+import truck from '@phosphor-icons/core/assets/light/truck-light.svg?url';
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?url';
 
 /**
@@ -24,15 +28,19 @@ const urls = {
     'calendar-plus'    : calendarPlus,
     'calendar-x'       : calendarX,
     check,
+    clock,
     cube,
     lightning,
     'magnifying-glass' : magnifyingGlass,
+    'map-pin'          : mapPin,
     minus,
     package            : packageIcon,
     pause,
     play,
     plus,
     snowflake,
+    'tray-arrow-down'  : trayArrowDown,
+    truck,
     warning
 };
 
