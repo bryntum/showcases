@@ -50,6 +50,13 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         now : null,
 
         /**
+         * The playhead glides from one simulated time to the next over this many milliseconds, the simulation's tick
+         * interval, so it moves at a steady pace instead of hopping a tick at a time
+         * @config {Number}
+         */
+        glideDuration : 300,
+
+        /**
          * Store of ShipmentModel records, for the tooltips and the menu
          * @config {Core.data.Store}
          */
@@ -74,6 +81,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         // Slots are booked from the shipments, not drawn on the timeline
         autoCreate                : false,
         useInitialAnimation       : false,
+        // Slots move with the data as is, animating every tick would add drift to the gliding timeline
+        enableEventAnimations     : false,
 
         // Lined up with the shipment grid's bar, the time axis header with the grid's column headers
         tbar : {
@@ -194,14 +203,58 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         return new Date(now);
     }
 
+    // The simulation sets the time once a tick, the playhead glides there frame by frame
     updateNow(now, oldNow) {
         const me = this;
 
-        me.syncPlayhead();
+        if (!oldNow || !me.isPainted || !me.shownNow) {
+            me.showNow(now);
 
-        // Delta scroll, synchronously and without animation, so the playhead stays put on screen
-        if (oldNow && me.isPainted) {
-            me.scrollRemainder += me.timeAxisViewModel.getDistanceForDuration(now - oldNow);
+            return;
+        }
+
+        me.glide = { from : me.shownNow.getTime(), to : now.getTime(), start : performance.now() };
+
+        if (!me.glideFrame) {
+            me.glideFrame = requestAnimationFrame(() => me.glideStep());
+        }
+    }
+
+    // One frame of the glide, at a steady pace from the shown time to the simulated one
+    glideStep() {
+        const
+            me                    = this,
+            { from, to, start }   = me.glide,
+            progress              = Math.min(1, (performance.now() - start) / me.glideDuration);
+
+        me.glideFrame = null;
+
+        if (me.isDestroyed) {
+            return;
+        }
+
+        me.showNow(new Date(from + (to - from) * progress));
+
+        if (progress < 1) {
+            me.glideFrame = requestAnimationFrame(() => me.glideStep());
+        }
+    }
+
+    /**
+     * Draws the playhead at a time and delta scrolls the timeline by the distance it moved, without animation, so the
+     * playhead stays put on screen
+     * @param {Date} time
+     */
+    showNow(time) {
+        const
+            me       = this,
+            previous = me.shownNow;
+
+        me.shownNow = time;
+        me.syncPlayhead(time);
+
+        if (previous && me.isPainted) {
+            me.scrollRemainder += me.timeAxisViewModel.getDistanceForDuration(time - previous);
 
             const whole = Math.trunc(me.scrollRemainder);
 
@@ -214,11 +267,12 @@ export default class DockSchedule extends DockBooking(Scheduler) {
 
     /**
      * The shaded past and the now line, two time ranges. Display state, so the changes are not tracked
+     * @param {Date} now The time shown
      */
-    syncPlayhead() {
+    syncPlayhead(now) {
         const
             me                 = this,
-            { project, now }   = me,
+            { project }        = me,
             { timeRangeStore } = project;
 
         if (!timeRangeStore) {
@@ -302,6 +356,11 @@ export default class DockSchedule extends DockBooking(Scheduler) {
     }
 
     //endregion
+
+    doDestroy() {
+        cancelAnimationFrame(this.glideFrame);
+        super.doDestroy();
+    }
 
     eventRenderer(args) {
         args.renderData.eventColor = statusColors[args.eventRecord.status] ?? 'gray';
