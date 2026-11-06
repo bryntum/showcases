@@ -4,7 +4,7 @@ import { statusText } from './util/Status.js';
 /**
  * The legend below the app: a dot per shipment status (the colours of the grid pills and the slot bars), the dashed
  * outlines of a conflict and of a tentative slot, the striped downtime, the overloaded hour of the utilization strip,
- * and the credits, linking AG Grid Enterprise to its licence terms.
+ * and the credits, each product linking to its page.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
@@ -44,8 +44,9 @@ export default class StatusLegend extends Widget {
                 class    : 'lct-legend-note',
                 children : [
                     'Shipments: ',
-                    { tag : 'a', href : 'https://www.ag-grid.com/license-pricing/', target : '_blank', text : 'AG Grid Enterprise' },
-                    ' · Dock schedule: Bryntum Scheduler'
+                    { tag : 'a', href : 'https://www.ag-grid.com/', target : '_blank', text : 'AG Grid Enterprise' },
+                    ' · Dock schedule: ',
+                    { tag : 'a', href : 'https://bryntum.com/products/scheduler/', target : '_blank', text : 'Bryntum Scheduler' }
                 ]
             }
         ].forEach(child => DomHelper.createElement({ ...child, parent : this.element }));

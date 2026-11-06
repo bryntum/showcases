@@ -139,8 +139,8 @@ export function renderSlot({ eventRecord, renderData }) {
     ];
 }
 
-// A slot too short for its number: the minimal style, an icon for its status over a line in its colour, and the delay
-// of a truck at risk or late where that fits too. A bare pallet count would read as anything, it is in the tooltip
+// A slot too short for its number: an icon for its status in the middle of the box, and the delay of a truck at risk or
+// late where that fits too. A bare pallet count would read as anything, it is in the tooltip
 function renderMiniSlot(status, delay, width) {
     const
         short     = status === 'late' || status === 'at-risk' ? formatMinutes(delay, true) : null,
