@@ -51,6 +51,9 @@
     /* Blue, red means late and conflicts */
     --lct-playhead : var(--b-color-blue);
 
+    /* The shown part of a mask, which reads the alpha only: any opaque colour */
+    --lct-mask : var(--b-color-black);
+
     /* Status colour of any element with a status class */
     .lct-status-on-time { --lct-color : var(--lct-on-time); }
     .lct-status-at-risk { --lct-color : var(--lct-at-risk); }

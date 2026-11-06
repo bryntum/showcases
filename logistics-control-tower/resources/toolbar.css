@@ -103,10 +103,9 @@
 }
 
 /* Narrow screens (ControlTowerApp#compact): the counters scroll sideways, fading out at the edge, the date leaves
- * the site out. The mask only reads the alpha, its colour is any opaque one. `to right`, gradients have no logical
- * direction, the showcase is left to right only */
+ * the site out. `to right`, gradients have no logical direction, the showcase is left to right only */
 .lct-compact .lct-kpis {
-    mask-image : linear-gradient(to right, black calc(100% - 2.5em), transparent);
+    mask-image : linear-gradient(to right, var(--lct-mask) calc(100% - 2.5em), transparent);
 
     .lct-clock {
         margin-inline-end : 0.5em;
