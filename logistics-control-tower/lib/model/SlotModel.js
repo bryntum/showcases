@@ -10,7 +10,6 @@ export default class SlotModel extends EventModelEnterprise {
 
     static fields = [
         'carrierCode',
-        'carrierColor',
         'loadType',
         { name : 'pallets', type : 'int' },
         { name : 'dueBy', type : 'date' },

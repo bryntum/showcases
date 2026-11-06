@@ -61,7 +61,7 @@ function carrierChip(data, name) {
 }
 
 /**
- * Carrier chip: a swatch in the carrier's colour and its code, the name in the tooltip
+ * Carrier chip: the carrier's logo and name, the name also in the tooltip
  * @param {Object} params AG Grid cell renderer params
  * @returns {HTMLElement}
  */

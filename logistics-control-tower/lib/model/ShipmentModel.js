@@ -13,8 +13,6 @@ export default class ShipmentModel extends Model {
         'ref',
         'carrier',
         'carrierCode',
-        // Name of a Bryntum palette colour (blue, teal...), resolved through `--b-color-{name}`, follows the theme
-        'carrierColor',
         'origin',
         // 'dry' or 'reefer' (temperature controlled)
         'loadType',
@@ -55,7 +53,7 @@ export default class ShipmentModel extends Model {
     toRow(slot) {
         const
             {
-                id, ref, carrier, carrierCode, carrierColor, origin, loadType, pallets, plannedEta, eta, dueBy,
+                id, ref, carrier, carrierCode, origin, loadType, pallets, plannedEta, eta, dueBy,
                 delayMinutes, etaHistory, setpoint, temperature, gps, status, expedited, onHold
             }    = this,
             dock = slot?.resource;
@@ -65,7 +63,6 @@ export default class ShipmentModel extends Model {
             ref,
             carrier,
             carrierCode,
-            carrierColor,
             origin,
             loadType,
             pallets,

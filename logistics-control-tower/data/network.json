@@ -22,43 +22,35 @@
     "carriers": [
         {
             "name": "Nordic Freight",
-            "code": "NF",
-            "color": "blue"
+            "code": "NF"
         },
         {
             "name": "Baltic Express",
-            "code": "BX",
-            "color": "teal"
+            "code": "BX"
         },
         {
             "name": "Atlas Haulage",
-            "code": "AH",
-            "color": "orange"
+            "code": "AH"
         },
         {
             "name": "Fjord Logistics",
-            "code": "FL",
-            "color": "cyan"
+            "code": "FL"
         },
         {
             "name": "Meridian Cargo",
-            "code": "MC",
-            "color": "purple"
+            "code": "MC"
         },
         {
             "name": "Polar Line",
-            "code": "PL",
-            "color": "indigo"
+            "code": "PL"
         },
         {
             "name": "Cobalt Transport",
-            "code": "CT",
-            "color": "pink"
+            "code": "CT"
         },
         {
             "name": "Swift Arctic",
-            "code": "SA",
-            "color": "lime"
+            "code": "SA"
         }
     ],
     "origins": [
