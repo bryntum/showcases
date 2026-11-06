@@ -1,0 +1,60 @@
+/* Door downtime (schedule/Downtime.js), the dock schedule's only resource time ranges: neutral stripes behind the
+ * slots, as tall as the slot bars, a short label where the range is wide enough. The legend's Unavailable swatch shares
+ * the stripes */
+
+.b-dock-schedule .b-sch-resource-time-range::before, .lct-legend-downtime .lct-swatch {
+    background : repeating-linear-gradient(135deg, var(--lct-stripe-a) 0 5px, var(--lct-stripe-b) 5px 6px);
+}
+
+.b-dock-schedule .b-sch-resource-time-range {
+    /* Hoverable for its tooltip (ResourceTimeRanges enableMouseEvents), not clickable */
+    cursor         : default;
+    container-type : inline-size;
+    font-size      : 11px;
+    font-weight    : 500;
+
+    --b-resource-time-range-background : none;
+    --b-resource-time-range-color      : var(--lct-ink-sub);
+
+    /* The range spans the row, the striped box gets the slot bars' inset, the row's bar margin (DockSchedule) */
+    &::before {
+        content       : '';
+        position      : absolute;
+        inset         : var(--lct-bar-inset) 0;
+        border        : 1px solid var(--lct-stripe-b);
+        border-radius : var(--lct-radius);
+    }
+
+    /* The renderer's element, centred on the row like a slot's label */
+    .lct-downtime {
+        position    : relative;
+        display     : flex;
+        align-items : center;
+        align-self  : stretch;
+        width       : 100%;
+        min-width   : 0;
+    }
+
+    /* The feature's content element sits at the bottom of the range, centred here */
+    .b-sch-event-content {
+        align-items : center;
+        min-width   : 0;
+        margin      : 0;
+        padding     : 0 6px;
+        font-size   : 1em;
+        overflow    : hidden;
+    }
+
+    .lct-downtime-label {
+        overflow      : hidden;
+        white-space   : nowrap;
+        text-overflow : ellipsis;
+    }
+
+    /* Narrower than "Defrost": the stripes and the tooltip say it */
+    @container (width < 48px) {
+        .lct-downtime-label {
+            display : none;
+        }
+    }
+}

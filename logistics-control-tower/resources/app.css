@@ -3,8 +3,12 @@
 @import './tokens.css';
 @import './icons.css';
 @import './toolbar.css';
+@import './panel-bars.css';
 @import './grid.css';
 @import './schedule.css';
+@import './downtime.css';
+@import './playhead.css';
+@import './utilization.css';
 @import './legend.css';
 
 /* Shown in place of the app when it fails to load, see app.js */

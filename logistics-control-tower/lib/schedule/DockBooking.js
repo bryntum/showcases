@@ -1,5 +1,6 @@
 import DockPlanner from '../simulation/DockPlanner.js';
 import { slotData } from '../simulation/ShipmentData.js';
+import { downtimeIntervals } from './Downtime.js';
 import { minuteMs } from '../util/Time.js';
 
 /**
@@ -55,11 +56,12 @@ export default Target => class DockBooking extends Target {
 
     //region Booking
 
-    // Sorted busy intervals of a door, optionally ignoring one slot
+    // Sorted busy intervals of a door, its slots (optionally but one) and its downtime
     getBusy(door, ignoreId) {
         return door.events
             .filter(slot => slot.id !== ignoreId)
             .map(slot => ({ start : slot.startDate.getTime(), end : slot.plannedEnd }))
+            .concat(downtimeIntervals(door))
             .sort((a, b) => a.start - b.start);
     }
 
@@ -153,8 +155,8 @@ export default Target => class DockBooking extends Target {
     }
 
     /**
-     * Gives a shipment the earliest possible slot: right after the truck unloading at the best door. The engine pushes
-     * the slots it jumps in front of
+     * Gives a shipment the earliest possible slot: right after the truck unloading at the best door, clear of its
+     * downtime. The engine pushes the slots it jumps in front of
      * @param {String} shipmentId
      * @returns {SlotModel|null}
      */
@@ -169,21 +171,24 @@ export default Target => class DockBooking extends Target {
         }
 
         const
-            from = me.earliestStart(shipment),
-            gap  = DockPlanner.TURNAROUND * minuteMs;
+            from     = me.earliestStart(shipment),
+            gap      = DockPlanner.TURNAROUND * minuteMs,
+            duration = DockPlanner.unloadMinutes(shipment.pallets, shipment.loadType) * minuteMs;
 
         let best = null;
 
         for (const door of me.resourceStore) {
             if (door.accepts(shipment.loadType)) {
-                // Only the slots being unloaded block the door, the others are pushed back
+                // Only the slots being unloaded and the downtime block the door, the other slots are pushed back
                 const
-                    blockedUntil = Math.max(from, ...door.events.filter(slot => slot.isStarted)
+                    unloadedBy = Math.max(from, ...door.events.filter(slot => slot.isStarted)
                         .map(slot => slot.plannedEnd + gap)),
-                    score        = blockedUntil + DockPlanner.doorPenalty(door.capability, shipment.loadType);
+                    start      = DockPlanner.earliestGap(downtimeIntervals(door).sort((a, b) => a.start - b.start),
+                        unloadedBy, duration),
+                    score      = start + DockPlanner.doorPenalty(door.capability, shipment.loadType);
 
                 if (!best || score < best.score) {
-                    best = { door, start : blockedUntil, score };
+                    best = { door, start, score };
                 }
             }
         }
@@ -203,69 +208,6 @@ export default Target => class DockBooking extends Target {
         }
 
         return slot;
-    }
-
-    //endregion
-
-    //region Conflicts
-
-    /**
-     * The slots in conflict, ending after their shipment's due time, which can still be moved
-     * @property {SlotModel[]}
-     */
-    get conflicts() {
-        return this.eventStore.query(slot => slot.slaBreach && !slot.isStarted);
-    }
-
-    /**
-     * Moves each slot in conflict to the earliest gap at a door able to take its load where it ends before its due
-     * time, or failing that where it ends earliest. The most urgent first, each move seen by the next. A slot is only
-     * moved when that makes it end earlier. The engine schedules the new chains on its next commit
-     * @returns {SlotModel[]} The moved slots
-     */
-    resolveConflicts() {
-        const
-            me    = this,
-            moved = [];
-
-        for (const slot of me.conflicts.sort((a, b) => a.dueBy - b.dueBy)) {
-            const
-                shipment = me.shipmentStore.getById(slot.id),
-                best     = shipment && me.bestGapFor(slot, shipment);
-
-            if (best && best.end < slot.plannedEnd) {
-                me.bookAt(shipment, best.door, new Date(best.end - slot.duration * minuteMs));
-                moved.push(slot);
-            }
-        }
-
-        return moved;
-    }
-
-    // The earliest gap for a slot at a door able to take its load: one ending in time beats a late one, then the
-    // earliest end
-    bestGapFor(slot, shipment) {
-        const
-            me       = this,
-            duration = slot.duration * minuteMs,
-            from     = me.earliestStart(shipment),
-            due      = slot.dueBy.getTime();
-
-        let best = null;
-
-        for (const door of me.resourceStore) {
-            if (door.accepts(slot.loadType)) {
-                const
-                    end  = DockPlanner.earliestGap(me.getBusy(door, slot.id), from, duration) + duration,
-                    fits = end <= due;
-
-                if (!best || (fits && !best.fits) || (fits === best.fits && end < best.end)) {
-                    best = { door, end, fits };
-                }
-            }
-        }
-
-        return best;
     }
 
     //endregion

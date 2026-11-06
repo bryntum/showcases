@@ -5,10 +5,12 @@ import { hourMs, minuteMs } from '../util/Time.js';
 
 const
     // Delay values kept for the sparkline
-    historyLength = 16,
+    historyLength  = 16,
     // In transit statuses by minutes of delay
-    lateAfter     = 30,
-    atRiskAfter   = 10;
+    lateAfter      = 30,
+    atRiskAfter    = 10,
+    // A slot is tentative while its truck is further out than this, the ETA of a truck hours away is an estimate
+    tentativeAfter = 3 * hourMs;
 
 /**
  * Drives the live part of the showcase. Every tick it advances the simulated clock, lets truck ETAs drift, moves reefer
@@ -324,15 +326,17 @@ export default class Simulator extends Events(Delayable(Base)) {
     }
 
     /**
-     * Recalculates the status of all shipments and mirrors it onto their slots
+     * Recalculates the status of all shipments and mirrors it onto their slots, which are tentative while the truck is
+     * more than three hours out
      */
     refreshStatuses() {
         const { now, schedule } = this;
 
         for (const shipment of this.shipmentStore) {
             const
-                slot   = schedule.eventStore.getById(shipment.id),
-                status = Simulator.statusOf(shipment, slot, now);
+                slot      = schedule.eventStore.getById(shipment.id),
+                status    = Simulator.statusOf(shipment, slot, now),
+                tentative = shipment.isInTransit && shipment.eta - now > tentativeAfter;
 
             if (shipment.status !== status) {
                 shipment.set({
@@ -341,18 +345,22 @@ export default class Simulator extends Events(Delayable(Base)) {
                 });
             }
 
-            if (slot && (slot.status !== status || slot.expedited !== shipment.expedited ||
-                slot.delayMinutes !== shipment.delayMinutes)) {
-                const started = status === 'unloading' || status === 'done';
+            if (slot) {
+                const
+                    started = status === 'unloading' || status === 'done',
+                    // The shipment's display state on its slot. A slot which has started cannot be moved any more
+                    mirror  = {
+                        status,
+                        tentative,
+                        expedited    : shipment.expedited,
+                        delayMinutes : shipment.delayMinutes,
+                        draggable    : !started,
+                        resizable    : !started
+                    };
 
-                slot.set({
-                    status,
-                    expedited    : shipment.expedited,
-                    delayMinutes : shipment.delayMinutes,
-                    // A slot which has started cannot be moved any more
-                    draggable    : !started,
-                    resizable    : !started
-                });
+                if (Object.keys(mirror).some(key => slot[key] !== mirror[key])) {
+                    slot.set(mirror);
+                }
             }
         }
     }

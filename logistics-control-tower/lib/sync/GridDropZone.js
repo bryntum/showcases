@@ -2,6 +2,7 @@ import { DomHelper } from '@bryntum/core-enterprise';
 import DockPlanner from '../simulation/DockPlanner.js';
 import { minuteMs } from '../util/Time.js';
 import { shipmentNumber } from '../util/Status.js';
+import { downtimeAt } from '../schedule/Downtime.js';
 
 /**
  * Makes the dock schedule's timeline a drop zone for the rows of the shipment grid (AG Grid's `addRowDropZone`). While
@@ -86,7 +87,7 @@ export default class GridDropZone {
         const
             startDate = new Date(DockPlanner.ceilToFiveMinutes(Math.max(date.getTime(), schedule.now.getTime()))),
             minutes   = DockPlanner.unloadMinutes(shipment.pallets, shipment.loadType),
-            message   = this.invalidReason(shipment, door);
+            message   = this.invalidReason(shipment, door, startDate, minutes);
 
         return {
             shipment,
@@ -99,8 +100,17 @@ export default class GridDropZone {
         };
     }
 
-    // Why the shipment can not go to the door, nothing when it can
-    invalidReason(shipment, door) {
+    /**
+     * Why the shipment can not go to the door at the passed time, nothing when it can
+     * @param {ShipmentModel} shipment
+     * @param {DockModel} door
+     * @param {Date} startDate
+     * @param {Number} minutes The unloading time
+     * @returns {String|null}
+     */
+    invalidReason(shipment, door, startDate, minutes) {
+        const downtime = downtimeAt(door, startDate, startDate.getTime() + minutes * minuteMs);
+
         if (shipment.isFinished) {
             return `${shipment.ref} is unloaded`;
         }
@@ -109,7 +119,11 @@ export default class GridDropZone {
             return `${shipment.ref} is being unloaded`;
         }
 
-        return door.accepts(shipment.loadType) ? null : `${door.name} cannot take ${shipment.loadType} loads`;
+        if (!door.accepts(shipment.loadType)) {
+            return `${door.name} cannot take ${shipment.loadType} loads`;
+        }
+
+        return downtime ? `${door.name} is unavailable, ${downtime.name.toLowerCase()}` : null;
     }
 
     // The door row under the pointer. The event's target is AG Grid's drag layer, so the row is found by position

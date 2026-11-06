@@ -154,5 +154,63 @@
             "capability": "dry",
             "zone": "Ambient"
         }
+    ],
+    "downtime": [
+        {
+            "door": "D01",
+            "name": "Defrost",
+            "time": "05:10",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D02",
+            "name": "Defrost",
+            "time": "08:20",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D03",
+            "name": "Defrost",
+            "time": "12:00",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D04",
+            "name": "Defrost",
+            "time": "06:30",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D05",
+            "name": "Defrost",
+            "time": "10:40",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D07",
+            "name": "Maintenance",
+            "time": "07:30",
+            "minutes": 90,
+            "daily": false
+        },
+        {
+            "door": "D09",
+            "name": "Cleaning",
+            "time": "11:30",
+            "minutes": 30,
+            "daily": false
+        },
+        {
+            "door": "D11",
+            "name": "Cleaning",
+            "time": "04:30",
+            "minutes": 30,
+            "daily": false
+        }
     ]
 }

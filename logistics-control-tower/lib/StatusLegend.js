@@ -3,8 +3,8 @@ import { statusText } from './util/Status.js';
 
 /**
  * The legend below the app: a dot per shipment status (the colours of the grid pills and the slot bars), the dashed
- * conflict outline, the overloaded hour of the utilization strip, and the credits, linking AG Grid Enterprise to its
- * licence terms.
+ * outlines of a conflict and of a tentative slot, the striped downtime, the overloaded hour of the utilization strip,
+ * and the credits, linking AG Grid Enterprise to its licence terms.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
@@ -35,6 +35,8 @@ export default class StatusLegend extends Widget {
                 children     : [
                     ...Object.entries(statusText).map(([status, text]) => item(`lct-legend-status lct-status-${status}`, text)),
                     item('lct-legend-conflict', 'Conflict'),
+                    item('lct-legend-tentative', 'Tentative'),
+                    item('lct-legend-downtime', 'Unavailable'),
                     item('lct-legend-busy', 'Door over 90%')
                 ]
             },

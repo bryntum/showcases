@@ -1,4 +1,4 @@
-/* The dock schedule: the door column, the slot bars, the playhead and the drop preview */
+/* The dock schedule: the door column, the slot bars, the drop preview, the tooltip and the lines shared with the grid */
 
 .lct-dock {
     display     : flex;
@@ -41,12 +41,10 @@
     }
 }
 
-/* Slot bars: a dark tint of the status colour, a 1px border in it, the load icon in it. The label adapts to the
- * bar's width. Sized in px: the font matches the grid's (AgGridSetup.js), the padding fits the 44px rows, and the
- * container query widths below are measured against both */
+/* Slot bars: a dark tint of the status colour, a 1px border in it. What the bar shows follows its width, see
+ * SlotRendering#renderSlot, whose width tiers are measured against these px sizes: the font matches the grid's
+ * (AgGridSetup.js), the even padding fits the 44px rows */
 .b-sch-event.lct-slot {
-    /* Named, the bar's content element is a container of its own */
-    container : lct-slot / inline-size;
     /* The shipment grid's font size, the number reads alike in both views */
     font-size : 13px;
 
@@ -55,12 +53,13 @@
     --b-sch-event-border-width   : 1px;
     --b-sch-event-border-style   : solid;
     --b-sch-event-border-color   : color-mix(in srgb, var(--lct-color) 70%, transparent);
-    --b-sch-event-border-radius  : 4px;
+    --b-sch-event-border-radius  : var(--lct-radius);
     --b-sch-event-color          : var(--lct-ink);
     /* One padding all round, the label sits as far from the top and bottom as from the start */
     --b-sch-event-padding-inline : 5px;
     --b-sch-event-padding-block  : 5px;
 
+    /* The exceptions only: a reefer load, an expedited truck, an unloaded one */
     .lct-slot-icon {
         font-size : 1.1em;
         color     : var(--lct-color);
@@ -91,113 +90,71 @@
         color         : var(--lct-ink-sub);
     }
 
+    /* A crate and the count */
+    .lct-slot-pallets {
+        display     : flex;
+        align-items : center;
+        gap         : 0.25em;
+
+        .lct-icon {
+            font-size : 0.9em;
+        }
+    }
+
     &:is(.lct-status-late, .lct-status-at-risk) .lct-slot-meta {
         color : var(--lct-color);
     }
 
-    /* Narrower: the number only, never cut short. The container is the bar inside its border, the padding and the
-     * widest number (10888) take 50px, the icon and its gap 21px more. A 40 minute slot is 50px at the default zoom */
-    @container lct-slot (width < 71px) {
-        .lct-slot-icon {
-            display : none;
-        }
-    }
-
-    /* Too narrow for the number: the load icon only */
-    @container lct-slot (width < 50px) {
-        .lct-slot-icon {
-            display : revert;
-        }
-
-        .lct-slot-text {
-            display : none;
-        }
-    }
-
-    /* Unloaded: grey, quiet, no icon */
+    /* Unloaded: grey and quiet, a check */
     &.lct-status-done {
         --b-sch-event-border-color : var(--lct-border);
         --b-sch-event-color        : var(--lct-ink-faint);
-
-        .lct-slot-icon {
-            display : none;
-        }
 
         .lct-slot-meta {
             color : inherit;
         }
     }
 
+    /* Booked for a truck still hours out: a lighter box, a thin neutral dash, unlike the coloured dash of a conflict */
+    &.lct-slot-tentative {
+        --lct-slot-tint            : 8%;
+        --b-sch-event-border-style : dashed;
+        --b-sch-event-border-color : var(--lct-tentative);
+    }
+
     /* Unloading ends after the shipment's due time: a conflict, outlined dashed */
     &.lct-slot-breach {
-        --b-sch-event-border-color : transparent;
-
         outline        : 1px dashed var(--lct-conflict);
         outline-offset : 0;
+
+        --b-sch-event-border-color : transparent;
+    }
+
+    /* The number alone, closer to the border */
+    &.lct-slot-compact {
+        --b-sch-event-padding-inline : 2px;
+    }
+
+    /* Too narrow for anything inside: a slim bar, the tint and the border of its status, not an empty box */
+    &.lct-slot-sliver {
+        align-self : center;
+        block-size : 40%;
+
+        --b-sch-event-padding-inline : 0;
+        --b-sch-event-padding-block  : 0;
+        --b-sch-event-border-radius  : 2px;
     }
 }
 
 .b-sch-event-wrap {
-    &:is(:hover, .b-hover) > .lct-slot {
+    &:is(:hover, .b-hover) > .lct-slot:not(.lct-slot-sliver) {
         --lct-slot-tint : 24%;
     }
 
     &.b-selected > .lct-slot {
-        --lct-slot-tint : 30%;
-
         box-shadow : 0 0 0 2px color-mix(in srgb, var(--lct-playhead) 55%, transparent);
-    }
-}
 
-/* The past, shaded, and the playhead, two time ranges */
-.b-sch-time-range {
-    &.lct-past {
-        background-color : var(--lct-past);
-    }
-
-    /* Solid, time ranges are drawn half transparent by default */
-    &.lct-now {
-        z-index             : 5;
-        overflow            : visible;
-        opacity             : 1;
-        background-color    : transparent;
-        border-inline-start : 1px solid var(--lct-playhead);
-    }
-}
-
-/* In the time axis header the line runs on up to the playhead's time, a pill centred on it with fixed width digits */
-.b-time-ranges-header-canvas {
-    .lct-past {
-        display : none;
-    }
-
-    /* The line starts at the pill, so it runs down from it into the body */
-    .lct-now {
-        border-inline-start : none;
-
-        &::after {
-            content             : '';
-            position            : absolute;
-            inset-block         : 50% 0;
-            inset-inline-start  : 0;
-            border-inline-start : 1px solid var(--lct-playhead);
-        }
-
-        label {
-            position             : absolute;
-            z-index              : 1;
-            inset-block-start    : 50%;
-            inset-inline-start   : 0;
-            translate            : -50% -50%;
-            padding              : 0.1em 0.5em;
-            border-radius        : 1em;
-            font-size            : 0.75em;
-            line-height          : 1.4;
-            font-weight          : 700;
-            font-variant-numeric : tabular-nums;
-            color                : var(--b-color-white);
-            background-color     : var(--lct-playhead);
-        }
+        --lct-slot-tint : 30%;
     }
 }
 
@@ -211,7 +168,7 @@
     padding-inline   : 0.5em;
     box-sizing       : border-box;
     border           : 1px dashed var(--lct-drop);
-    border-radius    : 4px;
+    border-radius    : var(--lct-radius);
     font-size        : 13px;
     font-weight      : 600;
     white-space      : nowrap;
@@ -257,120 +214,6 @@
     .lct-tip-breach {
         font-weight : 600;
         color       : var(--lct-late);
-    }
-}
-
-/* The zoom buttons, one segmented control: a frame, Day on a raised background. Compact, like the Resolve button */
-.lct-zoom {
-    padding          : 2px;
-    border           : 1px solid var(--lct-border);
-    border-radius    : var(--sc-radius);
-    background-color : var(--lct-sunken);
-
-    --b-button-height : 2.1em;
-
-    .b-button {
-        min-inline-size : 2em;
-        padding-inline  : 0.5em;
-        border          : none;
-
-        --b-button-color : var(--lct-ink);
-    }
-
-    [data-ref='zoomDay'] {
-        padding-inline   : 0.8em;
-        background-color : var(--b-neutral-90);
-    }
-
-    .lct-icon {
-        font-size : 1.1em;
-    }
-}
-
-/* A narrow dock schedule leaves out the door count, Resolve conflicts keeps its place in the bar */
-@container lct-bar (width < 560px) {
-    .b-dock-schedule .lct-panel-count {
-        display : none;
-    }
-}
-
-/* Resolve conflicts: outlined and neutral, the filled Play / Pause is the accent. As tall as the zoom buttons */
-.lct-resolve {
-    --b-button-height                : 2.4em;
-    --b-button-outlined-color        : var(--lct-ink);
-    --b-button-outlined-border-color : var(--lct-border);
-
-    /* The conflicts to resolve, the button's badge as a red count after the text */
-    &.b-badge::after {
-        position             : static;
-        block-size           : auto;
-        min-inline-size      : 0;
-        margin-inline-start  : 0.6em;
-        padding              : 0.05em 0.45em;
-        border-radius        : 0.3em;
-        font-size            : 0.9em;
-        font-weight          : 600;
-        font-variant-numeric : tabular-nums;
-        color                : var(--lct-late);
-        background           : color-mix(in srgb, var(--lct-late) 16%, transparent);
-    }
-}
-
-/* The utilization strip, the Summary feature's footer: a bar per hour, from the bottom, orange when over 90% */
-.b-dock-schedule .b-grid-footer-container {
-    /* Bryntum draws the footer's top line as an outline, 1px above it in the header border colour. The grid's footer
-     * has a border inside its height, so the strip gets the same, for one line at one height across both views */
-    --b-grid-footer-outline-width : 0;
-
-    .b-grid-footer {
-        box-sizing         : border-box;
-        block-size         : var(--lct-footer-height);
-        border-block-start : 1px solid var(--b-border-6);
-        align-items        : center;
-        font-weight        : 400;
-        color              : var(--lct-ink-sub);
-    }
-
-    /* A bar per hour, as wide as the hour less a gap either side */
-    .b-sch-summary-bar .b-time-axis-tick {
-        box-sizing        : border-box;
-        block-size        : 100%;
-        justify-content   : flex-end;
-        padding           : 10px 6px 0;
-        border-inline-end : none;
-    }
-
-    .b-time-axis-summary-value {
-        display         : flex;
-        flex-direction  : column;
-        justify-content : flex-end;
-        block-size      : 100%;
-    }
-}
-
-.lct-util-bar {
-    /* Flat tints like the slot bars above. The blue a little stronger than the orange, which stands out on its own,
-     * and stronger in dark mode, where mixing into the dark panel dims it */
-    --lct-util-color : var(--lct-util);
-    --lct-util-mix   : 55%;
-
-    min-block-size            : 2px;
-    border-start-start-radius : 4px;
-    border-start-end-radius   : 4px;
-    background-color          : color-mix(in srgb, var(--lct-util-color) var(--lct-util-mix), var(--lct-surface));
-
-    :root[data-theme='dark'] & {
-        --lct-util-mix : 80%;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        :root:not([data-theme='light']) & {
-            --lct-util-mix : 80%;
-        }
-    }
-
-    &.lct-util-over {
-        --lct-util-color : var(--lct-util-over);
     }
 }
 

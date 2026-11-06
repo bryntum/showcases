@@ -1,0 +1,55 @@
+/* The panels' title bars, above the shipment grid and the dock schedule: the title, a count and the tools. One height
+ * for both panels, so the grid's column headers and the schedule's time axis line up */
+
+.lct-panel-bar {
+    box-sizing       : border-box;
+    block-size       : var(--lct-bar-height);
+    /* Inside the height, the line the grid's column headers have too */
+    border-block-end : 1px solid var(--b-border-6);
+
+    --b-toolbar-padding : 0 var(--sc-panel-padding);
+    --b-toolbar-gap     : 0.7em;
+
+    .lct-panel-title {
+        font-weight : 600;
+    }
+
+    .lct-panel-title, .lct-panel-count {
+        flex-shrink : 0;
+        white-space : nowrap;
+    }
+
+    /* Narrow screens (ControlTowerApp#compact): the room goes to the counts and the tools */
+    .lct-app.lct-compact & .lct-panel-title {
+        display : none;
+    }
+
+    /* After the title: the shipments shown, the doors */
+    .lct-panel-count {
+        margin-inline-start  : -0.25em;
+        font-variant-numeric : tabular-nums;
+        color                : var(--lct-ink-sub);
+    }
+
+    .lct-search {
+        --b-text-field-input-padding : 0.4em 0.6em;
+
+        /* The trigger is sized and placed by the field, the icon is its pseudo element */
+        .b-field-trigger.lct-icon {
+            inline-size : auto;
+            block-size  : auto;
+            align-self  : stretch;
+            align-items : center;
+        }
+    }
+}
+
+/* The zoom buttons, the speed control's padded rendition (SimulationControls), so the two read as one family. Actions,
+ * not options to pick from: at full strength, where the rendition dims the buttons not pressed */
+.lct-zoom {
+    --b-button-group-padded-button-opacity : 1;
+
+    .lct-icon {
+        font-size : 1.1em;
+    }
+}

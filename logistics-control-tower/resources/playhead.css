@@ -1,0 +1,52 @@
+/* The playhead of the dock schedule (schedule/Playhead.js): two time ranges, the shaded past and the now line */
+
+.b-sch-time-range {
+    &.lct-past {
+        background-color : var(--lct-past);
+    }
+
+    /* Solid, time ranges are drawn half transparent by default */
+    &.lct-now {
+        z-index             : 5;
+        overflow            : visible;
+        opacity             : 1;
+        background-color    : transparent;
+        border-inline-start : 1px solid var(--lct-playhead);
+    }
+}
+
+/* In the time axis header the line runs on up to the playhead's time, a pill centred on it with fixed width digits */
+.b-time-ranges-header-canvas {
+    .lct-past {
+        display : none;
+    }
+
+    /* The line starts at the pill, so it runs down from it into the body */
+    .lct-now {
+        border-inline-start : none;
+
+        &::after {
+            content             : '';
+            position            : absolute;
+            inset-block         : 50% 0;
+            inset-inline-start  : 0;
+            border-inline-start : 1px solid var(--lct-playhead);
+        }
+
+        label {
+            position             : absolute;
+            z-index              : 1;
+            inset-block-start    : 50%;
+            inset-inline-start   : 0;
+            translate            : -50% -50%;
+            padding              : 0.1em 0.5em;
+            border-radius        : 1em;
+            font-size            : 0.75em;
+            line-height          : 1.4;
+            font-weight          : 700;
+            font-variant-numeric : tabular-nums;
+            color                : var(--b-color-white);
+            background-color     : var(--lct-playhead);
+        }
+    }
+}

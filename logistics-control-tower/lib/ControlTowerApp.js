@@ -104,10 +104,11 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
                             now           : site.now,
                             shipmentStore : me.shipmentStore,
                             project       : {
-                                resources    : data.docks,
-                                events       : data.slots,
-                                assignments  : data.assignments,
-                                dependencies : data.dependencies
+                                resources          : data.docks,
+                                events             : data.slots,
+                                assignments        : data.assignments,
+                                dependencies       : data.dependencies,
+                                resourceTimeRanges : data.downtime
                             }
                         }
                     }
@@ -117,7 +118,6 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         });
 
         me.createSimulator(site, endDate);
-        me.schedule.on({ conflictsResolve : 'refreshKpis', thisObj : me });
 
         // A hidden tab pauses the simulation, it does not play on in the background
         EventHelper.on({
@@ -233,8 +233,8 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
     }
 
     /**
-     * The KPI header, the footer's late count, the conflicts to resolve and the live countdowns, after each tick or
-     * batch of changes
+     * The KPI header, the footer's late and conflict counts and the live countdowns, after each tick or batch of
+     * changes
      */
     refreshKpis() {
         const
@@ -249,11 +249,11 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
 
         me.widgetMap.kpis.setValues(simulator.now, counts);
         gridApi.getStatusPanel('lateCount')?.setCounts(counts);
-        me.schedule.conflictCount = counts.conflicts;
 
         if (gridContext.now !== simulator.now) {
             gridContext.now = simulator.now;
-            // The countdowns of the rendered rows, relative to the new now. Not flashed, the ETA did not change
+            // The countdowns of the rendered rows, relative to the new now: forced, as the ETAs did not change, and not
+            // flashed. EtaCellRenderer#refresh updates them in place
             gridApi.refreshCells({ columns : ['eta'], force : true, suppressFlash : true });
         }
     }

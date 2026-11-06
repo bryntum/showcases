@@ -18,6 +18,8 @@ export default class SlotModel extends EventModelEnterprise {
         // The shipment's delay in minutes, shown on the bars of trucks at risk or late
         { name : 'delayMinutes', type : 'int', defaultValue : 0 },
         { name : 'expedited', type : 'boolean', defaultValue : false },
+        // Booked for a truck whose arrival is not confirmed yet, see Simulator#refreshStatuses
+        { name : 'tentative', type : 'boolean', defaultValue : false },
         { name : 'durationUnit', defaultValue : 'minute' }
     ];
 

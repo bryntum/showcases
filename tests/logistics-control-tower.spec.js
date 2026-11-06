@@ -110,30 +110,35 @@ test.describe('Logistics Control Tower dock tools', () => {
         expect(await footer.locator('.b-sch-summary-bar .lct-util-bar').count()).toBeGreaterThan(24);
     });
 
-    test('Resolve conflicts moves a slot ending after its due time back in time', async({ page }) => {
+    test('door downtime renders striped and refuses slots', async({ page }) => {
         await openPaused(page);
 
-        // Pushes a booked slot to start at its due time, a conflict
-        const breached = await page.evaluate(async id => {
+        await expect(schedule(page).locator('.lct-downtime').first()).toBeAttached();
+
+        // A slot dragged or dropped onto the downtime of a door it could take is refused, by the drag validator and by
+        // the grid's drop zone alike
+        const refusals = await page.evaluate(() => {
             const
-                { schedule, shipmentStore } = globalThis.bryntum.query('controltowerapp'),
-                slot                        = schedule.eventStore.getById(id);
+                { schedule, shipmentStore, dropZone } = globalThis.bryntum.query('controltowerapp'),
+                range                                 = schedule.resourceTimeRangeStore.find(downtime =>
+                    downtime.startDate > schedule.now && downtime.resource.capability === 'dry'),
+                door                                  = range.resource,
+                slot                                  = schedule.eventStore.find(event => event.loadType === 'dry' &&
+                    !event.isStarted),
+                shipment                              = shipmentStore.getById(slot.id);
 
-            schedule.bookAt(shipmentStore.getById(id), slot.resource, slot.dueBy);
-            await schedule.project.commitAsync();
+            return [
+                schedule.validateSlotDrop({
+                    eventRecords : [slot],
+                    newResource  : door,
+                    startDate    : range.startDate,
+                    endDate      : range.endDate
+                }).message,
+                dropZone.invalidReason(shipment, door, range.startDate, 30)
+            ];
+        });
 
-            return slot.slaBreach;
-        }, bookedId);
-
-        expect(breached).toBe(true);
-
-        const resolve = page.locator('.lct-resolve');
-
-        await expect(resolve).toBeEnabled();
-        await resolve.click();
-
-        await expect.poll(() => page.evaluate(id => globalThis.bryntum.query('controltowerapp').schedule.eventStore
-            .getById(id).slaBreach, bookedId), { message : 'The slot ends in time again' }).toBe(false);
+        expect(refusals).toEqual([expect.stringMatching(/unavailable/), expect.stringMatching(/unavailable/)]);
     });
 
     test('Simulate delay makes a truck late and selects its slot', async({ page }) => {

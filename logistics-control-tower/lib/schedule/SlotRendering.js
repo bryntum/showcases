@@ -4,8 +4,37 @@ import { formatMinutes, formatTime, minuteMs } from '../util/Time.js';
 import { loadIcons, shipmentNumber, statusText } from '../util/Status.js';
 import { icon } from '../util/Icons.js';
 
-// Above this share of door time booked an hour reads as overloaded
-const busyShare = 0.9;
+const
+    // Above this share of door time taken an hour reads as overloaded
+    busyShare     = 0.9,
+    // What a slot bar needs around its number, in px, see renderSlot(): 1px borders and 5px padding, 2px padding when
+    // compact, 2px to spare as the rendered bar can be a pixel narrower than its computed width. An icon with its gap
+    // takes 21px, an icon alone fits from 28px
+    roomyFrame    = 14,
+    compactFrame  = 8,
+    iconWidth     = 21,
+    iconOnlyWidth = 28,
+    // The widest number, 10888 in bold 13px, until the font is there to measure them
+    widestNumber  = 40,
+    numberWidths  = new Map(),
+    measure       = new OffscreenCanvas(1, 1).getContext('2d');
+
+// The width of a slot's number in the bars' bold 13px (schedule.css), measured once per number with the web font
+function numberWidth(number) {
+    let width = numberWidths.get(number);
+
+    if (width === undefined) {
+        measure.font = `700 13px ${getComputedStyle(document.body).fontFamily}`;
+
+        if (!document.fonts.check(measure.font, number)) {
+            return widestNumber;
+        }
+
+        numberWidths.set(number, width = Math.ceil(measure.measureText(number).width));
+    }
+
+    return width;
+}
 
 /**
  * The dock schedule's cells, bars, utilization strip and tooltip, plain functions returning DomConfigs, or encoded HTML
@@ -43,47 +72,71 @@ export function renderDock({ record }) {
 }
 
 /**
- * A slot bar: the load type (or the expedite bolt), the shipment number and below it the pallets, or the delay of a
- * truck at risk or late, or that it is waiting at the yard. Tinted by status, outlined dashed when it ends after its
- * due time (a conflict)
+ * A slot bar, never an empty box. As wide as it gets: an icon for the exceptions only (a reefer load, an expedited
+ * truck, an unloaded one), the shipment number, below it the pallets, the delay of a truck at risk or late, or that it
+ * waits at the yard. Narrower, the number alone, then the icon alone, then a slim bar of the same tint. Tinted
+ * by status, outlined dashed when it ends after its due time (a conflict), a lighter dashed box while tentative
  * @param {Object} renderData
  * @returns {Object[]} DomConfig
  */
 export function renderSlot({ eventRecord, renderData }) {
     const
-        { status, loadType, expedited, pallets, name, delayMinutes, slaBreach } = eventRecord;
+        { status, loadType, expedited, pallets, name, delayMinutes, slaBreach, tentative } = eventRecord,
+        { width }  = renderData,
+        number     = shipmentNumber(name),
+        text       = numberWidth(number),
+        // Dry loads are the default, they need no marker
+        iconName   = status === 'done' ? 'check' : expedited ? 'lightning' : loadType === 'reefer' ? 'snowflake' : null,
+        // The number before an icon alone, with less padding where it is tight
+        showText   = width >= text + compactFrame,
+        showIcon   = Boolean(iconName) &&
+            (width >= text + roomyFrame + iconWidth || (!showText && width >= iconOnlyWidth));
 
     Object.assign(renderData.cls, {
         'lct-slot'               : 1,
         [`lct-status-${status}`] : 1,
-        'lct-slot-breach'        : slaBreach
+        'lct-slot-breach'        : slaBreach,
+        'lct-slot-tentative'     : tentative,
+        'lct-slot-compact'       : showText && width < text + roomyFrame,
+        'lct-slot-sliver'        : !showText && !showIcon
     });
 
     return [
-        { tag : 'i', class : `lct-slot-icon ${expedited ? icon('lightning') : loadIcons[loadType]}`, 'aria-hidden' : 'true' },
-        {
+        showIcon ? { tag : 'i', class : `lct-slot-icon ${icon(iconName)}`, 'aria-hidden' : 'true' } : null,
+        showText ? {
             class    : 'lct-slot-text',
             children : [
                 // The number only, the full reference is in the tooltip
-                { class : 'lct-slot-ref', text : shipmentNumber(name) },
-                { class : 'lct-slot-meta', text : slotMeta(status, pallets, delayMinutes) }
+                { class : 'lct-slot-ref', text : number },
+                slotMeta(status, pallets, delayMinutes)
             ]
-        }
+        } : null
     ];
 }
 
 // The second line of a slot bar
 function slotMeta(status, pallets, delay) {
     if (status === 'late' || status === 'at-risk') {
-        return formatMinutes(delay, true);
+        return { class : 'lct-slot-meta', text : formatMinutes(delay, true) };
     }
 
-    return status === 'yard' ? 'At yard' : `${pallets} plt`;
+    if (status === 'yard') {
+        return { class : 'lct-slot-meta', text : 'At yard' };
+    }
+
+    // A crate and the count, read out as "19 pallets"
+    return {
+        class        : 'lct-slot-meta lct-slot-pallets',
+        title        : `${pallets} pallets`,
+        'aria-label' : `${pallets} pallets`,
+        children     : [{ tag : 'i', class : icon('package'), 'aria-hidden' : 'true' }, String(pallets)]
+    };
 }
 
 /**
  * The utilization strip, the Summary feature's renderer for one tick of the time axis: the share of the doors' time
- * booked in it, a slot and the turnaround after it, as a bar. Orange above 90%
+ * taken in it, by the slots with the turnaround after them, and by downtime, as a bar. Orange above 90%. Downtime
+ * counts as taken, not as capacity removed: the bar tells how much door time is left for trucks
  * @param {Object} context
  * @param {Date} context.startDate
  * @param {Date} context.endDate
@@ -96,9 +149,11 @@ export function renderUtilization({ startDate, endDate, events, resourceStore })
         start   = startDate.getTime(),
         end     = endDate.getTime(),
         gap     = DockPlanner.TURNAROUND * minuteMs,
-        booked  = events.reduce((sum, slot) =>
-            sum + Math.max(0, Math.min(end, slot.plannedEnd + gap) - Math.max(start, slot.startDate.getTime())), 0),
-        share   = Math.min(1, booked / ((end - start) * (resourceStore.count || 1))),
+        overlap = (from, to) => Math.max(0, Math.min(end, to) - Math.max(start, from)),
+        slots   = events.reduce((sum, slot) => sum + overlap(slot.startDate.getTime(), slot.plannedEnd + gap), 0),
+        down    = resourceStore.records.reduce((sum, door) => door.timeRanges.reduce((doorSum, range) =>
+            doorSum + overlap(range.startDate.getTime(), range.endDate.getTime()), sum), 0),
+        share   = Math.min(1, (slots + down) / ((end - start) * (resourceStore.count || 1))),
         percent = Math.round(share * 100);
 
     return `<div class="lct-util-bar${share > busyShare ? ' lct-util-over' : ''}" style="block-size: ${percent}%" ` +

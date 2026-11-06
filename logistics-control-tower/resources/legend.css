@@ -49,6 +49,14 @@
         border : 1px dashed var(--lct-conflict);
     }
 
+    .lct-legend-tentative .lct-swatch {
+        border : 1px dashed var(--lct-tentative);
+    }
+
+    .lct-legend-downtime .lct-swatch {
+        border : 1px solid var(--lct-stripe-b);
+    }
+
     .lct-legend-busy .lct-swatch {
         background-color : var(--lct-util-over);
     }

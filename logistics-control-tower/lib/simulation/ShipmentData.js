@@ -31,19 +31,21 @@ export function slotData(shipment, startDate) {
     };
 }
 
+// The hours after the site's `now` booked up front, the simulation books the rest as the trucks approach
+const bookHours = 14;
+
 /**
- * Generates a reproducible data set from the network (the load mix, carriers, origins and dock doors, see
- * data/network.json) and a seed: the inbound shipments spread over the days, and the dock slots booked so far, chained
- * per door with dependencies so the scheduling engine pushes the later slots when one runs late.
+ * Generates a reproducible data set from the network (the load mix, carriers, origins, dock doors and their downtime,
+ * see data/network.json) and a seed: the inbound shipments spread over the days, the doors' downtime, and the dock
+ * slots booked so far around it, chained per door with dependencies so the scheduling engine pushes the later slots
+ * when one runs late.
  */
 export default class ShipmentData {
     /**
      * @param {Object} network The parsed data/network.json
-     * @param {Object} [options]
-     * @param {Number} [options.bookHours] Hours after the site's `now` that are booked up front
-     * @returns {Object} `{ shipments, docks, slots, assignments, dependencies }`, plain data objects
+     * @returns {Object} `{ shipments, docks, downtime, slots, assignments, dependencies }`, plain data objects
      */
-    static generate({ site, loads, carriers, origins, docks }, { bookHours = 14 } = {}) {
+    static generate({ site, loads, carriers, origins, docks, downtime }) {
         const
             random    = new Random(site.seed),
             start     = new Date(site.startDate).getTime(),
@@ -54,13 +56,34 @@ export default class ShipmentData {
                 .sort((a, b) => a - b),
             shipments = plannedAt.map((planned, index) => ShipmentData.createShipment({
                 random, index, planned, now, loads, carriers, origins
-            }));
+            })),
+            ranges    = ShipmentData.downtimeRanges(downtime, start, site.days);
 
         return {
             shipments,
-            docks : docks.map(dock => ({ ...dock })),
-            ...ShipmentData.bookInitialSlots(shipments, docks, now + bookHours * hourMs)
+            docks    : docks.map(dock => ({ ...dock })),
+            downtime : ranges,
+            ...ShipmentData.bookInitialSlots(shipments, docks, ranges, now + bookHours * hourMs)
         };
+    }
+
+    // The doors' downtime as resource time ranges, a daily window once per day of the timeline
+    static downtimeRanges(downtime, start, days) {
+        return downtime.flatMap(({ door, name, time, minutes, daily }) => {
+            const [hours, mins] = time.split(':').map(Number);
+
+            return Array.from({ length : daily ? days : 1 }, (_, day) => {
+                const from = start + day * 24 * hourMs + (hours * 60 + mins) * minuteMs;
+
+                return {
+                    id         : `${door}-${name}-${day}`,
+                    resourceId : door,
+                    name,
+                    startDate  : new Date(from),
+                    endDate    : new Date(from + minutes * minuteMs)
+                };
+            });
+        });
     }
 
     // A day, then an hour weighted towards the day shifts (04:00 - 22:00 for 75% of the trucks)
@@ -119,10 +142,14 @@ export default class ShipmentData {
         return loads.find(load => (roll -= load.share) < 0) ?? loads.at(-1);
     }
 
-    // Greedy first come, first served planning of the shipments planned to arrive before `bookUntil`
-    static bookInitialSlots(shipments, docks, bookUntil) {
+    // Greedy first come, first served planning of the shipments planned to arrive before `bookUntil`, around the
+    // doors' downtime
+    static bookInitialSlots(shipments, docks, downtime, bookUntil) {
         const
-            busy         = new Map(docks.map(dock => [dock, []])),
+            busy         = new Map(docks.map(dock => [dock, downtime
+                .filter(range => range.resourceId === dock.id)
+                .map(range => ({ start : range.startDate.getTime(), end : range.endDate.getTime() }))
+                .sort((a, b) => a.start - b.start)])),
             slots        = [],
             assignments  = [],
             dependencies = [];
@@ -158,8 +185,11 @@ export default class ShipmentData {
             }
         }
 
-        // Chain the slots of each door, so a late truck pushes the trucks after it
-        for (const intervals of busy.values()) {
+        // Chain the slots of each door, so a late truck pushes the trucks after it. Downtime, without an id, is not
+        // chained
+        for (const busyIntervals of busy.values()) {
+            const intervals = busyIntervals.filter(interval => interval.id);
+
             for (let i = 1; i < intervals.length; i++) {
                 dependencies.push({
                     id        : `${intervals[i - 1].id}>${intervals[i].id}`,
