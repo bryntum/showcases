@@ -30,18 +30,35 @@ export default class GridSync {
 
         const queue = ({ records = [], record }) => me.queue(record ? [record] : records);
 
-        shipmentStore.on({ update : queue, thisObj : me });
+        me.onGridRowSelected = event => me.onRowSelected(event);
 
-        // Slots added, removed or rescheduled (by the user, the simulation or the engine), and moved between doors
-        schedule.eventStore.on({ add : queue, remove : queue, update : queue, thisObj : me });
-        schedule.assignmentStore.on({
-            change  : ({ records = [] }) => me.queue(records.map(assignment => assignment.event).filter(Boolean)),
-            thisObj : me
-        });
+        // The functions `on()` returns detach the listeners again, see destroy()
+        me.detachers = [
+            shipmentStore.on({ update : queue, thisObj : me }),
+            // Slots added, removed or rescheduled (by the user, the simulation or the engine), and moved between doors
+            schedule.eventStore.on({ add : queue, remove : queue, update : queue, thisObj : me }),
+            schedule.assignmentStore.on({
+                change  : ({ records = [] }) => me.queue(records.map(assignment => assignment.event).filter(Boolean)),
+                thisObj : me
+            }),
+            // Selection, both ways
+            schedule.on({ eventSelectionChange : 'onSlotSelectionChange', thisObj : me })
+        ];
 
-        // Selection, both ways
-        gridApi.addEventListener('rowSelected', event => me.onRowSelected(event));
-        schedule.on({ eventSelectionChange : 'onSlotSelectionChange', thisObj : me });
+        gridApi.addEventListener('rowSelected', me.onGridRowSelected);
+    }
+
+    destroy() {
+        const me = this;
+
+        me.detachers.forEach(detach => detach());
+        me.dirty.clear();
+
+        if (!me.gridApi.isDestroyed()) {
+            me.gridApi.removeEventListener('rowSelected', me.onGridRowSelected);
+        }
+
+        me.isDestroyed = true;
     }
 
     /**
@@ -61,11 +78,15 @@ export default class GridSync {
 
     flush() {
         const
-            me                                     = this,
-            { dirty, shipmentStore, schedule }     = me,
-            update                                 = [];
+            me                                 = this,
+            { dirty, shipmentStore, schedule } = me,
+            update                             = [];
 
         me.pending = false;
+
+        if (me.isDestroyed) {
+            return;
+        }
 
         dirty.forEach(id => {
             const shipment = shipmentStore.getById(id);
@@ -99,8 +120,7 @@ export default class GridSync {
         me.syncingSelection = true;
 
         if (slot) {
-            schedule.selectEvent(slot);
-            schedule.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
+            schedule.revealSlot(slot);
         }
         else {
             schedule.clearEventSelection();

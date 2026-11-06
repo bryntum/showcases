@@ -363,10 +363,6 @@
     .lct-splitter, .lct-panel-title, .lct-speed {
         display : none;
     }
-
-    .lct-grid-panel, .lct-main > .b-scheduler {
-        flex : 1 1 50%;
-    }
 }
 
 /* The shipment grid's lines and header colours (AgGridSetup.js), the two views read as one */

@@ -5,7 +5,8 @@ import { minuteMs } from '../util/Time.js';
 /**
  * Makes the dock schedule's timeline a drop zone for the rows of the shipment grid (AG Grid's `addRowDropZone`). While
  * a shipment is dragged over a door, a preview bar shows the slot it would get, or why the door can not take it.
- * Dropping it books the slot (or moves its slot there), the engine pushes the slots after it.
+ * Dropping it books the slot (or moves its slot there), the engine pushes the slots after it. While a shipment is
+ * dragged `isDragging` is set, the simulation holds its clock.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/drag-and-drop/#row-drop-zone
@@ -24,13 +25,44 @@ export default class GridDropZone {
 
         Object.assign(me, { gridApi, schedule, shipmentStore });
 
-        gridApi.addRowDropZone({
+        /**
+         * `true` while a shipment row is dragged, over the grid or over the dock schedule
+         * @property {Boolean}
+         */
+        me.isDragging = false;
+
+        me.dropZone = {
             getContainer : () => schedule.timeAxisSubGridElement,
             onDragEnter  : params => me.onDragging(params),
             onDragging   : params => me.onDragging(params),
-            onDragLeave  : () => me.hidePreview(),
-            onDragStop   : params => me.onDragStop(params)
-        });
+            onDragLeave  : () => me.onDragEnd(),
+            onDragStop   : params => me.onDragStop(params),
+            onDragCancel : () => me.onDragEnd()
+        };
+
+        gridApi.addRowDropZone(me.dropZone);
+
+        // The drag starts over the grid, which reports it until the row leaves it, is dropped or the drag is cancelled
+        me.gridListeners = {
+            rowDragEnter  : () => me.isDragging = true,
+            rowDragLeave  : () => me.isDragging = false,
+            rowDragEnd    : () => me.isDragging = false,
+            rowDragCancel : () => me.isDragging = false
+        };
+
+        Object.entries(me.gridListeners).forEach(([name, fn]) => gridApi.addEventListener(name, fn));
+    }
+
+    destroy() {
+        const { gridApi, gridListeners, dropZone } = this;
+
+        if (!gridApi.isDestroyed()) {
+            gridApi.removeRowDropZone(dropZone);
+            Object.entries(gridListeners).forEach(([name, fn]) => gridApi.removeEventListener(name, fn));
+        }
+
+        this.preview?.remove();
+        this.preview = this.isDragging = null;
     }
 
     /**
@@ -53,17 +85,30 @@ export default class GridDropZone {
         const
             startDate = new Date(DockPlanner.ceilToFiveMinutes(Math.max(date.getTime(), schedule.now.getTime()))),
             minutes   = DockPlanner.unloadMinutes(shipment.pallets, shipment.loadType),
-            accepts   = door.accepts(shipment.loadType);
+            message   = this.invalidReason(shipment, door);
 
         return {
             shipment,
             door,
             startDate,
             minutes,
-            valid   : accepts,
+            valid   : !message,
             // Drop 10151, the slot's start reads off the axis
-            message : accepts ? `Drop ${shipment.ref.replace(/^\D+-/, '')}` : `${door.name} cannot take ${shipment.loadType} loads`
+            message : message ?? `Drop ${shipment.ref.replace(/^\D+-/, '')}`
         };
+    }
+
+    // Why the shipment can not go to the door, nothing when it can
+    invalidReason(shipment, door) {
+        if (shipment.isFinished) {
+            return `${shipment.ref} is unloaded`;
+        }
+
+        if (this.schedule.eventStore.getById(shipment.id)?.isStarted) {
+            return `${shipment.ref} is being unloaded`;
+        }
+
+        return door.accepts(shipment.loadType) ? null : `${door.name} cannot take ${shipment.loadType} loads`;
     }
 
     // The door row under the pointer. The event's target is AG Grid's drag layer, so the row is found by position
@@ -79,26 +124,30 @@ export default class GridDropZone {
     onDragging(params) {
         const target = this.resolveTarget(params);
 
+        this.isDragging = true;
         target ? this.showPreview(target) : this.hidePreview();
     }
 
-    onDragStop(params) {
+    // Left the schedule, cancelled or dropped
+    onDragEnd() {
+        this.isDragging = false;
+        this.hidePreview();
+    }
+
+    async onDragStop(params) {
         const
             me           = this,
             { schedule } = me,
             target       = me.resolveTarget(params);
 
-        me.hidePreview();
+        me.onDragEnd();
 
-        if (target?.valid) {
-            const slot = schedule.bookAt(target.shipment, target.door, target.startDate);
+        const slot = target?.valid && schedule.bookAt(target.shipment, target.door, target.startDate);
 
-            schedule.project.commitAsync().then(() => {
-                if (!schedule.isDestroyed && schedule.eventStore.includes(slot)) {
-                    schedule.selectEvent(slot);
-                    schedule.scrollEventIntoView(slot, { animate : true, highlight : true });
-                }
-            });
+        if (slot) {
+            // Revealed where the engine scheduled it
+            await schedule.project.commitAsync();
+            schedule.revealSlot(slot);
         }
     }
 

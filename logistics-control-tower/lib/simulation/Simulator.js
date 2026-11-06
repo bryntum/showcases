@@ -1,4 +1,4 @@
-import { Base, Events } from '@bryntum/core-enterprise';
+import { Base, Delayable, Events } from '@bryntum/core-enterprise';
 import DockPlanner from './DockPlanner.js';
 import Random from './Random.js';
 import { minuteMs } from '../util/Time.js';
@@ -16,13 +16,15 @@ const
  * after it), updates the shipment statuses and books docks for the trucks about to arrive.
  *
  * Shipment changes go to the shipment store, slot changes to the Scheduler's event store. The views pick them up from
- * there, see GridSync.
+ * there, see GridSync. The clock holds while a slot is dragged on the schedule or a shipment from the grid. The tick
+ * timer is a Delayable one, cleared when the simulator is destroyed.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/Base
  * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
+ * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Delayable
  */
-export default class Simulator extends Events(Base) {
+export default class Simulator extends Events(Delayable(Base)) {
     static $name = 'Simulator';
 
     static configurable = {
@@ -72,7 +74,13 @@ export default class Simulator extends Events(Base) {
          * The dock schedule, its event store holds the slots
          * @config {DockSchedule}
          */
-        schedule : null
+        schedule : null,
+
+        /**
+         * The schedule's drop zone for the grid's rows, the clock holds while a shipment is dragged
+         * @config {GridDropZone}
+         */
+        dropZone : null
     };
 
     construct(config) {
@@ -97,7 +105,7 @@ export default class Simulator extends Events(Base) {
         const me = this;
 
         if (!me.timer && me.now < me.endDate) {
-            me.timer = setInterval(() => me.tick(), me.tickInterval);
+            me.timer = me.setInterval(() => me.tick(), me.tickInterval, 'simulation');
             me.trigger('playStateChange', { running : true });
         }
     }
@@ -106,7 +114,7 @@ export default class Simulator extends Events(Base) {
         const me = this;
 
         if (me.timer) {
-            clearInterval(me.timer);
+            me.clearInterval(me.timer);
             me.timer = null;
             me.trigger('playStateChange', { running : false });
         }
@@ -116,14 +124,9 @@ export default class Simulator extends Events(Base) {
         this.isRunning ? this.pause() : this.play();
     }
 
-    doDestroy() {
-        this.pause();
-        super.doDestroy();
-    }
-
     /**
      * Advances the simulation one tick. Skipped while the previous one is still being scheduled by the engine, or while
-     * a slot is dragged
+     * a slot or a shipment is dragged
      * @returns {Promise}
      */
     async tick() {
@@ -131,7 +134,7 @@ export default class Simulator extends Events(Base) {
             me           = this,
             { schedule } = me;
 
-        if (me.ticking || schedule.isDraggingSlot) {
+        if (me.ticking || schedule.isDraggingSlot || me.dropZone?.isDragging) {
             return;
         }
 

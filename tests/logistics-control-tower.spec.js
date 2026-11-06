@@ -79,7 +79,7 @@ test.describe('Logistics Control Tower', () => {
         await expect(grid(page).locator(`.ag-row[row-id="${otherId}"]`)).toHaveClass(/\bag-row-selected\b/);
     });
 
-    test('the context menu offers book, unbook and expedite', async({ page }) => {
+    test('unbooking from the context menu removes the slot and puts the shipment on hold', async({ page }) => {
         await openPaused(page);
 
         await grid(page).locator(`.ag-row[row-id="${bookedId}"] [col-id="status"]`).click({ button : 'right' });
@@ -156,6 +156,76 @@ test.describe('Logistics Control Tower dock tools', () => {
             .delayMinutes, await selected.getAttribute('data-event-id'));
 
         expect(delay).toBeGreaterThanOrEqual(30);
+    });
+});
+
+test.describe('Logistics Control Tower drag and drop', () => {
+    let errors;
+
+    test.beforeEach(({ page }) => {
+        errors = collectErrors(page, { ignore : agGridLicenseNotice });
+    });
+
+    test.afterEach(() => {
+        expect(errors).toEqual([]);
+    });
+
+    test('dragging a shipment row onto a dock door books a slot there, the clock holds meanwhile', async({ page }) => {
+        await openPaused(page);
+
+        // An unbooked dry load, any door takes it, arriving after the hours the simulation books by itself
+        const id = await page.evaluate(() => {
+            const { schedule, shipmentStore, simulator } = globalThis.bryntum.query('controltowerapp');
+
+            return shipmentStore.find(shipment => shipment.loadType === 'dry' && shipment.isInTransit &&
+                !shipment.onHold && !schedule.eventStore.getById(shipment.id) &&
+                shipment.eta - simulator.now > (simulator.autoBookHours + 1) * 3_600_000).id;
+        });
+
+        await page.getByPlaceholder('Search shipments').fill(id);
+
+        const row = grid(page).locator(`.ag-row[row-id="${id}"]`);
+
+        await row.hover();
+
+        const
+            handle = await row.locator('.ag-row-drag').boundingBox(),
+            // The middle of the visible timeline on Door 06, the first ambient door, in view at the default viewport
+            target = await page.evaluate(() => {
+                const
+                    { schedule } = globalThis.bryntum.query('controltowerapp'),
+                    door         = schedule.getRowFor(schedule.resourceStore.getById('D06')).elements.normal
+                        .getBoundingClientRect(),
+                    timeline     = schedule.timeAxisSubGridElement.getBoundingClientRect();
+
+                return { x : timeline.x + timeline.width / 2, y : door.y + door.height / 2 };
+            }),
+            from   = { x : handle.x + handle.width / 2, y : handle.y + handle.height / 2 },
+            now    = () => page.evaluate(() => globalThis.bryntum.query('controltowerapp').simulator.now.getTime());
+
+        await page.mouse.move(from.x, from.y);
+        await page.mouse.down();
+
+        // AG Grid starts the drag after a few pixels, the drop zone follows the pointer
+        for (let step = 1; step <= 10; step++) {
+            await page.mouse.move(from.x + (target.x - from.x) * step / 10, from.y + (target.y - from.y) * step / 10);
+        }
+
+        await expect(page.locator('.lct-drop-preview')).toHaveText(`Drop ${id.replace(/^\D+-/, '')}`);
+
+        // Playing while the shipment is held over the door, the clock does not move
+        await page.evaluate(() => globalThis.bryntum.query('controltowerapp').simulator.play());
+
+        const held = await now();
+
+        await page.waitForTimeout(1000);
+        expect(await now(), 'the clock holds during the drag').toBe(held);
+
+        await page.mouse.up();
+
+        // Booked at the door, the simulation keeps it there (moved to the truck's ETA if it is later)
+        await expect.poll(() => page.evaluate(id => globalThis.bryntum.query('controltowerapp').schedule.eventStore
+            .getById(id)?.resource?.id, id), { message : 'The slot is booked at Door 06' }).toBe('D06');
     });
 });
 

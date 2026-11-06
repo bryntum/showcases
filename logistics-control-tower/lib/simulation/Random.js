@@ -9,7 +9,10 @@ export default class Random {
 
     // A number in the range [0, 1)
     next() {
-        let t = this.state += 0x6D2B79F5;
+        // Wrapped to 32 bits, the state stays a small integer however long the simulation runs
+        this.state = (this.state + 0x6D2B79F5) | 0;
+
+        let t = this.state;
 
         t = Math.imul(t ^ t >>> 15, t | 1);
         t ^= t + Math.imul(t ^ t >>> 7, t | 61);

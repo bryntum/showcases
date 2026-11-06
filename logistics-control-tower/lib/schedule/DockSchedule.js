@@ -152,7 +152,6 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             dependencies    : false,
             dependencyEdit  : false,
             eventEdit       : false,
-            taskEdit        : false,
             scheduleMenu    : false,
             eventDragCreate : false,
             cellMenu        : false,
@@ -178,16 +177,6 @@ export default class DockSchedule extends DockBooking(Scheduler) {
                 processItems({ eventRecord, items }) {
                     items.expedite.disabled = items.unbook.disabled = eventRecord.isStarted;
                 }
-            },
-            eventTooltip : {
-                // The timeline scrolls with the playhead under a still pointer, the tooltip follows its slot
-                scrollAction : 'realign',
-                // The shipment behind the slot
-                template     : ({ eventRecord }) => {
-                    const shipment = eventRecord.eventStore?.shipmentStore?.getById(eventRecord.id);
-
-                    return shipment ? slotTip(shipment, eventRecord) : '';
-                }
             }
         }
     };
@@ -199,15 +188,24 @@ export default class DockSchedule extends DockBooking(Scheduler) {
             ...config,
             features : {
                 ...config.features,
-                // The Enterprise tier brings its task editor back, slots are edited by dragging and from the menus
-                taskEdit  : false,
+                // Slots are edited by dragging and from the menus. Turned off here, not in the static features: the
+                // Enterprise tier's tierConfigs override a subclass's static `taskEdit : false` (Core/Tierable), a
+                // product bug, issue TBD
+                taskEdit     : false,
                 // Slots move between doors with the right equipment only, and not into the past
-                eventDrag : { validatorFn : context => me.validateSlotDrop(context) }
+                eventDrag    : { validatorFn : context => me.validateSlotDrop(context) },
+                eventTooltip : {
+                    // The timeline scrolls with the playhead under a still pointer, the tooltip follows its slot
+                    scrollAction : 'realign',
+                    // The shipment behind the slot
+                    template     : ({ eventRecord }) => {
+                        const shipment = me.shipmentStore?.getById(eventRecord.id);
+
+                        return shipment ? slotTip(shipment, eventRecord) : '';
+                    }
+                }
             }
         });
-
-        // The tooltip reaches the shipments through the event store
-        me.eventStore.shipmentStore = me.shipmentStore;
 
         me.resourceStore.on({ change : 'updateDoorCount', thisObj : me });
         me.updateDoorCount();
@@ -219,13 +217,14 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         me.scrollRemainder = 0;
 
         me.on({
-            eventDragStart : 'onSlotDragStart',
-            afterEventDrop : 'onSlotDragEnd',
-            eventResizeEnd : 'onSlotResizeEnd',
-            eventMenuItem  : 'onSlotMenuItem',
+            eventDragStart          : 'onSlotDragStart',
+            beforeEventDropFinalize : 'onSlotDrop',
+            afterEventDrop          : 'onSlotDragEnd',
+            eventResizeEnd          : 'onSlotResizeEnd',
+            eventMenuItem           : 'onSlotMenuItem',
             // Scrolled to now as it is shown
-            paint          : 'scrollToNow',
-            thisObj        : me
+            paint                   : 'scrollToNow',
+            thisObj                 : me
         });
     }
 
@@ -257,28 +256,25 @@ export default class DockSchedule extends DockBooking(Scheduler) {
 
         me.glide = { from : me.shownNow.getTime(), to : now.getTime(), start : performance.now() };
 
+        // The widget's own animation frames (Delayable), cancelled when it is destroyed
         if (!me.glideFrame) {
-            me.glideFrame = requestAnimationFrame(() => me.glideStep());
+            me.glideFrame = me.requestAnimationFrame(me.glideStep);
         }
     }
 
     // One frame of the glide, at a steady pace from the shown time to the simulated one
     glideStep() {
         const
-            me                    = this,
-            { from, to, start }   = me.glide,
-            progress              = Math.min(1, (performance.now() - start) / me.glideDuration);
+            me                  = this,
+            { from, to, start } = me.glide,
+            progress            = Math.min(1, (performance.now() - start) / me.glideDuration);
 
         me.glideFrame = null;
-
-        if (me.isDestroyed) {
-            return;
-        }
 
         me.showNow(new Date(from + (to - from) * progress));
 
         if (progress < 1) {
-            me.glideFrame = requestAnimationFrame(() => me.glideStep());
+            me.glideFrame = me.requestAnimationFrame(me.glideStep);
         }
     }
 
@@ -308,7 +304,9 @@ export default class DockSchedule extends DockBooking(Scheduler) {
     }
 
     /**
-     * The shaded past and the now line, two time ranges. Display state, so the changes are not tracked
+     * The shaded past and the now line, two time ranges, rendered once per frame (a store batch). Display state:
+     * `clearChanges()` keeps the records out of the store's added and modified records, suspending the change tracking
+     * keeps the CrudManager's `hasChanges` from flagging them
      * @param {Date} now The time shown
      */
     syncPlayhead(now) {
@@ -322,6 +320,7 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         }
 
         project.suspendChangeTracking();
+        timeRangeStore.beginBatch();
 
         if (!me.nowRange || !timeRangeStore.includes(me.nowRange)) {
             [me.pastRange, me.nowRange] = timeRangeStore.add([
@@ -336,6 +335,7 @@ export default class DockSchedule extends DockBooking(Scheduler) {
 
         me.pastRange.clearChanges();
         me.nowRange.clearChanges();
+        timeRangeStore.endBatch();
         project.resumeChangeTracking(true);
     }
 
@@ -458,18 +458,38 @@ export default class DockSchedule extends DockBooking(Scheduler) {
         return true;
     }
 
-    // Releases the dragged slots from their chains while dragging, so the engine does not snap them back behind their
-    // previous predecessor when dropped earlier. The chains are rebuilt on drop
+    // The doors the slots are dragged from, their chains are rebuilt on drop. Set anew per drag, an aborted drag
+    // (Escape, window blur) ends without a drop and leaves nothing behind for the next one
     onSlotDragStart({ eventRecords }) {
         this.dragSourceDoors = eventRecords.map(slot => slot.resource);
-        this.dependencyStore.remove(eventRecords.flatMap(slot => slot.dependencies));
     }
 
+    // Dropped, before the engine schedules the drop: the dropped slots are released from their chains, so the engine
+    // does not snap them back behind their previous predecessor when dropped earlier. An aborted drag never gets
+    // here, its slots keep their chains
+    onSlotDrop({ context }) {
+        this.dependencyStore.remove(context.eventRecords.flatMap(slot => slot.dependencies));
+    }
+
+    // The chains of the doors left and of the doors dropped on, also after an invalid drop
     onSlotDragEnd({ eventRecords }) {
         const doors = new Set([...this.dragSourceDoors ?? [], ...eventRecords.map(slot => slot.resource)]);
 
-        doors.forEach(door => this.chainDoor(door));
         this.dragSourceDoors = null;
+        doors.forEach(door => this.chainDoor(door));
+    }
+
+    /**
+     * Selects a slot, which selects its row in the grid, and scrolls it to the middle of the view, highlighted
+     * @param {SlotModel} slot
+     */
+    revealSlot(slot) {
+        const me = this;
+
+        if (slot && !me.isDestroyed && me.eventStore.includes(slot)) {
+            me.selectEvent(slot);
+            me.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
+        }
     }
 
     onSlotResizeEnd({ eventRecord }) {
@@ -486,11 +506,6 @@ export default class DockSchedule extends DockBooking(Scheduler) {
     }
 
     //endregion
-
-    doDestroy() {
-        cancelAnimationFrame(this.glideFrame);
-        super.doDestroy();
-    }
 
     eventRenderer(args) {
         args.renderData.eventColor = statusColors[args.eventRecord.status] ?? 'gray';

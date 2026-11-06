@@ -61,11 +61,11 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
 
     construct(config) {
         const
-            me                       = this,
-            { site }                 = config.network,
-            data                     = ShipmentData.generate(config.network),
-            startDate                = new Date(site.startDate),
-            endDate                  = new Date(startDate.getTime() + site.days * 24 * hourMs);
+            me        = this,
+            { site }  = config.network,
+            data      = ShipmentData.generate(config.network),
+            startDate = new Date(site.startDate),
+            endDate   = new Date(startDate.getTime() + site.days * 24 * hourMs);
 
         me.shipmentStore = new Store({ modelClass : ShipmentModel, data : data.shipments });
 
@@ -147,8 +147,8 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
      */
     async start({ play = true } = {}) {
         const
-            me                                      = this,
-            { schedule, simulator, shipmentStore }  = me;
+            me                                     = this,
+            { schedule, simulator, shipmentStore } = me;
 
         await schedule.project.commitAsync();
 
@@ -173,7 +173,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         Object.assign(me, { gridApi, gridContext : context });
 
         me.gridSync = new GridSync({ gridApi, shipmentStore, schedule, onFlush : () => me.refreshKpis() });
-        me.dropZone = new GridDropZone({ gridApi, schedule, shipmentStore });
+        me.dropZone = simulator.dropZone = new GridDropZone({ gridApi, schedule, shipmentStore });
 
         // The status bar panel is created with the grid
         gridApi.addEventListener('firstDataRendered', () => me.refreshKpis());
@@ -189,32 +189,38 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
     }
 
     doDestroy() {
-        this.simulator?.destroy();
+        const me = this;
+
+        // The simulator first, it ticks against the stores and the views
+        me.simulator?.destroy();
+        me.gridSync?.destroy();
+        me.dropZone?.destroy();
         super.doDestroy();
+        me.shipmentStore.destroy();
     }
 
     bookShipment(id) {
-        this.showSlot(this.schedule.book(this.shipmentStore.getById(id)));
+        return this.revealBooked(this.schedule.book(this.shipmentStore.getById(id)));
     }
 
     expediteShipment(id) {
-        this.showSlot(this.schedule.expedite(id));
+        return this.revealBooked(this.schedule.expedite(id));
+    }
+
+    // A slot booked or moved: scrolled to once the engine has scheduled it, the slots before it may push it later
+    async revealBooked(slot) {
+        const { schedule } = this;
+
+        if (slot) {
+            await schedule.project.commitAsync();
+            schedule.revealSlot(slot);
+        }
     }
 
     // The truck made late by Simulate delay: its slot, moved by the engine, selected and scrolled into view
     onSimulatedDelay({ shipment }) {
         this.refreshKpis();
-        this.showSlot(this.schedule.eventStore.getById(shipment.id));
-    }
-
-    // Selects a slot, which selects its row, and scrolls it into view
-    showSlot(slot) {
-        const { schedule } = this;
-
-        if (slot) {
-            schedule.selectEvent(slot);
-            schedule.scrollEventIntoView(slot, { animate : true, highlight : true, block : 'center' });
-        }
+        this.schedule.revealSlot(this.schedule.eventStore.getById(shipment.id));
     }
 
     /**
@@ -223,8 +229,8 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
      */
     refreshKpis() {
         const
-            me                                      = this,
-            { simulator, gridApi, gridContext }     = me;
+            me                                  = this,
+            { simulator, gridApi, gridContext } = me;
 
         if (!gridApi || gridApi.isDestroyed()) {
             return;
@@ -243,11 +249,16 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         }
     }
 
-    // The grid and the schedule stack on narrow screens, see app.css. Simulate delay is its icon, the counters keep
-    // the room
+    // The grid and the schedule stack on narrow screens, half the height each, see schedule.css. Wide, they share
+    // the width 12 to 9. Simulate delay is its icon, the counters keep the room. The flex is the widgets' own, a
+    // stylesheet can not override their inline flex
     updateCompact(compact) {
-        this.element.classList.toggle('lct-compact', compact);
-        this.widgetMap.delay.text = compact ? null : 'Simulate delay';
+        const { grid, schedule, delay } = this.widgetMap;
+
+        this.toggleCls('lct-compact', compact);
+        grid.flex     = compact ? '1 1 50%' : 12;
+        schedule.flex = compact ? '1 1 50%' : 9;
+        delay.text    = compact ? null : 'Simulate delay';
     }
 }
 

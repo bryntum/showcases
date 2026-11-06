@@ -3,6 +3,35 @@ import Random from './Random.js';
 import { hourMs, minuteMs } from '../util/Time.js';
 
 /**
+ * The data of the dock slot booked for a shipment: its id and number are the shipment's, it is kept at its booked time
+ * unless the slot before it pushes it later, and it mirrors the shipment's display state. Used for the generated data
+ * and for the slots booked live (DockBooking#bookAt)
+ * @param {Object|ShipmentModel} shipment
+ * @param {Date} startDate
+ * @returns {Object} SlotModel data
+ */
+export function slotData(shipment, startDate) {
+    const { id, ref, pallets, loadType } = shipment;
+
+    return {
+        id,
+        name           : ref,
+        startDate,
+        constraintType : 'startnoearlierthan',
+        constraintDate : startDate,
+        duration       : DockPlanner.unloadMinutes(pallets, loadType),
+        durationUnit   : 'minute',
+        carrierCode    : shipment.carrierCode,
+        carrierColor   : shipment.carrierColor,
+        loadType,
+        pallets,
+        dueBy          : shipment.dueBy,
+        delayMinutes   : shipment.delayMinutes,
+        expedited      : shipment.expedited
+    };
+}
+
+/**
  * Generates a reproducible data set from the network (the load mix, carriers, origins and dock doors, see
  * data/network.json) and a seed: the inbound shipments spread over the days, and the dock slots booked so far, chained
  * per door with dependencies so the scheduling engine pushes the later slots when one runs late.
@@ -100,9 +129,9 @@ export default class ShipmentData {
 
         for (const shipment of shipments) {
             const
-                { id, ref, loadType, pallets, plannedEta, eta } = shipment,
-                minutes                                         = DockPlanner.unloadMinutes(pallets, loadType),
-                from                                            = DockPlanner.ceilToFiveMinutes(eta.getTime());
+                { id, loadType, pallets, plannedEta, eta } = shipment,
+                minutes                                    = DockPlanner.unloadMinutes(pallets, loadType),
+                from                                       = DockPlanner.ceilToFiveMinutes(eta.getTime());
 
             if (plannedEta.getTime() >= bookUntil) {
                 break;
@@ -123,22 +152,7 @@ export default class ShipmentData {
                 intervals.push({ start : slot.start, end : slot.start + minutes * minuteMs, id });
                 intervals.sort((a, b) => a.start - b.start);
 
-                slots.push({
-                    id,
-                    name           : ref,
-                    startDate      : new Date(slot.start),
-                    // Kept at its booked time, unless the slot before it pushes it later
-                    constraintType : 'startnoearlierthan',
-                    constraintDate : new Date(slot.start),
-                    duration       : minutes,
-                    durationUnit   : 'minute',
-                    carrierCode    : shipment.carrierCode,
-                    carrierColor   : shipment.carrierColor,
-                    loadType,
-                    pallets,
-                    dueBy          : shipment.dueBy,
-                    expedited      : shipment.expedited
-                });
+                slots.push(slotData(shipment, new Date(slot.start)));
 
                 assignments.push({ id : `a-${id}`, event : id, resource : slot.door.id });
             }

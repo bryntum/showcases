@@ -23,15 +23,6 @@ export function renderStatus({ value }) {
     return value ? element({ tag : 'span', class : `lct-pill lct-status-${value}`, text : statusText[value] }) : '';
 }
 
-/**
- * Carrier chip: a swatch in the carrier's colour and its code, the name in the tooltip
- * @param {Object} params AG Grid cell renderer params
- * @returns {HTMLElement}
- */
-export function renderCarrier({ data, value }) {
-    return data ? element(carrierChip(data, value)) : '';
-}
-
 // The carrier chip's DomConfig, its colour from the theme palette
 const carrierChip = (data, name) => ({
     tag      : 'span',
@@ -43,6 +34,15 @@ const carrierChip = (data, name) => ({
         { tag : 'span', class : 'lct-carrier-name', text : name }
     ]
 });
+
+/**
+ * Carrier chip: a swatch in the carrier's colour and its code, the name in the tooltip
+ * @param {Object} params AG Grid cell renderer params
+ * @returns {HTMLElement}
+ */
+export function renderCarrier({ data, value }) {
+    return data ? element(carrierChip(data, value)) : '';
+}
 
 /**
  * The group row of a carrier: its chip, the shipments and pallets, and a pill with the late ones (aggregated)

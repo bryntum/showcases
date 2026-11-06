@@ -1,4 +1,5 @@
 import DockPlanner from '../simulation/DockPlanner.js';
+import { slotData } from '../simulation/ShipmentData.js';
 import { minuteMs } from '../util/Time.js';
 
 /**
@@ -29,17 +30,14 @@ export default Target => class DockBooking extends Target {
             { dependencyStore } = this,
             slots               = door.events.slice()
                 .sort((a, b) => a.startDate - b.startDate || a.id.localeCompare(b.id)),
-            slotIds             = new Set(slots.map(slot => slot.id)),
             wanted              = new Set(slots.slice(1).map((slot, index) => `${slots[index].id}>${slot.id}`)),
+            // The dependencies of this door's slots only, a dependency between two of them is listed by both
+            current             = new Set(slots.flatMap(slot => slot.dependencies)),
             toRemove            = [];
 
-        for (const dependency of dependencyStore) {
-            const
-                fromId = dependency.fromEvent?.id,
-                toId   = dependency.toEvent?.id;
-
+        for (const dependency of current) {
             // Keep the ones still wanted, what is left in `wanted` is added below
-            if ((slotIds.has(fromId) || slotIds.has(toId)) && !wanted.delete(`${fromId}>${toId}`)) {
+            if (!wanted.delete(`${dependency.fromEvent?.id}>${dependency.toEvent?.id}`)) {
                 toRemove.push(dependency);
             }
         }
@@ -98,12 +96,17 @@ export default Target => class DockBooking extends Target {
      * @param {ShipmentModel} shipment
      * @param {DockModel} door
      * @param {Date} startDate
-     * @returns {SlotModel}
+     * @returns {SlotModel|null} The slot, `null` when unloading has started and it can no longer move
      */
     bookAt(shipment, door, startDate) {
         const
             me       = this,
             existing = me.eventStore.getById(shipment.id);
+
+        // A truck being unloaded stays where it is
+        if (existing?.isStarted) {
+            return null;
+        }
 
         shipment.onHold = false;
 
@@ -123,24 +126,7 @@ export default Target => class DockBooking extends Target {
             return existing;
         }
 
-        const [slot] = me.eventStore.add({
-            id             : shipment.id,
-            name           : shipment.ref,
-            startDate,
-            // Kept at its booked time, unless the slot before it pushes it later
-            constraintType : 'startnoearlierthan',
-            constraintDate : startDate,
-            duration       : DockPlanner.unloadMinutes(shipment.pallets, shipment.loadType),
-            durationUnit   : 'minute',
-            carrierCode    : shipment.carrierCode,
-            carrierColor   : shipment.carrierColor,
-            loadType       : shipment.loadType,
-            pallets        : shipment.pallets,
-            dueBy          : shipment.dueBy,
-            status         : shipment.status,
-            delayMinutes   : shipment.delayMinutes,
-            expedited      : shipment.expedited
-        });
+        const [slot] = me.eventStore.add({ ...slotData(shipment, startDate), status : shipment.status });
 
         slot.assign(door);
         me.chainDoor(door);
@@ -194,7 +180,7 @@ export default Target => class DockBooking extends Target {
                 const
                     blockedUntil = Math.max(from, ...door.events.filter(slot => slot.isStarted)
                         .map(slot => slot.plannedEnd + gap)),
-                    score        = blockedUntil + (door.capability !== shipment.loadType ? 30 * minuteMs : 0);
+                    score        = blockedUntil + DockPlanner.doorPenalty(door.capability, shipment.loadType);
 
                 if (!best || score < best.score) {
                     best = { door, start : blockedUntil, score };
@@ -202,12 +188,19 @@ export default Target => class DockBooking extends Target {
             }
         }
 
+        // No door takes this load type
+        if (!best) {
+            return null;
+        }
+
         shipment.expedited = true;
 
         // Moved to the front: earlier than the first slot of the door, which the chain then pushes behind it
         const slot = me.bookAt(shipment, best.door, new Date(DockPlanner.ceilToFiveMinutes(best.start)));
 
-        slot.expedited = true;
+        if (slot) {
+            slot.expedited = true;
+        }
 
         return slot;
     }

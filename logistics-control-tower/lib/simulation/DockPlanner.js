@@ -1,7 +1,8 @@
-const
-    MINUTE               = 60 * 1000,
-    // Preference penalty for putting a dry load on a reefer door, kept free for the loads only it can take
-    SPECIAL_DOOR_PENALTY = 45 * MINUTE;
+import { minuteMs } from '../util/Time.js';
+
+// A dry load on a cold store door counts as starting this much later, booking, expediting and the generated data
+// alike: the door is kept free for the reefer loads only it can take, unless it is free much earlier
+const specialDoorPenalty = 45 * minuteMs;
 
 /**
  * Pure slot finding logic, shared by the data generator (plain objects) and the live scheduler (records). Works on
@@ -23,8 +24,18 @@ export default class DockPlanner {
         return Math.ceil(minutes / 5) * 5;
     }
 
+    /**
+     * The preference penalty in ms of a door for a load, `specialDoorPenalty` for a load the door is not built for
+     * @param {String} capability
+     * @param {String} loadType
+     * @returns {Number}
+     */
+    static doorPenalty(capability, loadType) {
+        return capability === loadType ? 0 : specialDoorPenalty;
+    }
+
     static ceilToFiveMinutes(time) {
-        const step = 5 * MINUTE;
+        const step = 5 * minuteMs;
 
         return Math.ceil(time / step) * step;
     }
@@ -38,7 +49,7 @@ export default class DockPlanner {
      * @returns {Number}
      */
     static earliestGap(intervals, from, duration) {
-        const gap = DockPlanner.TURNAROUND * MINUTE;
+        const gap = DockPlanner.TURNAROUND * minuteMs;
 
         let start = from;
 
@@ -66,7 +77,7 @@ export default class DockPlanner {
      * @param {String} options.loadType
      * @param {Number} options.from Earliest allowed start
      * @param {Number} options.duration Slot duration in ms
-     * @returns {{door : Object, start : Number}|null}
+     * @returns {{door : Object, start : Number}|null} `null` when no door accepts the load type
      */
     static findSlot({ doors, getBusy, loadType, from, duration }) {
         let best = null;
@@ -75,7 +86,7 @@ export default class DockPlanner {
             if (DockPlanner.accepts(door.capability, loadType)) {
                 const
                     start = DockPlanner.earliestGap(getBusy(door), from, duration),
-                    score = start + (door.capability !== loadType ? SPECIAL_DOOR_PENALTY : 0);
+                    score = start + DockPlanner.doorPenalty(door.capability, loadType);
 
                 if (!best || score < best.score) {
                     best = { door, start, score };
