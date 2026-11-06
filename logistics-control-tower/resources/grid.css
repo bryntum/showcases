@@ -9,8 +9,10 @@
 .lct-panel-bar {
     --b-toolbar-padding : 0 var(--sc-panel-padding);
 
-    box-sizing : border-box;
-    block-size : var(--lct-bar-height);
+    box-sizing       : border-box;
+    block-size       : var(--lct-bar-height);
+    /* Inside the height, the line the grid's column headers have too */
+    border-block-end : 1px solid var(--b-border-6);
 
     .lct-panel-title {
         font-weight : 600;
