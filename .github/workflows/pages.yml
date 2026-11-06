@@ -1,6 +1,8 @@
 name: Build and deploy
 
-# Every pull request is linted, built and smoke tested. Pushes to main also deploy the build to GitHub Pages
+# Every pull request is linted, built and smoke tested. Pushes to main are linted, built and deployed to GitHub Pages
+# without the smoke tests: small fixes go straight to main and should be live in under a minute, larger changes come
+# through a pull request and are tested there
 on:
   pull_request:
   push:
@@ -30,14 +32,14 @@ jobs:
 
       - run: npm run lint
 
-      - run: npm run build
+      # Pull requests: smoke tests, which build and serve under /showcases/ themselves (see playwright.config.js)
+      - if: github.event_name == 'pull_request'
+        run: npx playwright install --with-deps chromium
 
-      # Smoke tests against the build above, served under /showcases/ (see playwright.config.js)
-      - run: npx playwright install --with-deps chromium
+      - if: github.event_name == 'pull_request'
+        run: npm test
 
-      - run: npm test
-
-      - if: failure()
+      - if: failure() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
@@ -46,10 +48,10 @@ jobs:
             test-results/
           retention-days: 14
 
-      # The deployed build, with Bryntum's GA4 property, consent denied (cookieless, no ads). Built after the tests,
-      # which build and test without it, so only the deployed pages load it. The ID is public, it could also come
+      # The deployed build, with Bryntum's GA4 property, consent denied (cookieless, no ads). Only the deployed pages
+      # load it, the tests build without it. The ID is public, it could also come
       # from a repository variable: SHOWCASES_GA4_ID: ${{ vars.SHOWCASES_GA4_ID }}
-      - if: github.ref == 'refs/heads/main'
+      - if: github.event_name != 'pull_request'
         run: npm run build
         env:
           SHOWCASES_GA4_ID: G-1VY6776VJP
