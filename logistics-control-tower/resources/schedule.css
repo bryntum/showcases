@@ -340,20 +340,31 @@
 }
 
 .lct-util-bar {
+    /* Flat tints like the slot bars above. The blue a little stronger than the orange, which stands out on its own,
+     * and stronger in dark mode, where mixing into the dark panel dims it */
     --lct-util-color : var(--lct-util);
+    --lct-util-mix   : 55%;
 
     min-block-size            : 2px;
     border-start-start-radius : 4px;
     border-start-end-radius   : 4px;
-    background                : linear-gradient(
-        color-mix(in srgb, var(--lct-util-color) 36%, var(--lct-surface)),
-        color-mix(in srgb, var(--lct-util-color) 20%, var(--lct-surface))
-    );
+    background-color          : color-mix(in srgb, var(--lct-util-color) var(--lct-util-mix), var(--lct-surface));
+
+    :root[data-theme='dark'] & {
+        --lct-util-mix : 80%;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) & {
+            --lct-util-mix : 80%;
+        }
+    }
 
     &.lct-util-over {
         --lct-util-color : var(--lct-util-over);
     }
 }
+
 
 /* The splitter between the grid and the schedule */
 .lct-splitter {
