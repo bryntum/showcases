@@ -1,7 +1,10 @@
 import {
-    formatDelay, formatTimeValue, renderCarrier, renderCarrierGroup, renderDockSlot, renderEta, renderGps, renderLoad,
-    renderStatus, renderTemperature
+    formatDelay, formatTimeValue, renderCarrier, renderCarrierGroup, renderGps, renderLoad
 } from './CellRenderers.js';
+import DockSlotCellRenderer from './DockSlotCellRenderer.js';
+import EtaCellRenderer from './EtaCellRenderer.js';
+import StatusCellRenderer from './StatusCellRenderer.js';
+import TemperatureCellRenderer from './TemperatureCellRenderer.js';
 import { gpsText, loadText, statusText } from '../util/Status.js';
 
 /**
@@ -30,13 +33,6 @@ const
     statusOrder = Object.keys(statusText),
     // Booked slots by start, unbooked last
     slotSortValue = node => node.data?.slotStart ?? Infinity,
-    // ETA drift line colours by status, mid tones readable on light and dark (the sparkline draws on a canvas, which
-    // does not resolve CSS variables)
-    driftColors   = {
-        'on-time' : '#2fb36b',
-        'at-risk' : '#f08c2e',
-        late      : '#e5484d'
-    },
     // One series array per history and status, so a status change alone gives the cell a new value and redraws its
     // line in the new colour, and an unchanged row keeps its array (AG Grid compares by reference)
     driftSeries   = new WeakMap(),
@@ -53,14 +49,19 @@ const
 
         return byStatus.get(status);
     },
-    // A thin line, no area
-    sparkline     = status => ({
-        type        : 'line',
-        stroke      : driftColors[status] ?? '#8b9099',
-        strokeWidth : 1.25,
-        marker      : { enabled : false },
-        padding     : { top : 12, bottom : 12, left : 2, right : 2 }
-    });
+    // The sparkline renderer per status, a thin line and no area, made once: the selector returns the same object
+    // for every cell of a status. The colours are set from the theme, see setSparklineColors()
+    sparklines    = Object.fromEntries(Object.keys(statusText).map(status => [status, {
+        component : 'agSparklineCellRenderer',
+        params    : {
+            sparklineOptions : {
+                type        : 'line',
+                strokeWidth : 1.25,
+                marker      : { enabled : false },
+                padding     : { top : 12, bottom : 12, left : 2, right : 2 }
+            }
+        }
+    }]));
 
 // The visible columns share the room the grid has to spare, each in proportion to its `flex` (its natural width), up
 // to its `maxWidth`. Below the sum of their `minWidth`s the grid scrolls
@@ -80,7 +81,7 @@ export const shipmentColumns = [
         flex                  : 114,
         minWidth              : 114,
         maxWidth              : 150,
-        cellRenderer          : renderStatus,
+        cellRenderer          : StatusCellRenderer,
         enableCellChangeFlash : true,
         comparator            : (a, b) => statusOrder.indexOf(a) - statusOrder.indexOf(b),
         ...setFilter(statusText)
@@ -92,7 +93,7 @@ export const shipmentColumns = [
         minWidth              : 158,
         maxWidth              : 210,
         // The time and how long until arrival (or since), relative to the simulated now, refreshed on every tick
-        cellRenderer          : renderEta,
+        cellRenderer          : EtaCellRenderer,
         enableCellChangeFlash : true,
         filter                : false
     },
@@ -121,17 +122,14 @@ export const shipmentColumns = [
         filter               : false,
         valueGetter          : ({ data }) => data && drift(data),
         // A line coloured by status, the selector runs again when the value changes
-        cellRendererSelector : ({ data }) => ({
-            component : 'agSparklineCellRenderer',
-            params    : { sparklineOptions : sparkline(data?.status) }
-        })
+        cellRendererSelector : ({ data }) => sparklines[data.status]
     },
     {
         field                 : 'dockName',
         headerName            : 'Dock slot',
         // Fits the widest badge, a conflict with its warning
         width                 : 108,
-        cellRenderer          : renderDockSlot,
+        cellRenderer          : DockSlotCellRenderer,
         // Flashes when the slot moves, is booked or unbooked
         valueGetter           : ({ data }) => data && (data.dockId ? `${data.dockName} ${data.slotStart}` : data.onHold ? 'hold' : ''),
         enableCellChangeFlash : true,
@@ -145,7 +143,7 @@ export const shipmentColumns = [
         // As wide as −17.3 °C, the numbers line up on the right
         width                 : 96,
         type                  : 'rightAligned',
-        cellRenderer          : renderTemperature,
+        cellRenderer          : TemperatureCellRenderer,
         enableCellChangeFlash : true,
         filter                : 'agNumberColumnFilter'
     },
@@ -204,6 +202,16 @@ export const shipmentColumns = [
         filter         : false
     }
 ];
+
+/**
+ * Sets the line colour of the sparklines per status, see SparklineColors.js. Rows drawn after it use them
+ * @param {Object<String,String>} colors By status
+ */
+export function setSparklineColors(colors) {
+    Object.entries(sparklines).forEach(([status, { params }]) => {
+        params.sparklineOptions.stroke = colors[status];
+    });
+}
 
 /**
  * The carrier group rows, full width: the carrier chip, its shipments, pallets and late trucks (aggregated)

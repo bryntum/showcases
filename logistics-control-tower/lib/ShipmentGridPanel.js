@@ -1,6 +1,10 @@
 import { Panel } from '@bryntum/core-enterprise';
 import { createGrid } from 'ag-grid-community';
 import { shipmentGridOptions } from './grid/ShipmentGridOptions.js';
+import ShipmentTotalsPanel from './grid/ShipmentTotalsPanel.js';
+import { setSparklineColors } from './grid/ShipmentColumns.js';
+import { onColorSchemeChange, resolveSparklineColors } from './grid/SparklineColors.js';
+import { statusText } from './util/Status.js';
 import { icon } from './util/Icons.js';
 
 /**
@@ -59,40 +63,44 @@ export default class ShipmentGridPanel extends Panel {
      * @returns {Object} The AG Grid API, also the `gridApi` property
      */
     createGrid(options) {
-        const gridApi = this.gridApi = createGrid(this.contentElement, shipmentGridOptions(options));
+        const me = this;
 
-        // Rows changed, filtered or searched
-        gridApi.addEventListener('modelUpdated', () => this.refreshTotals());
+        me.applySparklineColors();
+
+        const gridApi = me.gridApi = createGrid(me.contentElement, shipmentGridOptions(options));
+
+        // The sparklines are drawn on a canvas, redrawn in the colours of the new mode
+        me.stopWatchingColorScheme = onColorSchemeChange(() => {
+            me.schemeFrame ??= me.requestAnimationFrame(() => {
+                me.schemeFrame = null;
+                me.applySparklineColors();
+                gridApi.redrawRows();
+            });
+        });
+
+        // Rows changed, filtered or searched: the shown count in the title, once per frame (Delayable, cancelled on
+        // destroy). The footer's totals panel follows the grid on its own
+        gridApi.addEventListener('modelUpdated', () => {
+            me.countFrame ??= me.requestAnimationFrame(me.refreshCount);
+        });
 
         return gridApi;
     }
 
-    /**
-     * The shipments shown of all of them in the title, and in the footer with their pallets and average delay
-     */
-    refreshTotals() {
-        const { gridApi, widgetMap } = this;
+    // The shipments shown of all of them, in the title
+    refreshCount() {
+        const { shown, total } = ShipmentTotalsPanel.count(this.gridApi);
 
-        if (!gridApi || gridApi.isDestroyed()) {
-            return;
-        }
+        this.countFrame = null;
+        this.widgetMap.count.html = `${shown.toLocaleString('en-US')} of ${total.toLocaleString('en-US')}`;
+    }
 
-        let total = 0, shown = 0, pallets = 0, delay = 0;
-
-        gridApi.forEachLeafNode(() => total++);
-        gridApi.forEachNodeAfterFilter(({ group, data }) => {
-            if (!group && data) {
-                shown++;
-                pallets += data.pallets;
-                delay += data.delay;
-            }
-        });
-
-        widgetMap.count.html = `${shown.toLocaleString('en-US')} of ${total.toLocaleString('en-US')}`;
-        gridApi.getStatusPanel('totals')?.setTotals({ shown, total, pallets, delay : shown ? delay / shown : 0 });
+    applySparklineColors() {
+        setSparklineColors(resolveSparklineColors(this.element, Object.keys(statusText)));
     }
 
     doDestroy() {
+        this.stopWatchingColorScheme?.();
         this.gridApi?.destroy();
         super.doDestroy();
     }

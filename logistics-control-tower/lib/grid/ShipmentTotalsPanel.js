@@ -1,45 +1,79 @@
-import { DomHelper } from '@bryntum/core-enterprise';
 import { formatMinutes } from '../util/Time.js';
 
 /**
  * A custom AG Grid status bar panel, on the left of the footer: the shipments shown of all of them, their pallets and
- * their average delay. Set by the grid panel whenever the rows or the filters change, through `setTotals()`, reached
- * with `api.getStatusPanel('totals')`.
+ * their average delay. It follows the grid itself, through `modelUpdated` (rows changed, filtered or searched), and
+ * counts at most once per frame, as a tick can update the model more than once.
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/component-status-bar/
+ * https://www.ag-grid.com/javascript-data-grid/grid-events/#reference-miscellaneous-modelUpdated
  */
 export default class ShipmentTotalsPanel {
-    init() {
+    /**
+     * The shipments of a grid, all of them and those its filters and search leave, with their pallets and average delay
+     * @param {Object} api AG Grid API
+     * @returns {Object} `{ shown, total, pallets, delay }`
+     */
+    static count(api) {
+        let total = 0, shown = 0, pallets = 0, delay = 0;
+
+        api.forEachLeafNode(() => total++);
+        api.forEachNodeAfterFilter(({ group, data }) => {
+            if (!group) {
+                shown++;
+                pallets += data.pallets;
+                delay += data.delay;
+            }
+        });
+
+        return { shown, total, pallets, delay : shown ? delay / shown : 0 };
+    }
+
+    init(params) {
         const
             me   = this,
-            item = children => DomHelper.createElement({ parent : me.gui, class : 'lct-footer-item', children });
+            item = (...children) => {
+                const element = document.createElement('div');
 
-        me.gui = DomHelper.createElement({ class : 'lct-footer lct-totals-panel' });
+                element.className = 'lct-footer-item';
+                element.append(...children);
+                me.eGui.append(element);
+            },
+            value = () => document.createElement('strong');
 
-        // Each value is a strong, filled in by setTotals()
-        [me.shown, me.pallets, me.delay] = [
-            item([{ tag : 'strong' }, { tag : 'span', class : 'lct-footer-of' }]),
-            item(['Pallets', { tag : 'strong' }]),
-            item(['Avg delay', { tag : 'strong' }])
-        ].map(element => element.querySelector('strong'));
+        me.api     = params.api;
+        me.eGui    = document.createElement('div');
+        me.shown   = value();
+        me.of      = document.createElement('span');
+        me.pallets = value();
+        me.delay   = value();
 
-        me.of = me.gui.querySelector('.lct-footer-of');
+        me.eGui.className = 'lct-footer lct-totals-panel';
+        me.of.className   = 'lct-footer-of';
+        item(me.shown, me.of);
+        item('Pallets', me.pallets);
+        item('Avg delay', me.delay);
+
+        me.onModelUpdated = () => {
+            me.frame ||= requestAnimationFrame(() => {
+                me.frame = 0;
+                me.update();
+            });
+        };
+
+        me.api.addEventListener('modelUpdated', me.onModelUpdated);
+        me.onModelUpdated();
     }
 
     getGui() {
-        return this.gui;
+        return this.eGui;
     }
 
-    /**
-     * @param {Object} totals
-     * @param {Number} totals.shown The shipments the filters and the search leave
-     * @param {Number} totals.total All shipments
-     * @param {Number} totals.pallets The pallets of those shown
-     * @param {Number} totals.delay Their average delay in minutes
-     */
-    setTotals({ shown, total, pallets, delay }) {
-        const me = this;
+    update() {
+        const
+            me                               = this,
+            { shown, total, pallets, delay } = ShipmentTotalsPanel.count(me.api);
 
         me.shown.textContent   = shown.toLocaleString('en-US');
         me.of.textContent      = `of ${total.toLocaleString('en-US')} shown`;
@@ -47,13 +81,18 @@ export default class ShipmentTotalsPanel {
         me.delay.textContent   = formatMinutes(delay, true);
     }
 
+    // The status bar config never changes, the panel stays as it is
     refresh() {
         return true;
     }
 
     destroy() {
-        const me = this;
+        const { api, onModelUpdated, frame } = this;
 
-        me.gui = me.shown = me.of = me.pallets = me.delay = null;
+        cancelAnimationFrame(frame);
+
+        if (!api.isDestroyed()) {
+            api.removeEventListener('modelUpdated', onModelUpdated);
+        }
     }
 }

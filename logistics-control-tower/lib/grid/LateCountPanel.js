@@ -1,29 +1,37 @@
-import { DomHelper } from '@bryntum/core-enterprise';
-
 /**
  * A custom AG Grid status bar panel, on the right of the footer: the late trucks and the slot conflicts among all
- * shipments. Set from the app on every tick through `setCounts()`, reached with `api.getStatusPanel('lateCount')`.
+ * shipments, counted by the app (the slots live on the dock schedule, not in the grid) and set on every tick through
+ * `api.getStatusPanel('lateCount').setCounts()`.
  *
  * Learn more:
- * https://www.ag-grid.com/javascript-data-grid/component-status-bar/
+ * https://www.ag-grid.com/javascript-data-grid/component-status-bar/#accessing-status-bar-panel-instances
  */
 export default class LateCountPanel {
     init() {
         const
             me      = this,
-            counter = (parent, label) => {
-                const item = DomHelper.createElement({ parent, class : 'lct-footer-item', children : [label] });
+            counter = label => {
+                const
+                    item  = document.createElement('div'),
+                    value = document.createElement('strong');
 
-                return DomHelper.createElement({ parent : item, tag : 'strong', class : 'lct-footer-alert', text : '0' });
+                item.className    = 'lct-footer-item';
+                value.className   = 'lct-footer-alert';
+                value.textContent = '0';
+                item.append(label, value);
+                me.eGui.append(item);
+
+                return value;
             };
 
-        me.gui       = DomHelper.createElement({ class : 'lct-footer lct-late-panel' });
-        me.late      = counter(me.gui, 'Late');
-        me.conflicts = counter(me.gui, 'Conflicts');
+        me.eGui           = document.createElement('div');
+        me.eGui.className = 'lct-footer lct-late-panel';
+        me.late           = counter('Late');
+        me.conflicts      = counter('Conflicts');
     }
 
     getGui() {
-        return this.gui;
+        return this.eGui;
     }
 
     /**
@@ -36,11 +44,8 @@ export default class LateCountPanel {
         this.conflicts.textContent = conflicts.toLocaleString('en-US');
     }
 
+    // The status bar config never changes, the panel stays as it is
     refresh() {
         return true;
-    }
-
-    destroy() {
-        this.gui = this.late = this.conflicts = null;
     }
 }

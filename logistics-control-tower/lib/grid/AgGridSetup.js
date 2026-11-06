@@ -2,7 +2,7 @@ import {
     CellStyleModule, ClientSideRowModelApiModule, ClientSideRowModelModule, ColumnApiModule,
     EventApiModule, HighlightChangesModule, ModuleRegistry, NumberFilterModule, QuickFilterModule, RenderApiModule,
     RowApiModule, RowDragModule, RowSelectionModule, RowStyleModule, ScrollApiModule, TextFilterModule,
-    ValidationModule, themeQuartz
+    enableDevValidations, themeQuartz
 } from 'ag-grid-community';
 import {
     ContextMenuModule, LicenseManager, RowGroupingModule, SetFilterModule, SparklinesModule,
@@ -51,10 +51,13 @@ ModuleRegistry.registerModules([
     StatusBarModule,
     ContextMenuModule,
     // The ETA drift sparklines, drawn by AG Charts (Community)
-    SparklinesModule.with(AgChartsCommunityModule),
-    // Explains a misconfiguration in the console during development, left out of the build
-    ...(import.meta.env.DEV ? [ValidationModule] : [])
+    SparklinesModule.with(AgChartsCommunityModule)
 ]);
+
+// Explains a misconfiguration in the console during development, left out of the build
+if (import.meta.env.DEV) {
+    enableDevValidations();
+}
 
 /**
  * The Quartz theme on the Bryntum theme's CSS variables. They follow light and dark mode (light-dark()), so the grid
