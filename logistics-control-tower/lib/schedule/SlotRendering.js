@@ -14,6 +14,8 @@ const
     compactFrame  = 8,
     iconWidth     = 21,
     iconOnlyWidth = 28,
+    // The number in the meta line's 11px instead of 13px, the next step down
+    smallRatio    = 11 / 13,
     // The widest number, 10888 in bold 13px, until the font is there to measure them
     widestNumber  = 40,
     numberWidths  = new Map(),
@@ -87,8 +89,10 @@ export function renderSlot({ eventRecord, renderData }) {
         text       = numberWidth(number),
         // Dry loads are the default, they need no marker
         iconName   = status === 'done' ? 'check' : expedited ? 'lightning' : loadType === 'reefer' ? 'snowflake' : null,
-        // The number before an icon alone, with less padding where it is tight
-        showText   = width >= text + compactFrame,
+        // The number before an icon alone, with less padding where it is tight, then in the meta line's smaller size
+        fullText   = width >= text + compactFrame,
+        smallText  = !fullText && width >= Math.ceil(text * smallRatio) + compactFrame,
+        showText   = fullText || smallText,
         showIcon   = Boolean(iconName) &&
             (width >= text + roomyFrame + iconWidth || (!showText && width >= iconOnlyWidth));
 
@@ -98,6 +102,8 @@ export function renderSlot({ eventRecord, renderData }) {
         'lct-slot-breach'        : slaBreach,
         'lct-slot-tentative'     : tentative,
         'lct-slot-compact'       : showText && width < text + roomyFrame,
+        'lct-slot-small'         : smallText,
+        'lct-slot-icon-only'     : showIcon && !showText,
         'lct-slot-sliver'        : !showText && !showIcon
     });
 
@@ -108,7 +114,8 @@ export function renderSlot({ eventRecord, renderData }) {
             children : [
                 // The number only, the full reference is in the tooltip
                 { class : 'lct-slot-ref', text : number },
-                slotMeta(status, pallets, delayMinutes)
+                // No room for a second line beside a number this small
+                smallText ? null : slotMeta(status, pallets, delayMinutes)
             ]
         } : null
     ];

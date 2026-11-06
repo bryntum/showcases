@@ -135,14 +135,24 @@
         --b-sch-event-padding-inline : 2px;
     }
 
-    /* Too narrow for anything inside: a slim bar, the tint and the border of its status, not an empty box */
-    &.lct-slot-sliver {
-        align-self : center;
-        block-size : 40%;
+    /* Short slots: the number alone in the meta line's size */
+    &.lct-slot-small .lct-slot-ref {
+        font-size : 11px;
+    }
+
+    /* An icon alone sits in the middle of its bar */
+    &.lct-slot-icon-only {
+        justify-content : center;
 
         --b-sch-event-padding-inline : 0;
-        --b-sch-event-padding-block  : 0;
-        --b-sch-event-border-radius  : 2px;
+    }
+
+    /* Too narrow for anything inside: a solid chip in the status colour, no outline. It reads as a short booking, a
+     * filled style next to the outlined slots with text, not as an empty frame */
+    &.lct-slot-sliver {
+        --lct-slot-tint              : var(--lct-chip-tint);
+        --b-sch-event-border-color   : transparent;
+        --b-sch-event-padding-inline : 0;
     }
 }
 
