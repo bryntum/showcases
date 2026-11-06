@@ -64,7 +64,8 @@ export default class DockSchedule extends DockBooking(Scheduler) {
 
         // The shipment grid's row height, the two sides share one rhythm
         rowHeight  : 44,
-        barMargin  : 5,
+        // Room for the two line label inside an even 5px padding
+        barMargin  : 4,
         tickSize   : 170,
         // Hours labelled at their start, so a time under the pointer reads off the axis
         viewPreset : {

@@ -56,9 +56,8 @@
         }
     }
 
-    /* A partner product next to the logo (createShell's `partner`): a times sign, then its logo as a mask in the same
-     * colour and at the same height, top of the tallest letter to the baseline. The SVG's viewBox is cropped to the
-     * logo, its baseline 0.39 units above the bottom of a 28.8 unit tall box (AG Grid's) */
+    /* A partner product next to the logo (createShell's `partner`): a times sign, then its own logo for the mode, its
+     * wordmark as tall as Bryntum's. The logo is 235 x 40 (AG Grid's), the wordmark from y 9.1 to its baseline at 37.9 */
     .sc-brand-partner {
         display         : flex;
         flex            : none;
@@ -73,15 +72,23 @@
     }
 
     .sc-brand-partner-logo {
-        flex             : none;
-        height           : calc(1.1cap * 28.8 / 28.41);
-        aspect-ratio     : 141.58 / 28.8;
-        background-color : var(--sc-logo);
-        mask             : var(--sc-partner-logo) left center / auto 100% no-repeat;
+        --sc-partner-cap : 1.1cap;
 
-        @media (forced-colors: active) {
-            forced-color-adjust : none;
-            background-color    : CanvasText;
+        flex       : none;
+        height     : calc(var(--sc-partner-cap) * 40 / 28.8);
+        aspect-ratio : 235 / 40;
+        /* Centred by the wordmark, not by the box, which has room below the baseline */
+        translate  : 0 calc(var(--sc-partner-cap) * (20 - 23.5) / 28.8);
+        background : var(--sc-partner-logo-light) left center / contain no-repeat;
+
+        :root[data-theme='dark'] & {
+            background-image : var(--sc-partner-logo-dark);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme='light']) & {
+                background-image : var(--sc-partner-logo-dark);
+            }
         }
     }
 

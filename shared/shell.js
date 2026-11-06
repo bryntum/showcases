@@ -91,7 +91,8 @@ function partnerLink({ name, href, logo }) {
                 role         : 'img',
                 'aria-label' : name,
                 // Double quoted and escaped, an inlined SVG data URL holds single quotes
-                style        : `--sc-partner-logo: url(${JSON.stringify(logo)})`
+                style        : `--sc-partner-logo-light: url(${JSON.stringify(logo.light)}); ` +
+                    `--sc-partner-logo-dark: url(${JSON.stringify(logo.dark)})`
             }
         ]
     };
@@ -104,8 +105,8 @@ function partnerLink({ name, href, logo }) {
  * @param {String} options.source The showcase folder in the repository, the target of the GitHub source link
  * @param {String} [options.gallery] The gallery URL, the breadcrumb's first link. Relative, as every showcase lives one
  * folder below the gallery, so it works under any base path
- * @param {Object} [options.partner] A partner product shown next to the Bryntum logo, `{ name, href, logo }`. `logo` is
- * the URL of a single colour SVG, used as a mask so it takes the logo colour of either mode, see brand.css
+ * @param {Object} [options.partner] A partner product shown next to the Bryntum logo, `{ name, href, logo }`. `logo`
+ * holds the URLs of its logo for each mode, `{ light, dark }`, see brand.css
  * @returns {HTMLElement} The container to render the app into (`appendTo`)
  */
 export function createShell({ title, source, gallery = '../', partner }) {
