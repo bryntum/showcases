@@ -147,16 +147,14 @@
         --b-sch-event-padding-inline : 0;
     }
 
-    /* Too short for its number: the same thin box as every slot with a thicker edge along the bottom in its status
-     * colour, an icon for the status in the middle, and the delay of a late truck beside it where that fits
-     * (renderMiniSlot) */
+    /* Too short for its number: a neutral thin box, the status shown by the colour of the icon in the middle, and the
+     * delay of a late truck beside it where that fits (renderMiniSlot) */
     &.lct-slot-mini {
         --b-sch-event-padding-inline : 2px;
+        --b-sch-event-border-color   : var(--lct-border);
 
-        justify-content           : center;
-        gap                       : 3px;
-        border-block-end-width    : 3px;
-        border-block-end-color    : var(--lct-color);
+        justify-content : center;
+        gap             : 3px;
 
         .lct-slot-icon {
             font-size : 14px;
