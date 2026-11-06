@@ -3,6 +3,7 @@
 @import './tokens.css';
 @import './icon-button.css';
 @import './brand.css';
+@import './get-the-code.css';
 
 html, body {
     height     : 100%;
@@ -33,6 +34,8 @@ body {
 }
 
 .sc-header {
+    /* The anchor of the "Get the code" popover at phone widths (get-the-code.css) */
+    position       : relative;
     display        : flex;
     align-items    : center;
     gap            : 0.75em;

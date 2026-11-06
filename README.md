@@ -72,15 +72,16 @@ lists the Bryntum packages it imports as `peerDependencies` at the same pin. Dep
 
 | Import | What it is |
 |--------|------------|
-| `@showcases/shared` | `createShell({ title, source, gallery })`: the page header and the container the app renders into. The header's breadcrumb links to the gallery, `gallery` defaults to `'../'`, as every showcase lives one folder below it |
-| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand, accent and text colours, font stacks, radius, border, tint and glows, page gutter, the app panel's border, padding, radius and shadow |
+| `@showcases/shared` | `createShell({ title, source, gallery })`: the page header and the container the app renders into. The header's breadcrumb links to the gallery, `gallery` defaults to `'../'`, as every showcase lives one folder below it. Its calls to action (`get-the-code.js`, `get-the-code.css`): "Get the code", a popover with the command that copies the repository and opens the showcase (derived from `source`) and the source link, and "Free trial", to bryntum.com/download/ |
+| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand, accent and text colours, font stacks, radius, borders, tint and glows, floating surfaces and their shadow, page gutter, the app panel's border, padding, radius and shadow |
 | `@showcases/shared/fonts.css` | The Montserrat font, bundled from `@fontsource` |
 | `@showcases/shared/color-scheme.js` | `createColorSchemeToggle({ apply })`: the sun / moon button and the one stored light / dark choice, shared by the gallery and the showcases. No Bryntum dependency |
-| `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (light / dark toggle, GitHub link) |
+| `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (the light / dark toggle, the gallery's GitHub link) |
 | `@showcases/shared/brand.css` | `.sc-brand`, the header lockup: the official Bryntum logo, a divider and the page name, or on a showcase the breadcrumb `.sc-crumbs` (Showcases / title) |
 | `@showcases/shared/logo-round.svg` | The round Bryntum logo, the favicon |
 | `@showcases/shared/logo.svg` | The official Bryntum logo, mark and wordmark, the mask brand.css colours brand blue on light and white on dark |
 | `@showcases/shared/github-mark.svg` | The GitHub mark, filled with `currentColor` |
+| `@showcases/shared/code.svg` | The code icon of "Get the code", drawn with `currentColor` |
 
 The shell imports the tokens, the icon buttons, the brand lockup and the font itself. The showcase imports its Bryntum
 structural CSS and the Svalbard theme, which renders light and dark from one file.
