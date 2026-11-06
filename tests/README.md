@@ -12,7 +12,7 @@ npm test
 | Spec | Checks |
 |------|--------|
 | `gallery.spec.js` | The gallery loads without errors, shows the EV Operations and Logistics Control Tower cards, their Live demo links open the showcases |
-| `logistics-control-tower.spec.js` | The page loads without errors (AG Grid's licence notice aside, the tests run without its key), the grid and the dock schedule render, the clock ticks until paused, row and slot selection follow each other, the context menu unbooks, the utilization strip renders, door downtime renders and refuses slots, Simulate delay works, a row dragged onto a door books a slot while the clock holds, the grid follows light / dark, the views stack at 390px |
+| `logistics-control-tower.spec.js` | The page loads without errors (AG Grid's licence notice aside, the tests run without its key), the grid and the dock schedule render, the clock ticks until paused, row and slot selection follow each other, the context menu unbooks, the utilization strip renders, door downtime renders and refuses slots, a slot pushed into downtime moves to after it, Simulate delay works, a row dragged onto a door books a slot while the clock holds, the grid follows light / dark, the views stack at 390px |
 | `ev-operations.spec.js` | The page loads without errors, the Production line Scheduler renders bars, the view switch shows Service and Program (Gantt), Simulate moves the now pill, the light / dark choice survives a reload, no horizontal scroll at 390px |
 
 Every page must at least load, render its main widget and log no console or page errors (`errors.js` collects them).

@@ -122,8 +122,9 @@ door or time, or with Expedite in the context menu.
 
 Door downtime is a resource time range per window (`lib/schedule/Downtime.js`, the ResourceTimeRanges feature). The
 booking (`getBusy()`), expedite, the drag and resize validators and the grid's drop zone treat it as taken. The engine
-does not know about it: a late truck pushing its door's chain can push a slot into downtime, which the dispatcher then
-sees and moves.
+does not know about it, so after each commit `Simulator#moveOutOfDowntime()` moves a slot the chain pushed into a
+window to right after it, and the engine pushes the slots behind it again. Not with resource calendars: those would
+stretch a slot over the window rather than move it.
 
 ### The utilization strip: the Summary feature
 
@@ -145,8 +146,8 @@ already. The simulation holds its clock while a row is dragged.
 ### The clock: `lib/simulation/Simulator.js` and `lib/schedule/Playhead.js`
 
 A tick every 300 ms advances the simulated now by the speed, drifts ETAs, temperatures and GPS states, moves the slots
-of late trucks, books the trucks arriving within six hours, then waits for the engine (`project.commitAsync()`) before
-it derives the statuses. The clock holds while a slot is dragged or resized. The playhead is two time ranges, the
+of late trucks, books the trucks arriving within six hours, then waits for the engine (`project.commitAsync()`) and
+moves slots out of downtime before it derives the statuses. The clock holds while a slot is dragged or resized. The playhead is two time ranges, the
 shaded past and the now line, edited without change tracking. The timeline follows it by delta scrolling: it scrolls
 by the distance the clock moved, so wherever the user scrolled to, the view keeps its place relative to now.
 

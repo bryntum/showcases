@@ -157,6 +157,44 @@ test.describe('Logistics Control Tower dock tools', () => {
     });
 });
 
+test.describe('Logistics Control Tower downtime', () => {
+    test('a late truck pushing a slot into downtime moves it to after the window', async({ page }) => {
+        await openPaused(page);
+
+        const result = await page.evaluate(async() => {
+            const
+                { schedule, shipmentStore, simulator } = globalThis.bryntum.query('controltowerapp'),
+                minute                                 = 60000,
+                // The delay making a truck arrive ten minutes into a window, at most the simulation's 240 minutes
+                delayInto                              = (range, shipment) =>
+                    (range.startDate - shipment.plannedEta) / minute + 10,
+                // A defrost window ahead, on a door with a booked slot before it whose truck is still on its way
+                { range, slot, shipment }              = schedule.resourceTimeRangeStore.records
+                    .filter(downtime => downtime.name === 'Defrost' && downtime.startDate > schedule.now)
+                    .flatMap(downtime => downtime.resource.events.map(event =>
+                        ({ range : downtime, slot : event, shipment : shipmentStore.getById(event.id) })))
+                    .find(pick => !pick.slot.isStarted && pick.shipment.isInTransit &&
+                        pick.slot.startDate < pick.range.startDate &&
+                        delayInto(pick.range, pick.shipment) >= 0 && delayInto(pick.range, pick.shipment) <= 240),
+                door                                   = range.resource;
+
+            // The tick moves the slot to the truck's ETA, into the window
+            simulator.delay(shipment, delayInto(range, shipment));
+            await simulator.tick();
+
+            return {
+                start      : slot.startDate.getTime(),
+                windowEnd  : range.endDate.getTime(),
+                inDowntime : door.events.filter(event => !event.isStarted && door.timeRanges.some(downtime =>
+                    event.startDate < downtime.endDate && event.endDate > downtime.startDate)).map(event => event.id)
+            };
+        });
+
+        expect(result.start).toBeGreaterThanOrEqual(result.windowEnd);
+        expect(result.inDowntime).toEqual([]);
+    });
+});
+
 test.describe('Logistics Control Tower drag and drop', () => {
     test('dragging a shipment row onto a dock door books a slot there, the clock holds meanwhile', async({ page }) => {
         await openPaused(page);

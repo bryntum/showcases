@@ -1,6 +1,7 @@
 import { Base, Delayable, Events } from '@bryntum/core-enterprise';
 import DockPlanner from './DockPlanner.js';
 import Random from './Random.js';
+import { downtimeAt, downtimeIntervals } from '../schedule/Downtime.js';
 import { hourMs, minuteMs } from '../util/Time.js';
 
 const
@@ -10,7 +11,9 @@ const
     lateAfter      = 30,
     atRiskAfter    = 10,
     // A slot is tentative while its truck is further out than this, the ETA of a truck hours away is an estimate
-    tentativeAfter = 3 * hourMs;
+    tentativeAfter = 3 * hourMs,
+    // Moving a slot out of downtime can push the next slot of its door into a window, at most this many rounds
+    downtimeRounds = 5;
 
 /**
  * Drives the live part of the showcase. Every tick it advances the simulated clock, lets truck ETAs drift, moves reefer
@@ -161,6 +164,7 @@ export default class Simulator extends Events(Delayable(Base)) {
 
             // The engine schedules the moved and the new slots, then the statuses follow the scheduled times
             await schedule.project.commitAsync();
+            await me.moveOutOfDowntime();
 
             if (!me.isDestroyed) {
                 me.refreshStatuses();
@@ -208,6 +212,7 @@ export default class Simulator extends Events(Delayable(Base)) {
         me.pushLateSlots();
 
         await schedule.project.commitAsync();
+        await me.moveOutOfDowntime();
 
         if (me.isDestroyed) {
             return null;
@@ -300,6 +305,41 @@ export default class Simulator extends Events(Delayable(Base)) {
         }
 
         doors.forEach(door => schedule.chainDoor(door));
+    }
+
+    /**
+     * The engine does not know the doors' downtime, a slot it pushed into a window is moved to right after it (with the
+     * door's turnaround, as booking does), and the engine pushes the slots after it again. Not done with resource
+     * calendars, which would stretch a slot over the window instead of moving it
+     * @returns {Promise}
+     */
+    async moveOutOfDowntime() {
+        const { schedule } = this;
+
+        for (let round = 0; round < downtimeRounds && !this.isDestroyed; round++) {
+            const doors = new Set();
+
+            for (const slot of schedule.eventStore) {
+                const
+                    door  = slot.resource,
+                    start = slot.startDate.getTime();
+
+                if (door && !slot.isStarted && downtimeAt(door, start, slot.plannedEnd)) {
+                    const after = DockPlanner.earliestGap(downtimeIntervals(door).sort((a, b) => a.start - b.start),
+                        start, slot.plannedEnd - start);
+
+                    slot.startDate = new Date(DockPlanner.ceilToFiveMinutes(after));
+                    doors.add(door);
+                }
+            }
+
+            if (!doors.size) {
+                return;
+            }
+
+            doors.forEach(door => schedule.chainDoor(door));
+            await schedule.project.commitAsync();
+        }
     }
 
     /**
