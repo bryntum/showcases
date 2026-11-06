@@ -75,7 +75,7 @@
                         Browse showcases
                         <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
                     </a>
-                    <a class="button" href="./ev-operations/">
+                    <a class="button" href="./logistics-control-tower/">
                         <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
                         Try the latest demo
                     </a>
@@ -148,7 +148,7 @@
         </section>
 
         <section class="featured wrap" aria-labelledby="featured-title">
-            <!-- Decorative time axis, the "now" marker creeps along -->
+            <!-- Decorative time axis, a hairline, the "now" dot creeps along -->
             <div class="timeline" aria-hidden="true">
                 <ol>
                     <li>09:00</li><li>10:00</li><li>11:00</li><li>12:00</li>
@@ -156,8 +156,7 @@
                 </ol>
                 <div class="now-track">
                     <div class="now-marker">
-                        <span class="now-pill">NOW</span>
-                        <span class="now-line"></span>
+                        <span class="now-dot"></span>
                     </div>
                 </div>
             </div>
@@ -166,65 +165,72 @@
                 <figure class="frame">
                     <figcaption>
                         <span class="live">Live simulation</span>
-                        <span>ev-operations</span>
+                        <span>logistics-control-tower</span>
                     </figcaption>
-                    <a href="./ev-operations/" tabindex="-1" aria-hidden="true">
+                    <a href="./logistics-control-tower/" tabindex="-1" aria-hidden="true">
                         <!-- Light or dark screenshot: the system setting by the media queries, the viewer's choice by
                              gallery.js, which rewrites the media of the data-scheme sources -->
                         <picture>
                             <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/ev-operations-light-800.webp 800w, ./gallery/ev-operations-light-1600.webp 1600w"
+                                srcset="./gallery/logistics-control-tower-light-800.webp 800w, ./gallery/logistics-control-tower-light-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source type="image/webp"
-                                srcset="./gallery/ev-operations-dark-800.webp 800w, ./gallery/ev-operations-dark-1600.webp 1600w"
+                                srcset="./gallery/logistics-control-tower-dark-800.webp 800w, ./gallery/logistics-control-tower-dark-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/ev-operations-light-1200.png">
-                            <img src="./gallery/ev-operations-dark-1200.png" width="1200" height="741" fetchpriority="high"
-                                alt="EV Operations, Production line view: work centers with running, behind and expedited batches on a shift timeline">
+                                srcset="./gallery/logistics-control-tower-light-1200.png">
+                            <img src="./gallery/logistics-control-tower-dark-1200.png" width="1200" height="741" fetchpriority="high"
+                                alt="Logistics Control Tower: inbound shipments grouped by carrier in AG Grid, next to the dock doors of a distribution centre with their unloading slots on a timeline">
                         </picture>
                     </a>
                 </figure>
 
                 <div>
-                    <h2 id="featured-title">EV Operations</h2>
+                    <h2 id="featured-title">Logistics Control Tower</h2>
                     <ul class="tags" aria-label="Built with">
                         <li><a href="https://bryntum.com/products/scheduler/">Scheduler</a></li>
-                        <li><a href="https://bryntum.com/products/gantt/">Gantt</a></li>
+                        <li><a href="https://www.ag-grid.com/">AG Grid</a></li>
                     </ul>
                     <p class="summary">
-                        Scheduler and Gantt in one app, driven by a live simulation you can
-                        start and stop.
+                        Bryntum Scheduler and AG Grid in one app: shipments stream live into the grid while the
+                        engine keeps the dock doors of a distribution centre scheduled.
                     </p>
-                    <ol class="views" aria-label="Views">
+                    <ol class="views" aria-label="Features">
                         <li>
                             <span class="index" aria-hidden="true">01</span>
                             <span>
-                                <strong>Production line</strong>
-                                <span>Work centers, batches and OEE per shift</span>
+                                <strong>Live shipments</strong>
+                                <span>2,000 inbound trucks in AG Grid, grouped by carrier</span>
                             </span>
                         </li>
                         <li>
                             <span class="index" aria-hidden="true">02</span>
                             <span>
-                                <strong>Service &amp; charging</strong>
-                                <span>A service center with DC fast chargers</span>
+                                <strong>Dock schedule</strong>
+                                <span>12 doors, unloading slots chained by the engine</span>
                             </span>
                         </li>
                         <li>
                             <span class="index" aria-hidden="true">03</span>
                             <span>
-                                <strong>Vehicle program</strong>
-                                <span>The launch plan as a Gantt</span>
+                                <strong>Utilization &amp; conflicts</strong>
+                                <span>Door load per hour, late slots flagged, expedite in a click</span>
+                            </span>
+                        </li>
+                        <li>
+                            <span class="index" aria-hidden="true">04</span>
+                            <span>
+                                <strong>Simulate delay</strong>
+                                <span>Make a truck run late, the slots behind it move</span>
                             </span>
                         </li>
                     </ol>
                     <div class="button-row">
-                        <a class="button primary" href="./ev-operations/">
+                        <a class="button primary" href="./logistics-control-tower/">
                             <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
                             Live demo
                         </a>
-                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/ev-operations">
+                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/logistics-control-tower">
                             <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
                             Source
                         </a>
@@ -248,18 +254,18 @@
                     <li>
                         <noscript>
                             <p>
-                                <a href="./ev-operations/">EV Operations</a>: a
-                                production line, a service center with DC fast chargers
-                                and a vehicle program, with a live simulation.
+                                <a href="./logistics-control-tower/">Logistics Control Tower</a>:
+                                inbound shipments streaming live into AG Grid, next to the dock
+                                doors of a distribution centre, scheduled by the Bryntum engine.
                             </p>
                         </noscript>
                     </li>
                     <li>
                         <noscript>
                             <p>
-                                <a href="./logistics-control-tower/">Logistics Control Tower</a>:
-                                inbound shipments streaming live into AG Grid, next to the dock
-                                doors of a distribution centre, scheduled by the Bryntum engine.
+                                <a href="./ev-operations/">EV Operations</a>: a
+                                production line, a service center with DC fast chargers
+                                and a vehicle program, with a live simulation.
                             </p>
                         </noscript>
                     </li>

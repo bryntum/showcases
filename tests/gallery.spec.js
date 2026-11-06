@@ -16,6 +16,20 @@ test.describe('Gallery', () => {
         expect(errors).toEqual([]);
     });
 
+    test('features the Logistics Control Tower', async({ page }) => {
+        const featured = page.getByRole('region', { name : 'Logistics Control Tower' });
+
+        await expect(featured.getByRole('heading', { level : 2, name : 'Logistics Control Tower' })).toBeVisible();
+        await expect(featured.getByRole('list', { name : 'Built with' }).getByRole('listitem'))
+            .toHaveText(['Scheduler', 'AG Grid']);
+        await expect(featured.getByRole('link', { name : 'Live demo' }))
+            .toHaveAttribute('href', './logistics-control-tower/');
+        await expect(featured.getByRole('link', { name : 'Source' }))
+            .toHaveAttribute('href', 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower');
+        await expect(page.getByRole('link', { name : 'Try the latest demo' }))
+            .toHaveAttribute('href', './logistics-control-tower/');
+    });
+
     test('shows the EV Operations card', async({ page }) => {
         const card = page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' });
 

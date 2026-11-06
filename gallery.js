@@ -27,21 +27,8 @@ const
         'AG Charts'  : 'https://www.ag-grid.com/charts/',
         'AG Studio'  : null
     },
+    // Latest first, the first is also the featured one in index.html
     showcases   = [
-        {
-            title       : 'EV Operations',
-            description : 'A production line, a service center with DC fast chargers and a vehicle program, ' +
-                'with a live simulation.',
-            products : ['Scheduler', 'Gantt'],
-            url      : './ev-operations/',
-            source   : 'https://github.com/bryntum/showcases/tree/main/ev-operations',
-            thumb    : {
-                light  : { webp : `${lightThumb800} 800w, ${lightThumb1600} 1600w`, png : lightThumbPng },
-                dark   : { webp : `${darkThumb800} 800w, ${darkThumb1600} 1600w`, png : darkThumbPng },
-                width  : 1200,
-                height : 741
-            }
-        },
         {
             title       : 'Logistics Control Tower',
             description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
@@ -52,6 +39,20 @@ const
             thumb    : {
                 light  : { webp : `${lctLightThumb800} 800w, ${lctLightThumb1600} 1600w`, png : lctLightThumbPng },
                 dark   : { webp : `${lctDarkThumb800} 800w, ${lctDarkThumb1600} 1600w`, png : lctDarkThumbPng },
+                width  : 1200,
+                height : 741
+            }
+        },
+        {
+            title       : 'EV Operations',
+            description : 'A production line, a service center with DC fast chargers and a vehicle program, ' +
+                'with a live simulation.',
+            products : ['Scheduler', 'Gantt'],
+            url      : './ev-operations/',
+            source   : 'https://github.com/bryntum/showcases/tree/main/ev-operations',
+            thumb    : {
+                light  : { webp : `${lightThumb800} 800w, ${lightThumb1600} 1600w`, png : lightThumbPng },
+                dark   : { webp : `${darkThumb800} 800w, ${darkThumb1600} 1600w`, png : darkThumbPng },
                 width  : 1200,
                 height : 741
             }

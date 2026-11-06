@@ -594,7 +594,7 @@ a {
     }
 }
 
-/* The time axis above the featured showcase, with a slowly advancing "now" marker */
+/* A quiet time axis above the featured showcase: a hairline with hour ticks and a slowly advancing "now" dot */
 .timeline {
     position : relative;
 
@@ -602,35 +602,29 @@ a {
         display               : grid;
         grid-template-columns : repeat(8, minmax(0, 1fr));
         padding               : 0;
-        border                : 1px solid var(--g-border-soft);
+        border-block-start    : 1px solid var(--g-border-soft);
         list-style            : none;
     }
 
     li {
-        padding     : 0.45rem 0.6rem;
-        white-space : nowrap;
-        font-family : var(--g-mono);
-        font-size   : 0.72rem;
-        color       : var(--g-faint);
-
-        & + li {
-            border-inline-start : 1px solid var(--g-border-soft);
-        }
+        padding             : 0.3rem 0.45rem 0;
+        border-inline-start : 1px solid var(--g-border-soft);
+        white-space         : nowrap;
+        font-family         : var(--g-mono);
+        font-size           : 0.65rem;
+        line-height         : 1;
+        color               : var(--g-faint);
     }
 
-    /* Every second hour on narrow screens, the labels run into the empty cell next to them */
+    /* Every second hour on narrow screens */
     @media (max-width: 40rem) {
-        li {
-            padding-inline : 0.4rem;
-        }
-
         li:nth-child(even) {
             color : transparent;
         }
     }
 }
 
-/* Spans the axis, clipped sideways only so the drop line can reach the screenshot below */
+/* Spans the axis */
 .now-track {
     position       : absolute;
     inset          : 0;
@@ -650,38 +644,17 @@ a {
     }
 }
 
-.now-pill {
+/* A dot on the hairline */
+.now-dot {
     position           : absolute;
-    inset-block-start  : 50%;
+    inset-block-start  : 0;
     inset-inline-start : 0;
-    padding            : 0.15em 0.45em;
-    border-radius      : 0.2rem;
-    font-family        : var(--g-mono);
-    font-size          : 0.65rem;
-    font-weight        : 700;
-    color              : var(--g-on-accent);
+    width              : 0.4rem;
+    height             : 0.4rem;
+    border-radius      : 50%;
     background         : var(--g-accent-fill);
-    translate          : -50% -50%;
-}
-
-.now-line {
-    position            : absolute;
-    inset-block-start   : calc(50% + 0.7rem);
-    inset-inline-start  : 0;
-    height              : 3.2rem;
-    border-inline-start : 1px solid var(--g-accent-fill);
-
-    &::after {
-        content             : '';
-        position            : absolute;
-        inset-block-end     : -0.2rem;
-        inset-inline-start  : -0.2rem;
-        width               : 0.35rem;
-        height              : 0.35rem;
-        margin-inline-start : -0.5px;
-        border-radius       : 50%;
-        background          : var(--g-accent-fill);
-    }
+    box-shadow         : 0 0 0 0.2rem color-mix(in srgb, var(--g-accent-fill) 20%, transparent);
+    translate          : -50% calc(-50% - 0.5px);
 }
 
 @keyframes now-creep {
@@ -699,7 +672,7 @@ a {
         grid-template-columns : minmax(0, 1.65fr) minmax(0, 1fr);
         align-items           : center;
         gap                   : 3rem 4rem;
-        margin-block-start    : 3.25rem;
+        margin-block-start    : 2.5rem;
 
         @media (max-width: 56rem) {
             grid-template-columns : minmax(0, 1fr);
