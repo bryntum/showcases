@@ -11,9 +11,10 @@ unload and leave.
   GPS, load, pallets, origin and the planned ETA are hidden columns
 * **Dock doors**: a Scheduler on the Enterprise tier, formerly Scheduler Pro, whose engine schedules the unloading
   slots. The slots of a door are chained, so when a truck runs late its slot moves and the slots after it are pushed.
-  Below the doors a utilization strip (the Summary feature) shows per hour the share of door time booked, orange above
-  90%. Zoom around the playhead, and Resolve conflicts moves the slots ending after their due time to doors where they
-  end in time
+  A slot ending after its due time is a conflict, outlined dashed in red, one for a truck still more than three hours
+  out is tentative, dashed grey. Striped blocks are door downtime (defrost, maintenance, cleaning), where nothing can be
+  booked. Below the doors a utilization strip (the Summary feature) shows per hour the share of door time taken,
+  orange above 90%. Zoom around the playhead
 * **Header**: the site, the simulated clock and live counters (on time with its trend over the last hour), the speed
   (1, 5 or 15 simulated minutes per tick), Simulate delay, which makes a truck with a booked slot run 30 to 75 minutes
   late, and play / pause
@@ -23,6 +24,31 @@ a slot to move it, right-click a row or a slot to book, unbook or expedite. Sele
 other way round, both scroll into view.
 
 **[Live demo](https://showcase.bryntum.com/logistics-control-tower/)**
+
+## How it works
+
+```
+Simulator (a tick every 300 ms)
+  ├─ shipment changes ──► shipment Store (Bryntum) ─┐
+  └─ slot moves, bookings ─► Scheduler project ─────┤  GridSync: changed ids, one
+       (the engine pushes the chained slots)        ├─ applyTransactionAsync per batch ─► AG Grid
+                                                    │
+  AG Grid row dragged onto a door ◄── GridDropZone ─┘  (books through DockBooking)
+```
+
+The Bryntum stores are the sources of truth: the shipment store for the transport state, the Scheduler's project for
+the doors, their downtime and the booked slots. AG Grid only shows flat rows built from both, sent as transactions.
+
+| To change | Look in |
+|-----------|---------|
+| The site, doors, carriers, load mix, downtime windows | `data/network.json` |
+| How the data is generated, how much is booked up front | `lib/simulation/ShipmentData.js` |
+| Unloading times, turnaround, which door takes which load | `lib/simulation/DockPlanner.js` |
+| What happens per tick, the statuses, when a slot is tentative | `lib/simulation/Simulator.js` |
+| Booking, unbooking, expediting | `lib/schedule/DockBooking.js` |
+| How a slot bar looks at each width, the utilization strip | `lib/schedule/SlotRendering.js`, `resources/schedule.css` |
+| The grid's columns and cells | `lib/grid/ShipmentColumns.js`, `lib/grid/*CellRenderer.js` |
+| Colours, light and dark | `resources/tokens.css` |
 
 To run it locally, see the [root README](../README.md#running-locally).
 
@@ -56,14 +82,17 @@ The sparklines are drawn by AG Charts Community (`ag-charts-community`), MIT lic
     (`StatusLegend.js`)
   * `simulation/` the seeded random generator, the data generator (`ShipmentData`), the slot finding rules
     (`DockPlanner`) and the `Simulator`
-  * `schedule/` the dock schedule (`DockSchedule`), its booking mixin (`DockBooking`) and its rendering
-  * `grid/` AG Grid: the licence key, modules and theme (`AgGridSetup`), the columns, the cell renderers, the grid
-    options and the status bar panels
+  * `schedule/` the dock schedule (`DockSchedule`), its mixins for booking (`DockBooking`) and the playhead
+    (`Playhead`), the door downtime (`Downtime`) and the rendering of the cells, slots and utilization
+  * `grid/` AG Grid: the licence key, modules and theme (`AgGridSetup`), the columns, the cell renderers (component
+    renderers for the cells that change often, functions for the others), the sparkline colours, the grid options and
+    the status bar panels
   * `sync/` the bridges between the two: `GridSync` (store changes to grid transactions, selection both ways) and
     `GridDropZone` (rows dropped onto the schedule)
   * `model/` `ShipmentModel`, `DockModel` and `SlotModel`
   * `util/` time formatting, the status labels, the icons and the KPI counts
-* `resources/` the CSS: `app.css` imports the tokens and one file per part of the app
+* `resources/` the CSS: `app.css` imports the tokens and one file per part of the app (the header, the panel bars,
+  the grid, the schedule, the downtime, the playhead, the utilization strip, the legend)
 
 ## Code tour
 
@@ -88,15 +117,20 @@ after it. `chainDoor()` rebuilds a door's chain in start order after a booking, 
 dependencies that differ. The Dependencies feature is off: the chains schedule, but are not drawn.
 
 A slot that ends after its shipment's due time is a conflict, outlined dashed on the schedule, red in the grid's dock
-slot badge, and counted in the header and the grid's footer. Resolve conflicts (`resolveConflicts()`) moves each one,
-the most urgent first, to the earliest gap at a door able to take its load where it ends in time, or failing that ends
-earliest, through `bookAt()`, then lets the engine commit the new chains.
+slot badge, and counted in the header and the grid's footer. The dispatcher fixes it by dragging the slot to another
+door or time, or with Expedite in the context menu.
+
+Door downtime is a resource time range per window (`lib/schedule/Downtime.js`, the ResourceTimeRanges feature). The
+booking (`getBusy()`), expedite, the drag and resize validators and the grid's drop zone treat it as taken. The engine
+does not know about it: a late truck pushing its door's chain can push a slot into downtime, which the dispatcher then
+sees and moves.
 
 ### The utilization strip: the Summary feature
 
 The Scheduler's `Summary` feature paints a footer row under the timeline, one cell per tick of the time axis, so it
-scrolls and zooms with the slots for free. Its `renderer` returns a bar per hour: the slots and their turnaround in the
-tick, as a share of the doors' time. The door column's `summaryRenderer` labels it. The feature refreshes on the
+scrolls and zooms with the slots for free. Its `renderer` returns a bar per hour: the slots with their turnaround and
+the downtime in the tick, as a share of the doors' time. Downtime counts as taken rather than as capacity removed, so
+the bar tells how much door time is left for trucks. The door column's `summaryRenderer` labels it. The feature refreshes on the
 project's `dataReady`, and the schedule refreshes it, buffered, when slots change. The gliding playhead only edits time
 ranges, so it does not redraw the strip.
 
@@ -108,7 +142,7 @@ is AG Grid's drag layer), the time by `getDateFromCoordinate()`, and a dashed pr
 why the door refuses the load. A drop books the slot with `bookAt()`, or moves the slot if the shipment was booked
 already. The simulation holds its clock while a row is dragged.
 
-### The clock: `lib/simulation/Simulator.js` and `DockSchedule#updateNow`
+### The clock: `lib/simulation/Simulator.js` and `lib/schedule/Playhead.js`
 
 A tick every 300 ms advances the simulated now by the speed, drifts ETAs, temperatures and GPS states, moves the slots
 of late trucks, books the trucks arriving within six hours, then waits for the engine (`project.commitAsync()`) before
@@ -124,10 +158,17 @@ the Bryntum theme's CSS variables (`var(--b-neutral-100)`, `var(--b-text-1)`, `v
 light and dark mode, so the grid follows the shell's light / dark switch without any code. Only the modules the grid
 uses are registered.
 
+The grid follows AG Grid's own patterns: the cells that change on every tick (status, ETA, dock slot, temperature)
+are component renderers whose `refresh()` updates the cell in place, the footer's panels are status bar components
+that listen to the grid (`modelUpdated`), and the rows are updated by id with transactions. When the clock moves, only
+the ETA column is refreshed, forced, as its values did not change, and without flashing.
+
 ## Styling
 
-Neutral colours come from the theme (`--b-neutral-*`, `--b-text-*`, `--b-border-*`), the status colours are mixed from
-its palette (`--b-color-*`) in `resources/tokens.css`, darker in light mode and lighter in dark mode for contrast. The
+Neutral colours come from the theme (`--b-neutral-*`, `--b-text-*`, `--b-border-*`), in dark mode tinted a little cool
+by `resources/tokens.css`, the status colours are mixed from its palette (`--b-color-*`), darker in light mode and
+lighter in dark mode for contrast. Every colour in the CSS is a token. The sparklines are drawn on a canvas, which can
+not read CSS variables: `lib/grid/SparklineColors.js` resolves the status tokens and redraws when the mode changes. The
 counters and times use tabular figures and fixed widths, so they do not shift as they change. Below 900px the grid and
 the schedule stack.
 
