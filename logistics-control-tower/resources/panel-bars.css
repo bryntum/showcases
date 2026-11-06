@@ -58,6 +58,18 @@
  * not pressed */
 .lct-zoom {
     --b-button-group-padded-button-opacity : 1;
+    --b-button-group-padded-padding        : 2px;
+
+    /* As tall as the grid's search field next door, so both title bars have the same air around their controls */
+    block-size  : var(--lct-bar-control-height);
+    align-items : stretch;
+
+    .b-button {
+        align-self     : stretch;
+        min-block-size : 0;
+        block-size     : auto;
+        padding-block  : 0;
+    }
 
     .lct-icon {
         font-size : 1.1em;
