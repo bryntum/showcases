@@ -248,15 +248,27 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
     }
 
     // The buttons step between the three presets, gliding (smoothZoom with `animate`). Stepping by preset rather than
-    // by smooth zoom's own continuous levels keeps exactly three, each with its own tick. The playhead stays where the
-    // view keeps it, a quarter in, and at either end the button is disabled rather than doing nothing
+    // by smooth zoom's own continuous levels keeps exactly three, each with its own tick. Smooth zoom keeps its
+    // `centerDate` in the middle and ignores `zoomPosition` while animating, so every step scrolls the timeline back to
+    // where the playhead was: it holds still on screen instead of jumping once the zoom ends. At either end the button
+    // is disabled rather than doing nothing
     async zoomToPreset(index) {
-        const me = this;
+        const
+            me     = this,
+            { scrollable } = me.timeAxisSubGrid,
+            offset = me.getCoordinateFromDate(me.now) - scrollable.x,
+            pin    = () => scrollable.x = me.getCoordinateFromDate(me.now) - offset,
+            detach = me.on({ zoomLevelChange : pin });
 
-        await me.zoomToLevel(presets[index].id, { centerDate : me.now, animate : true });
+        try {
+            await me.zoomToLevel(presets[index].id, { centerDate : me.now, animate : true });
+        }
+        finally {
+            detach();
+        }
 
         if (!me.isDestroyed) {
-            me.scrollToNow();
+            pin();
             me.widgetMap.zoomOut.disabled = index === 0;
             me.widgetMap.zoomIn.disabled  = index === presets.length - 1;
         }
