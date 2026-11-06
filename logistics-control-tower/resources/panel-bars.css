@@ -6,6 +6,8 @@
     block-size       : var(--lct-bar-height);
     /* Inside the height, the line the grid's column headers have too */
     border-block-end : 1px solid var(--b-border-6);
+    /* For the narrow dock schedule below */
+    container        : lct-bar / inline-size;
 
     --b-toolbar-padding : 0 var(--sc-panel-padding);
     --b-toolbar-gap     : 0.7em;
@@ -29,6 +31,14 @@
         margin-inline-start  : -0.25em;
         font-variant-numeric : tabular-nums;
         color                : var(--lct-ink-sub);
+    }
+
+    /* A narrow dock schedule beside the grid (about 900 to 1080px wide screens) leaves out the door count, or the
+     * toolbar would move the zoom buttons to its overflow menu. Stacked, the title gives way instead */
+    .lct-app:not(.lct-compact) .b-dock-schedule & .lct-panel-count {
+        @container lct-bar (width < 420px) {
+            display : none;
+        }
     }
 
     .lct-search {
