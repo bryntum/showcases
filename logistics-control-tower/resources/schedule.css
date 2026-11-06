@@ -314,9 +314,14 @@
 
 /* The utilization strip, the Summary feature's footer: a bar per hour, from the bottom, orange when over 90% */
 .b-dock-schedule .b-grid-footer-container {
+    /* Bryntum draws the footer's top line as an outline, 1px above it in the header border colour. The grid's footer
+     * has a border inside its height, so the strip gets the same, for one line at one height across both views */
+    --b-grid-footer-outline-width : 0;
+
     .b-grid-footer {
-        box-sizing  : border-box;
-        block-size  : var(--lct-footer-height);
+        box-sizing         : border-box;
+        block-size         : var(--lct-footer-height);
+        border-block-start : 1px solid var(--b-border-6);
         align-items : center;
         font-weight : 400;
         color       : var(--lct-ink-sub);
