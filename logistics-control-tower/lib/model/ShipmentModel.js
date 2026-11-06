@@ -16,7 +16,7 @@ export default class ShipmentModel extends Model {
         // Name of a Bryntum palette colour (blue, teal...), resolved through `--b-color-{name}`, follows the theme
         'carrierColor',
         'origin',
-        // 'dry', 'reefer' (temperature controlled) or 'oversize'
+        // 'dry' or 'reefer' (temperature controlled)
         'loadType',
         { name : 'pallets', type : 'int' },
         { name : 'plannedEta', type : 'date' },

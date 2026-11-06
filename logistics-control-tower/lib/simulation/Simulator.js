@@ -173,6 +173,59 @@ export default class Simulator extends Events(Base) {
         }
     }
 
+    /**
+     * Makes a truck run late: a shipment on time or at risk with a booked slot, the next hours' first, gets 30 to 75
+     * minutes of delay. Its slot moves to the new ETA the way a tick moves it, the engine pushes the slots after it,
+     * then the statuses follow
+     * @returns {Promise<ShipmentModel|null>} The delayed shipment, `null` if none could be
+     */
+    async simulateDelay() {
+        const
+            me                                  = this,
+            { random, schedule, shipmentStore } = me,
+            soon                                = me.now.getTime() + 4 * 60 * minuteMs,
+            // Trucks in transit with a slot have not started unloading
+            booked                              = shipmentStore.records.filter(shipment =>
+                shipment.isInTransit && shipment.status !== 'late' && schedule.eventStore.getById(shipment.id)),
+            upcoming                            = booked.filter(shipment => shipment.eta.getTime() < soon),
+            shipment                            = random.pick(upcoming.length ? upcoming : booked);
+
+        if (!shipment) {
+            return null;
+        }
+
+        me.delay(shipment, Math.max(0, shipment.delayMinutes) + random.int(30, 75));
+        me.pushLateSlots();
+
+        await schedule.project.commitAsync();
+
+        if (me.isDestroyed) {
+            return null;
+        }
+
+        me.refreshStatuses();
+
+        /**
+         * Fired when a truck was made late, see simulateDelay()
+         * @event shipmentDelay
+         * @param {ShipmentModel} shipment
+         */
+        me.trigger('shipmentDelay', { shipment });
+
+        return shipment;
+    }
+
+    // Sets the delay of a shipment, its ETA and the sparkline history follow
+    delay(shipment, minutes) {
+        const delay = Math.min(240, Math.max(-20, minutes));
+
+        shipment.set({
+            delayMinutes : delay,
+            eta          : new Date(shipment.plannedEta.getTime() + delay * minuteMs),
+            etaHistory   : [...shipment.etaHistory.slice(1 - historyLength), delay]
+        });
+    }
+
     driftEtas(shipping, count) {
         const { random } = this;
 
@@ -183,13 +236,7 @@ export default class Simulator extends Events(Base) {
                 drift    = Math.round(random.normal(0.3, 1.4)) + (random.chance(0.015) ? random.int(12, 40) : 0);
 
             if (drift) {
-                const delay = Math.min(240, Math.max(-20, shipment.delayMinutes + drift));
-
-                shipment.set({
-                    delayMinutes : delay,
-                    eta          : new Date(shipment.plannedEta.getTime() + delay * minuteMs),
-                    etaHistory   : [...shipment.etaHistory.slice(1 - historyLength), delay]
-                });
+                this.delay(shipment, shipment.delayMinutes + drift);
             }
         }
     }
@@ -286,15 +333,17 @@ export default class Simulator extends Events(Base) {
                 });
             }
 
-            if (slot && (slot.status !== status || slot.expedited !== shipment.expedited)) {
+            if (slot && (slot.status !== status || slot.expedited !== shipment.expedited ||
+                slot.delayMinutes !== shipment.delayMinutes)) {
                 const started = status === 'unloading' || status === 'done';
 
                 slot.set({
                     status,
-                    expedited : shipment.expedited,
+                    expedited    : shipment.expedited,
+                    delayMinutes : shipment.delayMinutes,
                     // A slot which has started cannot be moved any more
-                    draggable : !started,
-                    resizable : !started
+                    draggable    : !started,
+                    resizable    : !started
                 });
             }
         }

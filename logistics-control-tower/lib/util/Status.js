@@ -1,3 +1,5 @@
+import { icon } from './Icons.js';
+
 /**
  * Shipment statuses and load types, shared by the grid, the schedule and the KPI bar.
  */
@@ -14,16 +16,14 @@ export const
     },
 
     loadText = {
-        dry      : 'Dry',
-        reefer   : 'Reefer',
-        oversize : 'Oversize'
+        dry    : 'Dry',
+        reefer : 'Reefer'
     },
 
-    // Font Awesome icons (the Core package's build) per load type
+    // Icon classes per load type, see Icons.js
     loadIcons = {
-        dry      : 'fa fa-box',
-        reefer   : 'fa fa-snowflake',
-        oversize : 'fa fa-truck-ramp-box'
+        dry    : icon('cube'),
+        reefer : icon('snowflake')
     },
 
     gpsText = {

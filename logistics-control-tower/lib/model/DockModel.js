@@ -8,7 +8,7 @@ export default class DockModel extends ResourceModelEnterprise {
     static $name = 'DockModel';
 
     static fields = [
-        // 'dry', 'reefer' (temperature controlled) or 'oversize'
+        // 'dry' or 'reefer' (temperature controlled)
         { name : 'capability', defaultValue : 'dry' },
         'zone'
     ];

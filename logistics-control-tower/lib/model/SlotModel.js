@@ -15,6 +15,8 @@ export default class SlotModel extends EventModelEnterprise {
         { name : 'pallets', type : 'int' },
         { name : 'dueBy', type : 'date' },
         { name : 'status', defaultValue : 'on-time' },
+        // The shipment's delay in minutes, shown on the bars of trucks at risk or late
+        { name : 'delayMinutes', type : 'int', defaultValue : 0 },
         { name : 'expedited', type : 'boolean', defaultValue : false },
         { name : 'durationUnit', defaultValue : 'minute' }
     ];

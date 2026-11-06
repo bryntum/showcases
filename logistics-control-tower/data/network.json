@@ -1,12 +1,24 @@
 {
     "site": {
-        "name": "Gävle DC North",
+        "name": "Nordhamn DC",
         "startDate": "2026-11-09T00:00",
-        "now": "2026-11-09T07:30",
-        "days": 7,
+        "now": "2026-11-09T09:15",
+        "days": 10,
         "seed": 20261109,
         "shipments": 2000
     },
+    "loads": [
+        {
+            "type": "reefer",
+            "share": 0.3,
+            "pallets": [6, 26]
+        },
+        {
+            "type": "dry",
+            "share": 0.7,
+            "pallets": [4, 33]
+        }
+    ],
     "carriers": [
         {
             "name": "Nordic Freight",
@@ -141,30 +153,6 @@
             "name": "Door 12",
             "capability": "dry",
             "zone": "Ambient"
-        },
-        {
-            "id": "D13",
-            "name": "Door 13",
-            "capability": "dry",
-            "zone": "Ambient"
-        },
-        {
-            "id": "D14",
-            "name": "Door 14",
-            "capability": "oversize",
-            "zone": "Heavy goods"
-        },
-        {
-            "id": "D15",
-            "name": "Door 15",
-            "capability": "oversize",
-            "zone": "Heavy goods"
-        },
-        {
-            "id": "D16",
-            "name": "Door 16",
-            "capability": "oversize",
-            "zone": "Heavy goods"
         }
     ]
 }

@@ -3,9 +3,9 @@ import Random from './Random.js';
 import { hourMs, minuteMs } from '../util/Time.js';
 
 /**
- * Generates a reproducible data set from the network (carriers, origins, dock doors, see data/network.json) and a
- * seed: the inbound shipments spread over the week, and the dock slots booked so far, chained per door with
- * dependencies so the scheduling engine pushes the later slots when one runs late.
+ * Generates a reproducible data set from the network (the load mix, carriers, origins and dock doors, see
+ * data/network.json) and a seed: the inbound shipments spread over the days, and the dock slots booked so far, chained
+ * per door with dependencies so the scheduling engine pushes the later slots when one runs late.
  */
 export default class ShipmentData {
     /**
@@ -14,7 +14,7 @@ export default class ShipmentData {
      * @param {Number} [options.bookHours] Hours after the site's `now` that are booked up front
      * @returns {Object} `{ shipments, docks, slots, assignments, dependencies }`, plain data objects
      */
-    static generate({ site, carriers, origins, docks }, { bookHours = 14 } = {}) {
+    static generate({ site, loads, carriers, origins, docks }, { bookHours = 14 } = {}) {
         const
             random    = new Random(site.seed),
             start     = new Date(site.startDate).getTime(),
@@ -24,7 +24,7 @@ export default class ShipmentData {
                 () => ShipmentData.plannedArrival(random, start, site.days))
                 .sort((a, b) => a - b),
             shipments = plannedAt.map((planned, index) => ShipmentData.createShipment({
-                random, index, planned, now, carriers, origins
+                random, index, planned, now, loads, carriers, origins
             }));
 
         return {
@@ -43,13 +43,12 @@ export default class ShipmentData {
         return start + day * 24 * hourMs + Math.round(minutes / 5) * 5 * minuteMs;
     }
 
-    static createShipment({ random, index, planned, now, carriers, origins }) {
+    static createShipment({ random, index, planned, now, loads, carriers, origins }) {
         const
-            loadRoll = random.next(),
-            loadType = loadRoll < 0.22 ? 'reefer' : loadRoll < 0.32 ? 'oversize' : 'dry',
+            load     = ShipmentData.pickLoad(random, loads),
+            loadType = load.type,
             carrier  = random.pick(carriers),
-            pallets  = loadType === 'reefer' ? random.int(6, 26) : loadType === 'oversize' ? random.int(2, 10) :
-                random.int(4, 33),
+            pallets  = random.int(...load.pallets),
             // Most trucks are roughly on time, some are hit by an incident
             delay    = Math.max(-15, Math.round(random.normal(3, 7)) + (random.chance(0.08) ? random.int(25, 70) : 0)),
             history  = [delay],
@@ -82,6 +81,13 @@ export default class ShipmentData {
             gps          : eta <= now ? 'arrived' : random.chance(0.05) ? 'stale' : 'live',
             expedited    : random.chance(0.03)
         };
+    }
+
+    // A load type by its share of the trucks (network.json `loads`), the last one takes what is left
+    static pickLoad(random, loads) {
+        let roll = random.next();
+
+        return loads.find(load => (roll -= load.share) < 0) ?? loads.at(-1);
     }
 
     // Greedy first come, first served planning of the shipments planned to arrive before `bookUntil`

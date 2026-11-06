@@ -1,6 +1,6 @@
 const
     MINUTE               = 60 * 1000,
-    // Preference penalty for putting a dry load on a special (reefer / oversize) door
+    // Preference penalty for putting a dry load on a reefer door, kept free for the loads only it can take
     SPECIAL_DOOR_PENALTY = 45 * MINUTE;
 
 /**
@@ -11,15 +11,14 @@ export default class DockPlanner {
     // Minutes a door needs between two trucks
     static TURNAROUND = 10;
 
-    // Dry goods fit any door, temperature controlled and oversize loads need a door equipped for them
+    // Dry goods fit any door, temperature controlled loads need a door equipped for them
     static accepts(capability, loadType) {
         return loadType === 'dry' || capability === loadType;
     }
 
     // Unloading time in minutes, rounded up to 5 minutes: docking, the pallets, then the cold chain checks of a reefer
-    // or the extra handling of an oversize load
     static unloadMinutes(pallets, loadType) {
-        const minutes = 10 + pallets * 1.5 + (loadType === 'reefer' ? 8 : 0) + (loadType === 'oversize' ? 15 : 0);
+        const minutes = 10 + pallets * 1.5 + (loadType === 'reefer' ? 8 : 0);
 
         return Math.ceil(minutes / 5) * 5;
     }
@@ -59,7 +58,8 @@ export default class DockPlanner {
     }
 
     /**
-     * Finds the best door and start for a load.
+     * Finds the best door and start for a load: the earliest start, a dry load on a reefer door only when that is
+     * much earlier
      * @param {Object} options
      * @param {Object[]} options.doors Doors (anything with `capability`)
      * @param {Function} options.getBusy Returns the sorted busy intervals of a door
