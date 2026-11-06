@@ -167,7 +167,7 @@ export default class GridDropZone {
 
         if (slot) {
             // Revealed where the engine scheduled it
-            await schedule.project.commitAsync();
+            await schedule.reschedule();
             schedule.revealSlot(slot);
         }
     }

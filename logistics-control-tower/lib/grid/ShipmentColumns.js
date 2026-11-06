@@ -33,6 +33,10 @@ const
     statusOrder = Object.keys(statusText),
     // Booked slots by start, unbooked last
     slotSortValue = node => node.data?.slotStart ?? Infinity,
+    // The dock slot cell is refreshed and flashed when its value changes: the slot moves, is booked or unbooked, or a
+    // resize makes it end after the due time
+    dockSlotValue = ({ data }) => data &&
+        (data.dockId ? `${data.dockName} ${data.slotStart} ${data.slaBreach}` : data.onHold ? 'hold' : ''),
     // One series array per history and status, so a status change alone gives the cell a new value and redraws its
     // line in the new colour, and an unchanged row keeps its array (AG Grid compares by reference)
     driftSeries   = new WeakMap(),
@@ -130,12 +134,14 @@ export const shipmentColumns = [
         // Fits the widest badge, a conflict with its warning
         width                 : 122,
         cellRenderer          : DockSlotCellRenderer,
-        // Flashes when the slot moves, is booked or unbooked
-        valueGetter           : ({ data }) => data && (data.dockId ? `${data.dockName} ${data.slotStart}` : data.onHold ? 'hold' : ''),
+        valueGetter           : dockSlotValue,
         enableCellChangeFlash : true,
         comparator            : (a, b, nodeA, nodeB) => slotSortValue(nodeA) - slotSortValue(nodeB),
         filter                : 'agSetColumnFilter',
-        filterParams          : { valueGetter : ({ data }) => data.dockName ?? (data.onHold ? 'On hold' : 'Unbooked') }
+        // One entry per door and booking state. The set filter sorts its entries with the column's comparator unless
+        // it has its own, which gets the values only
+        filterValueGetter     : ({ data }) => data.dockName ?? (data.onHold ? 'On hold' : 'Unbooked'),
+        filterParams          : { comparator : (a, b) => a.localeCompare(b) }
     },
     {
         field                 : 'temperature',

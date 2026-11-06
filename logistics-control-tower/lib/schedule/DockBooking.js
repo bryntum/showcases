@@ -1,12 +1,16 @@
 import DockPlanner from '../simulation/DockPlanner.js';
 import { slotData } from '../simulation/ShipmentData.js';
-import { downtimeIntervals } from './Downtime.js';
+import { downtimeAt, downtimeIntervals } from './Downtime.js';
 import { minuteMs } from '../util/Time.js';
+
+// Moving a slot out of downtime can push the next slot of its door into a window, at most this many rounds
+const downtimeRounds = 5;
 
 /**
  * Mixin of the dock schedule booking slots for shipments. The slots of a door are chained with dependencies (finish to
  * start, with the turnaround time as lag), so the scheduling engine pushes every slot to at least the end of the slot
- * before it. Moving a slot, booking or unbooking one re-sequences its door.
+ * before it. Moving a slot, booking or unbooking one re-sequences its door, `reschedule()` then schedules the change
+ * and keeps the slots out of door downtime.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise
@@ -50,6 +54,44 @@ export default Target => class DockBooking extends Target {
 
             return { id, fromEvent, toEvent, lag : DockPlanner.TURNAROUND, lagUnit : 'minute' };
         }));
+    }
+
+    /**
+     * Schedules the changes with the engine, after every booking, move, resize and simulation tick. The engine does not
+     * know the doors' downtime, a slot it pushed into a window is moved to right after it (with the door's turnaround,
+     * as booking does), and the engine pushes the slots after it again. Not done with resource calendars, which would
+     * stretch a slot over the window instead of moving it
+     * @returns {Promise}
+     */
+    async reschedule() {
+        const me = this;
+
+        await me.project.commitAsync();
+
+        for (let round = 0; round < downtimeRounds && !me.isDestroyed; round++) {
+            const doors = new Set();
+
+            for (const slot of me.eventStore) {
+                const
+                    door  = slot.resource,
+                    start = slot.startDate.getTime();
+
+                if (door && !slot.isStarted && downtimeAt(door, start, slot.plannedEnd)) {
+                    const after = DockPlanner.earliestGap(downtimeIntervals(door).sort((a, b) => a.start - b.start),
+                        start, slot.plannedEnd - start);
+
+                    slot.startDate = new Date(DockPlanner.ceilToFiveMinutes(after));
+                    doors.add(door);
+                }
+            }
+
+            if (!doors.size) {
+                return;
+            }
+
+            doors.forEach(door => me.chainDoor(door));
+            await me.project.commitAsync();
+        }
     }
 
     //endregion
@@ -154,9 +196,22 @@ export default Target => class DockBooking extends Target {
         }
     }
 
+    // The door is chained in start order: the slots not yet unloading that would keep a slot from starting at `start`
+    // move to `end`, after it, and the chain pushes the ones after them. The slots being unloaded stay
+    makeRoom(door, start, end, ignoreId) {
+        const gap = DockPlanner.TURNAROUND * minuteMs;
+
+        for (const slot of door.events) {
+            if (slot.id !== ignoreId && !slot.isStarted && slot.startDate.getTime() <= start &&
+                slot.plannedEnd + gap > start) {
+                slot.startDate = new Date(end);
+            }
+        }
+    }
+
     /**
      * Gives a shipment the earliest possible slot: right after the truck unloading at the best door, clear of its
-     * downtime. The engine pushes the slots it jumps in front of
+     * downtime. It jumps in front of the trucks not yet unloading there, the engine pushes them back
      * @param {String} shipmentId
      * @returns {SlotModel|null}
      */
@@ -198,10 +253,12 @@ export default Target => class DockBooking extends Target {
             return null;
         }
 
+        const start = DockPlanner.ceilToFiveMinutes(best.start);
+
+        me.makeRoom(best.door, start, start + duration + gap, shipmentId);
         shipment.expedited = true;
 
-        // Moved to the front: earlier than the first slot of the door, which the chain then pushes behind it
-        const slot = me.bookAt(shipment, best.door, new Date(DockPlanner.ceilToFiveMinutes(best.start)));
+        const slot = me.bookAt(shipment, best.door, new Date(start));
 
         if (slot) {
             slot.expedited = true;

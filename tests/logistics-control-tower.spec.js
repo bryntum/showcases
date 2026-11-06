@@ -100,6 +100,82 @@ test.describe('Logistics Control Tower', () => {
     });
 });
 
+test.describe('Logistics Control Tower selection and dock slot column', () => {
+    test('clearing the selection on one side clears it on the other', async({ page }) => {
+        await openPaused(page);
+
+        const
+            row  = grid(page).locator(`.ag-row[row-id="${bookedId}"]`),
+            slot = schedule(page).locator(`.b-sch-event-wrap[data-event-id="${bookedId}"]`);
+
+        // Deselected in the grid
+        await row.locator('[col-id="ref"]').click();
+        await expect(slot).toHaveClass(/\bb-selected\b/);
+        await row.locator('[col-id="ref"]').click({ modifiers : ['ControlOrMeta'] });
+        await expect(row).not.toHaveClass(/\bag-row-selected\b/);
+        await expect(slot).not.toHaveClass(/\bb-selected\b/);
+
+        // Deselected by a click on the empty schedule, a point on the slot's door between slots and downtime
+        await row.locator('[col-id="ref"]').click();
+        await expect(slot).toHaveClass(/\bb-selected\b/);
+
+        const empty = await page.evaluate(id => {
+            const
+                { schedule } = globalThis.bryntum.query('controltowerapp'),
+                door         = schedule.getRowFor(schedule.eventStore.getById(id).resource).elements.normal
+                    .getBoundingClientRect(),
+                timeline     = schedule.timeAxisSubGridElement.getBoundingClientRect(),
+                y            = door.y + door.height / 2;
+
+            for (let x = timeline.right - 4; x > timeline.x; x -= 10) {
+                if (document.elementFromPoint(x, y)?.matches('.b-sch-time-axis-cell')) {
+                    return { x, y };
+                }
+            }
+        }, bookedId);
+
+        await page.mouse.click(empty.x, empty.y);
+        await expect(slot).not.toHaveClass(/\bb-selected\b/);
+        await expect(row).not.toHaveClass(/\bag-row-selected\b/);
+    });
+
+    test('the dock slot badge turns red when a resize makes the slot end after the due time', async({ page }) => {
+        await openPaused(page);
+
+        const id = await page.evaluate(async() => {
+            const
+                { schedule, gridApi } = globalThis.bryntum.query('controltowerapp'),
+                slot                  = schedule.eventStore.find(event => !event.isStarted && !event.slaBreach &&
+                    event.dueBy && gridApi.getRowNode(event.id)?.displayed);
+
+            // Longer, same door and start: unloading now ends an hour after the due time
+            slot.duration = (slot.dueBy - slot.startDate) / 60_000 + 60;
+            await schedule.project.commitAsync();
+
+            return slot.id;
+        });
+
+        await expect(grid(page).locator(`.ag-row[row-id="${id}"] [col-id="dockName"] .lct-badge`))
+            .toHaveClass(/\blct-badge-breach\b/);
+    });
+
+    test('the dock slot filter lists each door and booking state once', async({ page }) => {
+        await openPaused(page);
+
+        const { keys, doors } = await page.evaluate(async() => {
+            const
+                { gridApi, schedule } = globalThis.bryntum.query('controltowerapp'),
+                filter                = await gridApi.getColumnFilterInstance('dockName');
+
+            return { keys : filter.getFilterKeys(), doors : schedule.resourceStore.map(door => door.name) };
+        });
+
+        expect(keys).toEqual(expect.arrayContaining(['Door 01', 'Unbooked']));
+        expect(new Set(keys).size).toBe(keys.length);
+        expect(keys.every(key => doors.includes(key) || key === 'On hold' || key === 'Unbooked')).toBe(true);
+    });
+});
+
 test.describe('Logistics Control Tower dock tools', () => {
     test('the utilization strip renders a bar per hour under the doors', async({ page }) => {
         await openPaused(page);
@@ -192,6 +268,72 @@ test.describe('Logistics Control Tower downtime', () => {
 
         expect(result.start).toBeGreaterThanOrEqual(result.windowEnd);
         expect(result.inDowntime).toEqual([]);
+    });
+
+    test('a resize pushing the next slot into downtime moves it to after the window, also while paused', async({ page }) => {
+        await openPaused(page);
+
+        const inDowntime = await page.evaluate(async() => {
+            const
+                { schedule }              = globalThis.bryntum.query('controltowerapp'),
+                minute                    = 60_000,
+                // A window ahead with two slots before it on its door, trucks not yet unloading
+                { range, previous, next } = schedule.resourceTimeRangeStore.records
+                    .filter(downtime => downtime.startDate > schedule.now)
+                    .map(downtime => {
+                        const before = downtime.resource.events
+                            .filter(event => !event.isStarted && event.startDate > schedule.now &&
+                                event.endDate <= downtime.startDate)
+                            .sort((a, b) => a.startDate - b.startDate);
+
+                        return { range : downtime, previous : before.at(-2), next : before.at(-1) };
+                    })
+                    .find(pick => pick.previous),
+                door                      = range.resource;
+
+            // Resized as the EventResize feature does, long enough to push the next slot 15 minutes into the window
+            previous.duration += (range.startDate - next.endDate) / minute + 15;
+            schedule.trigger('eventResizeEnd', { eventRecord : previous, changed : true });
+            await schedule.project.commitAsync();
+
+            // The repair runs after the engine has scheduled the resize
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            return door.events.filter(event => !event.isStarted && door.timeRanges.some(downtime =>
+                event.startDate < downtime.endDate && event.endDate > downtime.startDate)).map(event => event.id);
+        });
+
+        expect(inDowntime).toEqual([]);
+    });
+});
+
+test.describe('Logistics Control Tower expedite', () => {
+    test('Expedite puts the truck ahead of the slots not yet unloading at the time it picked', async({ page }) => {
+        await openPaused(page);
+
+        // A slot keeps its booked time as its no earlier than constraint, Expedite books the time it picked
+        const pushedBack = await page.evaluate(async() => {
+            const
+                app                         = globalThis.bryntum.query('controltowerapp'),
+                { schedule, shipmentStore } = app,
+                candidates                  = shipmentStore.records.filter(shipment => shipment.isInTransit &&
+                    !shipment.onHold && !schedule.eventStore.getById(shipment.id)?.isStarted).slice(0, 10),
+                result                      = [];
+
+            for (const shipment of candidates) {
+                await app.expediteShipment(shipment.id);
+
+                const slot = schedule.eventStore.getById(shipment.id);
+
+                if (slot && slot.startDate.getTime() !== slot.constraintDate.getTime()) {
+                    result.push(shipment.id);
+                }
+            }
+
+            return result;
+        });
+
+        expect(pushedBack).toEqual([]);
     });
 });
 

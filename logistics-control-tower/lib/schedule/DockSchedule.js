@@ -315,16 +315,19 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         this.dependencyStore.remove(context.eventRecords.flatMap(slot => slot.dependencies));
     }
 
-    // The chains of the doors left and of the doors dropped on, also after an invalid drop
+    // The chains of the doors left and of the doors dropped on, also after an invalid drop. Rescheduled while paused
+    // too, the chain may push a slot into downtime
     onSlotDragEnd({ eventRecords }) {
         const doors = new Set([...this.dragSourceDoors ?? [], ...eventRecords.map(slot => slot.resource)]);
 
         this.dragSourceDoors = null;
         doors.forEach(door => this.chainDoor(door));
+        this.reschedule();
     }
 
     onSlotResizeEnd({ eventRecord }) {
         this.chainDoor(eventRecord.resource);
+        this.reschedule();
     }
 
     onSlotMenuItem({ item, eventRecord }) {
@@ -334,6 +337,8 @@ export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
         else if (item.ref === 'unbook') {
             this.unbook(eventRecord.id);
         }
+
+        this.reschedule();
     }
 
     //endregion

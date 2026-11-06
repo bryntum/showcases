@@ -106,21 +106,27 @@ export default class GridSync {
 
     //region Selection
 
-    // A row selected in the grid selects its slot and scrolls it into view
+    // A row selected in the grid selects its slot and scrolls it into view, a row deselected deselects its slot
     onRowSelected({ node, source }) {
         const me = this;
 
-        if (me.syncingSelection || !node.isSelected() || source === 'api') {
+        if (me.syncingSelection || source === 'api') {
             return;
         }
 
         const
             { schedule } = me,
-            slot         = node.data && schedule.eventStore.getById(node.data.id);
+            slot         = node.data && schedule.eventStore.getById(node.data.id),
+            selected     = node.isSelected();
+
+        // Selecting another row deselects this one, possibly after its slot was selected
+        if (!selected && !(slot && schedule.isEventSelected(slot))) {
+            return;
+        }
 
         me.syncingSelection = true;
 
-        if (slot) {
+        if (selected && slot) {
             schedule.revealSlot(slot);
         }
         else {
@@ -130,27 +136,34 @@ export default class GridSync {
         me.syncingSelection = false;
     }
 
-    // A slot selected on the schedule selects its row, expands its group and scrolls it into view
-    onSlotSelectionChange({ selected }) {
+    // A slot selected on the schedule selects its row, expands its group and scrolls it into view, no slot selected
+    // deselects the rows
+    onSlotSelectionChange({ selection }) {
         const
             me          = this,
             { gridApi } = me,
-            slot        = selected?.[0],
+            slot        = selection[0],
             node        = slot && gridApi.getRowNode(slot.id);
 
-        if (me.syncingSelection || !node) {
+        // A slot whose row the grid does not have (yet) leaves the grid's selection as is
+        if (me.syncingSelection || (slot && !node)) {
             return;
         }
 
         me.syncingSelection = true;
 
-        for (let parent = node.parent; parent && parent.level >= 0; parent = parent.parent) {
-            parent.setExpanded(true);
-        }
+        if (node) {
+            for (let parent = node.parent; parent && parent.level >= 0; parent = parent.parent) {
+                parent.setExpanded(true);
+            }
 
-        node.setSelected(true, true, 'api');
-        gridApi.ensureNodeVisible(node, 'middle');
-        gridApi.flashCells({ rowNodes : [node] });
+            node.setSelected(true, true, 'api');
+            gridApi.ensureNodeVisible(node, 'middle');
+            gridApi.flashCells({ rowNodes : [node] });
+        }
+        else {
+            gridApi.deselectAll('all', 'api');
+        }
 
         me.syncingSelection = false;
     }

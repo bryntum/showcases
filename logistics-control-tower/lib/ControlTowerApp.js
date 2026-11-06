@@ -174,7 +174,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
                 rowData : shipmentStore.map(shipment => shipment.toRow(schedule.eventStore.getById(shipment.id))),
                 actions : {
                     book     : id => me.bookShipment(id),
-                    unbook   : id => schedule.unbook(id),
+                    unbook   : id => me.unbookShipment(id),
                     expedite : id => me.expediteShipment(id)
                 }
             });
@@ -212,6 +212,13 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         return this.revealBooked(this.schedule.book(this.shipmentStore.getById(id)));
     }
 
+    // Unbooking lets the slots after it move up, the engine schedules them
+    unbookShipment(id) {
+        this.schedule.unbook(id);
+
+        return this.schedule.reschedule();
+    }
+
     expediteShipment(id) {
         return this.revealBooked(this.schedule.expedite(id));
     }
@@ -221,7 +228,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         const { schedule } = this;
 
         if (slot) {
-            await schedule.project.commitAsync();
+            await schedule.reschedule();
             schedule.revealSlot(slot);
         }
     }

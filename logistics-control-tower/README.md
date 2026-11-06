@@ -122,9 +122,10 @@ door or time, or with Expedite in the context menu.
 
 Door downtime is a resource time range per window (`lib/schedule/Downtime.js`, the ResourceTimeRanges feature). The
 booking (`getBusy()`), expedite, the drag and resize validators and the grid's drop zone treat it as taken. The engine
-does not know about it, so after each commit `Simulator#moveOutOfDowntime()` moves a slot the chain pushed into a
-window to right after it, and the engine pushes the slots behind it again. Not with resource calendars: those would
-stretch a slot over the window rather than move it.
+does not know about it, so after each change, a simulation tick as well as a booking, drag, resize or Expedite,
+`DockBooking#reschedule()` commits and moves a slot the chain pushed into a window to right after it, and the engine
+pushes the slots behind it again. Not with resource calendars: those would stretch a slot over the window rather than
+move it.
 
 ### The utilization strip: the Summary feature
 
