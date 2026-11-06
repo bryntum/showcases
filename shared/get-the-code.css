@@ -158,9 +158,20 @@
     }
 }
 
+/* Narrower than the full header: "Free trial" moves into the popover, the page title keeps its room */
+@media (width < 64rem) {
+    .sc-trial {
+        display : none;
+    }
+
+    .sc-code-popover .sc-code-trial {
+        display : inline-flex;
+    }
+}
+
 /* Phone widths keep the header for the page title: "Get the code" shows its icon alone (the label stays its name) and
  * "Free trial" moves into the popover */
-@media (width < 30rem) {
+@media (width < 48rem) {
     .sc-code-button {
         min-width      : 2.4rem;
         padding-inline : 0.6rem;

@@ -119,6 +119,7 @@
             display     : flex;
             align-items : center;
             gap         : var(--sc-brand-gap);
+            min-width   : 0;
             margin      : 0;
             padding     : 0;
             list-style  : none;
@@ -144,11 +145,11 @@
         color       : var(--sc-text-muted);
     }
 
-    /* The current page ends the trail: primary and semibold, never cut */
+    /* The current page ends the trail: primary and semibold. Where the header runs out of room it ends in an
+     * ellipsis rather than run under the tools */
     .sc-brand-title[aria-current] {
-        flex        : none;
+        flex        : 0 1 auto;
         font-weight : 600;
         color       : var(--sc-text);
-        overflow    : visible;
     }
 }

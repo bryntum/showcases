@@ -62,15 +62,10 @@ body {
             }
         }
 
-        /* Phone widths, the logo's mark alone stands for Bryntum and a chevron for the gallery, so the title fits in
-         * full. The link text stays for screen readers, as the link's name */
-        @media (width < 30rem) {
-            .sc-brand-logo {
-                aspect-ratio : 354.91 / 190.08;
-            }
-
-            /* The partner logo too, the title needs the room */
-            .sc-brand-divider, .sc-crumb-separator, .sc-brand-partner {
+        /* Narrower than the full lockup, breadcrumb and both buttons: a chevron stands for the gallery link, the
+         * link text stays for screen readers as the link's name */
+        @media (width < 64rem) {
+            .sc-crumb-separator {
                 display : none;
             }
 
@@ -92,13 +87,6 @@ body {
                 rotate              : -45deg;
             }
 
-            /* A long title wraps onto a second line rather than run under the tools */
-            .sc-brand-title[aria-current] {
-                flex        : 0 1 auto;
-                white-space : normal;
-                text-wrap   : balance;
-            }
-
             .sc-crumb-text {
                 position    : absolute;
                 width       : 1px;
@@ -106,6 +94,24 @@ body {
                 overflow    : hidden;
                 clip-path   : inset(50%);
                 white-space : nowrap;
+            }
+        }
+
+        /* Phone widths (with get-the-code.css): the logo's mark alone stands for Bryntum and the title may take two
+         * lines, so it fits in full */
+        @media (width < 48rem) {
+            .sc-brand-logo {
+                aspect-ratio : 354.91 / 190.08;
+            }
+
+            /* The partner logo too, the title needs the room */
+            .sc-brand-divider, .sc-brand-partner {
+                display : none;
+            }
+
+            .sc-brand-title[aria-current] {
+                white-space : normal;
+                text-wrap   : balance;
             }
         }
     }
