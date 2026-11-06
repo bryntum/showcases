@@ -56,6 +56,43 @@
         }
     }
 
+    /* A partner product next to the logo (createShell's `partner`): a times sign, then its own logo for the mode, its
+     * wordmark as tall as Bryntum's. The logo is 235 x 40 (AG Grid's), the wordmark from y 9.1 to its baseline at 37.9 */
+    .sc-brand-partner {
+        display         : flex;
+        flex            : none;
+        align-items     : center;
+        gap             : var(--sc-brand-gap);
+        color           : var(--sc-text-muted);
+        text-decoration : none;
+    }
+
+    .sc-brand-plus {
+        font-size : 0.9em;
+    }
+
+    .sc-brand-partner-logo {
+        /* The logo's cap height, as the Bryntum logo's */
+        --sc-partner-cap : 1.1cap;
+
+        flex         : none;
+        height       : calc(var(--sc-partner-cap) * 40 / 28.8);
+        aspect-ratio : 235 / 40;
+        /* Centred by the wordmark, not by the box, which has room below the baseline */
+        translate    : 0 calc(var(--sc-partner-cap) * (20 - 23.5) / 28.8);
+        background   : var(--sc-partner-logo-light) left center / contain no-repeat;
+
+        :root[data-theme='dark'] & {
+            background-image : var(--sc-partner-logo-dark);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme='light']) & {
+                background-image : var(--sc-partner-logo-dark);
+            }
+        }
+    }
+
     .sc-brand-divider {
         flex          : none;
         width         : 1px;
@@ -82,6 +119,7 @@
             display     : flex;
             align-items : center;
             gap         : var(--sc-brand-gap);
+            min-width   : 0;
             margin      : 0;
             padding     : 0;
             list-style  : none;
@@ -107,11 +145,11 @@
         color       : var(--sc-text-muted);
     }
 
-    /* The current page ends the trail: primary and semibold, never cut */
+    /* The current page ends the trail: primary and semibold. Where the header runs out of room it ends in an
+     * ellipsis rather than run under the tools */
     .sc-brand-title[aria-current] {
-        flex        : none;
+        flex        : 0 1 auto;
         font-weight : 600;
         color       : var(--sc-text);
-        overflow    : visible;
     }
 }

@@ -1,0 +1,20 @@
+{
+    "name": "@showcases/logistics-control-tower",
+    "description": "Logistics Control Tower: Bryntum Scheduler and AG Grid in one app, with a live simulation",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "license": "MIT",
+    "dependencies": {
+        "@phosphor-icons/core": "^2.1.1",
+        "@showcases/shared": "*",
+        "ag-charts-community": "14.3.0",
+        "ag-grid-community": "36.3.0",
+        "ag-grid-enterprise": "36.3.0"
+    },
+    "peerDependencies": {
+        "@bryntum/core-enterprise": "8.0.0",
+        "@bryntum/grid-enterprise": "8.0.0",
+        "@bryntum/scheduler-enterprise": "8.0.0"
+    }
+}

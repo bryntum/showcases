@@ -1,0 +1,140 @@
+/* The app toolbar: the clock, the KPI counters and the simulation controls */
+
+.lct-toolbar {
+    border-block-end : 1px solid var(--lct-border);
+    /* A step above the panels, the status overview apart from the work area */
+    background-color : var(--lct-raised);
+
+    /* Its content edge is the one the page header lines up with, see shared/tokens.css */
+    --b-toolbar-padding : var(--sc-panel-padding);
+    --b-toolbar-gap     : 1em;
+}
+
+.lct-kpis {
+    display              : flex;
+    align-items          : center;
+    gap                  : 0.5em;
+    min-width            : 0;
+    overflow-x           : auto;
+    /* Fixed width digits, the counters do not shift as they change */
+    font-variant-numeric : tabular-nums;
+    scrollbar-width      : none;
+
+    /* The date and the site above the clock */
+    .lct-clock {
+        flex              : none;
+        display           : flex;
+        flex-direction    : column;
+        gap               : 0.15em;
+        margin-inline-end : 2em;
+        white-space       : nowrap;
+    }
+
+    .lct-clock-day {
+        display        : flex;
+        white-space    : pre;
+        font-size      : 0.75em;
+        font-weight    : 500;
+        letter-spacing : 0.06em;
+        text-transform : uppercase;
+        color          : var(--lct-ink-sub);
+    }
+
+    .lct-clock-time {
+        font-size   : 1.65em;
+        font-weight : 700;
+        line-height : 1.1;
+    }
+
+    /* A small label above the value, the trend after the value */
+    .lct-kpi {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        align-items           : baseline;
+        column-gap            : 0.45em;
+        row-gap               : 0.1em;
+        min-width             : 5.6em;
+        padding               : 0.35em 0.7em;
+        border-radius         : var(--sc-radius);
+        white-space           : nowrap;
+    }
+
+    .lct-kpi-label {
+        grid-column : 1 / -1;
+        display     : flex;
+        align-items : center;
+        gap         : 0.4em;
+        font-size   : 0.8em;
+        color       : var(--lct-ink-sub);
+    }
+
+    .lct-kpi-value {
+        font-size   : 1.4em;
+        font-weight : 700;
+        line-height : 1.15;
+    }
+
+    /* On time against an hour ago, muted green or red */
+    .lct-kpi-trend {
+        font-size : 0.75em;
+        color     : color-mix(in srgb, var(--lct-on-time) 75%, var(--lct-ink-sub));
+
+        &.lct-trend-down {
+            color : color-mix(in srgb, var(--lct-late) 75%, var(--lct-ink-sub));
+        }
+    }
+
+    /* Late trucks and conflicts: a red dot before the label, and while there are any a tinted box and a red value */
+    :is(.lct-kpi-late, .lct-kpi-conflicts) .lct-kpi-label::before {
+        content          : '';
+        inline-size      : 0.5em;
+        block-size       : 0.5em;
+        border-radius    : 50%;
+        background-color : var(--lct-late);
+    }
+
+    .lct-kpi-alert {
+        background-color : color-mix(in srgb, var(--lct-late) 13%, transparent);
+
+        .lct-kpi-value {
+            color : var(--lct-late);
+        }
+    }
+}
+
+/* Narrow screens (ControlTowerApp#compact): the counters scroll sideways, fading out at the edge, the date leaves
+ * the site out. `to right`, gradients have no logical direction, the showcase is left to right only */
+.lct-compact .lct-kpis {
+    mask-image : linear-gradient(to right, var(--lct-mask) calc(100% - 2.5em), transparent);
+
+    .lct-clock {
+        margin-inline-end : 0.5em;
+    }
+
+    .lct-clock-site {
+        display : none;
+    }
+}
+
+.lct-controls {
+    align-items : center;
+    gap         : 0.75em;
+
+    /* One width for Play and Pause */
+    .lct-play {
+        min-width       : 6.6em;
+        justify-content : center;
+    }
+
+    .b-button .lct-icon {
+        font-size : 1.15em;
+    }
+
+    /* Simulate delay is a quiet secondary action, neutral text until hovered. The text rendition's own variables are
+     * set by the theme on the button, so the resolved ones are set here */
+    .lct-delay.b-button-text {
+        --b-button-color             : var(--lct-ink-sub);
+        --b-button-hover-background  : var(--b-neutral-95);
+        --b-button-active-background : var(--b-neutral-90);
+    }
+}

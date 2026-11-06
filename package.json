@@ -19,7 +19,8 @@
     },
     "workspaces": [
         "shared",
-        "ev-operations"
+        "ev-operations",
+        "logistics-control-tower"
     ],
     "scripts": {
         "dev": "vite",

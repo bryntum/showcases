@@ -4,19 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bryntum Showcases · Real-world scheduling and planning apps</title>
-    <meta name="description" content="Realistic, fully front-end scheduling and planning apps built on the public Bryntum npm packages. Try one live, then point your AI assistant at the repo and make it your own.">
+    <title>Bryntum Showcases · Real-world use cases</title>
+    <meta name="description" content="Realistic, fully front-end apps for real-world use cases, built on the public Bryntum and AG Grid npm packages. Try one live, then point your AI assistant at the repo and make it your own.">
     <link rel="canonical" href="https://showcase.bryntum.com/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Bryntum">
     <meta property="og:url" content="https://showcase.bryntum.com/">
-    <meta property="og:title" content="Bryntum Showcases · Real-world scheduling and planning apps">
-    <meta property="og:description" content="Realistic, fully front-end scheduling and planning apps built on the public Bryntum npm packages, with the source on GitHub.">
+    <meta property="og:title" content="Bryntum Showcases · Real-world use cases">
+    <meta property="og:description" content="Realistic, fully front-end apps for real-world use cases, built on the public Bryntum and AG Grid npm packages, with the source on GitHub.">
     <!-- Absolute URL, the image is copied as is from public/gallery/ -->
-    <meta property="og:image" content="https://showcase.bryntum.com/gallery/og-ev-operations.png">
+    <meta property="og:image" content="https://showcase.bryntum.com/gallery/og-logistics-control-tower.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="The EV Operations showcase: a production line scheduled per work center">
+    <meta property="og:image:alt" content="The Logistics Control Tower showcase: live inbound shipments in AG Grid next to a Bryntum dock schedule">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="./shared/logo-round.svg" type="image/svg+xml">
     <!-- vite.config.js injects the theme colour and the head script applying the stored light / dark choice -->
@@ -63,102 +63,195 @@
 
     <main id="main">
         <section class="hero wrap" aria-labelledby="hero-title">
-            <!-- The headline, swap it here (the page title and og:title are in the head) -->
-            <h1 id="hero-title">Real-world planning apps. <em>Source included.</em></h1>
-            <p class="lede">
-                Realistic, fully front-end use cases built on the public Bryntum npm packages. Try one live,
-                then point your AI assistant at the repo and make it your own.
-            </p>
-            <div class="button-row">
-                <a class="button primary" href="#showcases">
-                    Browse showcases
-                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
-                </a>
-                <a class="button" href="./ev-operations/">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
-                    Try the latest demo
-                </a>
+            <div class="hero-text">
+                <!-- The headline, swap it here (the page title and og:title are in the head) -->
+                <h1 id="hero-title">Real-world use cases. <em>Source included.</em></h1>
+                <p class="lede">
+                    Realistic, fully front-end use cases built on the public Bryntum and AG Grid npm packages. Try one live,
+                    then point your AI assistant at the repo and make it your own.
+                </p>
+                <div class="button-row">
+                    <a class="button primary" href="#showcases">
+                        Browse showcases
+                        <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
+                    </a>
+                    <a class="button" href="./logistics-control-tower/">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
+                        Try the latest demo
+                    </a>
+                </div>
+            </div>
+
+            <!-- Decorative stack of the components the showcases are built from, one light and one dark screenshot per tile,
+                 swapped like the card thumbnails (gallery.js). Back to front in source order -->
+            <div class="hero-stack" role="img"
+                aria-label="Bryntum Gantt, Scheduler, Calendar and Task Board with AG Grid, AG Charts and AG Studio">
+                <ul class="stack-scene" aria-hidden="true">
+                    <li class="tile" data-tile="gantt" data-family="bryntum">
+                        <span class="chip">Gantt</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-gantt-light.webp">
+                            <img src="./gallery/hero-gantt-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="calendar" data-family="bryntum">
+                        <span class="chip">Calendar</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-calendar-light.webp">
+                            <img src="./gallery/hero-calendar-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="taskboard" data-family="bryntum">
+                        <span class="chip">Task Board</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-taskboard-light.webp">
+                            <img src="./gallery/hero-taskboard-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-studio" data-family="ag">
+                        <span class="chip">AG Studio</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-studio-light.webp">
+                            <img src="./gallery/hero-ag-studio-dark.webp" width="760" height="363" loading="lazy" fetchpriority="low" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="scheduler" data-family="bryntum">
+                        <span class="chip">Scheduler</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-scheduler-light.webp">
+                            <img src="./gallery/hero-scheduler-dark.webp" width="520" height="390" loading="lazy" fetchpriority="low" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-charts" data-family="ag">
+                        <span class="chip">AG Charts</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-charts-light.webp">
+                            <img src="./gallery/hero-ag-charts-dark.webp" width="640" height="457" loading="lazy" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                    <li class="tile" data-tile="ag-grid" data-family="ag">
+                        <span class="chip">AG Grid</span>
+                        <picture>
+                            <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
+                                srcset="./gallery/hero-ag-grid-light.webp">
+                            <img src="./gallery/hero-ag-grid-dark.webp" width="720" height="460" loading="lazy" decoding="async" draggable="false" alt="">
+                        </picture>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Customers, from bryntum.com/company/customers. The logos scroll slowly, the second list repeats the first so
+             the loop is seamless; still and wrapped with reduced motion -->
+        <section class="trusted wrap" aria-labelledby="trusted-title">
+            <p id="trusted-title" class="trusted-title">Trusted by teams at</p>
+            <div class="marquee">
+                <ul class="logos">
+                    <li><span class="logo" data-logo="airbus" role="img" aria-label="Airbus"></span></li>
+                    <li><span class="logo" data-logo="boeing" role="img" aria-label="Boeing"></span></li>
+                    <li><span class="logo" data-logo="bosch" role="img" aria-label="Bosch"></span></li>
+                    <li><span class="logo" data-logo="ericsson" role="img" aria-label="Ericsson"></span></li>
+                    <li><span class="logo" data-logo="ferrari" role="img" aria-label="Ferrari"></span></li>
+                    <li><span class="logo" data-logo="intel" role="img" aria-label="Intel"></span></li>
+                    <li><span class="logo" data-logo="microsoft" role="img" aria-label="Microsoft"></span></li>
+                    <li><span class="logo" data-logo="nvidia" role="img" aria-label="NVIDIA"></span></li>
+                    <li><span class="logo" data-logo="samsung" role="img" aria-label="Samsung"></span></li>
+                    <li><span class="logo" data-logo="siemens" role="img" aria-label="Siemens"></span></li>
+                    <li><span class="logo" data-logo="sony" role="img" aria-label="Sony"></span></li>
+                    <li><span class="logo" data-logo="spacex" role="img" aria-label="SpaceX"></span></li>
+                    <li><span class="logo" data-logo="toyota" role="img" aria-label="Toyota"></span></li>
+                </ul>
+                <ul class="logos" aria-hidden="true">
+                    <li><span class="logo" data-logo="airbus"></span></li>
+                    <li><span class="logo" data-logo="boeing"></span></li>
+                    <li><span class="logo" data-logo="bosch"></span></li>
+                    <li><span class="logo" data-logo="ericsson"></span></li>
+                    <li><span class="logo" data-logo="ferrari"></span></li>
+                    <li><span class="logo" data-logo="intel"></span></li>
+                    <li><span class="logo" data-logo="microsoft"></span></li>
+                    <li><span class="logo" data-logo="nvidia"></span></li>
+                    <li><span class="logo" data-logo="samsung"></span></li>
+                    <li><span class="logo" data-logo="siemens"></span></li>
+                    <li><span class="logo" data-logo="sony"></span></li>
+                    <li><span class="logo" data-logo="spacex"></span></li>
+                    <li><span class="logo" data-logo="toyota"></span></li>
+                </ul>
             </div>
         </section>
 
         <section class="featured wrap" aria-labelledby="featured-title">
-            <!-- Decorative time axis, the "now" marker creeps along -->
-            <div class="timeline" aria-hidden="true">
-                <ol>
-                    <li>09:00</li><li>10:00</li><li>11:00</li><li>12:00</li>
-                    <li>13:00</li><li>14:00</li><li>15:00</li><li>16:00</li>
-                </ol>
-                <div class="now-track">
-                    <div class="now-marker">
-                        <span class="now-pill">NOW</span>
-                        <span class="now-line"></span>
-                    </div>
-                </div>
-            </div>
-
             <div class="featured-grid">
                 <figure class="frame">
-                    <figcaption>
-                        <span class="live">Live simulation</span>
-                        <span>ev-operations</span>
-                    </figcaption>
-                    <a href="./ev-operations/" tabindex="-1" aria-hidden="true">
+                    <a href="./logistics-control-tower/" tabindex="-1" aria-hidden="true">
                         <!-- Light or dark screenshot: the system setting by the media queries, the viewer's choice by
                              gallery.js, which rewrites the media of the data-scheme sources -->
                         <picture>
                             <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/ev-operations-light-800.webp 800w, ./gallery/ev-operations-light-1600.webp 1600w"
+                                srcset="./gallery/logistics-control-tower-light-800.webp 800w, ./gallery/logistics-control-tower-light-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source type="image/webp"
-                                srcset="./gallery/ev-operations-dark-800.webp 800w, ./gallery/ev-operations-dark-1600.webp 1600w"
+                                srcset="./gallery/logistics-control-tower-dark-800.webp 800w, ./gallery/logistics-control-tower-dark-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/ev-operations-light-1200.png">
-                            <img src="./gallery/ev-operations-dark-1200.png" width="1200" height="741" fetchpriority="high"
-                                alt="EV Operations, Production line view: work centers with running, behind and expedited batches on a shift timeline">
+                                srcset="./gallery/logistics-control-tower-light-1200.png">
+                            <img src="./gallery/logistics-control-tower-dark-1200.png" width="1200" height="741" fetchpriority="high"
+                                alt="Logistics Control Tower: inbound shipments grouped by carrier in AG Grid, next to the dock doors of a distribution centre with their unloading slots on a timeline">
                         </picture>
                     </a>
                 </figure>
 
                 <div>
-                    <h2 id="featured-title">EV Operations</h2>
+                    <h2 id="featured-title">Logistics Control Tower</h2>
                     <ul class="tags" aria-label="Built with">
                         <li><a href="https://bryntum.com/products/scheduler/">Scheduler</a></li>
-                        <li><a href="https://bryntum.com/products/gantt/">Gantt</a></li>
+                        <li><a href="https://www.ag-grid.com/">AG Grid</a></li>
                     </ul>
                     <p class="summary">
-                        Scheduler and Gantt in one app, driven by a live simulation you can
-                        start and stop.
+                        Bryntum Scheduler and AG Grid in one app: shipments stream live into the grid while the
+                        engine keeps the dock doors of a distribution centre scheduled.
                     </p>
-                    <ol class="views" aria-label="Views">
+                    <ul class="views" aria-label="Features">
                         <li>
-                            <span class="index" aria-hidden="true">01</span>
+                            <span class="view-icon" data-icon="truck" aria-hidden="true"></span>
                             <span>
-                                <strong>Production line</strong>
-                                <span>Work centers, batches and OEE per shift</span>
+                                <strong>Live shipments</strong>
+                                <span>2,000 inbound trucks in AG Grid, grouped by carrier</span>
                             </span>
                         </li>
                         <li>
-                            <span class="index" aria-hidden="true">02</span>
+                            <span class="view-icon" data-icon="warehouse" aria-hidden="true"></span>
                             <span>
-                                <strong>Service &amp; charging</strong>
-                                <span>A service center with DC fast chargers</span>
+                                <strong>Dock schedule</strong>
+                                <span>12 doors, unloading slots chained by the engine</span>
                             </span>
                         </li>
                         <li>
-                            <span class="index" aria-hidden="true">03</span>
+                            <span class="view-icon" data-icon="chart-bar" aria-hidden="true"></span>
                             <span>
-                                <strong>Vehicle program</strong>
-                                <span>The launch plan as a Gantt</span>
+                                <strong>Utilization &amp; conflicts</strong>
+                                <span>Door load per hour, late slots flagged, expedite in a click</span>
                             </span>
                         </li>
-                    </ol>
+                        <li>
+                            <span class="view-icon" data-icon="clock-countdown" aria-hidden="true"></span>
+                            <span>
+                                <strong>Simulate delay</strong>
+                                <span>Make a truck run late, the slots behind it move</span>
+                            </span>
+                        </li>
+                    </ul>
                     <div class="button-row">
-                        <a class="button primary" href="./ev-operations/">
+                        <a class="button primary" href="./logistics-control-tower/">
                             <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
                             Live demo
                         </a>
-                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/ev-operations">
+                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/logistics-control-tower">
                             <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
                             Source
                         </a>
@@ -182,6 +275,15 @@
                     <li>
                         <noscript>
                             <p>
+                                <a href="./logistics-control-tower/">Logistics Control Tower</a>:
+                                inbound shipments streaming live into AG Grid, next to the dock
+                                doors of a distribution centre, scheduled by the Bryntum engine.
+                            </p>
+                        </noscript>
+                    </li>
+                    <li>
+                        <noscript>
+                            <p>
                                 <a href="./ev-operations/">EV Operations</a>: a
                                 production line, a service center with DC fast chargers
                                 and a vehicle program, with a live simulation.
@@ -197,7 +299,7 @@
             <ul class="how">
                 <li>
                     <div class="art">
-                        <ul class="packages" aria-label="Bryntum packages on npm">
+                        <ul class="packages" aria-label="Bryntum and AG packages on npm">
                             <li>
                                 <a href="https://www.npmjs.com/package/@bryntum/scheduler-enterprise">
                                     Scheduler
@@ -228,11 +330,23 @@
                                     <span class="npm"><span class="visually-hidden">@bryntum/grid-enterprise on </span>npm</span>
                                 </a>
                             </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/ag-grid-enterprise">
+                                    AG Grid
+                                    <span class="npm"><span class="visually-hidden">ag-grid-enterprise on </span>npm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.npmjs.com/package/ag-charts-community">
+                                    AG Charts
+                                    <span class="npm"><span class="visually-hidden">ag-charts-community on </span>npm</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     <div class="text">
                         <h3>Public npm packages</h3>
-                        <p>Every showcase installs the published Bryntum packages. No private builds, no special access.</p>
+                        <p>Every showcase installs the published Bryntum and AG packages. No private builds, no special access.</p>
                     </div>
                 </li>
                 <li>

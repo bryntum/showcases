@@ -1,0 +1,122 @@
+/* Design tokens of the showcase, mapped onto the theme palette so they follow the theme and light / dark mode. The
+ * app panel's frame and the font are the shell's */
+
+.lct-app, .b-tooltip, .ag-popup {
+    /* Status colours, the theme palette darkened in light mode for contrast on white, lightened in dark mode */
+    --lct-on-time   : light-dark(color-mix(in srgb, var(--b-color-green) 80%, var(--b-color-black)), var(--b-color-green));
+    --lct-at-risk   : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)),
+        var(--b-color-orange));
+    --lct-late      : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
+    --lct-yard      : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
+    --lct-unloading : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
+    --lct-done      : var(--b-neutral-50);
+    /* A slot ending after its due time, between at risk and late */
+    --lct-conflict  : color-mix(in srgb, var(--lct-late) 65%, var(--lct-at-risk));
+    /* A tentative slot's dash, neutral, a conflict's is coloured */
+    --lct-tentative : color-mix(in srgb, var(--lct-ink-sub) 75%, transparent);
+    /* Reefer loads and cold store doors */
+    --lct-cold      : light-dark(color-mix(in srgb, var(--b-color-blue) 85%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-blue) 70%, var(--b-color-white)));
+    /* The utilization bars: the playhead's blue, and over 90% the orange of at risk */
+    --lct-util      : var(--b-color-blue);
+    --lct-util-over : var(--lct-at-risk);
+
+    /* Neutrals, from the theme */
+    --lct-surface       : var(--b-neutral-100);
+    /* The KPI header, a step above the panels in dark mode, the faintest grey in light mode */
+    --lct-raised        : light-dark(var(--b-neutral-99), var(--b-neutral-96));
+    --lct-sunken        : var(--b-neutral-98);
+    --lct-border        : var(--b-border-7);
+    --lct-ink           : var(--b-text-1);
+    --lct-ink-sub       : var(--b-text-2);
+    --lct-ink-faint     : var(--b-neutral-55);
+    --lct-past          : light-dark(color-mix(in srgb, var(--b-color-black) 4%, transparent),
+        color-mix(in srgb, var(--b-color-black) 22%, transparent));
+    /* The panel title bars, the column headers and the rows of both views: one rhythm, see AgGridSetup.js and
+     * DockSchedule.js for the rows */
+    --lct-bar-height    : 44px;
+    /* The grid's footer and the schedule's utilization strip, side by side */
+    --lct-footer-height : 56px;
+    /* The controls in the panel title bars: the grid's search field and the schedule's zoom group */
+    --lct-bar-control-height : 30px;
+    /* The slot bars, their drop preview, downtime and the utilization bars */
+    --lct-radius        : 4px;
+    /* The slot bars' inset in their 44px row, DockSchedule's barMargin */
+    --lct-bar-inset     : 4px;
+
+    /* Door downtime, neutral stripes */
+    --lct-stripe-a : color-mix(in srgb, var(--lct-ink-sub) 6%, transparent);
+    --lct-stripe-b : color-mix(in srgb, var(--lct-ink-sub) 22%, transparent);
+
+    /* Blue, red means late and conflicts */
+    --lct-playhead : var(--b-color-blue);
+
+    /* The shown part of a mask, which reads the alpha only: any opaque colour */
+    --lct-mask : var(--b-color-black);
+
+    /* Status colour of any element with a status class */
+    .lct-status-on-time { --lct-color : var(--lct-on-time); }
+    .lct-status-at-risk { --lct-color : var(--lct-at-risk); }
+    .lct-status-late { --lct-color : var(--lct-late); }
+    .lct-status-yard { --lct-color : var(--lct-yard); }
+    .lct-status-unloading { --lct-color : var(--lct-unloading); }
+    .lct-status-done { --lct-color : var(--lct-done); }
+}
+
+/* Dark mode surfaces and lines a little cool, towards the slate of the page, as the design: the theme's neutrals from 70
+ * up (panels, headers, rows, borders) restated with a blue hue in their dark half. The light half is the theme's own.
+ * On the root, where the theme derives its widget variables from them, this page only (app.css). More specific than
+ * the theme's `:root:not(.b-nothing)`. AG Grid's theme reads the same variables */
+:root:not(.b-nothing, .lct-nothing) {
+    /* Hue and saturation of the dark neutrals */
+    --lct-cool      : 220 14%;
+    --b-neutral-70  : light-dark(hsl(0 0% 70%), hsl(var(--lct-cool) 37%));
+    --b-neutral-75  : light-dark(hsl(0 0% 75%), hsl(var(--lct-cool) 32.5%));
+    --b-neutral-80  : light-dark(hsl(0 0% 80%), hsl(var(--lct-cool) 28%));
+    --b-neutral-85  : light-dark(hsl(0 0% 85%), hsl(var(--lct-cool) 23.5%));
+    --b-neutral-90  : light-dark(hsl(0 0% 90%), hsl(var(--lct-cool) 19%));
+    --b-neutral-91  : light-dark(hsl(0 0% 91%), hsl(var(--lct-cool) 18.1%));
+    --b-neutral-92  : light-dark(hsl(0 0% 92%), hsl(var(--lct-cool) 17.2%));
+    --b-neutral-93  : light-dark(hsl(0 0% 93%), hsl(var(--lct-cool) 16.3%));
+    --b-neutral-94  : light-dark(hsl(0 0% 94%), hsl(var(--lct-cool) 15.4%));
+    --b-neutral-95  : light-dark(hsl(0 0% 95%), hsl(var(--lct-cool) 14.5%));
+    --b-neutral-96  : light-dark(hsl(0 0% 96%), hsl(var(--lct-cool) 13.6%));
+    --b-neutral-97  : light-dark(hsl(0 0% 97%), hsl(var(--lct-cool) 12.7%));
+    --b-neutral-98  : light-dark(hsl(0 0% 98%), hsl(var(--lct-cool) 11.8%));
+    --b-neutral-99  : light-dark(hsl(0 0% 99%), hsl(var(--lct-cool) 10.9%));
+    --b-neutral-100 : light-dark(hsl(0 0% 100%), hsl(var(--lct-cool) 10%));
+}
+
+/* The app panel's body (its bodyCls): no padding, the grid and the schedule meet at the splitter */
+.lct-app-body {
+    border-radius : 0;
+
+    --b-panel-padding : 0;
+    --b-panel-gap     : 0;
+}
+
+/* A status pill: a dot in the status colour and the text, in the grid and the tooltip */
+.lct-pill {
+    display          : inline-flex;
+    align-items      : center;
+    gap              : 0.45em;
+    padding          : 0.1em 0.55em;
+    border-radius    : 0.3em;
+    font-size        : 0.92em;
+    font-weight      : 500;
+    line-height      : 1.5;
+    white-space      : nowrap;
+    color            : color-mix(in srgb, var(--lct-color) 80%, var(--lct-ink));
+    background-color : color-mix(in srgb, var(--lct-color) 16%, transparent);
+
+    &::before {
+        content          : '';
+        flex             : none;
+        inline-size      : 0.45em;
+        block-size       : 0.45em;
+        border-radius    : 50%;
+        background-color : var(--lct-color);
+    }
+}

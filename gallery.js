@@ -7,16 +7,42 @@ import lightThumbPng from './gallery/ev-operations-light-1200.png';
 import darkThumb800 from './gallery/ev-operations-dark-800.webp';
 import darkThumb1600 from './gallery/ev-operations-dark-1600.webp';
 import darkThumbPng from './gallery/ev-operations-dark-1200.png';
+import lctLightThumb800 from './gallery/logistics-control-tower-light-800.webp';
+import lctLightThumb1600 from './gallery/logistics-control-tower-light-1600.webp';
+import lctLightThumbPng from './gallery/logistics-control-tower-light-1200.png';
+import lctDarkThumb800 from './gallery/logistics-control-tower-dark-800.webp';
+import lctDarkThumb1600 from './gallery/logistics-control-tower-dark-1600.webp';
+import lctDarkThumbPng from './gallery/logistics-control-tower-dark-1200.png';
+// Generated with the hero tiles, see `hoverHotspots()`
+import hotspots from './gallery/hero-hotspots.json';
 
 const
-    // Product pages the tags link to
+    // Every product a showcase can be built on, in filter order, with the page its tag links to
     productUrls = {
-        Scheduler    : 'https://bryntum.com/products/scheduler/',
         Gantt        : 'https://bryntum.com/products/gantt/',
+        Scheduler    : 'https://bryntum.com/products/scheduler/',
         Calendar     : 'https://bryntum.com/products/calendar/',
-        'Task Board' : 'https://bryntum.com/products/taskboard/'
+        'Task Board' : 'https://bryntum.com/products/taskboard/',
+        'AG Grid'    : 'https://www.ag-grid.com/',
+        'AG Charts'  : 'https://www.ag-grid.com/charts/',
+        'AG Studio'  : null
     },
+    // Latest first, the first is also the featured one in index.html
     showcases   = [
+        {
+            title       : 'Logistics Control Tower',
+            description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
+                'distribution centre, scheduled by the Bryntum engine.',
+            products : ['Scheduler', 'AG Grid'],
+            url      : './logistics-control-tower/',
+            source   : 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower',
+            thumb    : {
+                light  : { webp : `${lctLightThumb800} 800w, ${lctLightThumb1600} 1600w`, png : lctLightThumbPng },
+                dark   : { webp : `${lctDarkThumb800} 800w, ${lctDarkThumb1600} 1600w`, png : lctDarkThumbPng },
+                width  : 1200,
+                height : 741
+            }
+        },
         {
             title       : 'EV Operations',
             description : 'A production line, a service center with DC fast chargers and a vehicle program, ' +
@@ -32,8 +58,8 @@ const
             }
         }
     ],
-    // The products the showcases are built on, in order of appearance, one filter each
-    products    = [...new Set(showcases.flatMap(showcase => showcase.products))],
+    // One filter per product, also for those no showcase uses yet
+    products    = Object.keys(productUrls),
     encodeHtml  = text => String(text).replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`),
     // A product tag, a link to its product page when it has one
     tagHtml     = name => productUrls[name] ? `<a href="${productUrls[name]}">${encodeHtml(name)}</a>` : encodeHtml(name),
@@ -97,6 +123,13 @@ function renderFilters(group, items, status) {
         button.type        = 'button';
         button.textContent = label;
         button.setAttribute('aria-pressed', String(label === 'All'));
+
+        // Listed, so the range shows, but not selectable until a showcase uses it
+        if (label !== 'All' && !showcases.some(showcase => showcase.products.includes(label))) {
+            button.disabled = true;
+            button.title    = 'No showcase yet';
+        }
+
         return button;
     });
 
@@ -140,3 +173,253 @@ document.querySelector('.site-actions').prepend(createColorSchemeToggle({
         syncScreenshots(scheme);
     }
 }));
+
+// Where the hero's tiles lean, float and light up: beside the text, with a mouse, without reduced motion. Elsewhere,
+// phones and touch tablets included, they are a still picture and no pointer listener is attached (gallery.css agrees)
+const pointerEffects = matchMedia(
+    '(width >= 60rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+
+/**
+ * Runs `attach` while `pointerEffects` matches, with a signal that removes its listeners when it stops matching
+ * @param {Function} attach Called with an `AbortSignal` for its `addEventListener` calls, returns an optional cleanup
+ */
+function whilePointerEffects(attach) {
+    let controller, cleanup;
+
+    const sync = () => {
+        controller?.abort();
+        cleanup?.();
+        controller = cleanup = null;
+
+        if (pointerEffects.matches) {
+            controller = new AbortController();
+            cleanup    = attach(controller.signal);
+        }
+    };
+
+    pointerEffects.addEventListener('change', sync);
+    sync();
+}
+
+/**
+ * Leans the hero's component stack towards the pointer anywhere in the hero's band of the page, margins included,
+ * as `--px` / `--py` from -1 to 1 (gallery.css): from the stack's centre to the band's edge on each side. Eases back
+ * to rest when the pointer leaves the band or the hero scrolls away. The rectangles are read once per scroll or
+ * resize, one write per frame
+ * @param {HTMLElement} stack The `.hero-stack`
+ */
+function leanTowardsPointer(stack) {
+    const
+        hero  = stack.closest('.hero'),
+        clamp = value => Math.max(-1, Math.min(1, value)),
+        // -1 at the near edge, 0 at the centre, 1 at the far edge
+        along = (value, start, centre, end) =>
+            clamp((value - centre) / (value < centre ? centre - start : end - centre)),
+        // The hero's height, the window's width
+        measure = () => {
+            const
+                { top, bottom } = hero.getBoundingClientRect(),
+                centre          = stack.getBoundingClientRect();
+
+            return {
+                area : { left : 0, right : document.documentElement.clientWidth, top, bottom },
+                cx   : centre.left + centre.width / 2,
+                cy   : centre.top + centre.height / 2
+            };
+        };
+
+    whilePointerEffects(signal => {
+        let frame = 0, inView = false, rects = null, pointer = null;
+
+        const
+            rest     = () => {
+                cancelAnimationFrame(frame);
+                frame = 0;
+                stack.style.removeProperty('--px');
+                stack.style.removeProperty('--py');
+            },
+            observer = new IntersectionObserver(([entry]) => {
+                inView = entry.isIntersecting;
+                inView || rest();
+            });
+
+        observer.observe(hero);
+        addEventListener('scroll', () => rects = null, { passive : true, signal });
+        addEventListener('resize', () => rects = null, { signal });
+        // Out of the window
+        document.documentElement.addEventListener('pointerleave', rest, { signal });
+
+        addEventListener('pointermove', ({ clientX, clientY, pointerType }) => {
+            if (!inView || pointerType !== 'mouse') {
+                return;
+            }
+
+            pointer = [clientX, clientY];
+            frame ||= requestAnimationFrame(() => {
+                frame = 0;
+                rects ??= measure();
+
+                const
+                    { area, cx, cy } = rects,
+                    [x, y]           = pointer;
+
+                if (x < area.left || x > area.right || y < area.top || y > area.bottom) {
+                    rest();
+                    return;
+                }
+
+                stack.style.setProperty('--px', along(x, area.left, cx, area.right).toFixed(3));
+                stack.style.setProperty('--py', along(y, area.top, cy, area.bottom).toFixed(3));
+            });
+        }, { passive : true, signal });
+
+        return () => {
+            observer.disconnect();
+            rest();
+        };
+    });
+}
+
+leanTowardsPointer(document.querySelector('.hero-stack'));
+
+// The hover micro-interactions on the hero tiles, see `hoverHotspots()`
+const setVars = (element, values) => Object.entries(values).forEach(([name, value]) =>
+    element.style.setProperty(`--${name}`, value));
+
+/**
+ * The hotspot of a tile at a point of its screenshot: the smallest rectangle of a `box` tile there, the row of a `row`
+ * tile, `true` inside the plot of the `chart` tile
+ * @param {Object} spec The tile's entry in hero-hotspots.json
+ * @param {Number} px Percentage across the screenshot
+ * @param {Number} py Percentage down the screenshot
+ * @returns {Number[]|Boolean|undefined}
+ */
+function hotspotAt({ kind, r, plot }, px, py) {
+    const inside = ([x, y, w, h]) => px >= x && px <= x + w && py >= y && py <= y + h;
+
+    if (kind === 'chart') {
+        return inside(plot);
+    }
+
+    if (kind === 'row') {
+        return r.find(([y, h]) => py >= y && py < y + h);
+    }
+
+    // The innermost of nested ones, like a chart inside a dashboard panel: the smallest
+    return r.filter(inside).reduce((best, rect) => !best || rect[2] * rect[3] < best[2] * best[3] ? rect : best,
+        undefined);
+}
+
+/**
+ * Moves the chart's crosshair to the nearest month, the dot to the nearest series point on it, and shows its value
+ */
+function showChartPoint({ spot, dot, bubble }, { x : months, cats, series }, px, py) {
+    const
+        i       = months.reduce((best, x, index) => Math.abs(x - px) < Math.abs(months[best] - px) ? index : best, 0),
+        nearest = series.reduce((best, s) => Math.abs(s.y[i] - py) < Math.abs(best.y[i] - py) ? s : best),
+        x       = months[i],
+        y       = nearest.y[i];
+
+    setVars(spot, { x });
+    setVars(dot, { x, y });
+    // Kept inside the tile at the ends of the axis
+    setVars(bubble, { x, y, shift : x < 20 ? '-15%' : x > 80 ? '-85%' : '-50%' });
+    bubble.textContent = `${cats[i]} · ${nearest.name} ${nearest.v[i]}k`;
+}
+
+/**
+ * `?hotspots`: outlines every hotspot of every tile at once, to check them against the screenshots
+ * @param {Function} layerOf Returns the hotspot layer of a tile
+ */
+function outlineHotspots(stack, layerOf) {
+    stack.querySelectorAll('.tile').forEach(tile => {
+        const
+            { layer, spec } = layerOf(tile),
+            outline         = (values, point) => {
+                const element = document.createElement('i');
+
+                element.className = point ? 'outline point' : 'outline';
+                setVars(element, values);
+                layer.append(element);
+            };
+
+        layer.dataset.debug = '';
+
+        if (spec.kind === 'chart') {
+            const [x, y, w, h] = spec.plot;
+
+            outline({ x, y, w, h });
+            spec.series.forEach(series => series.y.forEach((y, i) => outline({ x : spec.x[i], y }, true)));
+        }
+        else {
+            spec.r.forEach(r => outline(spec.kind === 'row' ? { x : 0, y : r[0], w : 100, h : r[1] } :
+                { x : r[0], y : r[1], w : r[2], h : r[3] }));
+        }
+    });
+}
+
+/**
+ * Lights up the real element under the pointer on the hovered hero tile: a card, a bar or a day glows, the grid row
+ * gets a band, the chart a crosshair with the nearest point's value. The positions come from the rendered components
+ * (gallery/hero-hotspots.json, percentages of the screenshot, made by the tile render script), in a layer inside the
+ * tile so the tilt moves it too. Only with `pointerEffects`; CSS shows it on the hovered tile only
+ * @param {HTMLElement} stack The `.hero-stack`
+ */
+function hoverHotspots(stack) {
+    const
+        layers  = new Map(),
+        // The layer over a tile's screenshot with the elements the effect moves, made on first use
+        layerOf = tile => {
+            if (!layers.has(tile)) {
+                const
+                    spec  = hotspots[tile.dataset.tile],
+                    layer = document.createElement('span');
+
+                layer.className    = 'hot';
+                layer.dataset.kind = spec.kind;
+                layer.innerHTML    = '<i class="spot"></i><i class="dot"></i><b class="bubble"></b>';
+                spec.plot && setVars(layer, { top : spec.plot[1], height : spec.plot[3] });
+                tile.append(layer);
+
+                const [spot, dot, bubble] = layer.children;
+
+                layers.set(tile, { layer, spec, spot, dot, bubble });
+            }
+
+            return layers.get(tile);
+        };
+
+    if (new URLSearchParams(location.search).has('hotspots')) {
+        outlineHotspots(stack, layerOf);
+    }
+
+    whilePointerEffects(signal => {
+        // Built ahead, so the first hover only moves a glow
+        (globalThis.requestIdleCallback ?? setTimeout)(() => stack.querySelectorAll('.tile').forEach(layerOf));
+
+        stack.addEventListener('pointermove', ({ target, pointerType, offsetX, offsetY }) => {
+            if (pointerType !== 'mouse' || target.localName !== 'img') {
+                return;
+            }
+
+            // The offset is in the image's own, untilted coordinates
+            const
+                parts = layerOf(target.closest('.tile')),
+                px    = offsetX / target.clientWidth * 100,
+                py    = offsetY / target.clientHeight * 100,
+                hit   = hotspotAt(parts.spec, px, py);
+
+            parts.layer.toggleAttribute('data-on', Boolean(hit));
+
+            if (hit === true) {
+                showChartPoint(parts, parts.spec, px, py);
+            }
+            else if (hit) {
+                setVars(parts.spot, parts.spec.kind === 'row' ? { y : hit[0], h : hit[1] } :
+                    { x : hit[0], y : hit[1], w : hit[2], h : hit[3] });
+            }
+        }, { signal });
+    });
+}
+
+hoverHotspots(document.querySelector('.hero-stack'));

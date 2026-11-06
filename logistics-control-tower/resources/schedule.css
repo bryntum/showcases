@@ -1,0 +1,274 @@
+/* The dock schedule: the door column, the slot bars, the drop preview, the tooltip and the lines shared with the grid */
+
+.lct-dock {
+    display     : flex;
+    align-items : center;
+    gap         : 0.7em;
+    min-width   : 0;
+
+    /* The door's equipment, a line icon on a tinted square */
+    .lct-dock-icon {
+        display          : grid;
+        flex             : none;
+        place-items      : center;
+        inline-size      : 1.75em;
+        block-size       : 1.75em;
+        border-radius    : 0.35em;
+        font-size        : 1.05em;
+        color            : var(--lct-ink-sub);
+        background-color : var(--b-neutral-95);
+    }
+
+    &.lct-load-reefer .lct-dock-icon {
+        color            : var(--lct-cold);
+        background-color : color-mix(in srgb, var(--lct-cold) 16%, transparent);
+    }
+
+    .lct-dock-text {
+        display        : flex;
+        flex-direction : column;
+        min-width      : 0;
+        line-height    : 1.25;
+    }
+
+    .lct-dock-name {
+        font-weight : 600;
+    }
+
+    .lct-dock-zone {
+        font-size : 0.85em;
+        color     : var(--lct-ink-sub);
+    }
+}
+
+/* Slot bars: a dark tint of the status colour, a 1px border in it. What the bar shows follows its width, see
+ * SlotRendering#renderSlot, whose width tiers are measured against these px sizes: the font matches the grid's
+ * (AgGridSetup.js), the even padding fits the 44px rows */
+.b-sch-event.lct-slot {
+    /* The shipment grid's font size, the number reads alike in both views */
+    font-size : 13px;
+
+    --lct-slot-tint              : 16%;
+    --b-sch-event-background     : color-mix(in srgb, var(--lct-color) var(--lct-slot-tint), var(--lct-surface));
+    --b-sch-event-border-width   : 1px;
+    --b-sch-event-border-style   : solid;
+    --b-sch-event-border-color   : color-mix(in srgb, var(--lct-color) 70%, transparent);
+    --b-sch-event-border-radius  : var(--lct-radius);
+    --b-sch-event-color          : var(--lct-ink);
+    /* One padding all round, the label sits as far from the top and bottom as from the start */
+    --b-sch-event-padding-inline : 5px;
+    --b-sch-event-padding-block  : 5px;
+
+    /* The exceptions only: a reefer load, an expedited truck, an unloaded one */
+    .lct-slot-icon {
+        font-size : 1.1em;
+        color     : var(--lct-color);
+    }
+
+    .lct-slot-text {
+        display        : flex;
+        flex-direction : column;
+        min-width      : 0;
+        line-height    : 1.15;
+        overflow       : hidden;
+    }
+
+    /* Proportional figures, the number never changes and a narrow slot still fits it */
+    .lct-slot-ref {
+        font-weight   : 700;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    /* The pallets, the delay or At yard below the number, quieter */
+    .lct-slot-meta {
+        font-size     : 11px;
+        white-space   : nowrap;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        color         : var(--lct-ink-sub);
+    }
+
+    /* A crate and the count */
+    .lct-slot-pallets {
+        display     : flex;
+        align-items : center;
+        gap         : 0.25em;
+
+        .lct-icon {
+            font-size : 0.9em;
+        }
+    }
+
+    &:is(.lct-status-late, .lct-status-at-risk) .lct-slot-meta {
+        color : var(--lct-color);
+    }
+
+    /* Unloaded: grey and quiet, a check */
+    &.lct-status-done {
+        --b-sch-event-border-color : var(--lct-border);
+        --b-sch-event-color        : var(--lct-ink-faint);
+
+        .lct-slot-meta {
+            color : inherit;
+        }
+    }
+
+    /* Booked for a truck still hours out: a lighter box, a thin neutral dash, unlike the coloured dash of a conflict */
+    &.lct-slot-tentative {
+        --lct-slot-tint            : 8%;
+        --b-sch-event-border-style : dashed;
+        --b-sch-event-border-color : var(--lct-tentative);
+    }
+
+    /* Unloading ends after the shipment's due time: a conflict, outlined dashed */
+    &.lct-slot-breach {
+        outline        : 1px dashed var(--lct-conflict);
+        outline-offset : 0;
+
+        --b-sch-event-border-color : transparent;
+    }
+
+    /* The number alone, closer to the border */
+    &.lct-slot-compact {
+        --b-sch-event-padding-inline : 2px;
+    }
+
+    /* Short slots: the number alone in the meta line's size */
+    &.lct-slot-small .lct-slot-ref {
+        font-size : 11px;
+    }
+
+    /* An icon alone sits in the middle of its bar */
+    &.lct-slot-icon-only {
+        justify-content : center;
+
+        --b-sch-event-padding-inline : 0;
+    }
+
+    /* Too short for its number: a neutral thin box, the status shown by the colour of the icon in the middle, and the
+     * delay of a late truck beside it where that fits (renderMiniSlot) */
+    &.lct-slot-mini {
+        --b-sch-event-padding-inline : 2px;
+        --b-sch-event-border-color   : var(--lct-border);
+
+        justify-content : center;
+        gap             : 3px;
+
+        .lct-slot-icon {
+            font-size : 14px;
+            color     : var(--lct-color);
+        }
+
+        .lct-slot-short {
+            font-size   : 11px;
+            font-weight : 600;
+            white-space : nowrap;
+            color       : var(--lct-ink-sub);
+        }
+    }
+}
+
+.b-sch-event-wrap {
+    &:is(:hover, .b-hover) > .lct-slot:not(.lct-slot-mini) {
+        --lct-slot-tint : 24%;
+    }
+
+    &.b-selected > .lct-slot {
+        box-shadow : 0 0 0 2px color-mix(in srgb, var(--lct-playhead) 55%, transparent);
+
+        --lct-slot-tint : 30%;
+    }
+}
+
+/* Where a dragged shipment would be booked, a dashed blue box, red where the door can not take it. The slot bars'
+ * font size and radius */
+.lct-drop-preview {
+    position         : absolute;
+    z-index          : 20;
+    display          : flex;
+    align-items      : center;
+    padding-inline   : 0.5em;
+    box-sizing       : border-box;
+    border           : 1px dashed var(--lct-drop);
+    border-radius    : var(--lct-radius);
+    font-size        : 13px;
+    font-weight      : 600;
+    white-space      : nowrap;
+    color            : var(--lct-drop);
+    background-color : color-mix(in srgb, var(--lct-drop) 12%, transparent);
+    pointer-events   : none;
+
+    --lct-drop : var(--lct-playhead);
+
+    &.lct-drop-invalid {
+        --lct-drop : var(--lct-late);
+    }
+}
+
+/* The slot tooltip */
+.lct-tip {
+    min-width : 15em;
+
+    header {
+        display          : flex;
+        align-items      : center;
+        justify-content  : space-between;
+        gap              : 1em;
+        margin-block-end : 0.5em;
+    }
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 0.2em 1em;
+        margin                : 0;
+    }
+
+    dt {
+        color : var(--lct-ink-sub);
+    }
+
+    dd {
+        margin               : 0;
+        font-variant-numeric : tabular-nums;
+    }
+
+    .lct-tip-breach {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+}
+
+/* The splitter between the grid and the schedule */
+.lct-splitter {
+    --b-splitter-color : var(--lct-border);
+}
+
+/* Narrow screens (ControlTowerApp#compact): the grid above the schedule, without the splitter */
+.lct-app.lct-compact {
+    .lct-main {
+        flex-direction : column;
+    }
+
+    .lct-splitter {
+        display : none;
+    }
+}
+
+/* The shipment grid's lines and header colours (AgGridSetup.js), the two views read as one */
+.b-dock-schedule {
+    --b-grid-row-border-color    : var(--b-border-6);
+    --b-grid-row-border-width    : 1px;
+    --b-grid-cell-border-color   : var(--b-border-6);
+    --b-grid-header-border-color : var(--b-border-6);
+    --b-grid-header-background   : var(--b-neutral-98);
+
+    /* The time axis header and the dock door column header, as tall as the grid's column headers */
+    .b-grid-header-container :is(.b-grid-header, .b-sch-header-row) {
+        box-sizing : border-box;
+        min-height : 0;
+        block-size : var(--lct-bar-height);
+    }
+}

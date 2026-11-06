@@ -6,13 +6,12 @@ import '@bryntum/core-enterprise/fontawesome/css/solid.css';
 // The showcases' font, design tokens and brand lockup (shell.css imports tokens.css and brand.css)
 import './fonts.css';
 import './shell.css';
-import githubMark from './github-mark.svg?raw';
-import externalLink from './external-link.svg?raw';
+import { createGetTheCode } from './get-the-code.js';
 
 /**
  * The showcase shell, shared by all showcases: a header with the brand lockup (the Bryntum logo, linking to
- * bryntum.com, then a breadcrumb from the gallery to the showcase title), a light / dark switch and a link to the
- * source on GitHub, above the container the app renders into.
+ * bryntum.com, then a breadcrumb from the gallery to the showcase title), a light / dark switch, "Get the code" (how
+ * to run it locally, and its source on GitHub) and "Free trial", above the container the app renders into.
  *
  * ```javascript
  * import { createShell } from '@showcases/shared';
@@ -29,8 +28,6 @@ import externalLink from './external-link.svg?raw';
  * Learn more:
  * https://bryntum.com/products/grid/docs/api/Core/helper/DomHelper#property-colorScheme-static
  */
-
-const repoUrl = 'https://github.com/bryntum/showcases';
 
 /**
  * The breadcrumb of the lockup: the gallery link, then the page heading as the current page. The heading is the trail's
@@ -73,15 +70,43 @@ function breadcrumb(title, gallery) {
 }
 
 /**
+ * The partner product next to the Bryntum logo: a times sign and its logo, linking to the partner's site
+ * @param {Object} partner `{ name, href, logo }`, see createShell
+ * @returns {Object} DomConfig
+ */
+function partnerLink({ name, href, logo }) {
+    return {
+        tag       : 'a',
+        className : 'sc-brand-partner',
+        href,
+        target    : '_blank',
+        children  : [
+            { tag : 'span', className : 'sc-brand-plus', 'aria-hidden' : 'true', text : '×' },
+            {
+                tag          : 'span',
+                className    : 'sc-brand-partner-logo',
+                role         : 'img',
+                'aria-label' : name,
+                // Double quoted and escaped, an inlined SVG data URL holds single quotes
+                style        : `--sc-partner-logo-light: url(${JSON.stringify(logo.light)}); ` +
+                    `--sc-partner-logo-dark: url(${JSON.stringify(logo.dark)})`
+            }
+        ]
+    };
+}
+
+/**
  * Builds the page shell: the header, and the container the app renders into. Call it once, before creating the app
  * @param {Object} options
  * @param {String} options.title The showcase title, shown in the header
- * @param {String} options.source The showcase folder in the repository, the target of the GitHub source link
+ * @param {String} options.source The showcase folder in the repository, for the run command and the source link
  * @param {String} [options.gallery] The gallery URL, the breadcrumb's first link. Relative, as every showcase lives one
  * folder below the gallery, so it works under any base path
+ * @param {Object} [options.partner] A partner product shown next to the Bryntum logo, `{ name, href, logo }`. `logo`
+ * holds the URLs of its logo for each mode, `{ light, dark }`, see brand.css
  * @returns {HTMLElement} The container to render the app into (`appendTo`)
  */
-export function createShell({ title, source, gallery = '../' }) {
+export function createShell({ title, source, gallery = '../', partner }) {
     const
         { body } = document,
         scheme   = storedColorScheme(),
@@ -102,6 +127,7 @@ export function createShell({ title, source, gallery = '../' }) {
                                 { tag : 'span', className : 'sc-brand-logo', role : 'img', 'aria-label' : 'Bryntum' }
                             ]
                         },
+                        partner && partnerLink(partner),
                         { tag : 'span', className : 'sc-brand-divider', 'aria-hidden' : 'true' },
                         breadcrumb(title, gallery)
                     ]
@@ -115,27 +141,10 @@ export function createShell({ title, source, gallery = '../' }) {
         DomHelper.colorScheme = scheme;
     }
 
-    // The light / dark toggle and the GitHub link, the same icon buttons as on the gallery
+    // The light / dark toggle, the same icon button as on the gallery, then the calls to action
     header.append(
         createColorSchemeToggle({ apply : scheme => DomHelper.colorScheme = scheme }),
-        DomHelper.createElement({
-            tag          : 'a',
-            className    : 'sc-icon-button',
-            href         : `${repoUrl}/tree/main/${source}`,
-            target       : '_blank',
-            title        : 'View source on GitHub',
-            'aria-label' : 'View source on GitHub',
-            // The trusted GitHub mark of this package
-            html         : githubMark.trim()
-        }),
-        DomHelper.createElement({
-            tag       : 'a',
-            className : 'sc-icon-button sc-external',
-            href      : 'https://bryntum.com',
-            target    : '_blank',
-            // The label, then this package's trusted external arrow
-            html      : `bryntum.com ${externalLink.trim()}`
-        })
+        ...createGetTheCode({ source })
     );
 
     return container;

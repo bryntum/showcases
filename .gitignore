@@ -6,3 +6,6 @@ dist/
 # Playwright
 test-results/
 playwright-report/
+# Local environment, e.g. the AG Grid licence key (VITE_AG_LICENSE_KEY), never committed
+.env.local
+*.local

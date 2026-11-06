@@ -1,0 +1,240 @@
+/* The shipment grid: the panel hosting AG Grid, the cell renderers and the row styling by status */
+
+.lct-grid-panel {
+    min-width : 0;
+}
+
+/* AG Grid fills the panel's body */
+.lct-grid-body {
+    display        : flex;
+    flex-direction : column;
+    padding        : 0;
+
+    > div {
+        flex       : 1;
+        min-height : 0;
+    }
+
+    .ag-root-wrapper {
+        height : 100%;
+    }
+
+    .lct-ref {
+        font-weight : 600;
+    }
+
+    .ag-row {
+        &.lct-row-done {
+            color : var(--lct-ink-faint);
+        }
+
+        &.ag-row-selected {
+            background-color : var(--ag-selected-row-background-color);
+        }
+
+        &:not(:hover) .ag-row-drag {
+            opacity : 0;
+        }
+    }
+
+    /* The drag handle sits at the end of the reference and shows on the row under the pointer, so the references
+     * line up with their header */
+    .ag-row-drag {
+        order               : 1;
+        margin-inline-start : auto;
+    }
+
+    /* The filter buttons show on the header under the pointer only, they take no room from the header text
+     * otherwise. The title's count tells whether rows are filtered out */
+    .ag-header-cell:not(:hover) .ag-header-cell-filter-button {
+        display : none;
+    }
+
+    .lct-delay-late {
+        font-weight : 600;
+        color       : var(--lct-late);
+    }
+
+    .lct-delay-risk {
+        font-weight : 600;
+        color       : var(--lct-at-risk);
+    }
+
+    /* The status bar is the grid's footer, as tall as the dock schedule's utilization strip */
+    .ag-status-bar {
+        box-sizing     : border-box;
+        block-size     : var(--lct-footer-height);
+        padding-inline : var(--sc-panel-padding);
+        align-items    : center;
+    }
+}
+
+/* The footer's panels: a muted label and a value */
+.lct-footer {
+    display     : flex;
+    align-items : baseline;
+    gap         : 1.6em;
+    white-space : nowrap;
+    color       : var(--lct-ink-sub);
+
+    .lct-footer-item {
+        display : flex;
+        gap     : 0.4em;
+    }
+
+    strong {
+        font-weight          : 600;
+        font-variant-numeric : tabular-nums;
+        color                : var(--lct-ink);
+    }
+
+    .lct-footer-alert {
+        color : var(--lct-late);
+    }
+}
+
+/* Carrier chip, its code tinted in the carrier's colour */
+.lct-carrier {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.6em;
+    min-width   : 0;
+
+    .lct-carrier-code {
+        display          : inline-grid;
+        place-items      : center;
+        min-inline-size  : 1.9em;
+        padding          : 0.15em 0.3em;
+        border-radius    : 0.3em;
+        font-size        : 0.8em;
+        font-weight      : 700;
+        line-height      : 1.4;
+        color            : color-mix(in srgb, var(--lct-carrier) 70%, var(--lct-ink));
+        background-color : color-mix(in srgb, var(--lct-carrier) 18%, transparent);
+    }
+
+    .lct-carrier-name {
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        font-weight   : 600;
+    }
+}
+
+/* Group rows: the carrier, its shipments and pallets, and the late ones */
+.lct-carrier-group {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.75em;
+
+    .lct-group-count {
+        color : var(--lct-ink-sub);
+    }
+}
+
+/* The ETA, then how long until it, quieter */
+.lct-eta {
+    display              : inline-flex;
+    align-items          : baseline;
+    gap                  : 0.7em;
+    font-variant-numeric : tabular-nums;
+
+    .lct-eta-relative {
+        font-size : 0.92em;
+        color     : var(--lct-ink-sub);
+    }
+
+    .lct-eta-soon {
+        color : var(--lct-ink);
+    }
+}
+
+/* The dock slot badge, red with the warning inside when the slot ends after the due time */
+.lct-badge {
+    display              : inline-flex;
+    align-items          : center;
+    gap                  : 0.45em;
+    padding              : 0.1em 0.5em;
+    border               : 1px solid var(--lct-border);
+    border-radius        : 0.3em;
+    font-size            : 0.92em;
+    line-height          : 1.5;
+    font-variant-numeric : tabular-nums;
+    white-space          : nowrap;
+
+    &.lct-badge-none {
+        border-style : dashed;
+        color        : var(--lct-ink-faint);
+    }
+
+    &.lct-badge-hold {
+        color        : var(--lct-at-risk);
+        border-color : color-mix(in srgb, var(--lct-at-risk) 50%, transparent);
+    }
+
+    &.lct-badge-breach {
+        color            : var(--lct-late);
+        border-color     : color-mix(in srgb, var(--lct-late) 70%, transparent);
+        background-color : color-mix(in srgb, var(--lct-late) 10%, transparent);
+    }
+}
+
+.lct-load {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.5em;
+
+    .lct-icon {
+        color : var(--lct-ink-faint);
+    }
+
+    &.lct-load-reefer .lct-icon {
+        color : var(--lct-cold);
+    }
+}
+
+/* Reefer temperature after a snowflake, an amber chip when off its set point */
+.lct-temp {
+    display              : inline-flex;
+    align-items          : center;
+    gap                  : 0.4em;
+    font-variant-numeric : tabular-nums;
+    white-space          : nowrap;
+
+    .lct-icon {
+        color : var(--lct-cold);
+    }
+
+    &.lct-temp-off {
+        padding          : 0.1em 0.5em;
+        border-radius    : 0.3em;
+        font-weight      : 600;
+        color            : var(--lct-at-risk);
+        background-color : color-mix(in srgb, var(--lct-at-risk) 16%, transparent);
+
+        .lct-icon {
+            color : inherit;
+        }
+    }
+}
+
+.lct-gps {
+    display     : inline-flex;
+    align-items : center;
+    gap         : 0.45em;
+
+    .lct-gps-dot {
+        inline-size      : 0.5em;
+        block-size       : 0.5em;
+        border-radius    : 50%;
+        background-color : var(--lct-on-time);
+    }
+
+    &.lct-gps-stale .lct-gps-dot { background-color : var(--lct-at-risk); }
+    &.lct-gps-lost .lct-gps-dot { background-color : var(--lct-late); }
+    &.lct-gps-arrived .lct-gps-dot { background-color : var(--lct-done); }
+}
+
+/* Narrow screens (ControlTowerApp#compact): the footer keeps the shown count and the alerts */
+.lct-compact .lct-totals-panel .lct-footer-item:not(:first-child) {
+    display : none;
+}

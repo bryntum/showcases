@@ -1,0 +1,59 @@
+/* The utilization strip under the dock doors, the Summary feature's footer: a bar per hour, from the bottom, orange
+ * when over 90%, see SlotRendering#renderUtilization */
+
+.b-dock-schedule .b-grid-footer-container {
+    /* Bryntum draws the footer's top line as an outline, 1px above it in the header border colour. The grid's footer
+     * has a border inside its height, so the strip gets the same, for one line at one height across both views */
+    --b-grid-footer-outline-width : 0;
+
+    .b-grid-footer {
+        box-sizing         : border-box;
+        block-size         : var(--lct-footer-height);
+        border-block-start : 1px solid var(--b-border-6);
+        align-items        : center;
+        font-weight        : 400;
+        color              : var(--lct-ink-sub);
+    }
+
+    /* A bar per hour, as wide as the hour less a gap either side */
+    .b-sch-summary-bar .b-time-axis-tick {
+        box-sizing        : border-box;
+        block-size        : 100%;
+        justify-content   : flex-end;
+        padding           : 10px 6px 0;
+        border-inline-end : none;
+    }
+
+    .b-time-axis-summary-value {
+        display         : flex;
+        flex-direction  : column;
+        justify-content : flex-end;
+        block-size      : 100%;
+    }
+}
+
+.lct-util-bar {
+    /* Flat tints like the slot bars above. The blue a little stronger than the orange, which stands out on its own,
+     * and stronger in dark mode, where mixing into the dark panel dims it */
+    --lct-util-color : var(--lct-util);
+    --lct-util-mix   : 55%;
+
+    min-block-size            : 2px;
+    border-start-start-radius : var(--lct-radius);
+    border-start-end-radius   : var(--lct-radius);
+    background-color          : color-mix(in srgb, var(--lct-util-color) var(--lct-util-mix), var(--lct-surface));
+
+    :root[data-theme='dark'] & {
+        --lct-util-mix : 80%;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) & {
+            --lct-util-mix : 80%;
+        }
+    }
+
+    &.lct-util-over {
+        --lct-util-color : var(--lct-util-over);
+    }
+}

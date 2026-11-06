@@ -1,0 +1,71 @@
+/* The legend below the app: the statuses, the conflict outline, the overloaded hour, and the credits */
+
+.lct-legend-bar {
+    border-block-start : 1px solid var(--lct-border);
+
+    --b-toolbar-padding : 0.6em var(--sc-panel-padding);
+}
+
+.lct-legend {
+    display     : flex;
+    flex-wrap   : wrap;
+    align-items : center;
+    gap         : 0.5em 1.5em;
+    width       : 100%;
+    font-size   : 0.9em;
+    color       : var(--lct-ink-sub);
+
+    .lct-legend-items {
+        display    : flex;
+        flex-wrap  : wrap;
+        gap        : 0.4em 1.3em;
+        margin     : 0;
+        padding    : 0;
+        list-style : none;
+    }
+
+    .lct-legend-item {
+        display     : flex;
+        align-items : center;
+        gap         : 0.45em;
+    }
+
+    .lct-swatch {
+        box-sizing    : border-box;
+        inline-size   : 0.75em;
+        block-size    : 0.75em;
+        border-radius : 0.15em;
+    }
+
+    /* Statuses are dots, as in the grid's pills */
+    .lct-legend-status .lct-swatch {
+        inline-size      : 0.5em;
+        block-size       : 0.5em;
+        border-radius    : 50%;
+        background-color : var(--lct-color);
+    }
+
+    .lct-legend-conflict .lct-swatch {
+        border : 1px dashed var(--lct-conflict);
+    }
+
+    .lct-legend-tentative .lct-swatch {
+        border : 1px dashed var(--lct-tentative);
+    }
+
+    .lct-legend-downtime .lct-swatch {
+        border : 1px solid var(--lct-stripe-b);
+    }
+
+    .lct-legend-busy .lct-swatch {
+        background-color : var(--lct-util-over);
+    }
+
+    .lct-legend-note {
+        margin-inline-start : auto;
+
+        a {
+            color : inherit;
+        }
+    }
+}

@@ -10,6 +10,7 @@ packages. No backend: each showcase loads its data from static JSON files and ru
 | Showcase | Products | Live | Source |
 |----------|----------|------|--------|
 | **EV Operations**: a production line, a service center with DC fast chargers and a vehicle program, with a live simulation | Scheduler (Enterprise tier), Gantt | [Live demo](https://showcase.bryntum.com/ev-operations/) | [ev-operations/](ev-operations/) |
+| **Logistics Control Tower**: 2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a distribution centre scheduled by the engine | Scheduler (Enterprise tier), with AG Grid Enterprise | [Live demo](https://showcase.bryntum.com/logistics-control-tower/) | [logistics-control-tower/](logistics-control-tower/) |
 
 ## Running locally
 
@@ -42,13 +43,19 @@ there, in case your npm config sends it to npm.bryntum.com, which serves Bryntum
 
 Without a licence key the Bryntum components run in trial mode and show a watermark.
 
+The Logistics Control Tower uses AG Grid Enterprise, a separately licensed third-party library. Its key is read at
+build time from `VITE_AG_LICENSE_KEY`, for example in a `.env.local` file at the repository root, which git ignores.
+Without it AG Grid runs unlicensed: it shows its watermark and logs a licence notice in the console. The tests always
+run without it.
+
 ## Repository layout
 
 ```
 ├── index.html, gallery.*     The gallery: page, styles, card list (gallery.js), images (gallery/, public/gallery/)
 ├── shared/                   @showcases/shared: the shell (header, light / dark switch, source link), design
 │                             tokens, the font and the logos, used by every showcase and the gallery
-├── ev-operations/            One folder per showcase, an npm workspace with its own README
+├── ev-operations/,           One folder per showcase, an npm workspace with its own README
+│   logistics-control-tower/
 ├── tests/                    Playwright smoke tests, one spec per page
 ├── vite.config.js            One multi-page build, every workspace but shared/ is a showcase
 └── eslint.config.js,         The code style of the Bryntum sources
@@ -65,15 +72,16 @@ lists the Bryntum packages it imports as `peerDependencies` at the same pin. Dep
 
 | Import | What it is |
 |--------|------------|
-| `@showcases/shared` | `createShell({ title, source, gallery })`: the page header and the container the app renders into. The header's breadcrumb links to the gallery, `gallery` defaults to `'../'`, as every showcase lives one folder below it |
-| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand, accent and text colours, font stacks, radius, border, tint and glows, page gutter, the app panel's border, padding, radius and shadow |
+| `@showcases/shared` | `createShell({ title, source, gallery })`: the page header and the container the app renders into. The header's breadcrumb links to the gallery, `gallery` defaults to `'../'`, as every showcase lives one folder below it. Its calls to action (`get-the-code.js`, `get-the-code.css`): "Get the code", a popover with the command that copies the repository and opens the showcase (derived from `source`) and the source link, and "Free trial", to bryntum.com/download/ |
+| `@showcases/shared/tokens.css` | Design tokens (`--sc-*`): brand, accent and text colours, font stacks, radius, borders, tint and glows, floating surfaces and their shadow, page gutter, the app panel's border, padding, radius and shadow |
 | `@showcases/shared/fonts.css` | The Montserrat font, bundled from `@fontsource` |
 | `@showcases/shared/color-scheme.js` | `createColorSchemeToggle({ apply })`: the sun / moon button and the one stored light / dark choice, shared by the gallery and the showcases. No Bryntum dependency |
-| `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (light / dark toggle, GitHub link) |
+| `@showcases/shared/icon-button.css` | `.sc-icon-button`, the borderless header icon buttons (the light / dark toggle, the gallery's GitHub link) |
 | `@showcases/shared/brand.css` | `.sc-brand`, the header lockup: the official Bryntum logo, a divider and the page name, or on a showcase the breadcrumb `.sc-crumbs` (Showcases / title) |
 | `@showcases/shared/logo-round.svg` | The round Bryntum logo, the favicon |
 | `@showcases/shared/logo.svg` | The official Bryntum logo, mark and wordmark, the mask brand.css colours brand blue on light and white on dark |
 | `@showcases/shared/github-mark.svg` | The GitHub mark, filled with `currentColor` |
+| `@showcases/shared/code.svg` | The code icon of "Get the code", drawn with `currentColor` |
 
 The shell imports the tokens, the icon buttons, the brand lockup and the font itself. The showcase imports its Bryntum
 structural CSS and the Svalbard theme, which renders light and dark from one file.
@@ -147,6 +155,9 @@ do not have. Such a banner would call `gtag('consent', 'update', { … })` once 
 ## License
 
 The showcase code in this repository is MIT licensed, see [LICENSE](LICENSE).
+
+AG Grid Enterprise (`ag-grid-enterprise`), used by the Logistics Control Tower, is a separately licensed third-party
+product, not part of Bryntum, see the [AG Grid licence](https://www.ag-grid.com/license-pricing/).
 
 The Bryntum packages it depends on (`@bryntum/*-enterprise`) hold the Enterprise tier, which is commercially licensed,
 see `license.pdf` in each package. The Community tier of each product is MIT licensed, see `LICENSE-MIT` in each

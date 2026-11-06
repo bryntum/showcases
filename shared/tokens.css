@@ -10,12 +10,19 @@
     --sc-accent        : light-dark(#0a63c9, #2b8bf2);
     --sc-accent-fill   : light-dark(#0a6ad6, #1570d6);
     --sc-accent-hover  : light-dark(#0a5cb8, #1f7fe6);
+    --sc-on-accent     : #fff;
     /* Text on pages without a Bryntum theme, and the brand lockup (brand.css): primary and muted */
     --sc-text          : light-dark(#15181d, #eef0f3);
     --sc-text-muted    : light-dark(#5b6270, #9aa1ac);
     /* Subtle borders and the pressed tint of the header icon buttons (icon-button.css) */
     --sc-border        : light-dark(#dde1e7, #2a2e35);
     --sc-tint          : color-mix(in srgb, currentColor 8%, transparent);
+    /* The outline of the header's secondary button, stronger than a subtle border */
+    --sc-border-strong : color-mix(in srgb, currentColor 30%, transparent);
+    /* Floating surfaces such as the "Get the code" popover: the surface, its inset code well and its shadow */
+    --sc-surface       : light-dark(#fff, #1c2026);
+    --sc-surface-inset : light-dark(#f2f4f7, #13161b);
+    --sc-shadow-float  : 0 0.75rem 2rem light-dark(rgb(16 24 40 / 16%), rgb(0 0 0 / 50%));
     --sc-font-family   : 'Montserrat Variable', 'Helvetica Neue', Arial, Helvetica, sans-serif;
     --sc-font-mono     : ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
     --sc-radius        : 0.375rem;
@@ -29,4 +36,6 @@
     /* The soft glows behind the showcase shell (shell.css) */
     --sc-glow-sky      : light-dark(rgb(108 207 250 / 30%), rgb(55 104 122 / 30%));
     --sc-glow-violet   : light-dark(rgb(78 34 191 / 10%), rgb(47 21 115 / 10%));
+    /* A soft blue light behind the header, dark mode only */
+    --sc-glow-header   : light-dark(transparent, color-mix(in srgb, var(--sc-brand) 16%, transparent));
 }

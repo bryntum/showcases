@@ -1,0 +1,216 @@
+{
+    "site": {
+        "name": "Nordhamn DC",
+        "startDate": "2026-11-09T00:00",
+        "now": "2026-11-09T09:15",
+        "days": 10,
+        "seed": 20261109,
+        "shipments": 2000
+    },
+    "loads": [
+        {
+            "type": "reefer",
+            "share": 0.38,
+            "pallets": [6, 26]
+        },
+        {
+            "type": "dry",
+            "share": 0.62,
+            "pallets": [4, 33]
+        }
+    ],
+    "carriers": [
+        {
+            "name": "Nordic Freight",
+            "code": "NF",
+            "color": "blue"
+        },
+        {
+            "name": "Baltic Express",
+            "code": "BX",
+            "color": "teal"
+        },
+        {
+            "name": "Atlas Haulage",
+            "code": "AH",
+            "color": "orange"
+        },
+        {
+            "name": "Fjord Logistics",
+            "code": "FL",
+            "color": "cyan"
+        },
+        {
+            "name": "Meridian Cargo",
+            "code": "MC",
+            "color": "purple"
+        },
+        {
+            "name": "Polar Line",
+            "code": "PL",
+            "color": "indigo"
+        },
+        {
+            "name": "Cobalt Transport",
+            "code": "CT",
+            "color": "pink"
+        },
+        {
+            "name": "Swift Arctic",
+            "code": "SA",
+            "color": "lime"
+        }
+    ],
+    "origins": [
+        "Gothenburg",
+        "Oslo",
+        "Hamburg",
+        "Rotterdam",
+        "Copenhagen",
+        "Gdańsk",
+        "Tallinn",
+        "Helsinki",
+        "Malmö",
+        "Aarhus",
+        "Bremen",
+        "Antwerp",
+        "Stockholm",
+        "Turku",
+        "Riga",
+        "Kiel",
+        "Lübeck",
+        "Szczecin"
+    ],
+    "docks": [
+        {
+            "id": "D01",
+            "name": "Door 01",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D02",
+            "name": "Door 02",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D03",
+            "name": "Door 03",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D04",
+            "name": "Door 04",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D05",
+            "name": "Door 05",
+            "capability": "reefer",
+            "zone": "Cold store"
+        },
+        {
+            "id": "D06",
+            "name": "Door 06",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D07",
+            "name": "Door 07",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D08",
+            "name": "Door 08",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D09",
+            "name": "Door 09",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D10",
+            "name": "Door 10",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D11",
+            "name": "Door 11",
+            "capability": "dry",
+            "zone": "Ambient"
+        },
+        {
+            "id": "D12",
+            "name": "Door 12",
+            "capability": "dry",
+            "zone": "Ambient"
+        }
+    ],
+    "downtime": [
+        {
+            "door": "D01",
+            "name": "Defrost",
+            "time": "05:10",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D02",
+            "name": "Defrost",
+            "time": "08:20",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D03",
+            "name": "Defrost",
+            "time": "12:00",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D04",
+            "name": "Defrost",
+            "time": "06:30",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D05",
+            "name": "Defrost",
+            "time": "10:40",
+            "minutes": 40,
+            "daily": true
+        },
+        {
+            "door": "D07",
+            "name": "Maintenance",
+            "time": "07:30",
+            "minutes": 90,
+            "daily": false
+        },
+        {
+            "door": "D09",
+            "name": "Cleaning",
+            "time": "11:30",
+            "minutes": 30,
+            "daily": false
+        },
+        {
+            "door": "D11",
+            "name": "Cleaning",
+            "time": "04:30",
+            "minutes": 30,
+            "daily": false
+        }
+    ]
+}
