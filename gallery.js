@@ -15,12 +15,15 @@ import lctDarkThumb1600 from './gallery/logistics-control-tower-dark-1600.webp';
 import lctDarkThumbPng from './gallery/logistics-control-tower-dark-1200.png';
 
 const
-    // Product pages the tags link to
+    // Every product a showcase can be built on, in filter order, with the page its tag links to
     productUrls = {
-        Scheduler    : 'https://bryntum.com/products/scheduler/',
         Gantt        : 'https://bryntum.com/products/gantt/',
+        Scheduler    : 'https://bryntum.com/products/scheduler/',
         Calendar     : 'https://bryntum.com/products/calendar/',
-        'Task Board' : 'https://bryntum.com/products/taskboard/'
+        'Task Board' : 'https://bryntum.com/products/taskboard/',
+        'AG Grid'    : 'https://www.ag-grid.com/',
+        'AG Charts'  : 'https://www.ag-grid.com/charts/',
+        'AG Studio'  : null
     },
     showcases   = [
         {
@@ -41,7 +44,7 @@ const
             title       : 'Logistics Control Tower',
             description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
                 'distribution centre, scheduled by the Bryntum engine.',
-            products : ['Scheduler'],
+            products : ['Scheduler', 'AG Grid'],
             url      : './logistics-control-tower/',
             source   : 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower',
             thumb    : {
@@ -52,8 +55,8 @@ const
             }
         }
     ],
-    // The products the showcases are built on, in order of appearance, one filter each
-    products    = [...new Set(showcases.flatMap(showcase => showcase.products))],
+    // One filter per product, also for those no showcase uses yet
+    products    = Object.keys(productUrls),
     encodeHtml  = text => String(text).replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`),
     // A product tag, a link to its product page when it has one
     tagHtml     = name => productUrls[name] ? `<a href="${productUrls[name]}">${encodeHtml(name)}</a>` : encodeHtml(name),
@@ -117,6 +120,13 @@ function renderFilters(group, items, status) {
         button.type        = 'button';
         button.textContent = label;
         button.setAttribute('aria-pressed', String(label === 'All'));
+
+        // Listed, so the range shows, but not selectable until a showcase uses it
+        if (label !== 'All' && !showcases.some(showcase => showcase.products.includes(label))) {
+            button.disabled = true;
+            button.title    = 'No showcase yet';
+        }
+
         return button;
     });
 

@@ -539,7 +539,7 @@ a {
         background    : transparent;
         cursor        : pointer;
 
-        &:hover {
+        &:hover:enabled {
             color      : var(--g-text);
             background : var(--g-surface-2);
         }
@@ -547,6 +547,12 @@ a {
         &[aria-pressed='true'] {
             color      : var(--g-on-accent);
             background : var(--g-accent-fill);
+        }
+
+        /* A product no showcase uses yet */
+        &:disabled {
+            opacity : 0.45;
+            cursor  : default;
         }
     }
 }
