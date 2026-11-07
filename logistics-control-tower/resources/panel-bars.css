@@ -33,7 +33,7 @@
         color                : var(--lct-ink-sub);
     }
 
-    /* A narrow dock schedule beside the grid (about 900 to 1080px wide screens) leaves out the door count, or the
+    /* A narrow dock schedule beside the grid (a window just over the compact width) leaves out the door count, or the
      * toolbar would move the zoom buttons to its overflow menu. Stacked, the title gives way instead */
     .lct-app:not(.lct-compact) .b-dock-schedule & .lct-panel-count {
         @container lct-bar (width < 420px) {

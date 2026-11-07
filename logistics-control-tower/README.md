@@ -171,7 +171,7 @@ Neutral colours come from the theme (`--b-neutral-*`, `--b-text-*`, `--b-border-
 by `resources/tokens.css`, the status colours are mixed from its palette (`--b-color-*`), darker in light mode and
 lighter in dark mode for contrast. Every colour in the CSS is a token. The sparklines are drawn on a canvas, which can
 not read CSS variables: `lib/grid/SparklineColors.js` resolves the status tokens and redraws when the mode changes. The
-counters and times use tabular figures and fixed widths, so they do not shift as they change. Below 900px the grid and
+counters and times use tabular figures and fixed widths, so they do not shift as they change. Below 1200px the grid and
 the schedule stack.
 
 The icons are [Phosphor Icons](https://phosphoricons.com) (MIT), Light weight, from `@phosphor-icons/core`.

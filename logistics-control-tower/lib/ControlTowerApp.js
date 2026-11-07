@@ -22,7 +22,7 @@ import './schedule/DockSchedule.js';
  * Scheduler's project the dock doors and the booked slots. GridSync mirrors both into AG Grid, GridDropZone lets
  * shipments be dragged from the grid onto a door.
  *
- * Below 900px wide the app is `compact` (the Responsive mixin): the grid and the schedule stack. Below 1280px the
+ * Below 1200px wide the app is `compact` (the Responsive mixin): the grid and the schedule stack. Below 1280px the
  * header makes room for the counters, Simulate delay shows its icon only.
  *
  * Learn more:
@@ -54,11 +54,12 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
          */
         delayLabel : null,
 
-        // Both of the default narrow states (small, medium) are compact, below 900px. Below 1280px the counters need
-        // the room of the Simulate delay label
+        // Both of the default narrow states (small, medium) are compact, below 1200px (phones, tablets, narrow
+        // windows), where the schedule beside the grid would be too narrow. Below 1280px the counters need the room
+        // of the Simulate delay label
         responsive : {
             small  : { when : 400, compact : true, delayLabel : false },
-            medium : { when : 900, compact : true, delayLabel : false },
+            medium : { when : 1200, compact : true, delayLabel : false },
             large  : { when : 1280, compact : false, delayLabel : false },
             '*'    : { compact : false, delayLabel : true }
         },
