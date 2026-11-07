@@ -4,6 +4,14 @@
     border-block-start : 1px solid var(--lct-border);
 
     --b-toolbar-padding : 0.6em var(--sc-panel-padding);
+
+    /* The first to go on short screens, before the panel bars and the footers (below 700px): the room goes to the
+     * shipments and the doors. Specific enough to win over the toolbar's own display */
+    @media (height < 800px) {
+        .lct-app & {
+            display : none;
+        }
+    }
 }
 
 .lct-legend {
