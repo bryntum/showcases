@@ -68,9 +68,10 @@
         align-items    : center;
         transition     : block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
 
-        /* Short screens (a phone on its side, a tablet across): no footer, the rows go to the shipments, the KPI bar
-         * has the late shipments and the conflicts. Collapsed and faded, hidden once it has gone */
-        @media (height < 700px) {
+        /* Short screens (a tablet across, small laptops), after the legend and before the panel bars (below 700px): no
+         * footer, the rows go to the shipments, the KPI bar has the late shipments and the conflicts. Collapsed and
+         * faded, hidden once it has gone */
+        @media (height < 800px) {
             block-size         : 0;
             border-block-start : none;
             overflow           : clip;

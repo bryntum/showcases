@@ -144,7 +144,7 @@
     display : none;
     flex    : none;
 
-    @media (width < 48rem), (height < 700px) {
+    @media (width < 48rem), (height < 700px), (pointer: coarse) {
         display : flex;
     }
 

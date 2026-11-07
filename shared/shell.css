@@ -159,9 +159,9 @@ body {
     }
 }
 
-/* Phones and short screens (a phone on its side, a tablet across): the app is all there is, no header, edge to edge.
- * After the wide rule above, a short wide window drops its gutter too */
-@media (width < 48rem), (height < 700px) {
+/* Touch devices (phones, tablets), narrow and short screens: the app is all there is, no header, edge to edge. After
+ * the wide rule above, a wide window drops its gutter too */
+@media (width < 48rem), (height < 700px), (pointer: coarse) {
     :root {
         --sc-gutter : 0;
     }

@@ -13,9 +13,9 @@
         transition : max-block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
     }
 
-    /* The first to go on short screens, before the panel bars and the footers (below 700px): the room goes to the
-     * shipments and the doors. Collapsed and faded, hidden once it has gone */
-    @media (height < 800px) {
+    /* The first to go on short screens, before the footers (below 800px) and the panel bars (below 700px): the room
+     * goes to the shipments and the doors. Collapsed and faded, hidden once it has gone */
+    @media (height < 900px) {
         .lct-app & {
             max-block-size     : 0;
             border-block-start : none;
