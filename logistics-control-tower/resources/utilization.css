@@ -9,9 +9,9 @@
     max-block-size : 5em;
     transition     : max-block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
 
-    /* Short screens (a tablet across, small laptops): collapses with the grid's footer, after the legend and before
+    /* Short screens and a tablet across: collapses with the grid's footer, after the legend (below 760px) and before
      * the panel bars (below 700px), the room goes to the doors */
-    @media (height < 800px) {
+    @media (height < 740px), (pointer: coarse) and (height < 800px) {
         max-block-size   : 0;
         overflow         : clip;
         opacity          : 0;

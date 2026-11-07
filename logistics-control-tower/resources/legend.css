@@ -3,19 +3,20 @@
 .lct-legend-bar {
     border-block-start : 1px solid var(--lct-border);
 
-    --b-toolbar-padding : 0.6em var(--sc-panel-padding);
-
     /* Room for the legend wrapped to four lines on a phone, the most it collapses from */
-    max-block-size : 12em;
+    max-block-size : 8em;
 
-    /* Specific enough to win over the toolbar's own transition */
+    /* Skinny, a key to glance at, the room goes to the shipments and the doors. Specific enough to win over the
+     * docked toolbar's own padding and transition */
     .lct-app & {
+        --b-toolbar-padding : 0.4em var(--sc-panel-padding);
+
         transition : max-block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
     }
 
-    /* The first to go on short screens, before the footers (below 800px) and the panel bars (below 700px): the room
+    /* The first to go on short screens, before the footers (below 740px) and the panel bars (below 700px): the room
      * goes to the shipments and the doors. Collapsed and faded, hidden once it has gone */
-    @media (height < 900px) {
+    @media (height < 760px) {
         .lct-app & {
             max-block-size     : 0;
             border-block-start : none;
@@ -31,15 +32,15 @@
     display     : flex;
     flex-wrap   : wrap;
     align-items : center;
-    gap         : 0.5em 1.5em;
+    gap         : 0.2em 1.25em;
     width       : 100%;
-    font-size   : 0.9em;
+    font-size   : 0.78em;
     color       : var(--lct-ink-sub);
 
     .lct-legend-items {
         display    : flex;
         flex-wrap  : wrap;
-        gap        : 0.4em 1.3em;
+        gap        : 0.2em 1.1em;
         margin     : 0;
         padding    : 0;
         list-style : none;
