@@ -6,6 +6,12 @@
      * has a border inside its height, so the strip gets the same, for one line at one height across both views */
     --b-grid-footer-outline-width : 0;
 
+    /* Short screens (a phone on its side, a tablet across): hidden with the panel bars and the grid's footer, the
+     * room goes to the doors */
+    @media (height < 700px) {
+        display : none;
+    }
+
     .b-grid-footer {
         box-sizing         : border-box;
         block-size         : var(--lct-footer-height);
