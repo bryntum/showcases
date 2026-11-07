@@ -27,7 +27,8 @@
         "build": "vite build",
         "preview": "vite preview --base /showcases/",
         "lint": "eslint . && stylelint \"**/*.css\"",
-        "test": "playwright test"
+        "test": "playwright test",
+        "screenshots": "node scripts/screenshots.js"
     },
     "dependencies": {
         "@bryntum/core-enterprise": "8.0.0",

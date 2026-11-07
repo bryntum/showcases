@@ -33,7 +33,7 @@ const
             title       : 'Logistics Control Tower',
             description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
                 'distribution centre, scheduled by the Bryntum engine.',
-            products : ['Scheduler', 'AG Grid'],
+            products : ['Scheduler', 'AG Grid', 'AG Charts'],
             url      : './logistics-control-tower/',
             source   : 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower',
             thumb    : {

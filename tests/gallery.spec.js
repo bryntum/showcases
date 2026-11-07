@@ -21,7 +21,7 @@ test.describe('Gallery', () => {
 
         await expect(featured.getByRole('heading', { level : 2, name : 'Logistics Control Tower' })).toBeVisible();
         await expect(featured.getByRole('list', { name : 'Built with' }).getByRole('listitem'))
-            .toHaveText(['Scheduler', 'AG Grid']);
+            .toHaveText(['Scheduler', 'AG Grid', 'AG Charts']);
         await expect(featured.getByRole('link', { name : 'Live demo' }))
             .toHaveAttribute('href', './logistics-control-tower/');
         await expect(featured.getByRole('link', { name : 'Source' }))
