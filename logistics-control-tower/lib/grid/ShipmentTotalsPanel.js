@@ -56,7 +56,7 @@ export default class ShipmentTotalsPanel {
         item('Avg delay', me.delay);
 
         me.onModelUpdated = () => {
-            me.idle ||= requestIdleCallback(() => {
+            me.idle ||= setTimeout(() => {
                 me.idle = 0;
                 me.update();
             });
@@ -89,7 +89,7 @@ export default class ShipmentTotalsPanel {
     destroy() {
         const { api, onModelUpdated, idle } = this;
 
-        cancelIdleCallback(idle);
+        clearTimeout(idle);
 
         if (!api.isDestroyed()) {
             api.removeEventListener('modelUpdated', onModelUpdated);
