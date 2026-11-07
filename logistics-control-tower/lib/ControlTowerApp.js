@@ -273,14 +273,16 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         }
     }
 
-    // The grid and the schedule stack on narrow screens, half the height each, see schedule.css. Wide, they share
-    // the width 12 to 9. The flex is the widgets' own, a stylesheet can not override their inline flex
+    // The grid and the schedule stack on narrow screens, half the height each. Wide, they share the width 12 to 9.
+    // Flipping the box layout sets the main container's flex-direction, which the splitter (orientation 'auto')
+    // follows. Setting the flex also drops the sizes of an earlier splitter drag
     updateCompact(compact) {
-        const { grid, schedule } = this.widgetMap;
+        const { main, grid, schedule } = this.widgetMap;
 
         this.toggleCls('lct-compact', compact);
-        grid.flex     = compact ? '1 1 50%' : 12;
-        schedule.flex = compact ? '1 1 50%' : 9;
+        main.layout.horizontal = !compact;
+        grid.flex              = compact ? '1 1 50%' : 12;
+        schedule.flex          = compact ? '1 1 50%' : 9;
     }
 
     // Without its label Simulate delay is its icon, the tooltip tells what it does

@@ -246,17 +246,6 @@
     --b-splitter-color : var(--lct-border);
 }
 
-/* Narrow screens (ControlTowerApp#compact): the grid above the schedule, without the splitter */
-.lct-app.lct-compact {
-    .lct-main {
-        flex-direction : column;
-    }
-
-    .lct-splitter {
-        display : none;
-    }
-}
-
 /* The shipment grid's lines and header colours (AgGridSetup.js), the two views read as one */
 .b-dock-schedule {
     --b-grid-row-border-color    : var(--b-border-6);
