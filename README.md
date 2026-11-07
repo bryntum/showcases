@@ -34,7 +34,7 @@ into a conflict.
 * Live KPIs, ETA drift sparklines, cold-chain temperatures, door downtime and an hourly utilization strip
 * Shows how to run Bryntum and AG Grid side by side, kept in sync from one source of truth
 
-**Built with** Scheduler (Enterprise tier) and AG Grid Enterprise ·
+**Built with** Scheduler (Enterprise tier), AG Grid Enterprise and AG Charts ·
 **[Live demo](https://showcase.bryntum.com/logistics-control-tower/)** ·
 **[Source and walkthrough](logistics-control-tower/)**
 
@@ -77,21 +77,26 @@ Want to change things, run the tests or add a showcase of your own? See [CONTRIB
 
 ## Learn more about Bryntum
 
-* The products: [Grid](https://bryntum.com/products/grid/), [Scheduler](https://bryntum.com/products/scheduler/),
-  [Gantt](https://bryntum.com/products/gantt/), [Calendar](https://bryntum.com/products/calendar/) and
-  [Task Board](https://bryntum.com/products/taskboard/)
+* The products: [Scheduler](https://bryntum.com/products/scheduler/), [Gantt](https://bryntum.com/products/gantt/),
+  [Calendar](https://bryntum.com/products/calendar/) and [Task Board](https://bryntum.com/products/taskboard/)
 * [Examples](https://bryntum.com/examples/): hundreds of focused, feature-level demos
 * [Documentation](https://bryntum.com/docs/)
 * [Free trial](https://bryntum.com/download/)
+* [Community, Business and Enterprise editions](https://bryntum.com/store/)
+
+## Learn more about AG Grid
+
+* The products: [AG Grid](https://www.ag-grid.com/), [AG Charts](https://www.ag-grid.com/charts/) and
+  [AG Studio](https://www.ag-grid.com/studio/)
+* [Demo](https://www.ag-grid.com/example/): AG Grid's feature showcase
+* [Documentation](https://www.ag-grid.com/javascript-data-grid/)
+* [Community and Enterprise editions](https://www.ag-grid.com/license-pricing/)
 
 ## License
 
-The showcase code in this repository is MIT licensed, see [LICENSE](LICENSE). Use it, copy it, build on it.
+**The showcase code** in this repository is MIT licensed, see [LICENSE](LICENSE).
 
-The Bryntum packages it depends on (`@bryntum/*-enterprise`) hold the Enterprise tier, which is commercially licensed,
-see `license.pdf` in each package. The Community tier of each product is MIT licensed, see `LICENSE-MIT` in each
-package. The packages run in trial mode, with a watermark, until a licence key is registered. Using Bryntum in
-production requires a licence, see the [Bryntum license](https://bryntum.com/products/license/).
-
-AG Grid Enterprise (`ag-grid-enterprise`), used by the Logistics Control Tower, is a separately licensed third-party
-product, not part of Bryntum, see the [AG Grid licence](https://www.ag-grid.com/license-pricing/).
+The showcases are built on the Enterprise tier of Bryntum and, in the Logistics Control Tower, AG Grid Enterprise.
+Both are commercially licensed and run in trial mode, with a watermark, until a licence key is added. Both products
+also have a free, MIT licensed Community edition. See the [Bryntum license](https://bryntum.com/products/license/)
+and the [AG Grid licence](https://www.ag-grid.com/license-pricing/).
