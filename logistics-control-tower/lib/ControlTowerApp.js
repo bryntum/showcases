@@ -91,7 +91,7 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
                         cls  : 'lct-toolbar-logo',
                         html : `<a href="../" title="All showcases" aria-label="Bryntum showcases"><img src="${logoUrl}" alt=""></a>`
                     },
-                    kpis     : { type : 'kpibar', flex : '1 1 auto', site : site.name },
+                    kpis     : { type : 'kpibar', flex : '1 1 auto', site : site.name, now : site.now },
                     controls : { type : 'simulationcontrols', flex : 'none' }
                 }
             },

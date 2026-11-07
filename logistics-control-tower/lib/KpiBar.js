@@ -36,6 +36,13 @@ export default class KpiBar extends Widget {
          */
         site : null,
 
+        /**
+         * The simulated time at the start, shown before the first counters, so the clock does not pop in and push
+         * them along as the grid loads
+         * @config {Date|String}
+         */
+        now : null,
+
         cls : 'lct-kpis'
     };
 
@@ -67,6 +74,19 @@ export default class KpiBar extends Widget {
         });
 
         me.trend = make('lct-kpi-trend', me.values.onTime.parentElement);
+
+        if (me.now) {
+            me.showClock(new Date(me.now));
+        }
+    }
+
+    /**
+     * Shows the date and the simulated time
+     * @param {Date} now The simulated time
+     */
+    showClock(now) {
+        this.clockDate.textContent = DateHelper.format(now, 'ddd D MMM');
+        this.clockTime.textContent = DateHelper.format(now, 'HH:mm');
     }
 
     /**
@@ -77,8 +97,7 @@ export default class KpiBar extends Widget {
     setValues(now, counts) {
         const me = this;
 
-        me.clockDate.textContent = DateHelper.format(now, 'ddd D MMM');
-        me.clockTime.textContent = DateHelper.format(now, 'HH:mm');
+        me.showClock(now);
 
         Object.keys(KpiBar.kpis).forEach(key => {
             const
