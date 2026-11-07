@@ -153,3 +153,25 @@ body {
         padding-block-start : 1em;
     }
 }
+
+/* Phones and short screens (a phone on its side, a tablet across): the app is all there is, no header, edge to edge.
+ * After the wide rule above, a short wide window drops its gutter too */
+@media (width < 48rem), (height < 700px) {
+    :root {
+        --sc-gutter : 0;
+    }
+
+    .sc-header {
+        display : none;
+    }
+
+    .sc-container {
+        padding : 0;
+
+        > .b-outer {
+            border        : none;
+            border-radius : 0;
+            box-shadow    : none;
+        }
+    }
+}
