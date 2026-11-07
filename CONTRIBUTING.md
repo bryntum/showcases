@@ -134,7 +134,8 @@ No other tags are loaded, and no ad tags.
   config.
 - **Production deploys only.** The Vite plugin in `vite.config.js` injects the snippet into every page's `<head>`
   only when the `SHOWCASES_GA4_ID` environment variable is set, see `shared/google-analytics.js`, which stops the build
-  on an ID not shaped like `G-XXXXXXXXXX`. The workflow sets it for the build it deploys from `main`.
+  on an ID not shaped like `G-XXXXXXXXXX`. The workflow sets it for the build it deploys from `main`,
+  in `bryntum/showcases` only, so a fork's deploys load no tracking.
   `npm run dev`, local builds, `npm run preview` and the tests load no tracking.
 
 To change the property, edit `SHOWCASES_GA4_ID` in `.github/workflows/pages.yml`. To disable tracking, remove it
