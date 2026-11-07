@@ -138,3 +138,28 @@
         --b-button-active-background : var(--b-neutral-90);
     }
 }
+
+/* The Bryntum mark before the counters, linking to the gallery. Only where the shell hides its header (shell.css) */
+.lct-toolbar .lct-toolbar-logo {
+    display : none;
+    flex    : none;
+
+    @media (width < 48rem), (height < 700px) {
+        display : flex;
+    }
+
+    a {
+        display       : flex;
+        border-radius : 50%;
+
+        &:focus-visible {
+            outline        : 2px solid var(--b-widget-focus-outline-color);
+            outline-offset : 0.2em;
+        }
+    }
+
+    img {
+        inline-size : 2.25em;
+        block-size  : 2.25em;
+    }
+}

@@ -1,4 +1,5 @@
 import { EventHelper, Panel, Responsive, Store } from '@bryntum/core-enterprise';
+import logoUrl from '@showcases/shared/logo-round.svg?url';
 import ShipmentModel from './model/ShipmentModel.js';
 import ShipmentData from './simulation/ShipmentData.js';
 import Simulator from './simulation/Simulator.js';
@@ -84,6 +85,12 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
             tbar : {
                 cls   : 'lct-toolbar',
                 items : {
+                    // The Bryntum mark, linking to the gallery, where the page header is hidden (phones, short screens)
+                    logo : {
+                        type : 'widget',
+                        cls  : 'lct-toolbar-logo',
+                        html : `<a href="../" title="All showcases" aria-label="Bryntum showcases"><img src="${logoUrl}" alt=""></a>`
+                    },
                     kpis     : { type : 'kpibar', flex : '1 1 auto', site : site.name },
                     controls : { type : 'simulationcontrols', flex : 'none' }
                 }
