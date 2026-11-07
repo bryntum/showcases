@@ -9,6 +9,14 @@
     /* For the narrow dock schedule below */
     container        : lct-bar / inline-size;
 
+    /* Short screens (a phone on its side, a tablet across): the room goes to the grid rows and the doors. Specific
+     * enough to win over the toolbar's own display */
+    @media (height < 700px) {
+        .lct-app & {
+            display : none;
+        }
+    }
+
     --b-toolbar-padding : 0 var(--sc-panel-padding);
     --b-toolbar-gap     : 0.7em;
 

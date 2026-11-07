@@ -113,9 +113,10 @@
     }
 }
 
-/* Group rows: the carrier, its shipments and pallets, and the late ones */
+/* Group rows: the carrier, its shipments and pallets, and the late ones. A block, inline it would sit on the text
+ * baseline of AG Grid's group value and the room for the descenders below would lift it off the row's centre */
 .lct-carrier-group {
-    display     : inline-flex;
+    display     : flex;
     align-items : center;
     gap         : 0.75em;
 
@@ -238,4 +239,12 @@
 /* Narrow screens (ControlTowerApp#compact): the footer keeps the shown count and the alerts */
 .lct-compact .lct-totals-panel .lct-footer-item:not(:first-child) {
     display : none;
+}
+
+/* Short screens (a phone on its side, a tablet across): no footer, the rows go to the shipments. The KPI bar has the
+ * late shipments and the conflicts */
+@media (height < 700px) {
+    .lct-grid-body .ag-status-bar {
+        display : none;
+    }
 }
