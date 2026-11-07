@@ -5,11 +5,24 @@
 
     --b-toolbar-padding : 0.6em var(--sc-panel-padding);
 
+    /* Room for the legend wrapped to four lines on a phone, the most it collapses from */
+    max-block-size : 12em;
+
+    /* Specific enough to win over the toolbar's own transition */
+    .lct-app & {
+        transition : max-block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
+    }
+
     /* The first to go on short screens, before the panel bars and the footers (below 700px): the room goes to the
-     * shipments and the doors. Specific enough to win over the toolbar's own display */
+     * shipments and the doors. Collapsed and faded, hidden once it has gone */
     @media (height < 800px) {
         .lct-app & {
-            display : none;
+            max-block-size     : 0;
+            border-block-start : none;
+            overflow           : clip;
+            opacity            : 0;
+            visibility         : hidden;
+            transition-delay   : 0s, 0s, var(--sc-collapse);
         }
     }
 }

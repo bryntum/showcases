@@ -66,6 +66,18 @@
         block-size     : var(--lct-footer-height);
         padding-inline : var(--sc-panel-padding);
         align-items    : center;
+        transition     : block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
+
+        /* Short screens (a phone on its side, a tablet across): no footer, the rows go to the shipments, the KPI bar
+         * has the late shipments and the conflicts. Collapsed and faded, hidden once it has gone */
+        @media (height < 700px) {
+            block-size         : 0;
+            border-block-start : none;
+            overflow           : clip;
+            opacity            : 0;
+            visibility         : hidden;
+            transition-delay   : 0s, 0s, var(--sc-collapse);
+        }
     }
 }
 
@@ -239,12 +251,4 @@
 /* Narrow screens (ControlTowerApp#compact): the footer keeps the shown count and the alerts */
 .lct-compact .lct-totals-panel .lct-footer-item:not(:first-child) {
     display : none;
-}
-
-/* Short screens (a phone on its side, a tablet across): no footer, the rows go to the shipments. The KPI bar has the
- * late shipments and the conflicts */
-@media (height < 700px) {
-    .lct-grid-body .ag-status-bar {
-        display : none;
-    }
 }

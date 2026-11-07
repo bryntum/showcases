@@ -40,7 +40,10 @@ body {
     align-items    : center;
     gap            : 0.75em;
     min-height     : 3.5em;
+    max-block-size : 6em;
     margin-inline  : var(--sc-gutter);
+    transition     : max-block-size var(--sc-collapse), min-height var(--sc-collapse), margin var(--sc-collapse),
+        opacity var(--sc-collapse), visibility 0s;
     /* The logo and the last tool line up with the app panel's content, clear of its rounded corners */
     padding-inline : calc(var(--sc-panel-border) + var(--sc-panel-padding));
 
@@ -125,6 +128,7 @@ body {
     display        : flex;
     flex-direction : column;
     padding        : 0 var(--sc-gutter) var(--sc-gutter);
+    transition     : padding var(--sc-collapse);
 
     /* The app panel, framed by the shell. `.b-outer` marks the outermost Bryntum widget, the shell has no other handle
      * on the app a showcase renders into it */
@@ -136,6 +140,7 @@ body {
         border        : var(--sc-panel-border) solid var(--b-border-7);
         border-radius : var(--sc-panel-radius);
         box-shadow    : var(--sc-panel-shadow);
+        transition    : border-width var(--sc-collapse), border-radius var(--sc-collapse), box-shadow var(--sc-collapse);
     }
 }
 
@@ -161,15 +166,22 @@ body {
         --sc-gutter : 0;
     }
 
+    /* Collapsed and faded, hidden once it has gone */
     .sc-header {
-        display : none;
+        min-height         : 0;
+        max-block-size     : 0;
+        margin-block-start : 0;
+        overflow           : clip;
+        opacity            : 0;
+        visibility         : hidden;
+        transition-delay   : 0s, 0s, 0s, 0s, var(--sc-collapse);
     }
 
     .sc-container {
         padding : 0;
 
         > .b-outer {
-            border        : none;
+            border-width  : 0;
             border-radius : 0;
             box-shadow    : none;
         }

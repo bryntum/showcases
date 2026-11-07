@@ -9,11 +9,21 @@
     /* For the narrow dock schedule below */
     container        : lct-bar / inline-size;
 
-    /* Short screens (a phone on its side, a tablet across): the room goes to the grid rows and the doors. Specific
-     * enough to win over the toolbar's own display */
+    /* Specific enough to win over the toolbar's own transition */
+    .lct-app & {
+        transition : block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
+    }
+
+    /* Short screens (a phone on its side, a tablet across): the room goes to the grid rows and the doors. Collapsed
+     * and faded, hidden once it has gone */
     @media (height < 700px) {
         .lct-app & {
-            display : none;
+            block-size       : 0;
+            border-block-end : none;
+            overflow         : clip;
+            opacity          : 0;
+            visibility       : hidden;
+            transition-delay : 0s, 0s, var(--sc-collapse);
         }
     }
 

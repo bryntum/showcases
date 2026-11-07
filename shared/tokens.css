@@ -28,6 +28,8 @@
     --sc-radius        : 0.375rem;
     /* Page gutter around the header and the app panel */
     --sc-gutter        : 1em;
+    /* Parts of the page that collapse and expand as the window crosses a size, see shell.css and the showcases */
+    --sc-collapse      : 0.2s;
     /* The app panel: its border, its toolbar's padding (the header lines up with that content edge) and its corners */
     --sc-panel-border  : 1px;
     --sc-panel-padding : 1em;
@@ -38,4 +40,11 @@
     --sc-glow-violet   : light-dark(rgb(78 34 191 / 10%), rgb(47 21 115 / 10%));
     /* A soft blue light behind the header, dark mode only */
     --sc-glow-header   : light-dark(transparent, color-mix(in srgb, var(--sc-brand) 16%, transparent));
+}
+
+/* No collapse animation for those who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --sc-collapse : 0s;
+    }
 }

@@ -247,10 +247,10 @@ export default class ControlTowerApp extends Panel.mixin(Responsive) {
         this.schedule.revealSlot(this.schedule.eventStore.getById(shipment.id));
     }
 
-    // A tick sends several batches to the grid. The KPIs are counted once for them all, when the browser is idle
-    // (Delayable, cancelled on destroy)
+    // A tick sends several batches to the grid. The KPIs are counted once for them all, in a timeout after them
+    // (Delayable, cancelled on destroy). Not an idle callback, Safari has none
     requestKpiRefresh() {
-        this.kpiIdle ??= this.requestIdleCallback(this.refreshKpis);
+        this.kpiIdle ??= this.setTimeout(this.refreshKpis, 0);
     }
 
     /**

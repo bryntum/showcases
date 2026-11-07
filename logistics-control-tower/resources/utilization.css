@@ -6,10 +6,17 @@
      * has a border inside its height, so the strip gets the same, for one line at one height across both views */
     --b-grid-footer-outline-width : 0;
 
-    /* Short screens (a phone on its side, a tablet across): hidden with the panel bars and the grid's footer, the
+    max-block-size : 5em;
+    transition     : max-block-size var(--sc-collapse), opacity var(--sc-collapse), visibility 0s;
+
+    /* Short screens (a phone on its side, a tablet across): collapses with the panel bars and the grid's footer, the
      * room goes to the doors */
     @media (height < 700px) {
-        display : none;
+        max-block-size   : 0;
+        overflow         : clip;
+        opacity          : 0;
+        visibility       : hidden;
+        transition-delay : 0s, 0s, var(--sc-collapse);
     }
 
     .b-grid-footer {
