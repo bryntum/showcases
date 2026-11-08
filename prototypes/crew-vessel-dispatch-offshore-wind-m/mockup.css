@@ -110,7 +110,17 @@
     }
 
     b {
-        font-size : 24px;
+        display     : flex;
+        align-items : baseline;
+        gap         : 10px;
+        font-size   : 22px;
+    }
+
+    /* The time beside the date, in the now line's blue */
+    b span {
+        font-size   : 15px;
+        font-weight : 600;
+        color       : var(--b-color-blue);
     }
 }
 
@@ -175,33 +185,6 @@
 
 .ow-kpi-alert {
     --ow-tone : var(--ow-cancel);
-}
-
-.ow-kpi-tools {
-    display     : flex;
-    align-items : center;
-    gap         : 14px;
-    margin-left : auto;
-}
-
-.ow-next {
-    font-size   : 12px;
-    color       : var(--ow-ink-sub);
-    white-space : nowrap;
-}
-
-.ow-play {
-    display          : flex;
-    align-items      : center;
-    gap              : 8px;
-    height           : 38px;
-    padding          : 0 16px;
-    border           : 0;
-    border-radius    : 8px;
-    font-weight      : 600;
-    color            : var(--ow-plan) !important;
-    background-color : color-mix(in srgb, var(--b-color-blue) 14%, transparent);
-    white-space      : nowrap;
 }
 
 /* The two halves */
@@ -421,8 +404,43 @@
     }
 }
 
+/* The date row over the hours, like the Scheduler's two level day / hour header */
+.ow-axis-row-day {
+    height        : 24px;
+    border-bottom : 1px solid var(--ow-grid);
+}
+
+.ow-day {
+    position     : sticky;
+    left         : 0;
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 8px;
+    height       : 100%;
+    padding-left : 8px;
+    font-size    : 12px;
+    font-weight  : 700;
+    white-space  : nowrap;
+
+    em {
+        padding          : 0 6px;
+        border-radius    : 4px;
+        font-style       : normal;
+        font-size        : 10.5px;
+        font-weight      : 600;
+        color            : var(--b-color-blue);
+        background-color : color-mix(in srgb, var(--b-color-blue) 13%, transparent);
+    }
+}
+
 .ow-axis-row-hours {
     height        : 26px;
+    border-bottom : 1px solid var(--ow-grid);
+}
+
+/* The label column's first cell spans the date and hour rows */
+.ow-axis-row-head {
+    height        : 51px; /* content-box: 24 + 1 + 26 */
     border-bottom : 1px solid var(--ow-grid);
 }
 
@@ -508,9 +526,11 @@
 
 .ow-now-label {
     position         : absolute;
-    top              : 4px;
-    left             : -21px;
-    padding          : 1px 5px;
+    top              : 29px;
+    left             : -1px;
+    transform        : translateX(-50%);
+    padding          : 1px 6px;
+    white-space      : nowrap;
     border-radius    : 9px;
     font-size        : 10.5px;
     font-weight      : 700;
@@ -1336,7 +1356,7 @@
         gap       : 10px 14px;
         padding   : 10px 12px;
 
-        .ow-kpi, .ow-next {
+        .ow-kpi {
             display : none;
         }
 
@@ -1346,7 +1366,7 @@
     }
 
     .ow-clock b {
-        font-size : 20px;
+        font-size : 19px;
     }
 
     .ow-window {
@@ -1359,20 +1379,8 @@
         }
     }
 
-    .ow-kpi-tools {
+    .ow-kpi-warn, .ow-kpi-alert {
         margin-left : auto;
-    }
-
-    .ow-play {
-        width   : 38px;
-        padding : 0;
-        justify-content : center;
-        font-size : 0;
-
-        .ow-icon {
-            width  : 18px;
-            height : 18px;
-        }
     }
 
     .ow-tabs {
@@ -1429,6 +1437,11 @@
 
     .ow-resource-icon {
         display : none;
+    }
+
+    /* Keep the date readable beside the sticky label column while the hours scroll */
+    .ow-day {
+        left : var(--ow-resource-width);
     }
 
     .ow-resource-text small {

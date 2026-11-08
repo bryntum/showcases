@@ -10,7 +10,7 @@
 import { createShell } from '@showcases/shared';
 import '@bryntum/scheduler-enterprise/scheduler.css';
 import '@bryntum/scheduler-enterprise/svalbard.css';
-import { forecast, now, trips as allTrips, hhmm, windows } from './data.js';
+import { dayShort, forecast, hhmm, nextDay, nextLong, now, trips as allTrips, windows } from './data.js';
 import { icon } from './icons.js';
 import { mapPanelHtml } from './map.js';
 import { drawDependencies, scheduleHtml, trayHtml, tripsFor } from './schedule.js';
@@ -33,22 +33,18 @@ function kpiHtml() {
         left    = win.ctv - now,
         moved   = state === 'forecast',
         kpis    = moved ?
-            [['Due today', 14], ['Assigned', 5], ['Moved to Tue', 6, 'ow-kpi-alert'], ['Offshore', '14 techs'], ['At risk', 0]] :
-            [['Due today', 14], ['Assigned', 11], ['Waiting', 3], ['Offshore', '14 techs'], ['At risk', 1, 'ow-kpi-warn']];
+            [['Due today', 14], ['Assigned', 5], [`Moved to ${nextDay}`, 6, 'ow-kpi-alert']] :
+            [['Due today', 14], ['Assigned', 11], ['At risk', 1, 'ow-kpi-warn']];
 
     return `
     <div class="ow-kpis">
-        <div class="ow-clock"><small>Mon 9 Nov · Skarv Bank</small><b>${hhmm(now)}</b></div>
+        <div class="ow-clock"><small>Skarv Bank · today</small><b>${dayShort}<span>${hhmm(now)}</span></b></div>
         <div class="ow-window ${moved ? 'ow-window-short' : ''}">
             ${icon('waves')}
             <span><small>CTV weather window</small><b>Closes ${hhmm(win.ctv)}</b></span>
             <span class="ow-window-left">${Math.floor(left)} h ${Math.round(left % 1 * 60)} min left${moved ? '<em>was 14:00</em>' : ''}</span>
         </div>
         ${kpis.map(([label, value, cls = '']) => `<div class="ow-kpi ${cls}"><small>${label}</small><b>${value}</b></div>`).join('')}
-        <div class="ow-kpi-tools">
-            <span class="ow-next">${icon('broadcast')} ${moved ? 'Updated 08:00' : 'Next forecast 08:00'}</span>
-            <button class="ow-play">${icon('play')} Play the day</button>
-        </div>
     </div>`;
 }
 
@@ -61,7 +57,7 @@ function toastHtml() {
     <div class="ow-toast" role="status">
         ${icon('warning')}
         <span><b>Forecast 08:00: Hs reaches 1.5 m at 12:00, two hours earlier.</b>
-        3 trips trimmed, Sea Puffin moved to Tuesday, Heli 1's pickup brought forward.</span>
+        3 trips trimmed, Sea Puffin moved to ${nextLong}, Heli 1's pickup brought forward.</span>
         <button>${icon('arrow-undo')} Undo</button><button class="ow-toast-primary">Review 5 changes</button>
     </div>`;
 }
@@ -120,7 +116,7 @@ app.innerHTML = `
             <div class="ow-schedule-body">${scheduleHtml(trips, state)}</div>
             <div class="ow-legend">
                 <span class="ow-l-plan">On plan</span><span class="ow-l-risk">Past window</span><span class="ow-l-trim">Trimmed</span>
-                <span class="ow-l-cancel">Moved</span><span class="ow-l-transit">Transit</span><span class="ow-l-nogo">Weather no-go</span>
+                <span class="ow-l-cancel">Moved</span><span class="ow-l-nogo">Weather no-go</span>
                 <span class="ow-l-dep">Must finish first</span>
                 <span class="ow-legend-credit">Schedule: Bryntum Scheduler · Wave height: AG Charts</span>
             </div>

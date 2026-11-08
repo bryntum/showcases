@@ -4,7 +4,7 @@
  * inside, the weather no-go time ranges and the window line. In the build these are a Scheduler with resource time
  * ranges, nested events, dependencies and a resource utilization column.
  */
-import { dayEnd, dayStart, forecast, hhmm, now, resources, tripEnd, waiting, windows } from './data.js';
+import { dayEnd, dayLong, dayStart, forecast, hhmm, nextDay, now, resources, tripEnd, waiting, windows } from './data.js';
 import { icon } from './icons.js';
 
 const
@@ -99,11 +99,12 @@ function axisHtml(state) {
     return `
     <div class="ow-axis">
         <div class="ow-axis-label">
-            <span class="ow-axis-row ow-axis-row-hours">${icon('broadcast')} ${state === 'forecast' ? '<span class="ow-chip-new">Forecast 08:00</span>' : 'Forecast 06:00'}</span>
+            <span class="ow-axis-row ow-axis-row-head">${icon('broadcast')} ${state === 'forecast' ? '<span class="ow-chip-new">Forecast 08:00</span>' : 'Forecast 06:00'}</span>
             <span class="ow-axis-row ow-axis-row-sea">${icon('waves')}<span>Wave height<small>Hs, metres</small></span></span>
             <span class="ow-axis-row ow-axis-row-wind">${icon('wind')}<span>Wind<small>m/s at hub</small></span></span>
         </div>
         <div class="ow-axis-time">
+            <div class="ow-axis-row ow-axis-row-day"><span class="ow-day">${dayLong}<em>Today</em></span></div>
             <div class="ow-axis-row ow-axis-row-hours">${hours.join('')}</div>
             <div class="ow-axis-row ow-axis-row-sea"><div class="ow-wave-chart"></div></div>
             <div class="ow-axis-row ow-axis-row-wind">${winds.join('')}</div>
@@ -113,7 +114,7 @@ function axisHtml(state) {
 }
 
 function nowLine(label = false) {
-    return `<span class="ow-now" style="left:${pct(now)}">${label ? `<span class="ow-now-label">${hhmm(now)}</span>` : ''}</span>`;
+    return `<span class="ow-now" style="left:${pct(now)}">${label ? `<span class="ow-now-label">Now ${hhmm(now)}</span>` : ''}</span>`;
 }
 
 /**
@@ -128,8 +129,8 @@ function tripHtml(trip, { selected, drag }) {
         status = trip.status,
         badge  = {
             'at-risk' : `<span class="ow-badge ow-badge-risk">${Math.round(-trip.margin * 60)} min past window</span>`,
-            trimmed   : `<span class="ow-badge ow-badge-trim">${trip.removed.join(', ')} → Tue</span>`,
-            cancelled : '<span class="ow-badge ow-badge-cancel">Moved to Tue 06:30</span>',
+            trimmed   : `<span class="ow-badge ow-badge-trim">${trip.removed.join(', ')} → ${nextDay}</span>`,
+            cancelled : `<span class="ow-badge ow-badge-cancel">Moved to ${nextDay} 06:30</span>`,
             pulled    : `<span class="ow-badge ow-badge-trim">${Math.round((trip.was - trip.start) * 60)} min earlier</span>`
         }[status] ?? '';
 

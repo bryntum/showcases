@@ -1,10 +1,22 @@
 /**
  * Mock data of the design mockup: one morning at a fictional 60 turbine farm, Skarv Bank. Hand written so every state
  * tells the story: the plan, a team dragged onto a trip, and the 08:00 forecast closing the window early.
- * Times are decimal hours of Mon 9 Nov.
+ * Times are decimal hours of today: the page opens on the real current date, like the build will.
  */
 
+const
+    today    = new Date(),
+    tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+    fmt      = (date, options) => date.toLocaleDateString('en-GB', options);
+
 export const
+    // Today, written out for the time axis ("Sunday 8 November 2026") and short for the KPI bar ("Sun 8 Nov")
+    dayLong  = fmt(today, { weekday : 'long', day : 'numeric', month : 'long', year : 'numeric' }).replace(',', ''),
+    dayShort = fmt(today, { weekday : 'short', day : 'numeric', month : 'short' }).replace(',', ''),
+    // Where the forecast pushes work: "Mon", "Monday"
+    nextDay  = fmt(tomorrow, { weekday : 'short' }),
+    nextLong = fmt(tomorrow, { weekday : 'long' }),
+
     // The visible day
     dayStart = 6,
     dayEnd   = 18,

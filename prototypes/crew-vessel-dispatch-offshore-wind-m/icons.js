@@ -11,7 +11,6 @@ import broadcast from '@phosphor-icons/core/assets/light/broadcast-light.svg?raw
 import caretDown from '@phosphor-icons/core/assets/light/caret-down-light.svg?raw';
 import checkCircle from '@phosphor-icons/core/assets/light/check-circle-light.svg?raw';
 import handGrabbing from '@phosphor-icons/core/assets/light/hand-grabbing-light.svg?raw';
-import play from '@phosphor-icons/core/assets/light/play-light.svg?raw';
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
 import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
@@ -59,7 +58,6 @@ const phosphor = {
     'caret-down'    : caretDown,
     'check-circle'  : checkCircle,
     'hand-grabbing' : handGrabbing,
-    play,
     warning,
     waves,
     wind

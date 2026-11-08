@@ -3,7 +3,7 @@
  * the trips from the port and the status of every turbine. While a team is dragged it shows which turbines the trip
  * can still reach before the window closes. Below it, the selected turbine with the turbine illustration.
  */
-import { now } from './data.js';
+import { nextDay, now } from './data.js';
 import { icon } from './icons.js';
 import { turbineMarker, turbineSvg } from './turbine.js';
 
@@ -169,8 +169,8 @@ function labelsFor(state) {
     return {
         plan     : [['T-22', 'T-22 · Team B'], ['T-34', 'T-34 · fault', 'ow-map-label-fault'], ['T-41', 'T-41 · at risk', 'ow-map-label-risk']],
         drag     : [['T-34', 'T-34 · +48 min · back 13:54', 'ow-map-label-target']],
-        forecast : [['T-31', 'SP-1 → Tue', 'ow-map-label-moved'], ['T-17', 'T-17 → Tue', 'ow-map-label-moved'],
-            ['T-55', 'T-46, T-55 → Tue', 'ow-map-label-moved']]
+        forecast : [['T-31', `SP-1 → ${nextDay}`, 'ow-map-label-moved'], ['T-17', `T-17 → ${nextDay}`, 'ow-map-label-moved'],
+            ['T-55', `T-46, T-55 → ${nextDay}`, 'ow-map-label-moved']]
     }[state];
 }
 
@@ -204,7 +204,7 @@ export function mapPanelHtml(trips, state) {
         },
         forecast : {
             name : 'T-31', sub : 'Row D · 8.0 MW', job : 'Yaw gear oil change', team : 'Team C · GWO',
-            trip : 'SP-1 · Sea Puffin', eta : 'Moved to Tue 06:30', hs : 1.5, note : 'Return leg would meet Hs 1.8 m'
+            trip : 'SP-1 · Sea Puffin', eta : `Moved to ${nextDay} 06:30`, hs : 1.5, note : 'Return leg would meet Hs 1.8 m'
         }
     }[state];
 
