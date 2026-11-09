@@ -127,7 +127,12 @@ export default class ForecastHeader {
         me.scheduler = scheduler;
         me.observer?.disconnect();
         me.observer = new MutationObserver(() => me.mount());
-        me.observer.observe(header, { childList : true, subtree : true });
+        me.observer.observe(header, {
+            childList       : true,
+            subtree         : true,
+            attributes      : true,
+            attributeFilter : ['style']
+        });
         me.mount();
     }
 
@@ -136,10 +141,35 @@ export default class ForecastHeader {
             me   = this,
             cell = me.scheduler?.element.querySelector('.ow-sea-cell');
 
-        if (cell && me.chartHost.parentElement !== cell) {
+        // Drawn again when moved or empty only (the chart's own changes also reach this observer)
+        if (cell && (me.chartHost.parentElement !== cell)) {
             cell.append(me.chartHost);
             me.chart.redraw();
         }
+
+        me.coverHours();
+    }
+
+    // The hour label the now pill covers is hidden while it does
+    coverHours() {
+        const
+            root = this.scheduler?.element,
+            pill = root?.querySelector('.b-grid-header .ow-now label');
+
+        root?.querySelectorAll('.ow-hour-cell').forEach(cell => {
+            const
+                text = cell.querySelector('.b-sch-header-text') ?? cell,
+                range = document.createRange();
+
+            range.selectNodeContents(text);
+
+            const
+                a       = range.getBoundingClientRect(),
+                b       = pill?.getBoundingClientRect(),
+                covered = Boolean(b?.width) && a.right > b.left - 2 && a.left < b.right + 2;
+
+            cell.classList.toggle('ow-covered', covered);
+        });
     }
 
     /**

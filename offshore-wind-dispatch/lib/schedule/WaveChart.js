@@ -191,7 +191,7 @@ export default class WaveChart {
                 me.overLimit('red', colors.red),
                 me.valueLabels(tone)
             ],
-            axes       : {
+            axes : {
                 x : me.timeAxis(colors, color('--ow-ink-sub'), color('--ow-grid')),
                 y : me.heightAxis(color('--ow-ink-faint'))
             }
@@ -335,7 +335,8 @@ export default class WaveChart {
             // chart's edges
             bottom         = 0,
             top            = 2.9,
-            limit          = (value, text) => ({
+            // CTV named under its line, SWATH above its line: the two labels never meet
+            limit          = (value, text, placement) => ({
                 type        : 'line',
                 value,
                 stroke      : ink,
@@ -344,7 +345,7 @@ export default class WaveChart {
                 label       : {
                     text,
                     color      : ink,
-                    placement  : 'top-right',
+                    placement,
                     padding    : 1,
                     fontSize   : 8.5,
                     fontWeight : 500,
@@ -363,7 +364,7 @@ export default class WaveChart {
             line       : { enabled : false },
             tick       : { enabled : false },
             gridLine   : { enabled : false },
-            crossLines : [limit(ctv, `CTV ${ctv.toFixed(1)}`), limit(swath, `SWATH ${swath.toFixed(1)}`)]
+            crossLines : [limit(ctv, `CTV ${ctv.toFixed(1)}`, 'bottom-right'), limit(swath, `SWATH ${swath.toFixed(1)}`, 'top-right')]
         };
     }
 }
