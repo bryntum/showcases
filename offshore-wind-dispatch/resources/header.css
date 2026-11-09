@@ -180,6 +180,13 @@
             color       : var(--ow-c-muted);
         }
 
+        /* The weather rows' icons, muted, in the row's centre line */
+        .ow-axis-icon {
+            width  : 16px;
+            height : 16px;
+            color  : var(--ow-c-muted);
+        }
+
         > span {
             display        : flex;
             flex-direction : column;

@@ -20,8 +20,10 @@
     --ow-now     : var(--b-color-blue);
 
     /* Neutrals */
-    --ow-surface   : var(--b-neutral-100);
-    --ow-page      : light-dark(#f4f5f7, var(--b-neutral-97));
+    /* Cards sit a step lighter than the page behind them, in dark too */
+    --ow-surface   : light-dark(var(--b-neutral-100), #1e1e1e);
+    --ow-page      : light-dark(#f4f5f7, #141414);
+    --ow-card-border : light-dark(rgb(16 24 40 / 10%), rgb(255 255 255 / 9%));
     --ow-sunken    : var(--b-neutral-98);
     --ow-raised    : light-dark(var(--b-neutral-99), var(--b-neutral-96));
     --ow-border    : var(--b-border-7);
@@ -91,7 +93,9 @@
     --ow-gutter         : var(--ow-frame-radius);
     --ow-card-radius-min : 8px;
     --ow-card-radius    : max(calc(var(--ow-frame-radius) - var(--ow-gutter)), var(--ow-card-radius-min));
-    --ow-card-shadow    : 0 1px 3px light-dark(rgb(16 24 40 / 8%), rgb(0 0 0 / 45%)),
+    /* The hairline is a 1px ring in the shadow, so it takes no room from what is inside the card (the schedule's rows
+       are fixed, they fit the 960px page to the pixel) */
+    --ow-card-shadow    : 0 0 0 1px var(--ow-card-border), 0 1px 3px light-dark(rgb(16 24 40 / 8%), rgb(0 0 0 / 45%)),
         0 1px 2px light-dark(rgb(16 24 40 / 4%), rgb(0 0 0 / 30%));
     --ow-c-radius       : 4px;
 }

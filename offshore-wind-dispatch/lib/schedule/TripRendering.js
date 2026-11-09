@@ -1,5 +1,6 @@
 import { windowShare } from '../plan/Planner.js';
 import { portMinutes } from '../plan/Farm.js';
+import { iconConfig } from '../util/Icons.js';
 import { duration, hhmm, nextDay, toMinutes } from '../util/Time.js';
 
 /**
@@ -250,13 +251,19 @@ export function renderVessel(vessel, { now, close, limit }) {
     return {
         class    : `ow-resource ow-resource-${vessel.mode}`,
         children : [
-            { tag : 'b', text : vessel.name },
+            iconConfig(vessel.glyph, 'ow-resource-icon'),
             {
-                tag   : 'small',
-                // The full type, "AW169 · hoist", the line has its first word
-                title : `${vessel.kind}: ${pax} of ${vessel.seats} seats taken, ${share}% of the weather window left ` +
-                    'today is booked',
-                text : `${vessel.kind.split(' · ')[0]} · ${limitText(limit)} · ${pax}/${vessel.seats}`
+                class    : 'ow-resource-text',
+                children : [
+                    { tag : 'b', text : vessel.name },
+                    {
+                        tag   : 'small',
+                        // The full type, "AW169 · hoist", the line has its first word
+                        title : `${vessel.kind}: ${pax} of ${vessel.seats} seats taken, ${share}% of the weather ` +
+                            'window left today is booked',
+                        text : `${vessel.kind.split(' · ')[0]} · ${limitText(limit)} · ${pax}/${vessel.seats}`
+                    }
+                ]
             }
         ]
     };
