@@ -294,7 +294,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
 });
 
 test.describe('Offshore Wind Dispatch turbines', () => {
-    test('the rotors turn at the wind of the hour, stopped turbines stand still, the wrench marks the ones in work', async({ page }) => {
+    test('the rotor in the tooltip turns at the wind of the hour, the markers on the map stand still, the wrench marks the ones in work', async({ page }) => {
         await open(page);
 
         const
@@ -312,11 +312,11 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         expect(await page.evaluate(() => getComputedStyle(document.documentElement)
             .getPropertyValue('--ow-rotor-period').trim())).toBe('6.86s');
 
-        // A running turbine turns when hovered, its tooltip says how fast
+        // A running turbine's marker stays still when hovered, the drawing in its tooltip turns and says how fast
         await hover('T-60');
-        await expect.poll(() => animation('T-60')).toBe('ow-spin');
         await expect(tooltip(page)).toContainText('8.8 rpm · wind 10 m/s');
         await expect(tooltip(page).locator('.ow-turbine-rotor')).toHaveCount(1);
+        expect(await animation('T-60')).toBe('none');
 
         // T-34 has a fault: still on the map and in its tooltip
         await hover('T-34');

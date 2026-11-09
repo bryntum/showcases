@@ -61,14 +61,6 @@
     }
 }
 
-/* A running turbine's rotor turns when hovered, at the speed of the wind now (--ow-rotor-period, see Turbine.js). A
-   stopped one, at fault or in work, stands still */
-@media (prefers-reduced-motion : no-preference) {
-    .ow-marker.ow-m-hover:not(.ow-m-stopped) .ow-marker-glyph {
-        animation : ow-spin var(--ow-rotor-period, 0s) linear infinite;
-    }
-}
-
 .ow-m-work, .ow-m-risk, .ow-m-fault, .ow-m-target {
     .ow-marker-disc {
         fill : var(--ow-tone);
@@ -154,10 +146,4 @@
 
 .ow-m-dim {
     opacity : 0.4;
-}
-
-@keyframes ow-spin {
-    to {
-        rotate : 360deg;
-    }
 }

@@ -54,6 +54,12 @@
     }
 }
 
+@keyframes ow-spin {
+    to {
+        rotate : 360deg;
+    }
+}
+
 .ow-card-body {
     display        : flex;
     flex-direction : column;

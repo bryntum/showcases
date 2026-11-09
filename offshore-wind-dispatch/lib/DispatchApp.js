@@ -494,6 +494,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         me.selectedTurbine = turbine;
         me.mapFollows      = true;
+        // A turbine picked on the map is already in view: the map stays where it is (fitMap)
+        me.keepMapView     = true;
 
         if (trip && !me.scheduler.isEventSelected(trip)) {
             me.scheduler.selectEvent(trip);
@@ -501,15 +503,16 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
 
         me.refreshSide();
+        me.keepMapView = false;
     }
 
     /**
      * Fits the map to the selected trip's turbines and the port, or to the selected turbine and the port, once the
      * user selected one. A team held over a trip shows the whole farm, what the trip can still reach is all over it.
      *
-     * Only a change of what is shown moves the map: another trip or turbine selected, the map following or not, a
-     * team held or not. A redraw of the same selection (the plan, the clock, a hover) leaves the view the user panned
-     * or zoomed to where it is
+     * Only a change of what is shown moves the map: another trip or turbine selected, the map following or not, a team
+     * held or not. Not a turbine picked on the map itself (`keepMapView`). A redraw of the same selection (the plan,
+     * the clock, a hover) leaves the view the user panned or zoomed to where it is
      * @param {TripModel|null} trip
      * @param {String|null} turbine
      */
@@ -523,7 +526,10 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         if (key !== me.fitKey) {
             me.fitKey = key;
-            me.widgetMap.map.fitTo(follow ? fit : null);
+
+            if (!me.keepMapView) {
+                me.widgetMap.map.fitTo(follow ? fit : null);
+            }
         }
     }
 
