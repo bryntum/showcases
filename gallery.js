@@ -13,6 +13,12 @@ import lctLightThumbPng from './gallery/logistics-control-tower-light-1200.png';
 import lctDarkThumb800 from './gallery/logistics-control-tower-dark-800.webp';
 import lctDarkThumb1600 from './gallery/logistics-control-tower-dark-1600.webp';
 import lctDarkThumbPng from './gallery/logistics-control-tower-dark-1200.png';
+import owdLightThumb800 from './gallery/offshore-wind-dispatch-light-800.webp';
+import owdLightThumb1600 from './gallery/offshore-wind-dispatch-light-1600.webp';
+import owdLightThumbPng from './gallery/offshore-wind-dispatch-light-1200.png';
+import owdDarkThumb800 from './gallery/offshore-wind-dispatch-dark-800.webp';
+import owdDarkThumb1600 from './gallery/offshore-wind-dispatch-dark-1600.webp';
+import owdDarkThumbPng from './gallery/offshore-wind-dispatch-dark-1200.png';
 // Generated with the hero tiles, see `hoverHotspots()`
 import hotspots from './gallery/hero-hotspots.json';
 
@@ -29,6 +35,20 @@ const
     },
     // Latest first, the first is also the featured one in index.html
     showcases   = [
+        {
+            title       : 'Offshore Wind Dispatch',
+            description : 'Crew transfer vessels and helicopters for a 60 turbine wind farm, planned against the ' +
+                'wave forecast: drag a crew onto a trip and see what it can still reach before the window closes.',
+            products : ['Scheduler', 'AG Charts'],
+            url      : './offshore-wind-dispatch/',
+            source   : 'https://github.com/bryntum/showcases/tree/main/offshore-wind-dispatch',
+            thumb    : {
+                light  : { webp : `${owdLightThumb800} 800w, ${owdLightThumb1600} 1600w`, png : owdLightThumbPng },
+                dark   : { webp : `${owdDarkThumb800} 800w, ${owdDarkThumb1600} 1600w`, png : owdDarkThumbPng },
+                width  : 1200,
+                height : 741
+            }
+        },
         {
             title       : 'Logistics Control Tower',
             description : '2,000 inbound shipments streaming live into AG Grid, next to the dock doors of a ' +
