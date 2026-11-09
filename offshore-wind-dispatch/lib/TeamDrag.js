@@ -1,7 +1,7 @@
 import { DomHelper, DragHelper, Rectangle, StringHelper, Tooltip } from '@bryntum/core-enterprise';
 import { teamChipHtml } from './TeamTray.js';
 import { icon } from './util/Icons.js';
-import { duration, hhmm } from './util/Time.js';
+import { hhmm } from './util/Time.js';
 
 /**
  * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following

@@ -157,7 +157,8 @@ export default class DispatchScheduler extends Scheduler {
                 eventModelClass    : TripModel,
                 resourceModelClass : VesselModel
             },
-            eventRenderer             : args => renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource), me.dispatch.now),
+            eventRenderer : args =>
+                renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource), me.dispatch.now),
             resourceTimeRangeRenderer : args => renderRange(args, range => me.dispatch.previousCloseOf(range.resource)),
             features                  : {
                 ...config.features,
@@ -322,9 +323,10 @@ export default class DispatchScheduler extends Scheduler {
                 resourceId : trip.resource?.id,
                 startDate  : toDate(trip.was),
                 endDate    : toDate(trip.was + trip.endMinute - trip.departs)
-            }));
+            })),
+            shown         = ghosts.filter(ghost => ghost.startDate < end);
 
-        DispatchScheduler.syncStore(me.resourceTimeRangeStore, [...nogo, ...ghosts.filter(ghost => ghost.startDate < end)]);
+        DispatchScheduler.syncStore(me.resourceTimeRangeStore, [...nogo, ...shown]);
     }
 
     /**

@@ -50,7 +50,9 @@
             }
         }
 
+        /* The rows own the horizontal lines (above), so a cell draws none of its own: one 1px line per edge */
         .b-sch-header-time-axis-cell {
+            border-block-end     : 0;
             font-size            : 11.5px;
             font-weight          : 600;
             color                : var(--ow-ink-sub);
