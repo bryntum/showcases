@@ -1,11 +1,11 @@
 import { Container } from '@bryntum/core-enterprise';
-import { iconConfig } from './util/Icons.js';
 // Also registers the widget types used below
 import './TeamChip.js';
 
 /**
- * The teams waiting at the port with no trip yet: a chip per team (TeamChip) after the tray's title. Chips are dragged
- * onto a trip, or held over one from the keyboard with Enter, see TeamDrag.
+ * The crews waiting at the port with no trip yet, a slim tray under the schedule: its title with their count, then a
+ * small card per team (TeamChip). Cards are dragged onto a trip, or held over one from the keyboard with Enter, see
+ * TeamDrag.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
@@ -40,17 +40,17 @@ export default class TeamTray extends Container {
 
     /**
      * Shows the waiting teams: the chip of a team that is still waiting stays, DragHelper holds on to the chip it drags
-     * @param {Object[]} waiting `{ team, job }`
+     * @param {Object[]} waiting `{ team, job, fault }`
      * @param {String} [lifted] The team being dragged
      */
     draw(waiting, lifted) {
         const
-            me           = this,
+            me               = this,
             { title, empty } = me.widgetMap,
-            chips        = new Map(me.chips.map(chip => [chip.team.id, chip])),
-            ids          = new Set(waiting.map(({ team }) => team.id));
+            chips            = new Map(me.chips.map(chip => [chip.team.id, chip])),
+            ids              = new Set(waiting.map(({ team }) => team.id));
 
-        title.html = [iconConfig('anchor'), { tag : 'span', text : `Waiting at ${me.port ?? 'the port'}` }];
+        title.html = `Crews waiting at ${me.port ?? 'the port'} · ${waiting.length}`;
 
         // Out go the chips of the teams that have a trip now
         chips.forEach((chip, id) => {
@@ -61,13 +61,13 @@ export default class TeamTray extends Container {
         });
 
         // After the title and the empty note, in the order of the waiting teams
-        waiting.forEach(({ team, job }, index) => {
+        waiting.forEach(({ team, job, fault }, index) => {
             const chip = chips.get(team.id);
 
             chip?.draw(job);
 
             if (!chip || me.items.indexOf(chip) !== index + 2) {
-                me.insert(chip ?? { type : 'teamchip', team, job }, index + 2);
+                me.insert(chip ?? { type : 'teamchip', team, job, fault }, index + 2);
             }
         });
 

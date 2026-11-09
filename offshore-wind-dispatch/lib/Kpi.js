@@ -1,7 +1,8 @@
 import { Widget } from '@bryntum/core-enterprise';
 
 /**
- * One of the day's counts: a label over a number. A tone (`warn` or `alert`) tints it when the number is above zero.
+ * One of the day's counts: a label over a number, no box. A tone tints it when the number is above zero: `warn` (past
+ * the window) and `alert` (moved to tomorrow) in the at risk orange, `stop` (turbines stopped) in red.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
@@ -20,13 +21,12 @@ export default class Kpi extends Widget {
      * @param {Object} values
      * @param {String} values.label
      * @param {Number} values.value
-     * @param {String} [values.tone] `warn` or `alert`, when it needs attention
+     * @param {String} [values.tone] `warn`, `alert` or `stop`, when it needs attention
      */
     draw({ label, value, tone }) {
         const me = this;
 
-        me.toggleCls('ow-kpi-warn', Boolean(tone === 'warn' && value));
-        me.toggleCls('ow-kpi-alert', Boolean(tone === 'alert' && value));
+        ['warn', 'alert', 'stop'].forEach(each => me.toggleCls(`ow-kpi-${each}`, Boolean(tone === each && value)));
         me.html = [
             { tag : 'small', text : label },
             { tag : 'b', text : String(value) }

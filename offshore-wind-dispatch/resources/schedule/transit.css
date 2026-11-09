@@ -1,0 +1,86 @@
+/* The sail out and back of a trip, its buffer time drawn by the EventBuffer feature (TripRendering.js#renderBuffers):
+ * a thin line through the middle of the work blocks, a hollow dot at the departure, a solid one at the return, the
+ * clock time beyond each. A trip back after its window has the part of its sail back past the close in orange, ending
+ * in a tag with the time and how late it is */
+.ow-scheduler.b-sch-horizontal .b-sch-event-wrap > .b-sch-event-buffer.ow-transit {
+    --ow-dot : 8px;
+
+    position          : relative;
+    align-self        : start;
+    height            : 2px;
+    margin-block-start : calc(var(--ow-line-y) - 1px);
+    background        : var(--ow-c-transit);
+    overflow          : visible;
+
+    /* The dot at the port end */
+    &::after {
+        content          : '';
+        position         : absolute;
+        inset-block-start : 50%;
+        box-sizing       : border-box;
+        width            : var(--ow-dot);
+        height           : var(--ow-dot);
+        border           : 2px solid var(--ow-c-transit);
+        border-radius    : 50%;
+        translate        : 0 -50%;
+    }
+
+    /* The clock time beyond the dot, on the row's own colour so the now line does not cut through it */
+    .b-buffer-label {
+        position         : absolute;
+        inset-block-start : 50%;
+        margin           : 0;
+        padding          : 0 2px;
+        translate        : 0 -50%;
+        font-size        : 11px;
+        line-height      : 14px;
+        color            : var(--ow-c-muted);
+        background-color : var(--ow-surface);
+    }
+
+    &.ow-transit-out {
+        &::after {
+            inset-inline-start : calc(var(--ow-dot) / -2);
+            background-color   : var(--ow-surface);
+        }
+
+        .b-buffer-label {
+            inset-inline-end : calc(100% + var(--ow-dot) / 2 + 2px);
+        }
+
+        /* Too close to the start of the timeline: after the dot, over the line */
+        &.ow-transit-edge .b-buffer-label {
+            inset-inline : calc(var(--ow-dot) / 2 + 2px) auto;
+        }
+    }
+
+    &.ow-transit-back {
+        &::after {
+            inset-inline-end : calc(var(--ow-dot) / -2);
+            background-color : var(--ow-c-transit);
+        }
+
+        .b-buffer-label {
+            inset-inline-start : calc(100% + var(--ow-dot) / 2 + 2px);
+        }
+    }
+
+    /* Past the window: orange from the close on (--ow-late-from, set by the trip's renderer) to the return */
+    &.ow-transit-late {
+        background : linear-gradient(to right, var(--ow-c-transit) var(--ow-late-from, 0%),
+            var(--ow-c-risk-line) var(--ow-late-from, 0%));
+
+        &::after {
+            border-color     : var(--ow-c-risk-line);
+            background-color : var(--ow-c-risk-line);
+        }
+
+        .b-buffer-label {
+            padding          : 1px 6px;
+            border-radius    : var(--ow-c-radius);
+            font-weight      : 600;
+            color            : var(--ow-c-risk-ink);
+            background-color : var(--ow-c-risk-tint);
+        }
+    }
+}

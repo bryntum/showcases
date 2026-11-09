@@ -48,9 +48,30 @@
     --ow-beacon       : #e5322d;
     --ow-limit        : var(--ow-risk);
 
+    /* The schedule, the header and the tray: neutrals and blue carry the plan, orange only what is past the window,
+       red only what is stopped. Exact values of the calm redesign, each with its dark counterpart */
+    --ow-c-work        : light-dark(#1f6fb8, #2a6db0);
+    --ow-c-on-work     : #fff;
+    --ow-c-risk-tint   : light-dark(#fff3e0, #3a2810);
+    --ow-c-risk-line   : light-dark(#e07b00, #f0962e);
+    --ow-c-risk-ink    : light-dark(#8a4500, #ffb766);
+    --ow-c-stop-ink    : light-dark(#b71c1c, #ff8f86);
+    --ow-c-stop-tint   : light-dark(#fdecea, #3b1a1a);
+    --ow-c-transit     : light-dark(#b8c0c8, #5e6975);
+    --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
+    --ow-c-footer      : light-dark(#fafafa, #1a2029);
+    --ow-c-nogo        : light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%));
+    --ow-c-nogo-heli   : light-dark(rgb(110 70 170 / 12%), rgb(190 160 240 / 12%));
+    --ow-c-neutral-bg  : light-dark(#eef0f3, #2a313b);
+    --ow-c-button-tint : light-dark(#e8f1fb, #1c3550);
+    --ow-c-chart-fill  : light-dark(rgb(31 111 184 / 10%), rgb(90 160 230 / 14%));
+    --ow-c-chart-risk  : light-dark(rgb(224 123 0 / 12%), rgb(240 150 46 / 14%));
+
     /* Sizes */
     --ow-resource-width : 214px;
     --ow-radius         : 5px;
+    --ow-c-block        : 28px;
+    --ow-c-radius       : 4px;
 }
 
 /* The icons, inline SVG in the text colour (lib/util/Icons.js) */

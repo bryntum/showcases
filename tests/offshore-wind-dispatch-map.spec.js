@@ -37,11 +37,12 @@ test.describe('Offshore Wind Dispatch map selection', () => {
 
             return [map.turbines.isStore, map.turbines.count, map.selected.isCollection,
                 map.selected.values.map(each => each.id)];
-        })).toEqual([true, 60, true, ['T-22']]);
+        })).toEqual([true, 60, true, ['T-41']]);
 
         await expect(page.locator('.ow-side [role="listbox"] [role="option"]')).toHaveCount(60);
         await expect(page.locator('.ow-side .ow-marker[aria-selected="true"]')).toHaveCount(1);
-        await expect(marker(page, 'T-22')).toHaveAttribute('aria-selected', 'true');
+        // The page opens on T-41, the turbine at risk
+        await expect(marker(page, 'T-41')).toHaveAttribute('aria-selected', 'true');
     });
 
     test('a turbine clicked on the map selects its trip, a trip selected in the schedule rings its turbines', async({ page }) => {
@@ -62,7 +63,7 @@ test.describe('Offshore Wind Dispatch map selection', () => {
         // The first change is the click's, the app's own redraw follows without one
         expect((await page.evaluate(() => globalThis.mapChanges))[0]).toEqual({ selection : ['T-07'], user : true });
         await expect(marker(page, 'T-07')).toHaveAttribute('aria-selected', 'true');
-        await expect(marker(page, 'T-22')).toHaveAttribute('aria-selected', 'false');
+        await expect(marker(page, 'T-41')).toHaveAttribute('aria-selected', 'false');
         expect(await selectedTrip(page)).toEqual(['SR-1']);
         await expect(card(page)).toContainText('T-07');
 
@@ -413,9 +414,9 @@ test.describe('Offshore Wind Dispatch map hover and tooltip', () => {
             await expect(marker(page, id)).toHaveClass(/\bow-m-ring\b/);
         }
 
-        // NT-1, the selected trip, rings its turbines again once the pointer leaves
+        // SP-1, the selected trip, rings its turbines again once the pointer leaves
         await page.mouse.move(5, 5);
-        await expect(marker(page, 'T-23')).toHaveClass(/\bow-m-ring\b/);
+        await expect(marker(page, 'T-31')).toHaveClass(/\bow-m-ring\b/);
         await expect(marker(page, 'T-07')).not.toHaveClass(/\bow-m-ring\b/);
     });
 
@@ -443,30 +444,30 @@ test.describe('Offshore Wind Dispatch map keyboard', () => {
 
         // One tab stop, on the selected turbine
         await expect(focusable).toHaveCount(1);
-        await expect(focusable).toHaveAttribute('data-turbine', 'T-22');
+        await expect(focusable).toHaveAttribute('data-turbine', 'T-41');
 
         await focusable.focus();
         await page.keyboard.press('ArrowRight');
 
-        // The next turbine of its row, T-23, now the tab stop and focused, with its tooltip
-        await expect(marker(page, 'T-23')).toBeFocused();
+        // The next turbine of its row, T-42, now the tab stop and focused, with its tooltip
+        await expect(marker(page, 'T-42')).toBeFocused();
         await expect(focusable).toHaveCount(1);
-        await expect(focusable).toHaveAttribute('data-turbine', 'T-23');
-        await expect(tooltip(page)).toContainText('T-23');
+        await expect(focusable).toHaveAttribute('data-turbine', 'T-42');
+        await expect(tooltip(page)).toContainText('T-42');
 
         await page.keyboard.press('ArrowLeft');
-        await expect(marker(page, 'T-22')).toBeFocused();
+        await expect(marker(page, 'T-41')).toBeFocused();
 
         // A row down, then select it
         await page.keyboard.press('ArrowDown');
 
         const down = await page.evaluate(() => document.activeElement.dataset.turbine);
 
-        expect(['T-31', 'T-32', 'T-33']).toContain(down);
+        expect(['T-51', 'T-52', 'T-53']).toContain(down);
 
         await page.keyboard.press('Enter');
         await expect(marker(page, down)).toHaveAttribute('aria-selected', 'true');
-        await expect(marker(page, 'T-22')).toHaveAttribute('aria-selected', 'false');
+        await expect(marker(page, 'T-41')).toHaveAttribute('aria-selected', 'false');
         await expect(card(page)).toContainText(down);
 
         // Space selects too

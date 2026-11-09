@@ -5,18 +5,22 @@ vessels and a SWATH) and two helicopters take maintenance teams out to the turbi
 The plan does not run against fixed sites but against the weather. Each vessel may only transfer people while the
 significant wave height (Hs) stays under its limit, and a trip has to be back at port before that window closes.
 
-* **Schedule**: one row per vessel or helicopter, one bar per trip. A trip is a parent event, its legs are nested
-  events inside it: the transits (hatched, with the vessel's icon) and the turbine stops, with the turbine and the
-  hours. From the hour the forecast
-  crosses a vessel's limit, a hatched weather no-go area covers its row. A trip back after the window closes turns
-  orange
+* **Schedule**: one row per vessel or helicopter. A trip is a parent event over its time on station, its turbine stops
+  are nested events inside it, solid blue work blocks with the turbine and the hours. The sail out and back are the
+  trip's buffer time (the EventBuffer feature): a thin line with the departure and return times at its ends. From the
+  time the forecast crosses a vessel's limit, a hatched weather no-go area covers its row; hatching means only that. A
+  trip back after the window closes has its last stop and the late part of its sail back in orange, ending in the time
+  and how late it is
 * **Weather in the time axis**: under the hours, the hourly Hs forecast is drawn as an AG Charts area chart against the
-  1.5 m CTV and 2.0 m SWATH limits, then the wind at hub height for the helicopters (limit 20 m/s)
-* **Vessel column**: the vessel, its limit, how much of the window left today it is booked for, and the most people on
-  board of its trips against its seats
+  1.5 m CTV and 2.0 m SWATH limits, blue up to where it crosses the CTV limit and orange after, then the wind at hub
+  height for the helicopters (limit 20 m/s, bold above it)
+* **Header**: the CTV window's close is the one big figure, with a countdown (a Bryntum ProgressBar); the day's counts
+  are quiet, At risk in orange and Stopped in red
+* **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
 * **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
   its cable work. The Dependencies feature draws it from the helicopter trip into that one nested stop of the SWATH's
-  trip, red if the plan breaks it
+  trip, its renderer turning the line into a chevron in the gap before the stop, so it stays in its row
+* **Crews waiting**: under the schedule, a card per team waiting at the port, its certificates and job in its tooltip
 * **Map**: the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
   turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
   limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
@@ -33,8 +37,8 @@ plan or the forecast change while a team is held, the team is checked again agai
 not yet gone are brought forward, trimmed (their last stops go to tomorrow) or moved to tomorrow. A notice offers Undo
 and a review of each change.
 
-`?state=drag` opens with Team F held over Northern Tern's trip, `?state=forecast` with the 08:00 forecast applied,
-`?tab=map` on the map tab at phone widths.
+The page opens on T-41, the turbine the weather puts at risk. `?state=drag` opens with Team F held over Northern Tern's
+trip, `?state=forecast` with the 08:00 forecast applied, `?tab=map` on the map tab at phone widths.
 
 ## How it works
 
@@ -54,8 +58,8 @@ TeamTray ──► TeamDrag (DragHelper) ──► DropPreview#previewDrop / dro
 TurbineMap (turbines Store, selected Collection) ◄──► MapLink, DispatchApp ◄──► Scheduler selection and highlighting
 ```
 
-The trips are the source of truth, in the Scheduler's event store, a tree: each trip is a parent event and its legs
-(transits and stops) are its children. Everything else is worked out from them and from `DispatchState`: a trip's
+The trips are the source of truth, in the Scheduler's event store, a tree: each trip is a parent event and its legs at
+sea (stops and the hops between them) are its children, the sail out and back its buffer. Everything else is worked out from them and from `DispatchState`: a trip's
 length follows from its stops and the farm's geography (`lib/plan/Farm.js`), so a dropped team, a dragged trip or a
 new forecast changes the stops or the departure, `TripModel#layout` places the legs again, and every view is drawn
 again from that.
@@ -81,13 +85,13 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
   dependency
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`, a Container of
-    `KpiClock`, `KpiWindow` and three `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
+    `KpiClock`, `KpiWindow` (with a `ProgressBar`) and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
     tabs. It holds the selection and wires the parts together. `DropPreview.js` (a mixin of the app) previews and
     books a dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
     (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a Container with
-    two Buttons), `IconButton.js` a Button with an inline SVG icon and `Legend.js` the legend
+    two Buttons), `IconButton.js` a Button with an inline SVG icon and `Legend.js` the schedule's footer
   * `panel/` the panels of the app, each a Panel whose `tbar` is the title bar, with `ButtonGroup`s for the zoom and
-    the Status / Access switch: `SchedulePanel` (the tray, the notice, the scheduler and the legend), `MapPanel` (the
+    the Status / Access switch: `SchedulePanel` (the notice, the scheduler, its footer and the tray), `MapPanel` (the
     map and the turbine card) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
@@ -122,30 +126,36 @@ the now line are time ranges (the TimeRanges feature).
 ### Trips with their legs nested inside: `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js`
 
 The Scheduler runs on the Enterprise tier with the NestedEvents feature, and its event store is a tree. A trip is a
-parent event, its legs are its children: the transit out, the turbine stops (`kind : 'stop'`, `{ turbine, minutes,
-team }`) with the hops between them, and the transit back. Each trip and each leg is assigned to the vessel, a nested
-event shows only where it and its parent are both assigned (`projectData` in `TripData.js`).
+parent event from its first stop to its last, its legs are its children: the turbine stops (`kind : 'stop'`,
+`{ turbine, minutes, team }`) with the hops between them. The sail out and back are the trip's `preamble` and
+`postamble`, drawn by the EventBuffer feature (`renderBuffers`); `TripModel#departs` is the trip's start less the sail
+out, and `TripModel#legs` still lists both as transits, so the planner reads the whole run. Each trip and each leg is
+assigned to the vessel, a nested event shows only where it and its parent are both assigned (`projectData` in
+`TripData.js`).
 
 The trip's stops are read from its stop children. Changing them, or the departure, goes through `TripModel#layout`:
-`Planner#buildLegs` puts the transits between the stops, and every leg gets its start and duration from the departure.
+`Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and every leg gets its
+start and duration from the departure.
 Legs that stay keep their record (a stop's ID is `<trip>:<turbine>`), new ones are added and assigned, gone ones
 removed. The trip and its legs are `manuallyScheduled`, so the scheduling engine keeps the times the planner gives
 them. The stop of a team being dragged over a trip is a leg too (`preview`), shown dashed in teal.
 
-The event renderer draws the trip's head line (the feature's `headerHeight`), and each leg at its own time below it:
-hatched with the vessel's icon, or solid with the turbine and the hours. The legs let the pointer through to their
-trip, so a trip is dragged, hovered and selected as one, and a click on a stop is found by time. Trips are dragged
-along their own row only, and not into the past or once gone (the EventDrag feature's `validatorFn`). A dropped trip's
-legs are placed again from its new departure.
+The event renderer draws the trip's label above its line (the feature's `headerHeight`), and each stop at its own
+time on it, solid with the turbine and the hours as far as its width has room. NestedEvents places nested events from
+the start of the parent's wrapper, which with a buffer is the departure, so the legs' container is shifted back by the
+buffer's width (`--ow-pre`). The legs let the pointer through to their trip, so a trip is dragged, hovered and selected
+as one, and a click on a stop is found by time. Trips are dragged along their own row only, and not into the past or
+once gone (the EventDrag feature's `validatorFn`). A dropped trip's legs are placed again from its new departure,
+snapped to 5 minutes (`DispatchScheduler#departsAt`).
 
 ### A dependency into a stop: `lib/model/TripData.js`, `lib/schedule/DispatchSync.js`
 
 The Dependencies feature draws the line from the helicopter's trip into the T-45 stop, a nested event of the SWATH's
 trip (`toEvent : 'BP-1:T-45'`). It is active, as the feature has it by default: a trip drag that would start the stop
 before the helicopter is back, or bring the helicopter back after it, is refused (`validateDependencies()`, from the
-EventDrag feature's `validatorFn`). Its renderer (`renderDependency`) turns it red when a forecast pushes the predecessor
-back after the stop starts, and hides
-it while the stop's trip is moved to tomorrow. `syncDependencies()` adds it again whenever both ends are in the plan,
+EventDrag feature's `validatorFn`). Its renderer (`renderDependency`) redraws the path as a chevron in the gap before
+the stop, so the line never leaves the stop's row, turns it orange when the plan breaks it, and hides it while the
+stop's trip is moved to tomorrow. `syncDependencies()` adds it again whenever both ends are in the plan,
 so it comes back when Undo brings back a stop a forecast had cut.
 
 ### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
@@ -180,8 +190,10 @@ work first. `undo()` puts the snapshot back, the new forecast stays.
 
 ## Styling
 
-Every colour comes from the Svalbard theme's palette through `light-dark()`, in `resources/tokens.css`. One hue per
-meaning: blue is on plan, orange past the window, red moved, purple the helicopters, teal reachable while dragging.
+Every colour is a token in `resources/tokens.css`, light and dark through `light-dark()`. In the schedule, the header
+and the tray, neutrals and blue carry the plan, orange marks only what is past the window, red only what is stopped;
+purple is the helicopters' wind, teal what a dragged team can reach. The map and the turbine card keep their own
+status colours.
 Below 760px wide the schedule and the map become tabs and the hours scroll sideways at 44px per hour.
 
 The generic icons are [Phosphor Icons](https://phosphoricons.com) (MIT), Light weight, from `@phosphor-icons/core`.

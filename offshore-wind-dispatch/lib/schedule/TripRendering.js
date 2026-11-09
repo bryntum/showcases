@@ -1,17 +1,19 @@
 import { windowShare } from '../plan/Planner.js';
-import { icon } from '../util/Icons.js';
-import { duration, hhmm, nextDay } from '../util/Time.js';
+import { portMinutes } from '../plan/Farm.js';
+import { duration, hhmm, nextDay, toMinutes } from '../util/Time.js';
 
 /**
  * The Scheduler's cells and bars, plain functions returning DomConfigs, styled in resources/schedule/.
  *
- * A trip is a parent event: its name, team and seats on top, then its legs, child events the NestedEvents feature
- * draws inside it, the transit legs hatched with the vessel's icon, the turbine stops solid with the turbine and hours.
- * Its colour says where it stands against the weather window: on plan, past the window, or changed by the forecast.
+ * A trip is a parent event over its time on station: its label above a thin line, its legs on the line, child events
+ * the NestedEvents feature draws inside it, the turbine stops as solid work blocks. The sail out and back are its
+ * buffer, drawn by the EventBuffer feature as the line with a dot and the clock time at each end. Blue carries the
+ * plan, orange only the stop and the sail back past the weather window.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventBuffer#config-renderer
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Dependencies#config-renderer
  * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-renderer
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
@@ -19,12 +21,37 @@ import { duration, hhmm, nextDay } from '../util/Time.js';
  */
 
 const
-    // Transit legs show the vessel's icon from this long, shorter ones (the hops between turbines) are a sliver
-    iconMinutes = 25,
-    // Stops show their hours from this long
-    hoursMinutes = 50,
     // Where tomorrow's work starts, the first sailing
-    firstSailing = 6 * 60 + 30;
+    firstSailing = 6 * 60 + 30,
+    // A departure this close to the start of the timeline, px, has no room for its time (11px) before its dot
+    edgeRoom     = 44,
+    // A work block's text: 12px, its padding each side and the gap between turbine and hours
+    blockFont    = { char : 7, padding : 6, gap : 6 };
+
+/**
+ * About how wide a work block's text is, px
+ * @param {String} text
+ * @returns {Number}
+ */
+function textWidth(text) {
+    return text.length * blockFont.char;
+}
+
+/**
+ * What a work block of a width has room for: the turbine and the hours, the turbine, or nothing. Its text never
+ * wraps nor is cut off
+ * @param {Object} stop `{ turbine, minutes }`
+ * @param {Number} width px
+ * @returns {Object} `{ turbine, hours }` booleans
+ */
+export function blockText({ turbine, minutes }, width) {
+    const
+        room  = width - 2 * blockFont.padding,
+        name  = textWidth(turbine),
+        hours = textWidth(hoursText(minutes));
+
+    return { turbine : name <= room, hours : name + blockFont.gap + hours <= room };
+}
 
 /**
  * "1.5 h", "1.25 h", "3 h"
@@ -36,98 +63,135 @@ export function hoursText(minutes) {
 }
 
 /**
- * The badge after the trip's name: what is wrong or what changed
+ * What changed, after the trip's label: set by a forecast. Past its window needs no word here, the sail back says it
  * @param {TripModel} trip
- * @param {Number} close When the trip's window closes
- * @returns {Object|null} DomConfig
+ * @returns {String|null}
  */
-function badge(trip, close) {
-    const text = {
-        'at-risk' : () => `${duration(trip.endMinute - close)} past window`,
-        trimmed   : () => `${trip.removed.join(', ')} → ${nextDay}`,
-        moved     : () => `Moved to ${nextDay} ${hhmm(firstSailing)}`,
-        pulled    : () => `${duration(trip.was - trip.startMinute)} earlier`
-    }[trip.status];
-
-    return text ? { tag : 'span', class : `ow-badge ow-badge-${trip.status}`, text : text() } : null;
+function changeText(trip) {
+    return {
+        trimmed : () => `${trip.removed.join(', ')} → ${nextDay}`,
+        moved   : () => `moved to ${nextDay} ${hhmm(firstSailing)}`,
+        pulled  : () => `${duration(trip.was - trip.startMinute)} earlier`
+    }[trip.status]?.() ?? null;
 }
 
 /**
- * A leg of a trip, a nested event placed by the NestedEvents feature at its own time: a transit hatched with the
- * vessel's icon, a stop solid with the turbine and the hours
+ * A leg of a trip at sea, a nested event placed by the NestedEvents feature at its own time: a stop is a solid work
+ * block with the turbine and the hours, a hop between two turbines is empty, the trip's line shows through it. A stop
+ * the vessel cannot get back to port from before its window closes is at risk
  * @param {TripModel} leg
  * @param {Object} renderData
+ * @param {Number} close When the trip's window closes
  * @returns {Object[]|String} DomConfigs
  */
-function renderLeg(leg, renderData) {
+function renderLeg(leg, renderData, close) {
     const
         { cls }   = renderData,
-        isTransit = leg.kind === 'transit';
+        isTransit = leg.kind === 'transit',
+        back      = !isTransit && leg.endDate ? toMinutes(leg.endDate) + portMinutes(leg.turbine, leg.mode) : 0;
 
     cls['ow-seg']         = 1;
-    cls['ow-seg-transit'] = isTransit;
-    cls['ow-seg-hop']     = isTransit && leg.hop;
+    cls['ow-seg-hop']     = isTransit;
     cls['ow-seg-stop']    = !isTransit;
+    cls['ow-seg-risk']    = !isTransit && !leg.preview && leg.trip.status === 'at-risk' && back > close;
     cls['ow-seg-preview'] = leg.preview;
 
     if (isTransit) {
-        return leg.minutes >= iconMinutes ? [{ class : 'ow-seg-icon', html : icon(leg.trip.resource?.glyph ?? 'ctv') }] : '';
+        return '';
     }
 
+    const fits = blockText(leg, renderData.width);
+
     return [
-        { tag : 'b', text : leg.turbine },
-        leg.minutes >= hoursMinutes ? { tag : 'small', text : hoursText(leg.minutes) } : null
+        fits.turbine ? { tag : 'b', text : leg.turbine } : null,
+        fits.hours ? { tag : 'span', text : hoursText(leg.minutes) } : null
     ];
 }
 
 /**
- * A trip bar, or one of its legs. The trip renders its head line, the NestedEvents feature adds the legs below it
+ * A trip, or one of its legs. The trip is the time on station, from its first stop to its last: its label above the
+ * line, the NestedEvents feature adds the legs on the line. The sail out and back are its buffer (renderBuffers). The
+ * label starts over the departure: its margin is the sail out, as a share of the trip's own width
  * @param {Object} renderData The event renderer's arguments
  * @param {Number} close When the trip's window closes
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, close, now) {
+export function renderTrip({ eventRecord, renderData }, close) {
     if (eventRecord.isLeg) {
-        return renderLeg(eventRecord, renderData);
+        return renderLeg(eventRecord, renderData, close);
     }
 
-    const trip = eventRecord;
-
-    renderData.cls['ow-trip']                 = 1;
-    renderData.cls[`ow-trip-${trip.status}`]  = 1;
-    renderData.cls['ow-trip-heli']            = trip.mode === 'heli';
-    renderData.cls['ow-trip-drop']            = trip.hasPreview;
-
     const
-        underway = trip.startMinute <= now && trip.status !== 'moved',
-        done     = Math.min(100, (now - trip.startMinute) / Math.max(1, trip.endMinute - trip.startMinute) * 100);
+        trip          = eventRecord,
+        { out, back } = trip.transits,
+        onStation     = Math.max(1, toMinutes(trip.endDate) - toMinutes(trip.startDate)),
+        late          = trip.endMinute - close,
+        change        = changeText(trip),
+        // The trip's own width, the buffers left out: the stops too short to name their turbine name it here
+        perMinute     = Math.max(0, renderData.width - (renderData.bufferBeforeWidth ?? 0) -
+            (renderData.bufferAfterWidth ?? 0)) / onStation,
+        unnamed       = trip.stops.filter(stop => !blockText(stop, stop.minutes * perMinute).turbine)
+            .map(stop => stop.turbine);
 
-    renderData.cls['ow-trip-underway'] = underway;
+    renderData.cls['ow-trip']                = 1;
+    renderData.cls[`ow-trip-${trip.status}`] = 1;
+    renderData.cls['ow-trip-heli']           = trip.mode === 'heli';
+    renderData.cls['ow-trip-drop']           = trip.hasPreview;
 
-    return [
-        // The part behind the Now line
-        underway ? { class : 'ow-underway', style : `width:${done}%` } : null,
-        {
-            class    : 'ow-trip-head',
-            children : [
-                { tag : 'b', text : trip.id },
-                { tag : 'span', text : `${trip.teamText} · ${trip.pax} PAX` },
-                badge(trip, close)
-            ]
-        }
-    ];
+    // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
+    // the trip's start: the legs' container is shifted back by the sail out (resources/schedule/trips.css)
+    renderData.wrapperStyle += `--ow-pre:${renderData.bufferBeforeWidth ?? 0}px;`;
+
+    // Where the window closes in the sail back, for its late part (resources/schedule/transit.css)
+    if (late > 0 && back) {
+        renderData.wrapperStyle += `--ow-late-from:${Math.max(0, Math.min(100, (back - late) / back * 100))}%;`;
+    }
+
+    return {
+        class    : 'ow-trip-head',
+        style    : `margin-inline-start:${-out / onStation * 100}%`,
+        children : [
+            {
+                tag  : 'span',
+                text : [trip.id, ...unnamed, trip.teamText, `${trip.pax} pax`, trip.note?.toLowerCase()]
+                    .filter(Boolean).join(' · ')
+            },
+            change ? { tag : 'span', class : 'ow-trip-change', text : change } : null
+        ]
+    };
 }
 
 /**
- * The dependency lines, drawn by the Dependencies feature. The links that keep a trip's legs in order are the engine's
- * business and not drawn. The one from a trip into a stop of another trip is grey while the engine resolves it, the
- * stop simply waits on station until the trip is back. It turns red where the engine cannot resolve it: the stop
- * still starts before the trip is back, or the wait brings the stop's trip back after its weather window. Hidden while
- * the stop's trip is moved to tomorrow
+ * The sail out and back, the EventBuffer feature's preamble and postamble: a thin line with a dot at each end and the
+ * clock time beyond it. A trip back after its window ends its line in a tag with the time and how late it is
+ * @param {Object} args The EventBuffer feature's renderer arguments
+ * @param {Number} close When the trip's window closes
+ * @param {Object} timeline `{ dayStart, perMinute }`: when the timeline starts, minutes, and its px a minute. A
+ * departure too close to the start has its time after its dot
+ */
+export function renderBuffers({ eventRecord : trip, preambleConfig, postambleConfig }, close, { dayStart, perMinute }) {
+    const
+        back = trip.endMinute,
+        late = back - close,
+        edge = (trip.departs - dayStart) * perMinute < edgeRoom;
+
+    preambleConfig.cls  = `ow-transit ow-transit-out${edge ? ' ow-transit-edge' : ''}`;
+    preambleConfig.text = hhmm(trip.departs);
+
+    postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 && trip.status !== 'moved' ? ' ow-transit-late' : ''}`;
+    postambleConfig.text = late > 0 && trip.status !== 'moved' ? `${hhmm(back)} · +${duration(late)}` : hhmm(back);
+}
+
+/**
+ * The dependency of the plan, drawn by the Dependencies feature from a trip into a stop of another trip. The line
+ * stays in the stop's row: the renderer redraws it as a small chevron in the gap before the stop, its tooltip names
+ * what it waits for. The links that keep a trip's legs in order are the engine's business and not drawn. It turns
+ * orange where the engine cannot resolve it in the weather: the stop still starts before the trip is done, or the
+ * wait brings the stop's trip back after its window. Hidden while the stop's trip is moved to tomorrow
  * @param {Object} args The Dependencies feature's renderer arguments
  * @param {Function} isChain Tells the links between legs from the dependencies of the plan
  */
-export function renderDependency({ domConfig, dependencyRecord }, isChain) {
+export function renderDependency({ domConfig, dependencyRecord, toBox }, isChain) {
     const { fromEvent, toEvent } = dependencyRecord;
 
     if (isChain(dependencyRecord)) {
@@ -145,11 +209,30 @@ export function renderDependency({ domConfig, dependencyRecord }, isChain) {
     domConfig.class['ow-dep']        = 1;
     domConfig.class['ow-dep-broken'] = broken;
     domConfig.class['ow-dep-moved']  = toEvent?.trip.status === 'moved';
+
+    // A chevron pointing into the stop, 4px wide and 8px high, ending 3px before it
+    if (toBox) {
+        const
+            x = toBox.x - 3,
+            y = toBox.y + toBox.height / 2;
+
+        domConfig.d = `M ${x - 4} ${y - 4} L ${x} ${y} L ${x - 4} ${y + 4}`;
+        domConfig.class['b-sch-dependency-markerless'] = 1;
+    }
 }
 
 /**
- * The vessel column: its icon, name, type and limit, and how much of what is left of its weather window its trips use,
- * with the most people on board of its trips against its seats
+ * The limit a vessel works to, short: "Hs ≤ 1.5", "wind ≤ 20"
+ * @param {Object} limit `{ hs }` or `{ wind }`
+ * @returns {String}
+ */
+function limitText(limit) {
+    return limit.hs == null ? `wind ≤ ${limit.wind}` : `Hs ≤ ${limit.hs.toFixed(1)}`;
+}
+
+/**
+ * The vessel column: its name, and one muted line with its type, its limit, and the most people on board of its trips
+ * against its seats, "CTV · Hs ≤ 1.5 · 3/12". How much of what is left of its window its trips book is in the title
  * @param {VesselModel} vessel
  * @param {Object} options `{ now, close, limit }`
  * @returns {Object} DomConfig
@@ -165,28 +248,20 @@ export function renderVessel(vessel, { now, close, limit }) {
     return {
         class    : `ow-resource ow-resource-${vessel.mode}`,
         children : [
-            { class : 'ow-resource-icon', html : icon(vessel.glyph) },
+            { tag : 'b', text : vessel.name },
             {
-                class    : 'ow-resource-text',
-                children : [
-                    { tag : 'b', text : vessel.name },
-                    { tag : 'small', text : `${vessel.kind} · ${limit.label}` },
-                    {
-                        class    : 'ow-util',
-                        title    : `${share}% of the weather window left today is booked`,
-                        children : [
-                            { class : 'ow-util-bar', children : [{ tag : 'span', style : `width:${share}%` }] },
-                            { class : `ow-util-text${pax >= vessel.seats ? ' ow-util-full' : ''}`, text : `${pax}/${vessel.seats} PAX` }
-                        ]
-                    }
-                ]
+                tag   : 'small',
+                // The full type, "AW169 · hoist", the line has its first word
+                title : `${vessel.kind}: ${pax} of ${vessel.seats} seats taken, ${share}% of the weather window left ` +
+                    'today is booked',
+                text : `${vessel.kind.split(' · ')[0]} · ${limitText(limit)} · ${pax}/${vessel.seats}`
             }
         ]
     };
 }
 
 /**
- * The group headers, Crew transfer vessels and Helicopters, with their count
+ * The group headers, "Vessels · 4" and "Helicopters · 2"
  * @param {Object} args The Group feature's renderer arguments
  * @returns {Object|String} DomConfig
  */
@@ -197,41 +272,22 @@ export function renderGroup({ groupRowFor, groupRecords, isFirstColumn }) {
 
     const count = groupRecords.filter(record => !record.isSpecialRow && !record.isGroupHeader).length;
 
-    return {
-        class    : 'ow-group',
-        children : [
-            { tag : 'span', text : groupRowFor === 'heli' ? 'Helicopters' : 'Crew transfer vessels' },
-            { tag : 'small', text : String(count) }
-        ]
-    };
+    return { class : 'ow-group', text : `${groupRowFor === 'heli' ? 'Helicopters' : 'Vessels'} · ${count}` };
 }
 
 /**
- * The resource time ranges: the weather no-go of a vessel, from the hour its limit is crossed, and the old place of a
- * trip the forecast brought forward (`ow-ghost`, no label)
+ * The resource time ranges: the weather no-go of a vessel, hatched from the time its own limit is crossed, the wave
+ * height chart and the wind above say why, and the old place of a trip the forecast brought forward (`ow-ghost`).
+ * Neither has a label
  * @param {Object} args The ResourceTimeRanges feature's renderer arguments
- * @param {Function} wasOf Returns when the previous forecast closed a range's window, or nothing
- * @returns {Object|String} DomConfig
+ * @returns {String}
  */
-export function renderRange({ resourceTimeRangeRecord : range, renderData }, wasOf) {
-    const
-        isGhost = String(range.id).startsWith('ghost-'),
-        heli    = range.resource?.mode === 'heli',
-        was     = wasOf(range);
+export function renderRange({ resourceTimeRangeRecord : range, renderData }) {
+    const isGhost = String(range.id).startsWith('ghost-');
 
-    renderData.cls['ow-nogo']  = !isGhost;
-    renderData.cls['ow-ghost'] = isGhost;
+    renderData.cls['ow-nogo']      = !isGhost;
+    renderData.cls['ow-nogo-heli'] = !isGhost && range.resource?.mode === 'heli';
+    renderData.cls['ow-ghost']     = isGhost;
 
-    if (isGhost) {
-        return '';
-    }
-
-    return {
-        class    : 'ow-nogo-label',
-        children : [
-            { tag : 'span', class : 'ow-nogo-icon', html : icon(heli ? 'wind' : 'waves') },
-            { tag : 'span', text : range.name },
-            was == null ? null : { tag : 'small', text : `was ${hhmm(was)}` }
-        ]
-    };
+    return '';
 }

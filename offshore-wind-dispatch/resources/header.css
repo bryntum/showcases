@@ -122,15 +122,16 @@
 /* The size of the wave height chart's value labels (WaveChart.js), one line high */
 .ow-wind {
     font-size            : 10px;
-    font-weight          : 600;
+    font-weight          : 400;
     line-height          : 1;
     font-variant-numeric : tabular-nums;
-    color                : var(--ow-ink-faint);
+    color                : var(--ow-c-muted);
 }
 
-/* At or over the helicopters' limit */
+/* Over the helicopters' limit: the only bold values of the row */
 .ow-wind-over {
-    color : var(--ow-heli);
+    font-weight : 700;
+    color       : var(--ow-heli);
 }
 
 /* The vessel column's header: the names of the weather rows, at the height of each */
@@ -168,14 +169,15 @@
         align-items : center;
         gap         : 6px;
         box-sizing  : border-box;
-        padding     : 0 16px;
-        font-size   : 11.5px;
-        font-weight : 600;
-        color       : var(--ow-ink-sub);
+        padding     : 0 8px 0 24px;
+        font-size   : 12px;
+        font-weight : 500;
+        color       : var(--ow-ink);
 
         small {
+            font-size   : 11px;
             font-weight : 400;
-            color       : var(--ow-ink-faint);
+            color       : var(--ow-c-muted);
         }
 
         > span {
@@ -183,22 +185,12 @@
             flex-direction : column;
             line-height    : 1.25;
         }
-
-        > .ow-icon {
-            width  : 16px;
-            height : 16px;
-            color  : var(--ow-sea-ok);
-        }
     }
 
     /* Beside the day and the hours, as tall as both, its line where the hours row has its own */
     .ow-axis-row-head {
         height           : calc(var(--ow-row-day) + var(--ow-row-hours));
         border-block-end : 1px solid var(--ow-row-line);
-
-        > .ow-icon {
-            color : var(--ow-ink-sub);
-        }
     }
 
     .ow-axis-row-sea {
@@ -211,10 +203,6 @@
         border-block-start : 1px solid var(--ow-row-line);
         line-height        : 1;
 
-        > .ow-icon {
-            color : var(--ow-heli);
-        }
-
         > span {
             flex-direction : row;
             align-items    : baseline;
@@ -223,12 +211,13 @@
     }
 }
 
+/* The newer forecast, flagged in the plan's blue */
 .ow-chip-new {
     padding          : 1px 6px;
     border-radius    : 4px;
     font-size        : 11px;
-    color            : var(--ow-cancel);
-    background-color : color-mix(in srgb, var(--ow-cancel) 13%, transparent);
+    color            : var(--ow-c-work);
+    background-color : var(--ow-c-button-tint);
 }
 
 /* The now line in the header: a pill in the hours row, the line runs from it down through the chart into the rows */

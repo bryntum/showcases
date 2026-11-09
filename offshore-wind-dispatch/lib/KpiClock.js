@@ -2,7 +2,7 @@ import { Widget } from '@bryntum/core-enterprise';
 import { dayShort, hhmm } from './util/Time.js';
 
 /**
- * The site, today and the time
+ * The site, today and the time, quiet beside the weather window
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
@@ -24,10 +24,10 @@ export default class KpiClock extends Widget {
      */
     draw({ site, now }) {
         this.html = [
-            { tag : 'small', text : `${site} · today` },
+            { tag : 'b', text : site },
             {
-                tag      : 'b',
-                children : [dayShort, { tag : 'span', class : 'ow-clock-time', text : hhmm(now) }]
+                tag      : 'small',
+                children : [`${dayShort} · `, { tag : 'span', class : 'ow-clock-time', text : hhmm(now) }]
             }
         ];
     }

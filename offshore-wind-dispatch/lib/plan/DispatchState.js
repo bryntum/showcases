@@ -80,17 +80,6 @@ export default class DispatchState {
     }
 
     /**
-     * When the window of a vessel closed in the previous forecast, if it was different
-     * @param {VesselModel|Object} vessel
-     * @returns {Number|null}
-     */
-    previousCloseOf(vessel) {
-        const was = this.previousWindows?.[vessel?.window];
-
-        return was != null && was !== this.closeOf(vessel) ? was : null;
-    }
-
-    /**
      * The wave height at a time
      * @param {Number} minutes
      * @returns {Number}
@@ -120,14 +109,14 @@ export default class DispatchState {
     }
 
     /**
-     * The teams waiting at the port with their job
-     * @property {Object[]} `{ team, job }`
+     * The teams waiting at the port with their job, and whether its turbine is stopped
+     * @property {Object[]} `{ team, job, fault }`
      */
     get waitingTeams() {
         return this.waiting.map(turbine => {
             const job = this.jobAt(turbine);
 
-            return { team : this.teams.get(job.team), job };
+            return { team : this.teams.get(job.team), job, fault : this.faults.has(turbine) };
         });
     }
 

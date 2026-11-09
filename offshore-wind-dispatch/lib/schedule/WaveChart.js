@@ -139,10 +139,28 @@ export default class WaveChart {
     }
 
     // The data: one point mid hour, the first and the last value held to the edges so the area spans the whole day.
-    // Where the line crosses a limit between two hours an extra point is put on the limit, so the coloured parts of the
-    // line (`amber`, `red`, set only above their limit) start and end on it. Those points carry `edge` too: no marker,
-    // no label
+    // Where the line crosses a limit between two hours an extra point is put on the limit. Those points carry `edge`
+    // too. The line is `calm` up to where it first crosses the CTV limit (`cross`) and `rough` from there, both have
+    // that point. Labelled are the first hour, the crossing and the last hour only
     data() {
+        const
+            points = this.points(),
+            cross  = points.find(point => point.edge && point.hs === this.limits.ctv && point.t > this.day.dayStart),
+            hours  = points.filter(point => !point.edge),
+            first  = hours[0],
+            last   = hours.at(-1);
+
+        return points.map(point => ({
+            ...point,
+            calm  : !cross || point.t <= cross.t ? point.hs : null,
+            rough : cross && point.t >= cross.t ? point.hs : null,
+            cross : point === cross,
+            first : point === first,
+            last  : point === last
+        }));
+    }
+
+    points() {
         const
             { hs }                 = this.forecast,
             { dayStart, dayEnd }   = this.day,
@@ -170,20 +188,22 @@ export default class WaveChart {
             all.push(point);
         });
 
-        return all.map(point => ({
-            ...point,
-            amber : point.hs >= ctv ? point.hs : null,
-            red   : point.hs >= swath ? point.hs : null
-        }));
+        return all;
     }
 
     options() {
         const
-            me      = this,
-            color   = name => cssColor(me.element, name),
-            colors  = { ok : color('--ow-sea-ok'), amber : color('--ow-sea-amb'), red : color('--ow-sea-red') },
-            { ctv, swath } = me.limits,
-            tone    = hs => hs > swath ? colors.red : hs > ctv ? colors.amber : colors.ok;
+            me     = this,
+            color  = name => cssColor(me.element, name),
+            colors = {
+                calm      : color('--ow-c-work'),
+                calmFill  : color('--ow-c-chart-fill'),
+                rough     : color('--ow-c-risk-line'),
+                roughFill : color('--ow-c-chart-risk'),
+                roughInk  : color('--ow-c-risk-ink'),
+                muted     : color('--ow-c-muted'),
+                surface   : color('--ow-surface')
+            };
 
         return {
             container  : me.element,
@@ -195,39 +215,40 @@ export default class WaveChart {
             animation  : { enabled : false },
             legend     : { enabled : false },
             series     : [
-                me.series(colors, tone),
-                me.overLimit('amber', colors.amber),
-                me.overLimit('red', colors.red),
-                me.valueLabels(tone)
+                me.series('calm', colors.calm, colors.calmFill, colors.surface),
+                me.series('rough', colors.rough, colors.roughFill, colors.surface),
+                me.valueLabels(colors)
             ],
             axes : {
-                x : me.timeAxis(colors, color('--ow-ink-sub'), color('--ow-grid')),
-                y : me.heightAxis(color('--ow-ink-faint'))
+                x : me.timeAxis(colors, color('--ow-grid')),
+                y : me.heightAxis(colors.muted)
             }
         };
     }
 
-    series(colors, tone) {
+    // The wave line up to where it crosses the CTV limit (`calm`) or from there (`rough`), a light fill under it. The
+    // crossing has a ring, the first and last hour a dot: the three points labelled
+    series(key, stroke, fill, surface) {
         const { ctv, swath } = this.limits;
 
         return {
             type          : 'area',
             xKey          : 't',
-            yKey          : 'hs',
+            yKey          : key,
             yName         : 'Wave height',
-            interpolation : { type : 'smooth' },
+            interpolation : { type : 'linear' },
             highlight,
-            fill          : colors.ok,
-            fillOpacity   : 0.2,
-            stroke        : colors.ok,
+            fill,
+            fillOpacity   : 1,
+            stroke,
             strokeWidth   : 2,
             marker        : {
                 enabled     : true,
                 size        : 6,
-                strokeWidth : 1.5,
-                itemStyler  : ({ datum }) => datum.edge ?
-                    { size : 0 } :
-                    { fill : tone(datum.hs), stroke : tone(datum.hs) }
+                strokeWidth : 2,
+                itemStyler  : ({ datum }) => datum.cross ?
+                    { size : 8, fill : surface, stroke } :
+                    (key === 'calm' ? datum.first : datum.last) ? { fill : stroke, stroke } : { size : 0 }
             },
             // The values are labelled by valueLabels(), under their points
             label   : { enabled : false },
@@ -257,26 +278,9 @@ export default class WaveChart {
         };
     }
 
-    // The part of the wave line over a limit, in the colour of that limit, drawn over the line
-    overLimit(key, stroke) {
-        return {
-            type          : 'line',
-            xKey          : 't',
-            yKey          : key,
-            yName         : 'Wave height',
-            interpolation : { type : 'smooth' },
-            stroke,
-            strokeWidth   : 2,
-            marker        : { enabled : false },
-            highlight,
-            showInLegend  : false,
-            tooltip       : { enabled : false }
-        };
-    }
-
-    // The value of each hour under its point: an area series cannot place its labels, a line series can. Under the
-    // points, the labels keep clear of the CTV and SWATH labels above their lines and of the window's label at the foot
-    valueLabels(tone) {
+    // The values of the first and the last hour, under their points: an area series cannot place its labels, a line
+    // series can. The crossing is named on the window's line (timeAxis)
+    valueLabels(colors) {
         return {
             type         : 'line',
             xKey         : 't',
@@ -292,23 +296,26 @@ export default class WaveChart {
                 placement  : 'bottom',
                 fontFamily,
                 fontSize   : 10,
-                fontWeight : 600,
-                formatter  : ({ datum }) => datum.edge ? '' : datum.hs.toFixed(1),
-                itemStyler : ({ datum }) => ({ color : tone(datum.hs) })
+                fontWeight : 500,
+                formatter  : ({ datum }) => datum.first || datum.last ? datum.hs.toFixed(1) : '',
+                // The last hour past the crossing in the orange of the line there
+                itemStyler : ({ datum }) => ({
+                    color : datum.last && datum.rough != null ? colors.roughInk : colors.muted
+                })
             }
         };
     }
 
-    // The day of the schedule, the hour lines, and the window's close as a cross line (with the old one dashed)
-    timeAxis(colors, ink, grid) {
+    // The day of the schedule, the hour lines, and the window's close as a cross line where the waves cross the CTV
+    // limit, named "1.5 m at 14:00" beside it (with the old one dashed after a new forecast)
+    timeAxis(colors, grid) {
         const
             { closes, was }      = this.forecast,
             { dayStart, dayEnd } = this.day,
-            tone                 = was == null ? colors.amber : colors.red,
-            label                = { fontFamily, fontSize : 9.5 },
-            // At the top of the chart, clear of the value labels under the points. The earlier of the two lines has its
-            // label on its left, the later one on its right, so they part
-            side                 = later => later ? 'right-top' : 'left-top';
+            { ctv }              = this.limits,
+            label                = { fontFamily, fontSize : 10 },
+            // The earlier of the two lines has its label on its left, the later one on its right, so they part
+            side                 = later => later ? 'right-bottom' : 'left-bottom';
 
         return {
             type       : 'number',
@@ -326,39 +333,43 @@ export default class WaveChart {
                 was == null ? null : {
                     type        : 'line',
                     value       : was / 60,
-                    stroke      : ink,
+                    stroke      : colors.muted,
                     lineDash    : [2, 3],
                     strokeWidth : 1,
-                    label       : { ...label, text : `was ${hhmm(was)}`, placement : side(was > closes), color : ink }
+                    label       : {
+                        ...label,
+                        text      : `was ${hhmm(was)}`,
+                        placement : side(was > closes),
+                        color     : colors.muted
+                    }
                 },
                 {
                     type        : 'line',
                     value       : closes / 60,
-                    stroke      : tone,
+                    stroke      : colors.rough,
                     strokeWidth : 1.5,
                     label       : {
                         ...label,
-                        text       : `CTV window closes ${hhmm(closes)}`,
-                        placement  : side(was != null && closes > was),
-                        color      : tone,
-                        fontWeight : 700
+                        text       : `${ctv.toFixed(1)} m at ${hhmm(closes)}`,
+                        placement  : side(was == null || closes > was),
+                        color      : colors.roughInk,
+                        fontWeight : 600
                     }
                 }
             ].filter(Boolean)
         };
     }
 
-    // Metres, with the CTV and SWATH limits as two thin dashed lines in one quiet tone, each named at its right end
+    // Metres, with the CTV and SWATH limits as two thin dashed lines in one quiet tone, each named at its left end
     heightAxis(ink) {
         const
             { ctv, swath } = this.limits,
-            // From calm water, so the area fills the row to its foot, with room under the calmest hour (0.9 m) for its
-            // value label under its point, and above the roughest one for its point and label: no label is cut at the
-            // chart's edges
-            bottom         = 0,
-            top            = 2.9,
-            // CTV named under its line, SWATH above its line: the two labels never meet
-            limit          = (value, text, placement) => ({
+            // Room under the calmest hour (0.9 m) for its value label, above the roughest one (2.4 m) for its point,
+            // and between the two limits for the CTV limit's name: no label is cut at the chart's edges or overlaps
+            bottom         = 0.3,
+            top            = 2.7,
+            // Named above their line at its left end, 20px apart in the 67px row: the two never meet
+            limit          = (value, text) => ({
                 type        : 'line',
                 value,
                 stroke      : ink,
@@ -367,9 +378,9 @@ export default class WaveChart {
                 label       : {
                     text,
                     color      : ink,
-                    placement,
-                    padding    : 1,
-                    fontSize   : 8.5,
+                    placement  : 'top-left',
+                    padding    : 6,
+                    fontSize   : 9,
                     fontWeight : 500,
                     fontFamily
                 }
@@ -386,7 +397,7 @@ export default class WaveChart {
             line       : { enabled : false },
             tick       : { enabled : false },
             gridLine   : { enabled : false },
-            crossLines : [limit(ctv, `CTV ${ctv.toFixed(1)}`, 'bottom-right'), limit(swath, `SWATH ${swath.toFixed(1)}`, 'top-right')]
+            crossLines : [limit(ctv, `CTV limit ${ctv.toFixed(1)}`), limit(swath, `SWATH limit ${swath.toFixed(1)}`)]
         };
     }
 }

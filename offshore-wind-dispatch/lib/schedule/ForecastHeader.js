@@ -1,6 +1,5 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
-import { icon } from '../util/Icons.js';
 import { dayAxis } from '../util/Time.js';
 
 /**
@@ -76,7 +75,7 @@ export default class ForecastHeader {
         ];
     }
 
-    // The wind of an hour, marked when it is at or over the helicopters' limit
+    // The wind of an hour, marked when it is over the helicopters' limit
     windHtml(hour) {
         const { wind, over } = this.windAt(hour);
 
@@ -88,9 +87,8 @@ export default class ForecastHeader {
             { forecast, limits, day } = this.state,
             wind                      = forecast.wind[hour - day.dayStart];
 
-        // Marked from the limit itself, so the hour at the limit stands out before the one that closes the window
-        // (Weather.js closes it above the limit)
-        return { wind, over : wind >= limits.heli.wind };
+        // Above the limit, as Weather.js closes the window
+        return { wind, over : wind > limits.heli.wind };
     }
 
     /**
@@ -100,9 +98,9 @@ export default class ForecastHeader {
     get labelHtml() {
         return `
         <div class="ow-axis-label">
-            <span class="ow-axis-row ow-axis-row-head">${icon('broadcast')}${this.forecastLabel}</span>
-            <span class="ow-axis-row ow-axis-row-sea">${icon('waves')}<span>Wave height<small>Hs, metres</small></span></span>
-            <span class="ow-axis-row ow-axis-row-wind">${icon('wind')}<span>Wind<small>m/s at hub</small></span></span>
+            <span class="ow-axis-row ow-axis-row-head">${this.forecastLabel}</span>
+            <span class="ow-axis-row ow-axis-row-sea"><span>Wave height<small>Hs, metres</small></span></span>
+            <span class="ow-axis-row ow-axis-row-wind"><span>Wind<small>m/s at hub</small></span></span>
         </div>`;
     }
 
@@ -191,7 +189,7 @@ export default class ForecastHeader {
         const label = scheduler?.element.querySelector('.ow-axis-row-head');
 
         if (label) {
-            label.innerHTML = `${icon('broadcast')}${me.forecastLabel}`;
+            label.innerHTML = me.forecastLabel;
         }
 
         return me.chart.show({

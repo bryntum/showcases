@@ -36,6 +36,12 @@
     }
 }
 
+/* The schedule's title bar on the 24px gutter. The map's keeps its own */
+.ow-schedule > .b-panel-body-wrap > .ow-panel-bar.b-toolbar > .b-toolbar-content,
+.ow-schedule > .ow-panel-bar.b-toolbar > .b-toolbar-content {
+    padding-inline : 24px 16px;
+}
+
 .ow-panel-title {
     font-size   : 14px;
     font-weight : 600;
@@ -52,18 +58,19 @@
     white-space : nowrap;
 }
 
-/* The next forecast, in: the one action that changes the plan */
+/* The next forecast, in: the one action that changes the plan, a quiet blue button */
 .ow-forecast-button.b-button {
-    --b-button-color            : var(--ow-cancel);
-    --b-button-border-width     : 1px;
-    --b-button-border-color     : color-mix(in srgb, var(--ow-cancel) 40%, transparent);
-    --b-button-background       : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
-    --b-button-hover-background : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
+    --b-button-color            : var(--ow-c-work);
+    --b-button-hover-color      : var(--ow-c-work);
+    --b-button-border-width     : 0;
+    --b-button-background       : var(--ow-c-button-tint);
+    --b-button-hover-background : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
+    --b-button-border-radius    : 6px;
 
-    height      : 28px;
+    height      : 32px;
     min-height  : 0;
-    font-size   : 12px;
-    font-weight : 600;
+    font-size   : 13px;
+    font-weight : 500;
 }
 
 /* The button groups as a segmented control: the pressed button is the raised one */

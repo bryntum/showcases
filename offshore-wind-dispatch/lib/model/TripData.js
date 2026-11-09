@@ -7,16 +7,43 @@ import { parseTime, toDate } from '../util/Time.js';
  */
 
 /**
- * The data of a trip's legs. Their start is where the planner expects them, the engine then places each after the
- * one before it
+ * The sail out from the port and back to it, minutes: the trip's event buffer (EventBuffer feature), its `preamble`
+ * and `postamble`
+ * @param {Object[]} stops `{ turbine, minutes, team, preview }`
+ * @param {String} mode
+ * @returns {Object} `{ out, back }`
+ */
+export function transitsOf(stops, mode) {
+    const legs = buildLegs(stops, mode);
+
+    return { out : legs[0]?.minutes ?? 0, back : legs.length > 1 ? legs.at(-1).minutes : 0 };
+}
+
+/**
+ * The buffer fields of a trip: the sail out before its first stop, the sail back after its last
+ * @param {Object} transits `{ out, back }`, minutes
+ * @returns {Object} `{ preamble, postamble }`
+ */
+export function bufferData({ out, back }) {
+    return {
+        preamble  : out ? { magnitude : out, unit : 'minute' } : null,
+        postamble : back ? { magnitude : back, unit : 'minute' } : null
+    };
+}
+
+/**
+ * The data of a trip's legs at sea: the turbine stops and the short hops between them. The sail out and back are not
+ * legs but the trip's event buffer (`transitsOf`). Their start is where the planner expects them, the engine then
+ * places each after the one before it
  * @param {Object} trip `{ id, departs }`
  * @param {Object[]} stops `{ turbine, minutes, team, preview }`
  * @param {String} mode
  * @returns {Object[]}
  */
 export function legsData({ id, departs }, stops, mode) {
-    return timeLegs(departs, buildLegs(stops, mode)).map(({ type, from, to, ...leg }, index) => ({
-        id           : type === 'stop' ? `${id}:${leg.preview ? 'preview' : leg.turbine}` : `${id}:leg-${index}`,
+    return timeLegs(departs, buildLegs(stops, mode)).slice(1, -1).map(({ type, from, to, ...leg }, index) => ({
+        // A hop keeps its place among all the legs, the sail out counted, in its ID
+        id           : type === 'stop' ? `${id}:${leg.preview ? 'preview' : leg.turbine}` : `${id}:leg-${index + 1}`,
         name         : leg.turbine ?? '',
         kind         : type,
         turbine      : leg.turbine ?? null,
@@ -38,14 +65,17 @@ export function legsData({ id, departs }, stops, mode) {
  * @param {Object} trip `{ id, departs, ... }`, `departs` in minutes since midnight
  * @param {Object[]} stops `{ turbine, minutes, team, preview }`
  * @param {String} mode `vessel` or `heli`
- * @returns {Object} The trip's data, its legs as `children`. The trip has no duration of its own, the engine rolls
- * it up from its legs
+ * @returns {Object} The trip's data, its legs at sea as `children`, the sail out and back as its buffer. The trip
+ * starts at its first stop, it has no duration of its own, the engine rolls it up from its legs
  */
 export function tripData({ departs, ...trip }, stops, mode) {
-    const start = toDate(departs);
+    const
+        transits = transitsOf(stops, mode),
+        start    = toDate(departs + transits.out);
 
     return {
         ...trip,
+        ...bufferData(transits),
         durationUnit   : 'minute',
         startDate      : start,
         constraintType : 'startnoearlierthan',

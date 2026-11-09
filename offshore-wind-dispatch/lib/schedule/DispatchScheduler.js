@@ -7,16 +7,16 @@ import VesselModel from '../model/VesselModel.js';
 import { isChain } from '../model/TripData.js';
 import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
-import { renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
+import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { toDate, toMinutes } from '../util/Time.js';
+import { toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
 const
-    // The trips' place in their 64px row: 7px above, 14px below, room for the dependency line to pass under a trip
-    margins     = { start : 7, end : 14 },
-    // The trip's head line above its legs, the NestedEvents feature's header
-    headHeight  = 19,
+    // The trips' place in their 64px row, 6px above and below: the label, then the 28px work blocks on the line
+    margins     = { start : 6, end : 6 },
+    // The trip's label above its legs, the NestedEvents feature's header
+    headHeight  = 20,
     // The hours of the day share the width, down to this many px per hour, then the timeline scrolls
     minTick     = { wide : 50, phone : 44 },
     // The zoom steps, times the width that fits the day
@@ -28,11 +28,13 @@ const
  * - The scheduling engine places the trips: the Enterprise tier runs on a ProjectModelEnterprise, which keeps each
  *   trip's legs in order from its departure and starts a stop that depends on another trip once that trip is back,
  *   pushing the rest of its trip (TripModel)
- * - Trips are parent events, their legs (transits and turbine stops) are child events drawn inside them by the
- *   NestedEvents feature (TripModel, TripRendering)
+ * - Trips are parent events over their time on station, their legs at sea (turbine stops and the hops between them)
+ *   are child events drawn inside them by the NestedEvents feature (TripModel, TripRendering)
+ * - The sail out and back are each trip's buffer time, its preamble and postamble, drawn by the EventBuffer feature
+ *   as a thin line with the clock times at its ends
  * - A dependency runs from the HV isolation flown to the substation into the one stop that needs it, drawn by the
- *   Dependencies feature from a trip to a nested event. Red only where the engine cannot resolve it: the wait it
- *   forces brings the trip back after its weather window
+ *   Dependencies feature from a trip to a nested event, as a chevron in the gap before that stop. Orange only where
+ *   the engine cannot resolve it: the wait it forces brings the trip back after its weather window
  * - The weather no-go of each vessel is a resource time range, from the hour the forecast crosses its limit
  * - The time axis carries the forecast: the wave height chart and the wind (ForecastHeader)
  * - The vessel column shows how much of the window left is booked, and the seats taken
@@ -42,6 +44,7 @@ const
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventBuffer
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Dependencies
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TimeRanges
@@ -109,9 +112,9 @@ export default class DispatchScheduler extends Scheduler {
             nestedEvents       : {
                 eventLayout             : 'none',
                 headerHeight            : headHeight,
-                // The inset of the legs from the trip's edge, the same on all sides, and between rows of legs
-                resourceMargin          : 1,
-                barMargin               : 1,
+                // The legs fill the 32px under the label less 2px above and below: 28px work blocks
+                resourceMargin          : 2,
+                barMargin               : 2,
                 constrainDragToParent   : true,
                 allowNestingOnDrop      : false,
                 allowDeNestingOnDrop    : false,
@@ -159,9 +162,8 @@ export default class DispatchScheduler extends Scheduler {
                 eventModelClass    : TripModel,
                 resourceModelClass : VesselModel
             },
-            eventRenderer : args =>
-                renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource), me.dispatch.now),
-            resourceTimeRangeRenderer : args => renderRange(args, range => me.dispatch.previousCloseOf(range.resource)),
+            eventRenderer             : args => renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource)),
+            resourceTimeRangeRenderer : renderRange,
             features                  : {
                 ...config.features,
                 // Along its own row, not into the past, not once gone or moved to tomorrow
@@ -169,10 +171,10 @@ export default class DispatchScheduler extends Scheduler {
                     constrainDragToResource : true,
                     validatorFn             : context => me.validateTripDrag(context)
                 },
-                eventTooltip : {
-                    template : ({ eventRecord }) => tripTipContent(eventRecord.trip, me.dispatch)
-                },
-                // Drawn from the data, not created or removed by hand. Red when the plan breaks it
+                eventTooltip : { template : ({ eventRecord }) => tripTipContent(eventRecord.trip, me.dispatch) },
+                // The sail out and back of a trip, its preamble and postamble: a line with the clock times at its ends
+                eventBuffer  : { renderer : args => me.renderTransits(args) },
+                // Drawn from the data, not created or removed by hand, marked when the plan breaks it
                 dependencies : {
                     allowCreate     : false,
                     enableDelete    : false,
@@ -237,6 +239,15 @@ export default class DispatchScheduler extends Scheduler {
         me.tickObserver ??= new ResizeObserver(() => me.fitTicks());
         me.tickObserver.observe(me.timeAxisSubGridElement);
         me.fitTicks();
+    }
+
+    // The EventBuffer feature's renderer: a trip's sail out and back against its window and the start of the day, the
+    // tick being an hour wide
+    renderTransits(args) {
+        const { dispatch, tickSize } = this;
+
+        renderBuffers(args, dispatch.closeOf(args.eventRecord.resource),
+            { dayStart : dispatch.day.dayStart * 60, perMinute : tickSize / 60 });
     }
 
     // The Group feature runs the column renderer for its header rows too, they have no vessel to draw (renderGroup)
@@ -316,19 +327,32 @@ export default class DispatchScheduler extends Scheduler {
         me.forecastHeader.refresh();
     }
 
+    /**
+     * The departure of a trip dragged to a new start. The trip starts at its first stop, it leaves port the sail out
+     * (its buffer) earlier. EventDrag snaps that start to the time resolution, the departure is snapped instead
+     * @param {TripModel} trip
+     * @param {Date} startDate The trip's start where it is dragged to
+     * @returns {Number} Minutes since midnight
+     */
+    departsAt(trip, startDate) {
+        const step = this.timeResolution.increment;
+
+        return Math.round((toMinutes(startDate) - trip.transits.out) / step) * step;
+    }
+
     validateTripDrag(context) {
         const { eventRecords, startDate } = context;
 
         const
-            trip  = eventRecords[0],
-            now   = toDate(this.dispatch.now);
+            trip    = eventRecords[0],
+            departs = this.departsAt(trip, startDate);
 
         if (trip.status === 'moved') {
             return { valid : false, message : `${trip.id} is moved to tomorrow` };
         }
 
         // Trips under way are not draggable at all (their `draggable` field, DispatchApp#evaluate)
-        if (startDate < now) {
+        if (departs < this.dispatch.now) {
             return { valid : false, message : 'Cannot leave port in the past' };
         }
 
@@ -336,7 +360,7 @@ export default class DispatchScheduler extends Scheduler {
         const
             vessel = (context.newResource ?? trip.resource),
             close  = this.dispatch.closeOf(vessel),
-            back   = toMinutes(startDate) + trip.endMinute - trip.departs;
+            back   = departs + trip.endMinute - trip.departs;
 
         if (back > close) {
             return { valid : false, message : noGoText(back, close, this.dispatch.limits[vessel.window]) };

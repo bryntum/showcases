@@ -1,43 +1,37 @@
-/* The teams waiting at the port (TeamTray.js, TeamChip.js) */
+/* The crews waiting at the port (TeamTray.js, TeamChip.js), a slim tray under the schedule */
 
-/* Teams waiting at the port, a Container with an hbox layout */
+/* A Container with an hbox layout: the title, then a small card per team */
 .ow-tray {
-    flex             : none;
-    gap              : 8px;
-    padding          : 8px 16px;
-    background-color : var(--ow-sunken);
-    border-block-end : 1px solid var(--ow-border);
-    overflow         : hidden;
+    flex               : none;
+    gap                : 16px;
+    padding            : 12px 24px;
+    background-color   : var(--ow-sunken);
+    border-block-start : 1px solid var(--ow-border);
+    overflow           : hidden;
 }
 
 .ow-tray-title {
-    /* The teams sit at the right end of the tray */
-    margin-inline-end : auto;
-    display     : flex;
-    align-items : center;
-    gap         : 5px;
-    font-size   : 12px;
-    font-weight : 600;
-    color       : var(--ow-ink-sub);
+    font-size   : 13px;
+    font-weight : 500;
     white-space : nowrap;
 }
 
 .ow-tray-empty {
-    font-size   : 11.5px;
-    color       : var(--ow-ink-faint);
+    font-size   : 12px;
+    color       : var(--ow-c-muted);
     white-space : nowrap;
 }
 
+/* A team's card: no coloured border on any */
 .ow-team {
     display          : flex;
     align-items      : center;
-    gap              : 8px;
-    padding          : 5px 10px;
-    border           : 1px solid var(--ow-border);
+    gap              : 12px;
+    padding          : 8px 16px 8px 8px;
     border-radius    : 8px;
     background-color : var(--ow-surface);
-    box-shadow       : 0 1px 2px rgb(0 0 0 / 6%);
-    font-size        : 12px;
+    box-shadow       : 0 1px 3px rgb(0 0 0 / 8%);
+    font-size        : 13px;
     white-space      : nowrap;
     cursor           : grab;
     user-select      : none;
@@ -45,51 +39,60 @@
     touch-action     : none;
 
     &:hover {
-        border-color : color-mix(in srgb, var(--ow-reach) 50%, var(--ow-border));
+        box-shadow : 0 0 0 1.5px color-mix(in srgb, var(--ow-reach) 50%, transparent), 0 1px 3px rgb(0 0 0 / 8%);
     }
 }
 
 .ow-team-lifted {
-    border-style : dashed;
-    box-shadow   : none;
-    opacity      : 0.45;
+    box-shadow : none;
+    opacity    : 0.45;
 }
 
-/* The people cue spanning both lines: a hard hat in the muted ink on a soft round tint */
+/* The people icon (Font Awesome, as Bryntum ships it) in a 32px neutral circle */
 .ow-team-crew {
     display          : grid;
     place-items      : center;
     flex             : none;
-    width            : 34px;
-    height           : 34px;
+    width            : 32px;
+    height           : 32px;
     border-radius    : 50%;
-    color            : var(--ow-ink-sub);
-    background-color : color-mix(in srgb, var(--ow-ink-sub) 12%, transparent);
-
-    .ow-icon {
-        width  : 26px;
-        height : 26px;
-    }
+    font-size        : 13px;
+    color            : var(--ow-c-muted);
+    background-color : var(--ow-c-neutral-bg);
 }
 
 .ow-team-text {
     display        : flex;
     flex-direction : column;
-    line-height    : 1.25;
+    line-height    : 1.35;
 }
 
-.ow-team-name {
-    display     : flex;
-    align-items : center;
-    gap         : 6px;
+.ow-team-name b {
+    font-weight : 500;
+}
+
+.ow-team-name, .ow-team-job {
+    white-space : nowrap;
 }
 
 .ow-team-job {
-    font-size : 11px;
-    color     : var(--ow-ink-sub);
+    font-size : 12px;
+    color     : var(--ow-c-muted);
 }
 
-/* The certificates as quiet text, only HV, the one a job can need, is emphasised */
+/* Waiting for a stopped turbine: the icon's circle tinted red, the task in red */
+.ow-team-fault {
+    .ow-team-crew {
+        color            : var(--ow-c-stop-ink);
+        background-color : var(--ow-c-stop-tint);
+    }
+
+    .ow-team-job {
+        color : var(--ow-c-stop-ink);
+    }
+}
+
+/* The certificates of the card that follows the pointer (drag/DragChip.js), quiet text, HV emphasised */
 .ow-certs {
     display : flex;
     gap     : 4px;
@@ -97,15 +100,15 @@
 
 .ow-cert {
     font-size : 10.5px;
-    color     : var(--ow-ink-faint);
+    color     : var(--ow-c-muted);
 
     & + &::before {
-        content      : '/';
+        content           : '/';
         margin-inline-end : 4px;
     }
 }
 
 .ow-cert-hv {
     font-weight : 700;
-    color       : var(--ow-weather);
+    color       : var(--ow-ink);
 }

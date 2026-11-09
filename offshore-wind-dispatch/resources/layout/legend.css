@@ -1,66 +1,82 @@
-/* The legend under the schedule (Legend.js) */
+/* The schedule's footer (Legend.js): 40px under the last row, the legend on the left, the credit on the right */
 
-/* Legend */
 .ow-legend {
-    flex        : none;
-    /* The same surface as the turbine card under it, not the sea */
-    background-color : var(--ow-surface);
-    display     : flex;
-    align-items : center;
-    gap         : 16px;
-    height      : 34px;
-    padding     : 0 16px;
+    flex               : none;
+    display            : flex;
+    align-items        : center;
+    gap                : 24px;
+    box-sizing         : border-box;
+    height             : 40px;
+    padding            : 0 24px;
+    background-color   : var(--ow-c-footer);
     border-block-start : 1px solid var(--ow-border);
-    font-size   : 11.5px;
-    color       : var(--ow-ink-sub);
-    white-space : nowrap;
-    overflow    : hidden;
+    font-size          : 12px;
+    color              : var(--ow-c-muted);
+    white-space        : nowrap;
+    overflow           : hidden;
 
-    > span::before {
-        content        : '';
-        display        : inline-block;
-        width          : 10px;
-        height         : 10px;
-        margin-inline-end : 6px;
-        border-radius  : 2px;
-        vertical-align : -1px;
+    .ow-l {
+        display     : inline-flex;
+        align-items : center;
+        gap         : 8px;
+    }
+
+    /* The swatch */
+    i {
+        position      : relative;
+        flex          : none;
+        box-sizing    : border-box;
+        width         : 16px;
+        height        : 10px;
+        border-radius : 2px;
+    }
+
+    .ow-l-work i {
+        background-color : var(--ow-c-work);
+    }
+
+    /* The line with its hollow and solid end dots */
+    .ow-l-transit i {
+        width            : 24px;
+        height           : 2px;
+        border-radius    : 0;
+        background-color : var(--ow-c-transit);
+
+        &::before, &::after {
+            content          : '';
+            position         : absolute;
+            inset-block-start : 50%;
+            box-sizing       : border-box;
+            width            : 7px;
+            height           : 7px;
+            border           : 2px solid var(--ow-c-transit);
+            border-radius    : 50%;
+            translate        : 0 -50%;
+        }
+
+        &::before {
+            inset-inline-start : -1px;
+            background-color   : var(--ow-c-footer);
+        }
+
+        &::after {
+            inset-inline-end : -1px;
+            background-color : var(--ow-c-transit);
+        }
+    }
+
+    .ow-l-risk i {
+        background-color : var(--ow-c-risk-tint);
+        box-shadow       : inset 0 0 0 1.5px var(--ow-c-risk-line);
+    }
+
+    .ow-l-nogo i {
+        /* The rows' hatch, denser and darker to read at this size */
+        background-image : repeating-linear-gradient(135deg,
+            color-mix(in srgb, var(--ow-c-muted) 55%, transparent) 0 1.5px, transparent 1.5px 4px);
     }
 
     .ow-legend-credit {
         margin-inline-start : auto;
-
-        &::before {
-            display : none;
-        }
-    }
-
-    .ow-l-plan::before {
-        background-color : var(--ow-plan);
-    }
-
-    .ow-l-risk::before {
-        background-color : var(--ow-risk);
-    }
-
-    .ow-l-trim::before {
-        background-color : var(--ow-plan);
-        box-shadow       : inset 0 0 0 2px var(--ow-cancel);
-    }
-
-    .ow-l-cancel::before {
-        border : 1.5px dashed var(--ow-cancel);
-    }
-
-    .ow-l-nogo::before {
-        background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px,
-            transparent 2px 4px);
-    }
-
-    .ow-l-dep::before {
-        width              : 14px;
-        height             : 0;
-        border-block-start : 1.5px solid var(--ow-ink-sub);
-        border-radius      : 0;
-        vertical-align     : 3px;
     }
 }

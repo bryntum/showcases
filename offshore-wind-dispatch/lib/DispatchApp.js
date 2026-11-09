@@ -15,6 +15,9 @@ import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
 import './panel/PhoneTabs.js';
 
+// The turbine the page opens on: the one the weather puts at risk
+const openingTurbine = 'T-41';
+
 /**
  * Offshore Wind Dispatch: the header with the weather window, the vessels and helicopters on the day's timeline with
  * the teams waiting at the port above it, and the map of the farm with the selected turbine beside it.
@@ -149,7 +152,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     }
 
     /**
-     * Shows the plan once painted: Northern Tern's trip selected, the forecast chart drawn
+     * Shows the plan once painted: T-41 selected, the turbine the story is about, its trip with it, the forecast chart
+     * drawn
      * @param {Object} [options]
      * @param {String} [options.state] `forecast` brings in the next forecast, `drag` holds Team F over Northern Tern's
      * trip (for screenshots and tests)
@@ -159,7 +163,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const
             me            = this,
             { scheduler } = me,
-            first         = me.trips.find(trip => trip.id === 'NT-1') ?? me.trips[0];
+            first         = me.trips.find(trip => trip.id === 'NT-1') ?? me.trips[0],
+            // Its trip, Sea Puffin's
+            opening       = tripsOf(me.trips, openingTurbine)[0] ?? first;
 
         if (!scheduler.isPainted) {
             await new Promise(resolve => scheduler.on({ paint : resolve, once : true }));
@@ -170,7 +176,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.evaluate();
         me.refreshAll();
 
-        scheduler.selectEvent(first);
+        // The turbine first: selecting its trip keeps it, as it is on the trip (onTripSelectionChange)
+        me.selectedTurbine = openingTurbine;
+        scheduler.selectEvent(opening);
         // From here on, a trip or turbine the user selects fits the map to it
         me.started = true;
 
@@ -255,9 +263,14 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
     }
 
-    // A trip dragged to a new departure: the engine moves its legs with it, and pushes any stop that waits for it
-    onTripDrop({ valid }) {
-        return valid ? this.replan() : null;
+    // A trip dragged to a new departure: the engine moves its legs with it, and pushes any stop that waits for it. The
+    // departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt)
+    onTripDrop({ valid, eventRecords }) {
+        const
+            { scheduler } = this,
+            trip          = eventRecords?.[0];
+
+        return valid ? this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) })) : null;
     }
 
     /**
@@ -271,6 +284,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         kpis.draw({
             site   : dispatch.site.name,
+            opens  : dispatch.day.dayStart * 60,
             now    : dispatch.now,
             closes : dispatch.windows.ctv,
             was    : dispatch.previousWindows?.ctv,

@@ -10,8 +10,8 @@ import '../schedule/DispatchScheduler.js';
 
 /**
  * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the zoom, with the
- * teams waiting at the port, the forecast notice, the vessels and helicopters on the day's timeline
- * (DispatchScheduler) and the legend under it. On a phone it is the Schedule tab.
+ * forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler), its footer with the legend,
+ * and the crews waiting at the port under it. On a phone it is the Schedule tab.
  *
  * The scheduler runs from today 06:00 to 18:00 over the vessels, the trips with their legs nested in them and the
  * dependency of the farm data.
@@ -65,11 +65,10 @@ export default class SchedulePanel extends Panel {
                         html : `${boats} CTV · ${dispatch.vessels.length - boats} heli`
                     },
                     spacer   : '->',
-                    // The next forecast, in: the one action that changes the plan
+                    // The next forecast, in: the one action that changes the plan, quiet and blue
                     forecast : {
-                        type    : 'iconbutton',
+                        type    : 'button',
                         cls     : 'ow-forecast-button',
-                        svg     : 'broadcast',
                         hidden  : true,
                         onClick : () => me.trigger('forecast')
                     },
@@ -84,7 +83,6 @@ export default class SchedulePanel extends Panel {
                 }
             },
             items : {
-                tray      : { type : 'teamtray', port : site.portShort ?? site.port },
                 notice    : { type : 'forecastnotice' },
                 scheduler : {
                     type      : 'dispatchscheduler',
@@ -94,7 +92,9 @@ export default class SchedulePanel extends Panel {
                     endDate   : toDate(day.dayEnd * 60),
                     project   : projectData(data)
                 },
-                legend : { type : 'legend' }
+                // The schedule's footer, then the crews waiting under the schedule
+                legend : { type : 'legend' },
+                tray   : { type : 'teamtray', port : site.portShort ?? site.port }
             }
         });
     }
@@ -123,7 +123,7 @@ export default class SchedulePanel extends Panel {
         forecast.hidden = !next;
 
         if (next) {
-            forecast.text = `Forecast ${next.issued} is in`;
+            forecast.text = `Forecast ${next.issued} is in · Re-plan`;
         }
 
         zoomOut.disabled = scheduler.zoomStep <= 0;

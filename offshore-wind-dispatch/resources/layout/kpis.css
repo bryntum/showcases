@@ -1,116 +1,149 @@
-/* The KPI header (KpiBar.js): the clock, the weather window and the numbers of the day */
+/* The KPI header (KpiBar.js): the clock, the weather window, the one big thing, and the numbers of the day, quiet */
 
-/* KPI header, a Container with an hbox layout */
+/* KPI header, a Container with an hbox layout. Its height is the one the map and the turbine card beside the schedule
+   are laid out under: it does not change */
 .ow-kpis {
     flex             : none;
-    gap              : 22px;
-    padding          : 10px 16px;
-    background-color : var(--ow-raised);
+    box-sizing       : border-box;
+    height           : 73px;
+    gap              : 32px;
+    padding          : 0 24px;
+    background-color : var(--ow-surface);
     border-block-end : 1px solid var(--ow-border);
 
     small {
         display     : block;
-        font-size   : 11px;
-        font-weight : 500;
-        color       : var(--ow-ink-sub);
+        font-size   : 12px;
+        font-weight : 400;
+        color       : var(--ow-c-muted);
         white-space : nowrap;
     }
 
     b {
-        font-size            : 20px;
-        font-weight          : 700;
+        display              : block;
         line-height          : 1.2;
         white-space          : nowrap;
         font-variant-numeric : tabular-nums;
     }
 }
 
-/* The clock and each count stack their label over the figure */
-:is(.ow-clock, .ow-kpi).b-widget {
+/* The clock, the window's name and each count stack their label over the figure */
+:is(.ow-clock, .ow-kpi, .ow-window-heading).b-widget {
     display : block;
 }
 
+/* "Skarv Bank" over "Mon 9 Nov · 07:40" */
 .ow-clock {
-    small {
-        text-transform : uppercase;
-        letter-spacing : 0.04em;
-        font-weight    : 600;
-    }
-
     b {
-        display     : flex;
-        align-items : baseline;
-        gap         : 10px;
-        font-size   : 22px;
-    }
-
-    /* The time beside the date, in the now line's blue */
-    .ow-clock-time {
-        font-size   : 15px;
+        font-size   : 16px;
         font-weight : 600;
-        color       : var(--ow-now);
+    }
+
+    small {
+        margin-block-start : 2px;
+        font-size          : 13px;
+    }
+
+    .ow-clock-time {
+        font-weight : 500;
+        color       : var(--ow-c-work);
     }
 }
 
+/* The weather window: its name over "Closes 14:00", then the countdown from the start of the day to the close */
 .ow-window {
-    --ow-tone : var(--ow-sea-ok);
+    --b-container-gap : 32px;
 
-    display          : flex;
-    align-items      : center;
-    gap              : 10px;
-    padding          : 6px 14px 6px 12px;
-    border-radius    : 8px;
-    background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
-    border           : 1px solid color-mix(in srgb, var(--ow-tone) 35%, transparent);
+    flex      : 1 1 auto;
+    min-width : 0;
+}
 
-    > .ow-icon {
-        width  : 26px;
-        height : 26px;
-        color  : var(--ow-tone);
-    }
+.ow-window-heading {
+    flex : none;
 
     b {
-        color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink));
+        font-size      : 30px;
+        font-weight    : 600;
+        line-height    : 1.15;
+        letter-spacing : -0.01em;
+        color          : var(--ow-ink);
     }
 
-    .ow-window-left {
-        display              : flex;
-        flex-direction       : column;
-        padding-inline-start : 10px;
-        margin-inline-start  : 2px;
-        border-inline-start  : 1px solid color-mix(in srgb, var(--ow-tone) 30%, transparent);
-        font-weight          : 600;
-        font-size            : 12px;
-        white-space          : nowrap;
-
-        em {
-            font-style      : normal;
-            font-weight     : 500;
-            color           : var(--ow-ink-sub);
-            text-decoration : line-through;
-        }
+    /* The close before the latest forecast */
+    em {
+        font-size       : 12px;
+        font-style      : normal;
+        color           : var(--ow-c-muted);
+        text-decoration : line-through;
     }
 }
 
-.ow-window-short {
-    --ow-tone : var(--ow-cancel);
+/* The countdown, a Bryntum ProgressBar: the time gone in grey, what is left of the window in blue, the start and the
+   close under it with how long is left between them */
+.ow-window-countdown {
+    position  : relative;
+    flex      : 1 1 0;
+    min-width : 160px;
+    max-width : 520px;
 }
 
-.ow-kpi {
-    padding       : 4px 8px;
-    border-radius : 6px;
+.ow-window-bar.b-progress-bar {
+    --b-primary                 : var(--ow-c-transit);
+    --b-progress-bar-background : var(--ow-c-work);
+
+    flex-direction : column-reverse;
+    margin         : 0;
+
+    .b-progress-bar-header {
+        margin-block : 6px 0;
+    }
+
+    .b-label {
+        font-size : 12px;
+        color     : var(--ow-c-muted);
+    }
+
+    .b-progress-bar-label {
+        margin : 0;
+    }
+}
+
+/* How long is left, centred under the bar */
+.ow-window-left.b-widget {
+    position          : absolute;
+    inset-block-end   : 0;
+    inset-inline      : 0;
+    margin-inline     : auto;
+    width             : max-content;
+    font-size         : 12px;
+    font-weight       : 500;
+    line-height       : 1.5;
+    white-space       : nowrap;
+    pointer-events    : none;
+}
+
+/* The counts: 22px, no boxes */
+.ow-kpi b {
+    font-size   : 22px;
+    font-weight : 600;
+}
+
+/* What needs acting on, after a divider */
+.ow-kpi-split {
+    align-self         : stretch;
+    width              : 0;
+    margin-block       : 18px;
+    border-inline-start : 1px solid var(--ow-border);
 }
 
 .ow-kpi-warn, .ow-kpi-alert {
-    --ow-tone : var(--ow-risk);
-
-    background-color : color-mix(in srgb, var(--ow-tone) 13%, transparent);
-
-    b {
-        color : var(--ow-tone);
+    :is(small, b) {
+        color : var(--ow-c-risk-ink);
     }
 }
 
-.ow-kpi-alert {
-    --ow-tone : var(--ow-cancel);
+.ow-kpi-stop {
+    :is(small, b) {
+        color : var(--ow-c-stop-ink);
+    }
 }

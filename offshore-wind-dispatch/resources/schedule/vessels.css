@@ -1,106 +1,30 @@
 /* The vessel column and the group rows (schedule/TripRendering.js) */
 
+/* The name, 14px, over one muted line: type, limit and seats */
 .ow-resource {
-    display     : flex;
-    align-items : center;
-    gap         : 10px;
-    min-width   : 0;
-}
-
-.ow-resource-icon {
-    display          : grid;
-    place-items      : center;
-    flex             : none;
-    width            : 38px;
-    height           : 38px;
-    border-radius    : 50%;
-    color            : var(--ow-plan);
-    background-color : color-mix(in srgb, var(--ow-plan) 11%, transparent);
-
-    .ow-icon {
-        width  : 28px;
-        height : 28px;
-    }
-
-    .ow-resource-heli & {
-        color            : var(--ow-heli);
-        background-color : color-mix(in srgb, var(--ow-heli) 12%, transparent);
-    }
-}
-
-.ow-resource-text {
     display        : flex;
     flex-direction : column;
+    gap            : 2px;
     min-width      : 0;
     line-height    : 1.3;
 
     b {
-        font-weight : 600;
+        font-size   : 14px;
+        font-weight : 500;
         white-space : nowrap;
     }
 
     small {
-        font-size     : 11px;
-        color         : var(--ow-ink-sub);
-        white-space   : nowrap;
-        overflow      : hidden;
-        text-overflow : ellipsis;
+        font-size   : 12px;
+        color       : var(--ow-c-muted);
+        white-space : nowrap;
     }
 }
 
-/* How much of what is left of the window is booked, and the seats */
-.ow-util {
-    display            : flex;
-    align-items        : center;
-    gap                : 6px;
-    margin-block-start : 3px;
-}
-
-.ow-util-bar {
-    width            : 64px;
-    height           : 4px;
-    border-radius    : 2px;
-    background-color : var(--b-neutral-93);
-    overflow         : hidden;
-
-    span {
-        display          : block;
-        height           : 100%;
-        border-radius    : 2px;
-        background-color : var(--ow-plan);
-    }
-}
-
-.ow-util-text {
-    font-size   : 11px;
-    color       : var(--ow-ink-sub);
-
-    /* Emphasis only when the vessel is full */
-    &.ow-util-full {
-        font-weight : 600;
-        color       : var(--ow-ink);
-    }
-}
-
-/* In the narrow phone column the name gives way (ellipsis), the count stays whole */
+/* "Vessels · 4": in the narrow phone column it gives way (ellipsis) */
 .ow-group {
-    display     : flex;
-    align-items : center;
-    gap         : 6px;
-    min-width   : 0;
-    white-space : nowrap;
-
-    span {
-        min-width     : 0;
-        overflow      : hidden;
-        text-overflow : ellipsis;
-    }
-
-    small {
-        flex             : none;
-        padding          : 0 6px;
-        border-radius    : 8px;
-        font-size        : 1em;
-        background-color : var(--b-neutral-94);
-    }
+    min-width     : 0;
+    white-space   : nowrap;
+    overflow      : hidden;
+    text-overflow : ellipsis;
 }

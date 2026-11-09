@@ -3,9 +3,9 @@
 .ow-scheduler {
     --b-grid-row-border-color   : var(--ow-border);
     --b-grid-cell-border-color  : var(--ow-border);
-    /* The group rows, Crew transfer vessels and Helicopters, a slim band. The Group feature sizes them from this */
-    --b-group-row-height        : 30px;
-    --b-group-header-background : var(--ow-sunken);
+    /* The group rows, Vessels and Helicopters, a slim band. The Group feature sizes them from this */
+    --b-group-row-height        : 32px;
+    --b-group-header-background : var(--ow-c-footer);
     /* Hour lines, faint */
     --b-column-lines-tick-color  : var(--ow-grid);
     --b-column-lines-major-color : var(--ow-grid);
@@ -15,23 +15,22 @@
 
     /* The vessel column */
     .ow-resource-cell.b-grid-cell {
-        padding          : 0 12px 0 16px;
+        padding          : 0 8px 0 24px;
         background-color : var(--ow-surface);
     }
 
-    /* Group rows: Crew transfer vessels, Helicopters */
+    /* Group rows: Vessels, Helicopters */
     .b-grid-row.b-group-row {
-        /* Small and untracked, so "Crew transfer vessels" and its count fit the column */
         .b-grid-cell {
-            font-size      : 10px;
-            font-weight    : 700;
-            letter-spacing : 0;
+            font-size      : 11px;
+            font-weight    : 600;
+            letter-spacing : 0.06em;
             text-transform : uppercase;
-            color          : var(--ow-ink-sub);
+            color          : var(--ow-c-muted);
         }
 
         .ow-resource-cell.b-grid-cell.b-group-title {
-            padding-inline : 16px 8px;
+            padding-inline : 24px 8px;
         }
     }
 

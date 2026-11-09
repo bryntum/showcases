@@ -13,6 +13,7 @@
 @import './schedule/ranges.css';
 @import './schedule/trips.css';
 @import './schedule/legs.css';
+@import './schedule/transit.css';
 @import './schedule/dependencies.css';
 @import './schedule/tooltip.css';
 @import './drag/chip.css';

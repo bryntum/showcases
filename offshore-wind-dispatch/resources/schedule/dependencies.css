@@ -1,15 +1,17 @@
-/* The dependency lines (schedule/TripRendering.js) */
-
-/* The dependency lines, drawn by the Dependencies feature from a trip into a stop, solid, 1px */
+/* The dependency of the plan (schedule/TripRendering.js): drawn by the Dependencies feature, its path redrawn by the
+ * renderer as a small chevron in the gap before the stop that waits, in its own row */
 .ow-scheduler .b-sch-dependency {
     &.ow-dep {
-        --b-dependency-color : var(--ow-ink-sub);
+        --b-dependency-color : var(--ow-c-muted);
 
+        stroke-width     : 1.5px;
         stroke-dasharray : none;
         stroke-linejoin  : round;
+        stroke-linecap   : round;
+        fill             : none;
 
         &.ow-dep-broken {
-            --b-dependency-color : var(--ow-cancel);
+            --b-dependency-color : var(--ow-c-risk-line);
         }
     }
 
