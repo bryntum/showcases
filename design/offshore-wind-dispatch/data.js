@@ -11,22 +11,24 @@ export const
     // 07:40 in the plan, 08:02 once the 08:00 forecast is in
     now      = new URLSearchParams(location.search).get('state') === 'forecast' ? 8 + 2 / 60 : 7 + 40 / 60,
 
-    // Significant wave height (m) and wind at hub height (m/s), hourly from 06:00. The forecast state is the 08:00 update
+    // Significant wave height (m) and wind at hub height (m/s), hourly from 06:00. The forecast state is the 08:00
+    // update. The same values as the build's data/farm.json
     forecast = {
         plan : {
-            hs   : [0.9, 0.9, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 1.9, 2.0, 2.1],
+            hs   : [0.9, 0.9, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 1.9, 2.1, 2.2],
             wind : [9, 10, 10, 11, 12, 13, 14, 15, 17, 19, 21, 23, 24]
         },
         forecast : {
-            hs   : [0.9, 0.9, 1.0, 1.1, 1.25, 1.4, 1.5, 1.8, 2.0, 2.2, 2.3, 2.3, 2.4],
+            hs   : [0.9, 0.9, 1.0, 1.1, 1.25, 1.4, 1.6, 1.8, 2.1, 2.2, 2.3, 2.3, 2.4],
             wind : [9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 25, 25, 26]
         }
     },
 
-    // When each limit is crossed, per state
+    // When each limit is crossed, per state: the start of the first hour over it (CTV Hs > 1.5 m, SWATH Hs > 2.0 m,
+    // helicopter wind > 20 m/s), as the build's Weather#closingTimes
     windows = {
-        plan     : { ctv : 14, swath : 17, heli : 16.5 },
-        forecast : { ctv : 12, swath : 14, heli : 13 }
+        plan     : { ctv : 14, swath : 17, heli : 16 },
+        forecast : { ctv : 12, swath : 14, heli : 14 }
     },
 
     resources = [

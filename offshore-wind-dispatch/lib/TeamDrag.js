@@ -268,7 +268,7 @@ export default class TeamDrag {
 
     /**
      * Shows a team held over a trip without a pointer, the chip on the trip's previewed stop. For the URL state
-     * `?state=drag`, the screenshots and the tests
+     * `?state=drag`, the screenshots and the tests, and for the keyboard. Escape puts the team back, as in a drag
      * @param {String} teamId
      * @param {TripModel} trip
      */
@@ -277,6 +277,8 @@ export default class TeamDrag {
 
         me.press = { team : teamId };
         me.begin(teamId);
+        // Removed by end() with the other drag listeners. Held from the keyboard, onHeldKeyDown sees Escape first
+        document.addEventListener('keydown', me.listeners.keydown);
         me.holdOver(trip);
     }
 

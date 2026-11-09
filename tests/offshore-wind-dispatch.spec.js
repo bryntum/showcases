@@ -148,6 +148,50 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
         await expect(page.locator('.ow-side .ow-m-reach')).not.toHaveCount(0);
         await expect(page.locator('.ow-side .ow-m-reach.ow-m-dim')).toHaveCount(0);
     });
+
+    test('Escape puts back a team held by the URL state', async({ page }) => {
+        await open(page, '?state=drag');
+
+        await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
+        await expect(page.locator('.ow-drag-chip')).toHaveCount(1);
+        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(1);
+
+        await page.keyboard.press('Escape');
+
+        await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
+        await expect(page.locator('.ow-drag-chip')).toHaveCount(0);
+        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
+        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
+    });
+});
+
+test.describe('Offshore Wind Dispatch weather windows', () => {
+    for (const [query, hour] of [['', 16], ['?state=forecast', 14]]) {
+        const title = `the helicopter no-go starts at the first hour over 20 m/s${query ? ', 08:00 forecast' : ''}`;
+
+        test(title, async({ page }) => {
+            await open(page, query);
+
+            const { wind, dayStart, starts } = await page.evaluate(() => {
+                const app = globalThis.bryntum.query('dispatchapp');
+
+                return {
+                    wind     : app.dispatch.forecast.wind,
+                    dayStart : app.dispatch.day.dayStart,
+                    starts   : app.scheduler.resourceTimeRangeStore.records
+                        .filter(range => range.resource?.mode === 'heli' && !String(range.id).startsWith('ghost-'))
+                        .map(range => range.startDate.getHours() + range.startDate.getMinutes() / 60)
+                };
+            });
+
+            const first = wind.findIndex(value => value > 20);
+
+            // The hour before is within the limit, the hour it starts is over it
+            expect(dayStart + first).toBe(hour);
+            expect(wind[first - 1]).toBeLessThanOrEqual(20);
+            expect(starts).toEqual([hour, hour]);
+        });
+    }
 });
 
 test.describe('Offshore Wind Dispatch forecast', () => {
