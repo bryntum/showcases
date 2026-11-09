@@ -81,7 +81,8 @@ export default class DispatchScheduler extends Scheduler {
         rowHeight                 : 56,
         barMargin                 : 0,
         resourceMargin            : margins,
-        // Fully custom bars
+        // A trip is a label over a thin line, no event style has that look: its legs are the work blocks, in
+        // Bryntum's tonal style (TripRendering#renderLeg), the line is drawn by the trip's own CSS
         eventStyle                : null,
         eventColor                : null,
         allowOverlap              : true,
@@ -93,20 +94,29 @@ export default class DispatchScheduler extends Scheduler {
         // The engine's calculations here take moments: no progress bar under the header
         projectProgressReporting  : null,
 
+        // Off where the dispatcher deliberately does not get that interaction here
         features : {
+            // The vessels and their order are the fleet's, not edited or sorted in the plan
             cellEdit           : false,
+            sort               : false,
+            // No context menus: a trip is changed by dragging it, dropping a team on it or its editor
             cellMenu           : false,
             headerMenu         : false,
             timeAxisHeaderMenu : false,
-            sort               : false,
-            eventEdit          : false,
             eventMenu          : false,
             scheduleMenu       : false,
+            // The Enterprise trip editor is TaskEdit (below), not the basic one
+            eventEdit          : false,
+            // A trip's length follows from its stops and the distances, and trips are created by dropping a team
             eventResize        : false,
             eventDragCreate    : false,
+            // Empty sea needs no time tip: the wave chart above says what the hour is like
             scheduleTooltip    : false,
+            // The dependencies are the plan's, from the data, not drawn or edited by hand
             dependencyEdit     : false,
             dependencyMenu     : false,
+            // The trip's label starts over its departure (the sail out is its buffer, `--ow-pre`): kept there, not
+            // slid along on a scroll
             stickyEvents       : false,
             // The legs inside their trip, each at its own time, filling the trip under its head line
             nestedEvents       : {

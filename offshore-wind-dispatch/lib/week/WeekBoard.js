@@ -70,6 +70,8 @@ export default class WeekBoard extends Scheduler {
         barMargin                 : 0,
         resourceMargin            : 5,
         fillTicks                 : true,
+        // A cell is a summary card, its times, seats and turbines, with the seats as the PercentBar's bar: the card's
+        // own CSS, no event style
         eventStyle                : null,
         eventColor                : null,
         zoomOnMouseWheel          : false,
@@ -80,6 +82,7 @@ export default class WeekBoard extends Scheduler {
         projectProgressReporting  : null,
         multiEventSelect          : false,
 
+        // A read-only board: a click opens the day, the plan is changed in the Day view
         features : {
             cellEdit           : false,
             cellMenu           : false,
@@ -94,8 +97,10 @@ export default class WeekBoard extends Scheduler {
             eventDragCreate    : false,
             // The board draws no dependencies: no feature, so no terminals to draw new ones
             dependencies       : false,
+            // The cell shows all it has, a click opens its day with the details
             eventTooltip       : false,
             scheduleTooltip    : false,
+            // Each cell fills its day, nothing to keep in view
             stickyEvents       : false,
             resourceTimeRanges : true,
             // The seats used, a thin bar along the cell's foot
