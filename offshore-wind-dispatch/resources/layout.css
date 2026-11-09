@@ -243,6 +243,8 @@
 }
 
 .ow-tray-title {
+    /* The teams sit at the right end of the tray */
+    margin-inline-end : auto;
     display     : flex;
     align-items : center;
     gap         : 5px;
@@ -252,14 +254,10 @@
     white-space : nowrap;
 }
 
-.ow-tray-hint, .ow-tray-empty {
+.ow-tray-empty {
     font-size   : 11.5px;
     color       : var(--ow-ink-faint);
     white-space : nowrap;
-}
-
-.ow-tray-hint {
-    margin-inline-start : auto;
 }
 
 .ow-team {

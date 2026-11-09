@@ -64,8 +64,7 @@ export default class TeamTray extends Widget {
 
         this.html = `
             <span class="ow-tray-title">${icon('anchor')} Waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')}</span>
-            ${chips || '<span class="ow-tray-empty">Every team has a trip</span>'}
-            <span class="ow-tray-hint">Drag a team onto a vessel</span>`;
+            ${chips || '<span class="ow-tray-empty">Every team has a trip</span>'}`;
     }
 }
 

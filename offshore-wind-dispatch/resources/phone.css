@@ -73,7 +73,7 @@
         border-inline-end : 0;
     }
 
-    .ow-legend, .ow-tray-hint, .ow-tray-title, .ow-team-job, .ow-certs, .ow-util-text, .ow-axis-label small,
+    .ow-legend, .ow-tray-title, .ow-team-job, .ow-certs, .ow-util-text, .ow-axis-label small,
     .ow-side .ow-panel-bar, .ow-schedule .ow-panel-bar:not(:has(.ow-forecast-button)),
     .ow-schedule .ow-panel-bar :is(.ow-panel-title, .ow-seg-buttons) {
         display : none;
