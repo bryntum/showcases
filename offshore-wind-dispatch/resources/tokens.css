@@ -88,6 +88,8 @@
     --ow-size-hero      : 22px;
     --ow-size-kpi       : 19px;
     --ow-bar-control    : 30px;
+    /* A card's inner inset: its title bar, its left column, and the header and crews tray lined up with them */
+    --ow-inset          : 16px;
     /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
        the corner curve ends. The cards inside are concentric: radius less padding, never below the smallest radius a
        card keeps (which is where the two are equal) */
@@ -95,10 +97,9 @@
     --ow-gutter         : var(--ow-frame-radius);
     --ow-card-radius-min : 8px;
     --ow-card-radius    : max(calc(var(--ow-frame-radius) - var(--ow-gutter)), var(--ow-card-radius-min));
-    /* The hairline is a 1px ring in the shadow, so it takes no room from what is inside the card (the schedule's rows
-       are fixed, they fit the 960px page to the pixel) */
-    --ow-card-shadow    : 0 0 0 1px var(--ow-card-border), 0 1px 3px light-dark(rgb(16 24 40 / 8%), rgb(0 0 0 / 45%)),
-        0 1px 2px light-dark(rgb(16 24 40 / 4%), rgb(0 0 0 / 30%));
+    /* One soft, diffuse shadow, no ring: a ring with an offset shadow read as a second, darker edge. In dark the cards
+       are a step lighter than the frame, which already sets them off */
+    --ow-card-shadow    : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
     --ow-c-radius       : 4px;
 }
 

@@ -6,8 +6,8 @@
     align-items        : center;
     gap                : 24px;
     box-sizing         : border-box;
-    height             : 40px;
-    padding            : 0 24px;
+    height             : 36px;
+    padding            : 0 var(--ow-inset);
     background-color   : var(--ow-c-footer);
     border-block-start : 1px solid var(--ow-border);
     font-size          : 12px;

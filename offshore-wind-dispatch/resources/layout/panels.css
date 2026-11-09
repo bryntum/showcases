@@ -40,28 +40,21 @@
     }
 }
 
-/* The Panel's tbar as the title bar: one row 44px high, the title, a note, then the buttons at the end */
+/* The Panel's tbar as the title bar: one row 40px high, the title, a note, then the buttons at the end */
 .ow-panel-bar.b-toolbar {
-    --b-toolbar-padding : 0 16px;
     --b-toolbar-gap     : 12px;
 
     flex             : none;
     box-sizing       : border-box;
-    height           : 44px;
+    height           : 40px;
     min-height       : 0;
     padding          : 0;
     border-block-end : 1px solid var(--ow-border);
 
     > .b-toolbar-content {
-        padding : 0 16px;
+        padding : 0 var(--ow-inset);
         gap     : 12px;
     }
-}
-
-/* The schedule's title bar on the 24px gutter. The map's keeps its own */
-.ow-schedule > .b-panel-body-wrap > .ow-panel-bar.b-toolbar > .b-toolbar-content,
-.ow-schedule > .ow-panel-bar.b-toolbar > .b-toolbar-content {
-    padding-inline : 24px 16px;
 }
 
 .ow-panel-title {
@@ -125,6 +118,8 @@
     --b-button-group-box-shadow    : none;
 
     box-sizing       : border-box;
+    /* The grey track rounded like its buttons (the theme variable alone left it square) */
+    border-radius    : var(--ow-card-radius);
     height           : var(--ow-bar-control);
     padding          : 2px;
     background-color : var(--b-neutral-95);

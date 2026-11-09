@@ -1,6 +1,5 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
-import { icon } from '../util/Icons.js';
 import { dayAxis } from '../util/Time.js';
 
 /**
@@ -100,8 +99,8 @@ export default class ForecastHeader {
         return `
         <div class="ow-axis-label">
             <span class="ow-axis-row ow-axis-row-head">${this.forecastLabel}</span>
-            <span class="ow-axis-row ow-axis-row-sea">${icon('waves', 'ow-axis-icon')}<span>Wave height<small>Hs, metres</small></span></span>
-            <span class="ow-axis-row ow-axis-row-wind">${icon('wind', 'ow-axis-icon')}<span>Wind<small>m/s at hub</small></span></span>
+            <span class="ow-axis-row ow-axis-row-sea"><span>Wave height<small>Hs, metres</small></span></span>
+            <span class="ow-axis-row ow-axis-row-wind"><span>Wind<small>m/s at hub</small></span></span>
         </div>`;
     }
 

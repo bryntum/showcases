@@ -1,4 +1,5 @@
 import { Widget } from '@bryntum/core-enterprise';
+import { iconConfig } from './util/Icons.js';
 import { duration } from './util/Time.js';
 
 /**
@@ -24,7 +25,7 @@ export function teamChipContent(team, job, compact = false, fault = false) {
 
     // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
     return [
-        { tag : 'i', class : 'ow-team-crew fa-solid fa-users', ariaHidden : true },
+        { tag : 'span', class : 'ow-team-crew', ariaHidden : true, children : [iconConfig('users')] },
         {
             tag      : 'span',
             class    : 'ow-team-text',

@@ -23,8 +23,8 @@ import x from '@phosphor-icons/core/assets/light/x-light.svg?raw';
 import wrenchFill from '@phosphor-icons/core/assets/fill/wrench-fill.svg?raw';
 
 /*
- * The transport icons, from Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter), drawn in a lighter line to sit
- * with Phosphor Light. MIT License, Copyright (c) 2020-2026 Paweł Kuna, https://github.com/tabler/tabler-icons
+ * The transport and crew icons, from Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter, users), drawn in a
+ * lighter line to sit with Phosphor Light. MIT License, Copyright (c) 2020-2026 Paweł Kuna, https://github.com/tabler/tabler-icons
  */
 const tabler = {
     // Crew transfer vessel
@@ -38,6 +38,12 @@ const tabler = {
         <path d="M4 18l-1 -5h18l-2 4"/>
         <path d="M5 13v-6h8l4 6"/>
         <path d="M7 7v-4h-1"/>`,
+    // The people icon of the crews waiting at port
+    users : `
+        <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+        <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>`,
     heli : `
         <path d="M3 10l1 2h6"/>
         <path d="M12 9a2 2 0 0 0 -2 2v3c0 1.1 .9 2 2 2h7a2 2 0 0 0 2 -2c0 -3.31 -3.13 -5 -7 -5h-2"/>

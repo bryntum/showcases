@@ -4,11 +4,11 @@
 .ow-kpis {
     flex             : none;
     box-sizing       : border-box;
-    height           : 50px;
+    height           : 58px;
     gap              : 32px;
     /* Its text starts and ends where the cards' content does, past their rounded corners: the gutter plus the cards'
        own inner padding */
-    padding          : 0 calc(var(--ow-gutter) * 2);
+    padding          : 0 calc(var(--ow-gutter) + var(--ow-inset));
 
     small {
         display     : block;

@@ -62,8 +62,8 @@
         "T-58": { "job": "Blade inspection from the hoist", "type": "Inspect", "team": "J" },
         "OSS": { "job": "HV isolation of string 4", "type": "Isolate", "team": "AP", "certs": ["HV"] },
         "T-34": { "job": "Converter fault, reset and test", "short": "Converter fault", "type": "Repair", "team": "F", "certs": ["HV"], "minutes": 48 },
-        "T-49": { "job": "Blade leading edge repair", "short": "Blade leading edge", "type": "Repair", "team": "G", "certs": ["Rope"], "minutes": 180 },
-        "T-02": { "job": "Annual service", "type": "Service", "team": "H", "minutes": 360 }
+        "T-49": { "job": "Blade leading edge repair", "short": "Blade", "type": "Repair", "team": "G", "certs": ["Rope"], "minutes": 180 },
+        "T-02": { "job": "Annual service", "short": "Service", "type": "Service", "team": "H", "minutes": 360 }
     },
     "faults": ["T-34"],
     "waiting": ["T-34", "T-49", "T-02"],
