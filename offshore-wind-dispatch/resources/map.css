@@ -310,6 +310,7 @@
 
     display               : grid;
     grid-template-columns : 124px minmax(0, 1fr);
+    align-items           : stretch;
     gap                   : 14px;
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
@@ -319,7 +320,7 @@
 
 .ow-card.b-widget {
     flex               : none;
-    padding            : 10px 16px 12px 8px;
+    padding            : 12px;
     border-block-start : 1px solid var(--ow-border);
 }
 
@@ -332,10 +333,6 @@
 
     .ow-turbine {
         width : 92px;
-    }
-
-    .ow-card-body {
-        padding-block-start : 0;
     }
 
     .ow-card-title b {
@@ -376,14 +373,14 @@
     display        : flex;
     flex-direction : column;
     gap            : 4px;
+    justify-content : space-between;
     min-width      : 0;
-    padding-block-start : 6px;
 
     dl {
         display               : grid;
         grid-template-columns : auto 1fr;
         gap                   : 3px 10px;
-        margin                : 4px 0;
+        margin                : 0;
         font-size             : 12px;
     }
 
