@@ -8,11 +8,11 @@
     }
 }
 
-/* The depth of each contour, in the muted text colour (readable, 4.5:1), its size kept as the map zooms */
+/* The depth of each contour, quiet but readable, its size kept as the map zooms */
 .ow-depth {
     font-size   : calc(11px / var(--ow-map-zoom, 1));
-    font-weight : 600;
-    fill        : var(--ow-c-muted);
+    font-weight : 500;
+    fill        : var(--ow-ink-faint);
 }
 
 .ow-cable {
