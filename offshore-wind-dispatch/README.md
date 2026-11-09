@@ -74,26 +74,51 @@ phone widths.
 ## How it works
 
 ```
-data/farm.json ──► DispatchState (site, forecasts, windows, teams, clock)
-                     │                 ▲
-                     ▼                 │ applyForecast()
-               Scheduler event store ◄─┴─ ForecastPlanner ──► Planner#replanTrip (per trip)
-               (tree: TripModel trips, their legs as children, TripModel#layout)
-                     │
-     ┌───────────────┼───────────────┬──────────────────┐
-  Trip bars      No-go ranges    KPI bar        Map + turbine card
- (TripRendering) (resource time   (KpiBar)      (MapModel, TurbineMap,
-                  ranges)                        TurbineCard)
-
-TeamTray ──► TeamDrag (DragHelper) ──► DropController#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
-TurbineMap (turbines Store, selected Collection) ◄──► MapLink, DispatchApp ◄──► Scheduler selection and highlighting
+data/farm.json ──► DispatchState (site, forecasts, windows, the day shown, clock; waitingStore of teams)
+                     │  change                         ▲ applyForecast()
+                     ▼                                 │
+     Scheduler project (ProjectModelEnterprise) ◄── ForecastPlanner ──► Planner#replanTrip (per trip)
+     event store: TripModel trips and their legs,       (one STM transaction, Undo = stm.undo())
+     dependencies; the engine places them
+                     │  dataReady
+     ┌───────────────┼────────────────┬───────────────┬──────────────────┐
+  Trip bars      No-go ranges     KPI bar       Week view          Map + turbine card
+ (renderers)    (DispatchSync)    (KpiBar)     (WeekBoard,         (MapPanel: MapModel,
+                                                its own listener)   TurbineMap, TurbineCard)
+                                                                         ▲ change
+AppState (selected turbine, map follows, team lifted / held) ────────────┘
+TeamTray ◄── waitingStore        TeamDrag (DragHelper) ──► DropController ──► Planner#previewDrop, #reachable
 ```
 
-The trips are the source of truth, in the Scheduler's event store, a tree: each trip is a parent event and its legs at
-sea (stops and the hops between them) are its children, the sail out and back its buffer. Everything else is worked out from them and from `DispatchState`: a trip's
-length follows from its stops and the farm's geography (`lib/plan/Farm.js`), so a dropped team, a dragged trip or a
-new forecast changes the stops or the departure, `TripModel#layout` places the legs again, and every view is drawn
-again from that.
+The trips are the source of truth, in the Scheduler's project, a tree: each trip is a parent event and its legs at
+sea (stops and the hops between them) are its children, the sail out and back its buffer. The scheduling engine owns
+their times: a trip's departure and return are its `outerStartDate` and `outerEndDate`, its legs' times their records'
+dates, the wait on station the gaps the engine leaves between them. A change of the plan (a team booked, a trip
+dragged or edited, a new forecast, its Undo) changes the stops or the departure (`TripModel#layout`), the engine
+calculates it (`DispatchApp#replan` awaits `project.commitAsync()`), and the project's `dataReady` redraws the views.
+
+The app holds three observable sources and wires them to the views, it pushes no redraws by hand:
+
+* the project (the plan), its `dataReady`
+* `DispatchState` (the day shown, the forecast and its windows, the clock), its `change`; the teams waiting are its
+  `waitingStore`, which the team tray shows a chip per record of
+* `AppState` (the turbine selected, whether the map follows it, the team lifted and the team held with its check),
+  its `change`; the trip selected is the Scheduler's own selection
+
+Several changes made together redraw once (the listeners' `buffer`).
+
+### What the engine calculates, and what the drop preview works out
+
+A team held over a trip asks: does it fit, when is the trip back, which turbines could it still reach. That is
+`lib/plan/Planner.js`, plain synchronous functions on the trip's plan (`TripModel#plan`: its departure, stops and wait
+on station, read from the records as the engine placed them), in minutes since the trip's midnight. It answers a hover
+in about 2 ms, the 60 turbines of the reach included. The engine is not asked: a trial change placed by the engine and
+taken back takes about 90 ms a check (`layout()` with the previewed stop, `commitAsync()`, read, put back,
+`commitAsync()`), the reach would take seconds, and the drag runs a check on every move. The previewed stop is then
+placed by the engine like any leg, so the bar shows it where the engine puts it.
+
+Committed trips are never modelled twice: the planner only reads them, and the forecast's re-plan lets the engine
+place each trip it changes before planning the next one on the vessel.
 
 | To change | Look in |
 |-----------|---------|
@@ -101,6 +126,7 @@ again from that.
 | Transit times, the layout of the farm and the map | `lib/plan/Farm.js` |
 | When a window closes | `lib/plan/Weather.js` |
 | Whether a team fits on a trip, what a new forecast does to a trip, what a trip can still reach | `lib/plan/Planner.js` |
+| Whether a trip may be dragged or edited to a new time | `lib/schedule/TripValidator.js` |
 | How a trip bar, the vessel column and the no-go areas look | `lib/schedule/TripRendering.js`, `resources/schedule/` |
 | The rows of the time axis, the wave height chart | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | The turbine illustration and the map markers | `lib/map/Turbine.js` |
@@ -117,33 +143,36 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
     `KpiClock`, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
-    tabs. It holds the selection and wires the parts together. `DropController.js` previews and books a dropped
-    team (TeamDrag's handler), `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
-    in the header (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a
-    Container with two Buttons) and `Legend.js` the schedule's footer
+    tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
+    the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
+    of the map and the schedule, `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
+    drag sources, one per record of the waiting teams' store), `ForecastNotice.js` the forecast notice (a Container
+    with two Buttons) and `Legend.js` the schedule's footer
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose `tbar` is the title bar, with the next forecast's
     button and a `ButtonGroup` for the Day / Week views; it holds the notice, the scheduler, the Week view and the
-    footer), `MapPanel` (the map with its title bar and legend, and the turbine card) and `PhoneTabs` (a `TabPanel`
-    with the arrow keys)
+    footer), `MapPanel` (the map with its title bar and legend, and the turbine card, drawn by `draw()`, which also
+    fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
     that follows the pointer)
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
-    the trips (`Planner`), the state apart from the trips (`DispatchState`), the re-planning on a new forecast
-    (`ForecastPlanner`) and the seeded generator of the week's forecasts and trips (`WeekPlan`)
+    the trips (`Planner`), the state apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts,
+    the waiting teams' store), the re-planning on a new forecast (`ForecastPlanner`) and the seeded generator of the
+    week's forecasts and trips (`WeekPlan`)
   * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
-    ResourceTimeRanges and Summary features) and `WeekCells` (one derived cell per vessel per day)
+    ResourceTimeRanges and Summary features, redrawn from the Day view's project while it shows) and `WeekCells` (one
+    derived cell per vessel per day)
   * `schedule/` the `DispatchScheduler`, `DispatchSync` (the no-go ranges, the now line and the dependencies in the
     project's stores), its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
-    (`TripTip`), and the rendering of the trips and their legs, the vessels, groups, ranges and the dependency
-    (`TripRendering`)
+    (`TripTip`), the checks of a trip moved to a new time (`TripValidator`), and the rendering of the trips and their
+    legs, the vessels, groups, ranges and the dependency (`TripRendering`)
   * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs), `TripData` (a trip, its legs and the
-    links between them as Scheduler data) and `VesselModel`
+    links between them as Scheduler data), `VesselModel` and `WaitingTeamModel` (a team waiting at the port)
   * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, `TurbineModel`, drawn from `MapModel` and
     `MapDrawing`), its viewport (`MapViewport` and the view arithmetic in `MapView`: zoom, pan and pinch), the
     `TurbineTooltip`, the `MapLegend`, the `ShowAllButton`, the selected turbine (`TurbineCard`) and the turbine
     drawing (`Turbine`)
-  * `util/` the times of the day and the icons
+  * `util/` formatting the planner's times of day, and the icons
 * `resources/` the CSS: `app.css` imports the tokens and one file per component, in folders that mirror `lib/`
   (`layout/`, `schedule/`, `drag/`, `map/`), then the header and the phone layout
 
@@ -168,8 +197,8 @@ assigned to the vessel, a nested event shows only where it and its parent are bo
 `TripData.js`).
 
 The trip's stops are read from its stop children. Changing them, or the departure, goes through `TripModel#layout`:
-`Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and every leg gets its
-start and duration from the departure.
+`Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and each leg gets its
+duration; the engine then places them in order from the departure, and the app reads the times once it has.
 Legs that stay keep their record (a stop's ID is `<trip>:<turbine>`), new ones are added and assigned, gone ones
 removed. The trip and its legs are `manuallyScheduled`, so the scheduling engine keeps the times the planner gives
 them. The stop of a team being dragged over a trip is a leg too (`preview`), shown dashed in teal.
@@ -188,7 +217,7 @@ The Dependencies feature draws the lines from a trip into a stop, a nested event
 (H2-1) into the T-45 stop of the SWATH's trip, and the helicopter's drop-off (H1-1) into the pick-up stop of H1-2 with a
 lag (`data/farm.json`, `dependencies`). The scheduling engine moves the dependent stop. A trip drag that would push a
 dependent stop so late that its trip is back after its window is refused, with the dependency's reason
-(`DispatchScheduler#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
+(`TripValidator#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
 bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a
 line orange when the plan breaks it, and hides it while the stop's trip is moved to tomorrow. `syncDependencies()` adds
 it again whenever both ends are in the plan, so it comes back when Undo brings back a stop a forecast had cut.
@@ -219,10 +248,12 @@ on a turbine still selects it. A "Show all" button, shown only while zoomed, goe
 
 ### A new forecast: `lib/plan/ForecastPlanner.js`
 
-`apply()` keeps a snapshot of the trips, takes the next forecast and goes through each vessel's trips in start order.
-A trip back after the new close is brought forward if it fits after the trip before it, else its last stops are cut
-and wait for tomorrow, else it moves to tomorrow (`Planner#replanTrip`). The changes are listed for the notice, lost
-work first. `undo()` puts the snapshot back, the new forecast stays.
+`apply()` takes the next forecast and goes through each vessel's trips in start order, inside one transaction of the
+project's StateTrackingManager (`project.stm`, recording only then). A trip back after the new close is brought forward
+if it fits after the trip before it, else its last stops are cut and wait for tomorrow, else it moves to tomorrow
+(`Planner#replanTrip`); the engine places each changed trip before the next is planned. The changes are listed for the
+notice, lost work first. `undo()` is the STM's `undo()`: the trips, their legs and dependencies go back, the new
+forecast stays.
 
 ## Styling
 
