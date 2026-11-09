@@ -1,7 +1,7 @@
 /**
  * The showcase's icons, one set drawn in one weight: Phosphor Light (MIT, `@phosphor-icons/core`, the set Logistics
- * Control Tower uses) for the generic ones, and five drawn here in the same 256 grid and 12 unit line for what Phosphor
- * lacks: the crew transfer vessel, the SWATH vessel, the helicopter, the offshore substation and the turbine.
+ * Control Tower uses) for the generic ones, Tabler Icons (MIT, below) for the vessels and the helicopter, and two drawn
+ * here in Phosphor's 256 grid and 12 unit line for what neither has: the offshore substation and the turbine.
  *
  * Every icon is inline SVG in `currentColor`, so it takes the colour of its text in light and dark. `?raw` imports
  * the few SVGs used as strings, the bundle holds these and no others.
@@ -17,31 +17,34 @@ import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
 import wrench from '@phosphor-icons/core/assets/light/wrench-light.svg?raw';
 
+/*
+ * The transport icons, from Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter), drawn in a lighter line to sit
+ * with Phosphor Light. MIT License, Copyright (c) 2020-2026 Paweł Kuna, https://github.com/tabler/tabler-icons
+ */
+const tabler = {
+    // Crew transfer vessel
+    ctv : `
+        <path d="M2 17h14.4a3 3 0 0 0 2.5 -1.34l3.1 -4.66h-6.23a4 4 0 0 0 -1.49 .29l-3.56 1.42a4 4 0 0 1 -1.49 .29h-5.73l-1.5 4"/>
+        <path d="M6 13l1.5 -5"/>
+        <path d="M6 8h8l2 3"/>`,
+    // SWATH vessel
+    swath : `
+        <path d="M2 20a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1"/>
+        <path d="M4 18l-1 -5h18l-2 4"/>
+        <path d="M5 13v-6h8l4 6"/>
+        <path d="M7 7v-4h-1"/>`,
+    heli : `
+        <path d="M3 10l1 2h6"/>
+        <path d="M12 9a2 2 0 0 0 -2 2v3c0 1.1 .9 2 2 2h7a2 2 0 0 0 2 -2c0 -3.31 -3.13 -5 -7 -5h-2"/>
+        <path d="M13 9l0 -3"/>
+        <path d="M5 6l15 0"/>
+        <path d="M15 9.1v3.9h5.5"/>
+        <path d="M15 19l0 -3"/>
+        <path d="M19 19l-8 0"/>`
+};
+
 // The drawn icons: stroked paths in Phosphor Light's grid (256) and line (12), round caps and joins
 const drawn = {
-    // Crew transfer vessel, side view, bow to the right: the hull with its bow fender, the wheelhouse forward, the mast
-    ctv : `
-        <path d="M28 150 H206 C222 150 232 156 236 166 L228 180 H44 Z"/>
-        <path d="M110 150 V112 H178 L200 150"/>
-        <path d="M124 128 H186"/>
-        <path d="M146 112 V84 M136 92 H156"/>
-        <path d="M20 212 C36 202 52 202 68 212 S100 222 116 212 148 202 164 212 196 222 212 212 236 206 236 206"/>`,
-    // SWATH vessel: the deck box high on two struts, the pontoon under the water line
-    swath : `
-        <path d="M36 112 H212 L224 140 H48 Z"/>
-        <path d="M92 112 V84 H164 L180 112"/>
-        <path d="M84 140 V176 M184 140 V176"/>
-        <path d="M20 168 C36 160 52 160 68 168 S100 176 116 168 148 160 164 168 196 176 212 168 236 164 236 164"/>
-        <rect x="56" y="186" width="156" height="22" rx="11"/>`,
-    // Helicopter, side view, nose to the right: cabin with its window, the tail boom and rotor, skids, the main rotor
-    heli : `
-        <path d="M84 116 H164 C196 116 220 136 220 160 C220 170 212 176 200 176 H100 C88 176 80 168 80 156 V120"/>
-        <path d="M170 124 C192 128 206 140 210 156 H170 Z"/>
-        <path d="M84 136 H28 L20 108"/>
-        <circle cx="22" cy="108" r="12"/>
-        <path d="M132 116 V92 M44 92 H228"/>
-        <path d="M108 176 V200 M188 176 V200 M84 200 H220"/>`,
-    // Offshore substation: the topsides with the lightning bolt, the jacket legs and their bracing
     substation : `
         <rect x="64" y="40" width="128" height="88" rx="8"/>
         <path d="M136 56 L112 88 H144 L120 116"/>
@@ -84,6 +87,11 @@ export function iconPath(name) {
  */
 export function icon(name, cls = '') {
     const classes = `ow-icon ow-icon-${name} ${cls}`.trim();
+
+    if (tabler[name]) {
+        return `<svg class="${classes}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${tabler[name]}</svg>`;
+    }
 
     if (drawn[name]) {
         return `<svg class="${classes}" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="12"

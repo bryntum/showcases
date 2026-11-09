@@ -273,7 +273,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         await expect(page.locator('.ow-side .ow-map-whole')).toBeHidden();
     });
 
-    test('the mouse wheel zooms in smoothly, a two finger scroll pans', async({ page }) => {
+    test('the mouse wheel and a two finger scroll both zoom around the pointer, as on Google Maps', async({ page }) => {
         await open(page);
 
         const point = await mapPoint(page, 0.5, 0.5);
@@ -285,13 +285,10 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
 
         const zoomed = await viewBox(page);
 
-        // A trackpad's scroll: small steps on both axes
-        await svg(page).dispatchEvent('wheel', { deltaX : 12.5, deltaY : 8.5, clientX : point.x, clientY : point.y });
+        // A trackpad's two finger scroll towards the user: small pixel steps, zooming in further
+        await svg(page).dispatchEvent('wheel', { deltaX : 0, deltaY : -40, clientX : point.x, clientY : point.y });
 
-        const scrolled = await viewBox(page);
-
-        expect(scrolled[2]).toBeCloseTo(zoomed[2], 1);
-        expect(scrolled[0]).toBeGreaterThan(zoomed[0]);
+        expect((await viewBox(page))[2]).toBeLessThan(zoomed[2]);
     });
 });
 

@@ -197,7 +197,7 @@ export default class TurbineMap extends Widget {
             forSelector : '.ow-marker',
             cls         : 'ow-map-tip',
             // The card's width (map.css) and the tooltip's padding, so its padding is the same on both sides
-            maxWidth    : 'min(25rem, calc(100vw - 16px))',
+            maxWidth    : 'min(26rem, calc(100vw - 16px))',
             hoverDelay  : 250,
             hideDelay   : 100,
             getHtml     : ({ activeTarget }) => me.tipHtml?.(activeTarget.dataset.turbine) ?? ''
@@ -378,31 +378,19 @@ export default class TurbineMap extends Widget {
     }
 
     /**
-     * The wheel: a trackpad pinch (the browser sends it with `ctrlKey`) and a mouse wheel zoom around the pointer, a
-     * two finger scroll on a trackpad pans
+     * The wheel zooms around the pointer, as on Google Maps: a two finger scroll or a pinch on a trackpad (the browser
+     * sends a pinch with `ctrlKey`, in bigger steps) and a mouse wheel. Dragging pans
      * @param {WheelEvent} event
      */
     onWheel(event) {
         const
             me    = this,
             lines = event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL,
-            // A mouse wheel moves in whole notches along one axis, a trackpad in small steps along both
-            mouse = lines || (!event.deltaX && Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 50),
             dy    = lines ? event.deltaY * 33 : event.deltaY;
 
         event.preventDefault();
         me.tooltip.hide();
-
-        if (event.ctrlKey) {
-            me.zoomAt(Math.exp(-dy * 0.01), event.clientX, event.clientY);
-        }
-        else if (mouse) {
-            me.zoomAt(Math.exp(-dy * 0.0025), event.clientX, event.clientY, true);
-        }
-        else {
-            me.stopAnimation();
-            me.panBy(-event.deltaX, -event.deltaY);
-        }
+        me.zoomAt(Math.exp(-dy * (event.ctrlKey ? 0.01 : 0.004)), event.clientX, event.clientY, lines);
     }
 
     /**

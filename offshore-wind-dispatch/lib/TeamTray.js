@@ -14,7 +14,7 @@ import { icon } from './util/Icons.js';
  * A team's chip, also the one following the pointer while it is dragged
  * @param {Object} team `{ id, name, techs, certs }`
  * @param {Object} job `{ turbine, job, short, minutes }`, `short` names the job in a few words for the chip
- * @param {Boolean} [compact] Its letter, name and certificates only
+ * @param {Boolean} [compact] Its name and certificates only
  * @returns {String} HTML
  */
 export function teamChipHtml(team, job, compact = false) {
@@ -23,12 +23,11 @@ export function teamChipHtml(team, job, compact = false) {
         certs = team.certs.map(cert => `<span class="ow-cert ow-cert-${cert.toLowerCase()}">${text(cert)}</span>`).join('');
 
     if (compact) {
-        return `<span class="ow-team-avatar">${text(team.id)}</span><b>${text(team.name)}</b>${certs}`;
+        return `<b>${text(team.name)}</b><span class="ow-certs">${certs}</span>`;
     }
 
     // The certificates on the name's line, so the chip is no wider than its job's line
     return `
-        <span class="ow-team-avatar">${text(team.id)}</span>
         <span class="ow-team-text">
             <span class="ow-team-name"><span><b>${text(team.name)}</b> · ${team.techs} techs</span><span class="ow-certs">${certs}</span></span>
             <span class="ow-team-job">${text(job.turbine)} · ${text(job.short ?? job.job)} · ${duration(job.minutes)}</span>

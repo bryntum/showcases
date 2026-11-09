@@ -264,7 +264,7 @@
     display          : flex;
     align-items      : center;
     gap              : 8px;
-    padding          : 4px 8px 4px 4px;
+    padding          : 5px 10px;
     border           : 1px solid var(--ow-border);
     border-radius    : 8px;
     background-color : var(--ow-surface);
@@ -308,37 +308,25 @@
     color     : var(--ow-ink-sub);
 }
 
-.ow-team-avatar {
-    display          : grid;
-    place-items      : center;
-    flex             : none;
-    width            : 26px;
-    height           : 26px;
-    border-radius    : 50%;
-    font-weight      : 700;
-    font-size        : 12px;
-    color            : var(--ow-plan);
-    background-color : color-mix(in srgb, var(--ow-plan) 14%, transparent);
-}
-
+/* The certificates as quiet text, only HV, the one a job can need, is emphasised */
 .ow-certs {
     display : flex;
-    gap     : 3px;
+    gap     : 4px;
 }
 
 .ow-cert {
-    padding          : 1px 5px;
-    border-radius    : 4px;
-    font-size        : 10px;
-    font-weight      : 700;
-    letter-spacing   : 0.02em;
-    color            : var(--ow-ink-sub);
-    background-color : var(--b-neutral-94);
+    font-size : 10.5px;
+    color     : var(--ow-ink-faint);
+
+    & + &::before {
+        content      : '/';
+        margin-inline-end : 4px;
+    }
 }
 
 .ow-cert-hv {
-    color            : var(--ow-weather);
-    background-color : color-mix(in srgb, var(--ow-weather) 14%, transparent);
+    font-weight : 700;
+    color       : var(--ow-weather);
 }
 
 /* The forecast's notice */
@@ -396,6 +384,8 @@
 /* Legend */
 .ow-legend {
     flex        : none;
+    /* The same surface as the turbine card under it, not the sea */
+    background-color : var(--ow-surface);
     display     : flex;
     align-items : center;
     gap         : 16px;

@@ -19,6 +19,15 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 const fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif';
 
+// Hovering a point only shows its tooltip: no dimming of the series, no bigger marker, just a slightly heavier ring
+const highlight = {
+    highlightedSeries   : { opacity : 1 },
+    unhighlightedSeries : { opacity : 1 },
+    highlightedItem     : { strokeWidth : 2.5 },
+    unhighlightedItem   : { opacity : 1 },
+    bringToFront        : false
+};
+
 /**
  * The resolved colour of a CSS custom property, after `light-dark()` and `color-mix()`
  * @param {HTMLElement} element Where the property is read
@@ -207,6 +216,7 @@ export default class WaveChart {
             yKey          : 'hs',
             yName         : 'Wave height',
             interpolation : { type : 'smooth' },
+            highlight,
             fill          : colors.ok,
             fillOpacity   : 0.2,
             stroke        : colors.ok,
@@ -248,6 +258,7 @@ export default class WaveChart {
             stroke,
             strokeWidth   : 2,
             marker        : { enabled : false },
+            highlight,
             showInLegend  : false,
             tooltip       : { enabled : false }
         };
@@ -263,6 +274,7 @@ export default class WaveChart {
             yName        : 'Wave height',
             strokeWidth  : 0,
             marker       : { enabled : false },
+            highlight,
             showInLegend : false,
             tooltip      : { enabled : false },
             label        : {

@@ -362,8 +362,10 @@
 
 .ow-card.ow-card-tip {
     grid-template-columns : 92px minmax(0, 1fr);
-    gap                   : 10px;
-    width                 : 22rem;
+    gap                   : 14px;
+    box-sizing            : border-box;
+    padding               : 16px 18px;
+    width                 : 24rem;
     max-width             : calc(100vw - 32px);
     color                 : var(--ow-ink);
 
@@ -373,6 +375,18 @@
 
     .ow-card-title b {
         font-size : 15px;
+    }
+
+    .ow-card-body {
+        gap : 9px;
+
+        dl {
+            gap : 5px 12px;
+        }
+    }
+
+    .ow-card-note {
+        margin-block-start : 3px;
     }
 }
 

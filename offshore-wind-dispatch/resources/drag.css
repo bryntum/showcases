@@ -30,10 +30,6 @@
     rotate             : -3deg;
     white-space        : nowrap;
 
-    .ow-cert + .ow-cert {
-        margin-inline-start : -3px;
-    }
-
     &[data-state='valid'] {
         box-shadow : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), var(--ow-shadow);
     }
