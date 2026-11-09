@@ -1,0 +1,120 @@
+/* The trips (schedule/TripRendering.js): the time on station, its label above the line and the line itself */
+
+/* Trips: parent events over their time on station, the label on top (the NestedEvents feature's header), then their
+ * legs on the line, the nested events placed at their own times. No box: the trip is its label and its line, the work
+ * blocks carry the colour. The sail out and back are its buffer (transit.css) */
+.ow-scheduler {
+    /* The trip's label muted. No background behind the legs either (the trip's own stays the feature's transparent) */
+    --b-nested-events-parent-color                  : var(--ow-c-muted);
+    --b-nested-events-container-background          : transparent;
+    --b-nested-events-container-hover-background    : transparent;
+    --b-nested-events-container-selected-background : transparent;
+    /* The line through the middle of the work blocks: under the label (the feature's `headerHeight`), 2px down, half a
+       block */
+    --ow-line-y                                     : calc(var(--b-nested-events-header-height) + 2px +
+        var(--ow-c-block) / 2);
+
+    .b-sch-event-wrap .b-sch-event.ow-trip {
+        --b-sch-event-border-width   : 0;
+        --b-sch-event-padding-inline : 0;
+        --b-sch-event-box-shadow     : none;
+
+        align-items : stretch;
+        overflow    : visible;
+
+        /* The label, the height of the feature's `headerHeight` */
+        > .b-sch-event-content {
+            position      : static;
+            display       : block;
+            padding-block : 0;
+            line-height   : normal;
+            overflow      : visible;
+        }
+
+        /* NestedEvents places the legs from the wrapper's start, the departure with a buffer: back by the sail out
+           (--ow-pre, TripRendering.js#renderTrip) */
+        > .b-nested-events-container {
+            translate : calc(-1 * var(--ow-pre, 0px)) 0;
+
+            /* The line on station, the sail out's line on to the sail back's: behind the legs, through the hops and
+               any wait between them. The container starts at the departure, the line from the first stop on */
+            &::before {
+                content            : '';
+                position           : absolute;
+                inset-inline-start : var(--ow-pre, 0px);
+                inset-block-start  : calc(var(--ow-line-y) - var(--b-nested-events-header-height) - 1px);
+                width              : 100%;
+                height             : var(--ow-transit-w);
+                background-color   : var(--ow-c-transit);
+            }
+        }
+
+        &.ow-trip-moved {
+            --b-sch-event-cursor : default;
+
+            > .b-nested-events-container {
+                opacity : 0.35;
+                filter  : grayscale(1);
+
+                &::before {
+                    background-color   : transparent;
+                    border-block-start : var(--ow-transit-w) dashed var(--ow-c-transit);
+                }
+            }
+
+            .ow-trip-head > span:first-child {
+                text-decoration : line-through;
+            }
+        }
+
+        /* A team dragged, and it would fit on the trip: a quiet outline in the work blue while the drag lasts */
+        &.ow-trip-fits {
+            outline        : 1.5px solid color-mix(in srgb, var(--ow-c-work) 45%, transparent);
+            outline-offset : 3px;
+            border-radius  : var(--ow-c-radius);
+        }
+
+        /* A team held over the trip, the drop target: a subtle blue tint with a thin blue outline, as a day of the
+           Week view held over (week/board.css) */
+        &.ow-trip-drop > .b-nested-events-container {
+            outline          : var(--ow-drop-outline);
+            outline-offset   : 3px;
+            border-radius    : var(--ow-c-radius);
+            background-color : var(--ow-drop-tint);
+        }
+    }
+
+    /* The selected trip: its label in the text colour */
+    .b-sch-event-wrap.b-selected > .b-sch-event.ow-trip .ow-trip-head {
+        color       : var(--ow-ink);
+        font-weight : 600;
+    }
+
+    /* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by
+       default so the plan stays readable */
+    .b-time-axis-sub-grid.b-is-highlighting .b-sch-canvas > .b-sch-event-wrap:not(.b-highlighted) {
+        opacity : 0.4;
+    }
+}
+
+/* "SP-1 · Team C · 4 pax", 11px muted, from the departure on: back by the sail out (--ow-pre, TripRendering.js) */
+.ow-trip-head {
+    display             : flex;
+    align-items         : center;
+    gap                 : 8px;
+    height              : var(--b-nested-events-header-height);
+    margin-inline-start : calc(-1 * var(--ow-pre, 0px));
+    font-size           : 11px;
+    color       : var(--ow-c-muted);
+    white-space : nowrap;
+
+    /* No box of its own (it showed on a selected row's tint); the 1 px now line may cross it */
+    > span {
+        padding-inline : 2px;
+    }
+
+    /* A forecast's change, quiet */
+    .ow-trip-change {
+        color : var(--ow-c-work);
+    }
+}

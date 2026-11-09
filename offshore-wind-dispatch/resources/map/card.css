@@ -1,0 +1,161 @@
+/* The selected turbine (map/TurbineCard.js) */
+
+/* The selected turbine, and the map's tooltip on a turbine (ow-card-tip). Each sets the width of its illustration,
+   --ow-art-w */
+:is(.ow-card.b-widget, .ow-card-tip) {
+    --ow-tone : var(--ow-sea-ok);
+
+    display               : grid;
+    grid-template-columns : var(--ow-art-w) minmax(0, 1fr);
+    align-items           : stretch;
+    gap                   : 10px;
+
+    &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
+    &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
+    &[data-tone='cancel'] { --ow-tone : var(--ow-cancel); }
+
+    .ow-turbine {
+        width  : var(--ow-art-w);
+        height : auto;
+    }
+}
+
+.ow-card.b-widget {
+    /* 20px narrower than in the tooltip, so the status line beside it stays whole within the card's padding */
+    --ow-art-w : 104px;
+
+    flex             : none;
+    box-sizing       : border-box;
+    padding          : 16px;
+    background-color : var(--ow-surface);
+    border-radius    : var(--ow-card-radius);
+    box-shadow       : var(--ow-card-shadow);
+}
+
+/* On a short screen the map needs the rail's height more than the turbine's card does: the map's tooltip still names
+   the turbine */
+@media (max-height: 820px) {
+    .ow-side .ow-card.b-widget {
+        display : none;
+    }
+}
+
+.ow-card-art {
+    display     : flex;
+    align-items : flex-end;
+}
+
+.ow-turbine-label {
+    font-size   : 8.5px;
+    font-weight : 700;
+    fill        : var(--ow-ink-sub);
+}
+
+/* The illustration's rotor, only drawn turning for a running turbine (TurbineCard), at the wind's speed: each drawing
+   sets its --ow-rotor-period (map/Turbine.js) */
+@media (prefers-reduced-motion : no-preference) {
+    .ow-turbine-rotor {
+        animation : ow-spin var(--ow-rotor-period, 0s) linear infinite;
+    }
+}
+
+@keyframes ow-spin {
+    to {
+        rotate : 360deg;
+    }
+}
+
+.ow-card-body {
+    display        : flex;
+    flex-direction : column;
+    gap             : 4px;
+    justify-content : space-between;
+    min-width       : 0;
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 3px 10px;
+        margin                : 0;
+        font-size             : 12px;
+    }
+
+    dt {
+        color : var(--ow-ink-sub);
+    }
+
+    dd {
+        margin      : 0;
+        font-weight : 500;
+    }
+}
+
+/* The id, its row and the rating pill share one text baseline, the pill is centred on that line */
+.ow-card-title {
+    display     : flex;
+    flex-wrap   : wrap;
+    align-items : baseline;
+    gap         : 0 8px;
+
+    b {
+        font-size   : 18px;
+        font-weight : 700;
+    }
+
+    small {
+        color : var(--ow-ink-sub);
+    }
+}
+
+.ow-card-job {
+    font-weight : 600;
+}
+
+.ow-card-note {
+    display          : flex;
+    align-items      : center;
+    gap              : 4px;
+    padding          : 4px 5px;
+    border-radius    : 6px;
+    font-size        : 10.5px;
+    font-weight      : 400;
+    color            : color-mix(in srgb, var(--ow-tone) 75%, var(--ow-ink));
+    background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
+
+    /* One line: the time in semibold, a line too long for the card is cut with an ellipsis */
+    > span {
+        min-width     : 0;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        white-space   : nowrap;
+
+        b {
+            font-weight : 600;
+        }
+    }
+
+    :is(.ow-icon, .ow-icon-host) {
+        flex : none;
+    }
+
+    .ow-icon {
+        width  : 1em;
+        height : 1em;
+    }
+}
+
+/* The turbine's rating, a small pill with a lightning bolt, muted */
+.ow-card-rating {
+    display             : inline-flex;
+    align-items         : center;
+    gap                 : 3px;
+    /* At the right end of the title line; a little less on the icon's side, whose glyph has its own space */
+    margin-inline-start : auto;
+    padding             : 3px 10px 3px 8px;
+    border-radius       : 99px;
+    font-size           : 11px;
+    line-height         : 1;
+    font-weight         : 500;
+    color               : var(--ow-ink-sub);
+    background-color    : color-mix(in srgb, var(--ow-ink-sub) 12%, transparent);
+}

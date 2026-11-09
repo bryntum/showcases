@@ -1,0 +1,269 @@
+/* The Scheduler's header with the weather in it (schedule/ForecastHeader.js): the day, the hours, the wave height
+ * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 26,
+ * 26, 67 and 20px. Both sides share the same row lines: each line is drawn inside the row above it (border-box), in
+ * the one divider colour, so the day and hours rows together are exactly the height of the "Forecast" cell beside
+ * them. The 1px line under it all is the theme's own, on the time axis header and on the vessel column's header */
+
+.ow-scheduler {
+    --ow-row-day   : 26px;
+    --ow-row-hours : 26px;
+    --ow-row-sea   : 67px;
+    --ow-row-wind  : 20px;
+    --ow-row-line  : var(--ow-grid);
+
+    --b-grid-header-background                   : var(--ow-surface);
+    --b-grid-header-border-color                 : var(--ow-border);
+    --b-horizontal-time-axis-cell-padding-inline : 6px;
+
+    /* One line under the whole header, left and right: the container's. The theme's line under the vessel column's
+       header is dropped, or the left side gets two (and the time axis side none) */
+    .b-grid-header-container {
+        border-block-end : 1px solid var(--ow-border);
+    }
+
+    .b-grid-header.ow-axis-header {
+        border-block-end : 0;
+    }
+
+    .b-horizontal-time-axis {
+        /* Rows of a fixed height, not shared out, so they line up with the names in the vessel column's header */
+        .b-sch-header-row {
+            flex             : none;
+            height           : var(--ow-row-hours);
+            border-block-end : 1px solid var(--ow-row-line);
+
+            &:has(.ow-day-cell) {
+                height : var(--ow-row-day);
+            }
+
+            &:has(.ow-sea-cell) {
+                height           : var(--ow-row-sea);
+                border-block-end : 0;
+            }
+
+            &:has(.ow-wind-cell) {
+                height             : var(--ow-row-wind);
+                border-block-start : 1px solid var(--ow-row-line);
+                border-block-end   : 0;
+            }
+        }
+
+        /* The rows own the horizontal lines (above), so a cell draws none of its own: one 1px line per edge */
+        .b-sch-header-time-axis-cell {
+            border-block-end     : 0;
+            font-size            : 11.5px;
+            font-weight          : 600;
+            color                : var(--ow-ink-sub);
+            font-variant-numeric : tabular-nums;
+            border-inline-color  : var(--ow-tick);
+        }
+
+        /* The hours are centred in their row, on the same middle line as the now pill (below) */
+        .ow-hour-cell, .ow-day-cell {
+            line-height : 1;
+        }
+
+        /* Hidden while the now pill covers it (ForecastHeader.js) */
+        .ow-hour-cell.ow-covered {
+            color : transparent;
+        }
+
+        /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
+        .ow-day-cell {
+            overflow : visible;
+            border   : 0;
+        }
+
+        /* The chart fills it, it spans the row */
+        .ow-sea-cell {
+            padding  : 0;
+            border   : 0;
+            overflow : visible;
+        }
+
+        /* Each value centred in its hour */
+        .ow-wind-cell {
+            padding       : 0;
+            border-inline : 0;
+        }
+    }
+}
+
+.ow-day {
+    position           : sticky;
+    inset-inline-start : 0;
+    display     : inline-flex;
+    align-items : center;
+    gap         : 8px;
+    height      : 100%;
+    font-size   : 12px;
+    font-weight : 700;
+    white-space : nowrap;
+    color       : var(--ow-ink);
+
+    em {
+        padding          : 2px 6px;
+        line-height      : 1.2;
+        border-radius    : 4px;
+        font-style       : normal;
+        font-size        : 10.5px;
+        font-weight      : 600;
+        color            : var(--ow-now);
+        background-color : color-mix(in srgb, var(--ow-now) 13%, transparent);
+    }
+}
+
+/* The AG Charts wave height chart, over the whole day (WaveChart.js) */
+.ow-wave-chart {
+    position : absolute;
+    inset    : 0;
+}
+
+/* The size of the wave height chart's value labels (WaveChart.js), one line high */
+.ow-wind {
+    font-size            : 10px;
+    font-weight          : 400;
+    line-height          : 1;
+    font-variant-numeric : tabular-nums;
+    color                : var(--ow-c-muted);
+}
+
+/* Over the helicopters' limit: the only bold values of the row */
+.ow-wind-over {
+    font-weight : 700;
+    color       : var(--ow-heli);
+}
+
+/* The vessel column's header: the names of the weather rows, at the height of each */
+.ow-axis-header.b-grid-header {
+    --b-grid-header-padding        : 0;
+    --b-grid-header-text-transform : none;
+
+    align-items : stretch;
+    min-height  : 0;
+
+    .b-grid-header-text, .b-grid-header-text-content {
+        display : flex;
+        width   : 100%;
+        height  : 100%;
+        padding : 0;
+    }
+
+    .b-grid-header-text-content > .ow-axis-label {
+        margin : 0;
+    }
+}
+
+/* Edge to edge in the header cell: the theme gives the header text's last child an inline-end margin, which left the
+   row lines short of the column's edge */
+.ow-axis-label {
+    display         : flex;
+    flex-direction  : column;
+    justify-content : flex-end;
+    width           : 100%;
+    letter-spacing  : normal;
+
+    .ow-axis-row {
+        display     : flex;
+        flex        : none;
+        align-items : center;
+        gap         : 6px;
+        box-sizing  : border-box;
+        padding     : 0 8px 0 var(--ow-inset);
+        font-size   : 12px;
+        font-weight : 500;
+        color       : var(--ow-ink);
+
+        small {
+            font-size   : 11px;
+            font-weight : 400;
+            color       : var(--ow-c-muted);
+        }
+
+        > span {
+            display        : flex;
+            flex-direction : column;
+            line-height    : 1.25;
+        }
+    }
+
+    /* Beside the day and the hours, as tall as both, its line where the hours row has its own */
+    .ow-axis-row-head {
+        height           : calc(var(--ow-row-day) + var(--ow-row-hours));
+        border-block-end : 1px solid var(--ow-row-line);
+    }
+
+    .ow-axis-row-sea {
+        height : var(--ow-row-sea);
+    }
+
+    /* One line of small text, as compact as the wind row beside it */
+    .ow-axis-row-wind {
+        height             : var(--ow-row-wind);
+        border-block-start : 1px solid var(--ow-row-line);
+        line-height        : 1;
+
+        > span {
+            flex-direction : row;
+            align-items    : baseline;
+            gap            : 6px;
+        }
+    }
+}
+
+/* The newer forecast, flagged in the plan's blue */
+.ow-chip-new {
+    padding          : 1px 6px;
+    border-radius    : 4px;
+    font-size        : 11px;
+    color            : var(--ow-c-work);
+    background-color : var(--ow-c-button-tint);
+}
+
+/* The now line in the header: a pill in the hours row, the line runs from it down through the chart into the rows */
+.ow-scheduler .b-grid-header {
+    /* The shaded past is for the rows only: its header element would cover the chart */
+    .ow-past {
+        display : none;
+    }
+
+    .ow-now {
+        z-index             : 4;
+        overflow            : visible;
+        background          : none;
+        border-inline-start : 0;
+        /* From the hours row down to the bottom of the header */
+        inset-block-start   : var(--ow-row-day);
+        height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
+
+        /* The line starts under the pill, it never runs through it */
+        &::before {
+            content             : '';
+            position            : absolute;
+            inset-inline-start  : 0;
+            inset-block-start   : calc((var(--ow-row-hours) + 14px) / 2);
+            inset-block-end     : 0;
+            border-inline-start : var(--b-time-range-line-width) solid var(--ow-now);
+        }
+
+        /* The time, a pill centred on the line and on the hours row's middle line, over the hour label it covers */
+        label {
+            position           : absolute;
+            inset-block-start  : calc((var(--ow-row-hours) - 14px) / 2);
+            inset-block-end    : auto;
+            inset-inline-start : 0;
+            transform          : translateX(-50%);
+            box-sizing         : border-box;
+            height             : 14px;
+            padding          : 0 5px;
+            white-space      : nowrap;
+            border-radius    : 7px;
+            font-size        : 9.5px;
+            font-weight      : 700;
+            line-height      : 14px;
+            font-variant-numeric : tabular-nums;
+            color            : var(--b-color-white);
+            background-color : var(--ow-now);
+        }
+    }
+}

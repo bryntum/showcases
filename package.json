@@ -20,7 +20,8 @@
     "workspaces": [
         "shared",
         "ev-operations",
-        "logistics-control-tower"
+        "logistics-control-tower",
+        "offshore-wind-dispatch"
     ],
     "scripts": {
         "dev": "vite",

@@ -1,0 +1,91 @@
+/* The chip of a team being dragged (drag/DragChip.js, drag/TeamDrag.js): DragHelper's proxy, moved by translate, or
+ * the chip held over a trip from the keyboard. It is in the page's body, the pointer passes through it */
+
+/* What the trip under the chip gives (DragChip showOnChip), from the same check as the tooltip: the chip turns green
+   where the team fits, red where it does not, and stays neutral over empty space */
+.ow-drag-chip {
+    position           : absolute;
+    inset-block-start  : 0;
+    inset-inline-start : 0;
+    /* Over the app, under Bryntum's floating widgets: the drop tooltip stays on top of it */
+    z-index            : calc(var(--b-float-root-z-index) - 1);
+    display            : flex;
+    flex-wrap          : wrap;
+    align-items        : center;
+    gap                : 7px;
+    max-width          : 260px;
+    padding            : 4px 10px 4px 4px;
+    border-radius      : 8px;
+    background-color   : var(--ow-surface);
+    border             : 1px solid var(--ow-reach);
+    box-shadow         : var(--ow-shadow-lifted);
+    rotate             : -3deg;
+    pointer-events     : none;
+    color              : var(--ow-ink);
+    font-family        : inherit;
+    font-size          : 12px;
+    white-space        : nowrap;
+
+    &[data-state='valid'] {
+        box-shadow : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), var(--ow-shadow-lifted);
+    }
+
+    &[data-state='invalid'] {
+        border-color : var(--ow-cancel);
+        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-cancel) 30%, transparent), var(--ow-shadow-lifted);
+    }
+
+    &[data-state='neutral'] {
+        border-color : var(--ow-border);
+    }
+}
+
+.ow-drag-team {
+    display     : flex;
+    align-items : center;
+    gap         : 7px;
+}
+
+/* The team's certificates (TeamChip#teamChipContent, compact), quiet text, HV emphasised */
+.ow-certs {
+    display : flex;
+    gap     : 4px;
+}
+
+.ow-cert {
+    font-size : 10.5px;
+    color     : var(--ow-c-muted);
+
+    & + &::before {
+        content           : '/';
+        margin-inline-end : 4px;
+    }
+}
+
+.ow-cert-hv {
+    font-weight : 700;
+    color       : var(--ow-ink);
+}
+
+.ow-drag-status {
+    flex-basis    : 100%;
+    padding       : 2px 6px;
+    border-radius : 4px;
+    font-size     : 11px;
+    font-weight   : 600;
+
+    [data-state='valid'] > & {
+        color            : color-mix(in srgb, var(--ow-reach) 80%, var(--ow-ink));
+        background-color : color-mix(in srgb, var(--ow-reach) 14%, transparent);
+    }
+
+    [data-state='invalid'] > & {
+        color            : var(--ow-cancel);
+        background-color : color-mix(in srgb, var(--ow-cancel) 12%, transparent);
+    }
+}
+
+/* While DragHelper drags, the grabbing hand (DragHelper's own class on the body, which also stops text selection) */
+.b-drag-helper-active {
+    cursor : grabbing;
+}

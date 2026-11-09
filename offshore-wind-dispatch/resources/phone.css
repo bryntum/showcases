@@ -1,0 +1,124 @@
+/* Phones (DispatchApp#phone, below 760px): the KPI header keeps the site and the alert, the schedule and the map
+ * become tabs, the schedule's hours scroll sideways at 44px an hour at least (the day preset's tick width). The title bars and the
+ * legend are hidden by the panels themselves (SchedulePanel#phone, MapPanel#phone) */
+
+.ow-app.ow-phone {
+    /* Not cards on a phone: the tab fills the width */
+    --ow-card-radius  : 0;
+    --ow-card-shadow  : none;
+    /* The vessel column and the axis labels closer to the edge (schedule/scheduler.css) */
+    --ow-column-inset : 10px;
+
+    .ow-kpis {
+        --b-container-gap     : 10px 14px;
+        --b-container-padding : 10px 12px;
+
+        flex-wrap : wrap;
+        height    : auto;
+
+        .ow-kpi, .ow-kpi-split {
+            display : none;
+        }
+
+        :is(.ow-kpi-warn, .ow-kpi-alert) {
+            display             : block;
+            margin-inline-start : auto;
+        }
+    }
+
+    /* The schedule and the map as the tabs of a Bryntum TabPanel (DispatchApp#updatePhone), its tab bar styled as a
+       segmented control */
+    .ow-tabs {
+        --b-panel-background : var(--ow-surface);
+    }
+
+    .ow-tab-bar.b-tab-bar {
+        --b-tab-bar-background          : var(--b-neutral-95);
+        --b-tab-bar-padding             : 2px;
+        --b-tab-bar-border-bottom-width : 0;
+        --b-tab-border-radius           : 5px;
+        --b-tab-font-weight             : 400;
+        --b-tab-color                   : var(--ow-ink);
+        --b-tab-hover-color             : var(--ow-ink);
+        --b-tab-active-tab-color        : var(--ow-ink);
+        --b-tab-hover-background        : transparent;
+        --b-tab-active-background       : var(--ow-surface);
+        --b-tab-indicator-display       : none;
+
+        min-height    : 0;
+        margin        : 8px 12px;
+        gap           : 0;
+        border-radius : 7px;
+
+        .b-tab {
+            flex       : 1;
+            min-height : 30px;
+            font-size  : 13px;
+
+            &.b-active {
+                --b-tab-hover-background : var(--ow-surface);
+
+                box-shadow : var(--ow-shadow-raised);
+            }
+        }
+    }
+
+    .ow-tabs > .b-panel-body-wrap > .b-panel-content {
+        border-block-start : 1px solid var(--ow-border);
+    }
+
+    .ow-tray-title, .ow-team-job, .ow-axis-label small {
+        display : none;
+    }
+
+    /* Only the next forecast's button stays in the schedule's title bar, across the width */
+    .ow-schedule .ow-panel-bar.b-toolbar {
+        --b-toolbar-padding : 0 calc(var(--ow-bar-inset) * 2);
+
+        min-height : 40px;
+
+        .ow-forecast-button {
+            flex            : 1;
+            justify-content : center;
+        }
+    }
+
+    .ow-tray {
+        --b-container-padding : 8px 12px;
+
+        overflow-x : auto;
+    }
+
+    /* "Forecast" over its time, the narrow column holds it on two lines */
+    .ow-axis-forecast {
+        display         : inline-block;
+        max-inline-size : 5em;
+        white-space     : normal;
+        line-height     : 1.25;
+    }
+
+    /* The muted line gives way in the narrow column */
+    .ow-resource small {
+        font-size     : 10px;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
+
+    .ow-trip-head .ow-trip-change {
+        display : none;
+    }
+
+    .ow-notice.b-widget {
+        --b-container-padding : 8px 12px 8px 10px;
+
+        flex-wrap : wrap;
+
+        > .ow-notice-text {
+            flex : 1 1 80%;
+        }
+    }
+
+    .ow-map.b-widget {
+        min-height : 300px;
+    }
+}

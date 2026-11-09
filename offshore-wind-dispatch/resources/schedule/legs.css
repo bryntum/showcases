@@ -1,0 +1,96 @@
+/* The legs of a trip at sea, its nested events (schedule/TripRendering.js) */
+
+/* The legs, nested events. They let the pointer through to their trip, which is dragged, hovered and clicked as one
+ * (a click on a stop finds it by time, DispatchApp#onTripClick). The feature's margins give them their height on the
+ * trip's line. A hop between two turbines is empty, the line shows through it */
+.ow-scheduler .b-nested-event {
+    pointer-events : none;
+
+    > .b-sch-event.ow-seg {
+        --b-sch-event-border-width   : 0;
+        --b-sch-event-border-radius  : var(--ow-c-radius);
+        /* As TripRendering.js#blockText counts it */
+        --b-sch-event-padding-inline : 6px;
+        --b-sch-event-font-size      : 12px;
+
+        margin      : 0;
+        translate   : none;
+        line-height : 1;
+        /* Its text is never cut off (blockText) */
+        overflow    : visible;
+
+        > .b-sch-event-content {
+            overflow      : visible;
+            gap           : 6px;
+            padding-block : 0;
+            line-height   : 1;
+            white-space   : nowrap;
+        }
+
+        b {
+            font-weight : 600;
+        }
+
+        /* A stop too short for its name (TripRendering.js#renderLeg) grows just wide enough to hold it, as in the
+           mockup: min-width wins over the width the feature sets */
+        &.ow-seg-narrow {
+            min-width : max-content;
+
+            > .b-sch-event-content {
+                padding-inline : 6px;
+            }
+        }
+    }
+
+    > .b-sch-event.ow-seg-hop {
+        --b-sch-event-background : transparent;
+    }
+
+    /* Work, Bryntum's tonal event style in the work blue (its `eventStyle` and `eventColor`, TripRendering.js): its
+       tint, dark text, and a hairline border. The row's colour round the block parts the trip's line from it */
+    > .b-sch-event.ow-seg-stop {
+        --b-sch-event-border-width : 1px;
+        --b-sch-event-border-color : var(--ow-c-work-line);
+        --b-sch-event-font-weight  : 400;
+
+        /* Two tiers: the turbine in semibold, the job type lighter, the hours at the right */
+        .ow-seg-type {
+            font-weight : 400;
+        }
+
+        .ow-seg-hours {
+            margin-inline-start  : auto;
+            font-weight          : 400;
+            font-variant-numeric : tabular-nums;
+        }
+    }
+
+    /* The stop the vessel cannot get back from before its window closes: the same tone in the at-risk orange */
+    > .b-sch-event.ow-seg-risk {
+        --b-sch-event-color        : var(--ow-c-risk-ink);
+        --b-sch-event-background   : var(--ow-c-risk-tint);
+        --b-sch-event-border-color : var(--ow-c-risk-line);
+    }
+
+    /* The stop of a team held over the trip */
+    > .b-sch-event.ow-seg-preview {
+        --b-sch-event-color      : var(--ow-reach);
+        --b-sch-event-background : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
+
+        outline        : 1.5px dashed var(--ow-reach);
+        outline-offset : -1.5px;
+    }
+}
+
+/* Bryntum's hover state of the trip, the NestedEvents parent (the legs let the pointer through to it): its work blocks
+   a step stronger. Not the previewed stop of a team held over the trip, which has its own look */
+.ow-scheduler .b-nested-events-parent:is(:hover, .b-hover) .b-nested-event {
+    > .b-sch-event.ow-seg-stop:not(.ow-seg-preview, .ow-seg-risk) {
+        --b-sch-event-background   : var(--ow-c-work-hover-tint);
+        --b-sch-event-border-color : var(--ow-c-work-hover-line);
+    }
+
+    > .b-sch-event.ow-seg-risk {
+        --b-sch-event-background : var(--ow-c-risk-hover-tint);
+    }
+}

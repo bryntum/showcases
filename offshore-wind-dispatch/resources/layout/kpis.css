@@ -1,0 +1,77 @@
+/* The KPI header (KpiBar.js): the site and the day, and the numbers of the day, quiet */
+
+/* KPI header, a Container with an hbox layout, floating free on the page background */
+.ow-kpis {
+    --b-container-gap     : 32px;
+    /* Its text starts and ends where the cards' content does, past their rounded corners: the gutter plus the cards'
+       own inner padding */
+    --b-container-padding : 0 calc(var(--ow-gutter) + var(--ow-inset));
+
+    flex       : none;
+    box-sizing : border-box;
+    height     : 58px;
+
+    small {
+        display     : block;
+        font-size   : 12px;
+        font-weight : 400;
+        color       : var(--ow-c-muted);
+        white-space : nowrap;
+    }
+
+    b {
+        display     : block;
+        line-height : 1.2;
+        white-space : nowrap;
+    }
+}
+
+/* The site and each count stack their label over the figure */
+:is(.ow-clock, .ow-kpi).b-widget {
+    display : block;
+}
+
+/* "Skarv Bank" over "Mon 9 Nov" */
+.ow-clock {
+    b {
+        font-size   : 16px;
+        font-weight : 600;
+    }
+
+    small {
+        margin-block-start : 2px;
+        font-size          : 13px;
+    }
+}
+
+/* The counts: the number over its label, no boxes */
+.ow-kpi {
+    b {
+        font-size   : var(--ow-size-kpi);
+        font-weight : 600;
+    }
+
+    small {
+        margin-block-start : 2px;
+    }
+}
+
+/* What needs acting on, after a divider */
+.ow-kpi-split {
+    align-self         : stretch;
+    width               : 0;
+    margin-block        : 18px;
+    border-inline-start : 1px solid var(--ow-border);
+}
+
+.ow-kpi-warn, .ow-kpi-alert {
+    :is(small, b) {
+        color : var(--ow-c-risk-ink);
+    }
+}
+
+.ow-kpi-stop {
+    :is(small, b) {
+        color : var(--ow-c-stop-ink);
+    }
+}

@@ -1,0 +1,1479 @@
+/* Design mockup of Offshore Wind Dispatch. Colours map onto the Svalbard theme palette, so light and dark come from
+ * one set of rules, as in the built showcases */
+
+.ow-app {
+    /* Trips on plan, helicopters, past the window, moved, and the drop preview */
+    --ow-plan     : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
+    --ow-heli     : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
+    --ow-risk     : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
+    --ow-cancel   : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
+    --ow-reach    : light-dark(color-mix(in srgb, var(--b-color-teal, #14b8a6) 75%, var(--b-color-black)), var(--b-color-teal, #2dd4bf));
+    /* The sea state: calm, past the CTV limit, past the SWATH limit */
+    --ow-sea-ok   : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
+    --ow-sea-amb  : var(--ow-risk);
+    --ow-sea-red  : var(--ow-cancel);
+    --ow-weather  : light-dark(color-mix(in srgb, var(--b-color-orange) 70%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-orange) 75%, var(--b-color-white)));
+
+    /* Neutrals */
+    --ow-surface  : var(--b-neutral-100);
+    --ow-sunken   : var(--b-neutral-98);
+    --ow-raised   : light-dark(var(--b-neutral-99), var(--b-neutral-96));
+    --ow-border   : var(--b-border-7);
+    --ow-grid     : color-mix(in srgb, var(--b-border-7) 70%, transparent);
+    --ow-ink      : var(--b-text-1);
+    --ow-ink-sub  : var(--b-text-2);
+    --ow-ink-faint: var(--b-neutral-55);
+    --ow-past     : light-dark(color-mix(in srgb, var(--b-color-black) 3.5%, transparent),
+        color-mix(in srgb, var(--b-color-black) 22%, transparent));
+
+    /* The map */
+    --ow-sea-map     : light-dark(#eaf3f9, #0e1c29);
+    --ow-contour     : light-dark(rgb(42 127 176 / 18%), rgb(127 196 224 / 10%));
+    --ow-marker      : light-dark(#fff, #253141);
+    --ow-marker-line : light-dark(#9aa8b8, #607086);
+
+    /* The turbine illustration */
+    --ow-steel        : light-dark(#f7f9fb, #d6dce3);
+    --ow-steel-shade  : light-dark(#bcc5cf, #8793a1);
+    --ow-yellow       : #f2c12e;
+    --ow-yellow-shade : #c49412;
+    --ow-sea-top      : light-dark(#6fb9da, #2a7798);
+    --ow-sea-deep     : light-dark(#1f6f9e, #0b3149);
+    --ow-sea-foam     : light-dark(#fff, #a6dcef);
+    --ow-beacon       : #e5322d;
+    --ow-limit        : var(--ow-risk);
+
+    /* Sizes */
+    --ow-resource-width : 214px;
+    --ow-row-height     : 64px;
+    --ow-radius         : 5px;
+
+    position         : relative;
+    display          : flex;
+    flex-direction   : column;
+    color            : var(--ow-ink);
+    background-color : var(--ow-surface);
+    font-size        : 13px;
+
+    button {
+        font : inherit;
+        color : inherit;
+        cursor : pointer;
+    }
+
+    small {
+        font-size : 0.85em;
+    }
+}
+
+/* The icons, inline SVG in the text colour (icons.js) */
+.ow-icon {
+    flex           : none;
+    width          : 1.2em;
+    height         : 1.2em;
+    vertical-align : -0.25em;
+}
+
+/* KPI bar */
+.ow-kpis {
+    display          : flex;
+    align-items      : center;
+    gap              : 22px;
+    padding          : 10px 16px;
+    background-color : var(--ow-raised);
+    border-bottom    : 1px solid var(--ow-border);
+
+    small {
+        display        : block;
+        font-size      : 11px;
+        font-weight    : 500;
+        color          : var(--ow-ink-sub);
+        white-space    : nowrap;
+    }
+
+    b {
+        font-size   : 20px;
+        font-weight : 700;
+        line-height : 1.2;
+        white-space : nowrap;
+    }
+}
+
+.ow-clock {
+    small {
+        text-transform : uppercase;
+        letter-spacing : 0.04em;
+        font-weight    : 600;
+    }
+
+    b {
+        display     : flex;
+        align-items : baseline;
+        gap         : 10px;
+        font-size   : 22px;
+    }
+
+    /* The time beside the date, in the now line's blue */
+    b span {
+        font-size   : 15px;
+        font-weight : 600;
+        color       : var(--b-color-blue);
+    }
+}
+
+.ow-window {
+    --ow-tone : var(--ow-sea-ok);
+
+    display          : flex;
+    align-items      : center;
+    gap              : 10px;
+    padding          : 6px 14px 6px 12px;
+    border-radius    : 8px;
+    background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
+    border           : 1px solid color-mix(in srgb, var(--ow-tone) 35%, transparent);
+
+    > .ow-icon {
+        width  : 26px;
+        height : 26px;
+        color  : var(--ow-tone);
+    }
+
+    b {
+        color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink));
+    }
+
+    .ow-window-left {
+        display        : flex;
+        flex-direction : column;
+        padding-left   : 10px;
+        margin-left    : 2px;
+        border-left    : 1px solid color-mix(in srgb, var(--ow-tone) 30%, transparent);
+        font-weight    : 600;
+        font-size      : 12px;
+        white-space    : nowrap;
+
+        em {
+            font-style      : normal;
+            font-weight     : 500;
+            color           : var(--ow-ink-sub);
+            text-decoration : line-through;
+        }
+    }
+}
+
+.ow-window-short {
+    --ow-tone : var(--ow-cancel);
+}
+
+.ow-kpi {
+    padding : 4px 8px;
+    border-radius : 6px;
+}
+
+.ow-kpi-warn, .ow-kpi-alert {
+    --ow-tone : var(--ow-risk);
+
+    background-color : color-mix(in srgb, var(--ow-tone) 13%, transparent);
+
+    b {
+        color : var(--ow-tone);
+    }
+}
+
+.ow-kpi-alert {
+    --ow-tone : var(--ow-cancel);
+}
+
+/* The two halves */
+.ow-main {
+    flex                  : 1;
+    min-height            : 0;
+    display               : grid;
+    grid-template-columns : minmax(0, 1fr) 400px;
+}
+
+.ow-schedule, .ow-side {
+    display        : flex;
+    flex-direction : column;
+    min-width      : 0;
+    min-height     : 0;
+}
+
+.ow-schedule {
+    border-right : 1px solid var(--ow-border);
+}
+
+.ow-panel-bar {
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    gap             : 12px;
+    height          : 44px;
+    padding         : 0 16px;
+    border-bottom   : 1px solid var(--ow-border);
+    flex            : none;
+}
+
+.ow-panel-title {
+    font-weight : 600;
+    font-size   : 14px;
+    white-space : nowrap;
+
+    small {
+        margin-left : 6px;
+        font-weight : 400;
+        color       : var(--ow-ink-sub);
+    }
+}
+
+.ow-seg-buttons, .ow-tabs {
+    display          : flex;
+    padding          : 2px;
+    border-radius    : 7px;
+    background-color : var(--b-neutral-95);
+
+    button {
+        min-width     : 30px;
+        height        : 26px;
+        padding       : 0 10px;
+        border        : 0;
+        border-radius : 5px;
+        background    : none;
+        font-size     : 12px;
+        font-weight   : 500;
+    }
+
+    .ow-pressed {
+        background-color : var(--ow-surface);
+        box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+    }
+}
+
+.ow-tabs {
+    display : none;
+}
+
+/* Teams waiting at the port */
+.ow-tray {
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 8px 16px;
+    background-color : var(--ow-sunken);
+    border-bottom    : 1px solid var(--ow-border);
+    flex             : none;
+    overflow         : hidden;
+}
+
+.ow-tray-title {
+    display     : flex;
+    align-items : center;
+    gap         : 5px;
+    font-size   : 12px;
+    font-weight : 600;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+}
+
+.ow-tray-hint {
+    margin-left : auto;
+    font-size   : 11.5px;
+    color       : var(--ow-ink-faint);
+    white-space : nowrap;
+}
+
+.ow-team {
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 4px 8px 4px 4px;
+    border           : 1px solid var(--ow-border);
+    border-radius    : 8px;
+    background-color : var(--ow-surface);
+    box-shadow       : 0 1px 2px rgb(0 0 0 / 6%);
+    font-size        : 12px;
+    white-space      : nowrap;
+    cursor           : grab;
+}
+
+.ow-team-lifted {
+    border-style     : dashed;
+    box-shadow       : none;
+    opacity          : 0.45;
+}
+
+.ow-team-text {
+    display        : flex;
+    flex-direction : column;
+    line-height    : 1.25;
+}
+
+.ow-team-job {
+    font-size : 11px;
+    color     : var(--ow-ink-sub);
+}
+
+.ow-team-avatar {
+    display          : grid;
+    place-items      : center;
+    flex             : none;
+    width            : 26px;
+    height           : 26px;
+    border-radius    : 50%;
+    font-weight      : 700;
+    font-size        : 12px;
+    color            : var(--ow-plan);
+    background-color : color-mix(in srgb, var(--ow-plan) 14%, transparent);
+}
+
+.ow-certs {
+    display : flex;
+    gap     : 3px;
+}
+
+.ow-cert {
+    padding          : 1px 5px;
+    border-radius    : 4px;
+    font-size        : 10px;
+    font-weight      : 700;
+    letter-spacing   : 0.02em;
+    color            : var(--ow-ink-sub);
+    background-color : var(--b-neutral-94);
+}
+
+.ow-cert-hv {
+    color            : light-dark(#8a5a00, #ffd166);
+    background-color : light-dark(#fff1c7, rgb(255 209 102 / 16%));
+}
+
+/* The schedule */
+.ow-schedule-body {
+    position   : relative;
+    flex       : 1;
+    min-height : 0;
+    overflow   : auto;
+}
+
+.ow-axis {
+    position              : sticky;
+    top                   : 0;
+    z-index               : 5;
+    display               : grid;
+    grid-template-columns : var(--ow-resource-width) minmax(0, 1fr);
+    background-color      : var(--ow-surface);
+    border-bottom         : 1px solid var(--ow-border);
+}
+
+.ow-axis-label {
+    display        : flex;
+    flex-direction : column;
+    border-right   : 1px solid var(--ow-border);
+
+    .ow-axis-row {
+        display     : flex;
+        align-items : center;
+        padding     : 0 16px;
+        font-size   : 11.5px;
+        font-weight : 600;
+        color       : var(--ow-ink-sub);
+        gap         : 6px;
+
+        small {
+            font-weight : 400;
+            color       : var(--ow-ink-faint);
+        }
+    }
+}
+
+.ow-chip-new {
+    padding          : 1px 6px;
+    border-radius    : 4px;
+    font-size        : 11px;
+    color            : var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 13%, transparent);
+}
+
+.ow-axis-time {
+    position : relative;
+
+    .ow-axis-row {
+        position : relative;
+    }
+}
+
+/* The date row over the hours, like the Scheduler's two level day / hour header */
+.ow-axis-row-day {
+    height        : 24px;
+    border-bottom : 1px solid var(--ow-grid);
+}
+
+.ow-day {
+    position     : sticky;
+    left         : 0;
+    display      : inline-flex;
+    align-items  : center;
+    gap          : 8px;
+    height       : 100%;
+    padding-left : 8px;
+    font-size    : 12px;
+    font-weight  : 700;
+    white-space  : nowrap;
+
+    em {
+        padding          : 0 6px;
+        border-radius    : 4px;
+        font-style       : normal;
+        font-size        : 10.5px;
+        font-weight      : 600;
+        color            : var(--b-color-blue);
+        background-color : color-mix(in srgb, var(--b-color-blue) 13%, transparent);
+    }
+}
+
+.ow-axis-row-hours {
+    height        : 26px;
+    border-bottom : 1px solid var(--ow-grid);
+}
+
+/* The label column's first cell spans the date and hour rows */
+.ow-axis-row-head {
+    height        : 51px; /* content-box: 24 + 1 + 26 */
+    border-bottom : 1px solid var(--ow-grid);
+}
+
+.ow-axis-row-sea {
+    height : 66px;
+}
+
+/* The wave height chart, AG Charts (wave-chart.js), over the whole day of the time axis */
+.ow-wave-chart {
+    position : absolute;
+    inset    : 0;
+}
+
+.ow-axis-label .ow-axis-row-sea, .ow-axis-label .ow-axis-row-wind {
+    align-items : center;
+
+    > span {
+        display        : flex;
+        flex-direction : column;
+        line-height    : 1.25;
+    }
+}
+
+.ow-axis-label .ow-icon {
+    width  : 16px;
+    height : 16px;
+    color  : var(--ow-sea-ok);
+}
+
+.ow-axis-label .ow-axis-row-wind .ow-icon {
+    color : var(--ow-heli);
+}
+
+.ow-axis-label .ow-axis-row-wind > span {
+    flex-direction : row;
+    align-items    : baseline;
+    gap            : 6px;
+}
+
+.ow-axis-row-wind {
+    height     : 20px;
+    border-top : 1px solid var(--ow-grid);
+}
+
+.ow-hour {
+    position     : absolute;
+    top          : 0;
+    bottom       : 0;
+    display      : flex;
+    align-items  : center;
+    padding-left : 6px;
+    border-left  : 1px solid var(--ow-grid);
+    font-size    : 11.5px;
+    font-weight  : 600;
+    color        : var(--ow-ink-sub);
+}
+
+.ow-wind {
+    position    : absolute;
+    top         : 0;
+    bottom      : 0;
+    width       : calc(100% / 12);
+    display     : grid;
+    place-items : center;
+    font-size   : 10.5px;
+    color       : var(--ow-ink-faint);
+}
+
+.ow-wind-over {
+    font-weight : 700;
+    color       : var(--ow-heli);
+}
+
+.ow-now {
+    position    : absolute;
+    top         : 0;
+    bottom      : 0;
+    z-index     : 4;
+    width       : 0;
+    border-left : 2px solid var(--b-color-blue);
+    pointer-events : none;
+}
+
+.ow-now-label {
+    position         : absolute;
+    top              : 29px;
+    left             : -1px;
+    transform        : translateX(-50%);
+    padding          : 1px 6px;
+    white-space      : nowrap;
+    border-radius    : 9px;
+    font-size        : 10.5px;
+    font-weight      : 700;
+    color            : #fff;
+    background-color : var(--b-color-blue);
+}
+
+.ow-rows {
+    position : relative;
+}
+
+.ow-past {
+    position         : absolute;
+    top              : 0;
+    bottom           : 0;
+    left             : var(--ow-resource-width);
+    width            : calc((100% - var(--ow-resource-width)) * var(--ow-frac));
+    background-color : var(--ow-past);
+    pointer-events   : none;
+    z-index          : 3;
+}
+
+.ow-group {
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    height           : 28px;
+    padding          : 0 16px;
+    font-size        : 11px;
+    font-weight      : 700;
+    letter-spacing   : 0.05em;
+    text-transform   : uppercase;
+    color            : var(--ow-ink-sub);
+    background-color : var(--ow-sunken);
+    border-bottom    : 1px solid var(--ow-border);
+
+    > span {
+        display     : flex;
+        align-items : center;
+        gap         : 6px;
+    }
+
+    .ow-icon {
+        width  : 13px;
+        height : 13px;
+    }
+
+    small {
+        padding          : 0 6px;
+        border-radius    : 8px;
+        background-color : var(--b-neutral-94);
+    }
+}
+
+.ow-row {
+    display               : grid;
+    grid-template-columns : var(--ow-resource-width) minmax(0, 1fr);
+    height                : var(--ow-row-height);
+    border-bottom         : 1px solid var(--ow-border);
+}
+
+.ow-resource {
+    display      : flex;
+    align-items  : center;
+    gap          : 10px;
+    min-width    : 0;
+    padding      : 0 12px 0 16px;
+    border-right : 1px solid var(--ow-border);
+    background-color : var(--ow-surface);
+    position     : relative;
+    z-index      : 4;
+}
+
+.ow-resource-icon {
+    display          : grid;
+    place-items      : center;
+    flex             : none;
+    width            : 38px;
+    height           : 38px;
+    border-radius    : 50%;
+    color            : var(--ow-plan);
+    background-color : color-mix(in srgb, var(--ow-plan) 11%, transparent);
+
+    .ow-icon {
+        width  : 28px;
+        height : 28px;
+    }
+}
+
+[data-resource^='h'] .ow-resource-icon {
+    color            : var(--ow-heli);
+    background-color : color-mix(in srgb, var(--ow-heli) 12%, transparent);
+}
+
+.ow-resource-text {
+    display        : flex;
+    flex-direction : column;
+    min-width      : 0;
+    line-height    : 1.3;
+
+    b {
+        font-weight : 600;
+        white-space : nowrap;
+    }
+
+    small {
+        font-size   : 11px;
+        color       : var(--ow-ink-sub);
+        white-space : nowrap;
+        overflow    : hidden;
+        text-overflow : ellipsis;
+    }
+}
+
+.ow-util {
+    display     : flex;
+    align-items : center;
+    gap         : 6px;
+    margin-top  : 3px;
+}
+
+.ow-util-bar {
+    width            : 64px;
+    height           : 4px;
+    border-radius    : 2px;
+    background-color : var(--b-neutral-93);
+    overflow         : hidden;
+
+    span {
+        display          : block;
+        height           : 100%;
+        border-radius    : 2px;
+        background-color : var(--ow-plan);
+    }
+}
+
+.ow-util-text {
+    font-size   : 10.5px;
+    font-weight : 600;
+    color       : var(--ow-ink-sub);
+}
+
+.ow-lane {
+    position          : relative;
+    background-image  : linear-gradient(to right, var(--ow-grid) 1px, transparent 1px);
+    background-size   : calc(100% / 12) 100%;
+}
+
+/* Weather no-go: from the hour the limit is crossed, hatched in the weather colour */
+.ow-nogo {
+    position         : absolute;
+    top              : 0;
+    bottom           : 0;
+    background-image : repeating-linear-gradient(-45deg,
+        color-mix(in srgb, var(--ow-weather) 16%, transparent) 0 5px,
+        color-mix(in srgb, var(--ow-weather) 5%, transparent) 5px 10px);
+}
+
+.ow-nogo-label {
+    position    : absolute;
+    left        : 8px;
+    bottom      : 3px;
+    display     : flex;
+    align-items : center;
+    gap         : 5px;
+    font-size   : 10.5px;
+    font-weight : 600;
+    color       : var(--ow-weather);
+    white-space : nowrap;
+
+    small {
+        font-weight     : 500;
+        color           : var(--ow-ink-faint);
+        text-decoration : line-through;
+    }
+}
+
+.ow-window-line {
+    position    : absolute;
+    top         : 0;
+    bottom      : 0;
+    border-left : 2px solid var(--ow-weather);
+}
+
+/* Trips: the head, then the legs and stops nested in the trip */
+.ow-trip {
+    --ow-tone : var(--ow-plan);
+
+    position         : absolute;
+    top              : 7px;
+    bottom           : 14px;
+    z-index          : 2;
+    display          : flex;
+    flex-direction   : column;
+    border-radius    : var(--ow-radius);
+    border           : 1px solid color-mix(in srgb, var(--ow-tone) 40%, transparent);
+    background-color : color-mix(in srgb, var(--ow-tone) 10%, var(--ow-surface));
+    overflow         : hidden;
+}
+
+.ow-trip-heli {
+    --ow-tone : var(--ow-heli);
+}
+
+.ow-trip-at-risk {
+    --ow-tone : var(--ow-risk);
+}
+
+.ow-trip-cancelled {
+    --ow-tone : var(--ow-cancel);
+
+    border-style     : dashed;
+    background-color : transparent;
+
+    .ow-trip-segs {
+        opacity : 0.35;
+        filter  : grayscale(1);
+    }
+
+    .ow-trip-head > b, .ow-trip-head > span:not(.ow-badge) {
+        text-decoration : line-through;
+        color           : var(--ow-ink-sub);
+    }
+}
+
+.ow-selected {
+    border-color : var(--ow-tone);
+    box-shadow   : 0 0 0 1.5px var(--ow-tone), 0 4px 12px color-mix(in srgb, var(--ow-tone) 25%, transparent);
+}
+
+.ow-trip-drop {
+    overflow     : visible;
+    border-color : var(--ow-reach);
+    box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 45%, transparent);
+}
+
+.ow-trip-head {
+    display     : flex;
+    align-items : center;
+    gap         : 6px;
+    height      : 19px;
+    padding     : 1px 7px 0;
+    font-size   : 11.5px;
+    white-space : nowrap;
+    overflow    : hidden;
+
+    > b {
+        color : color-mix(in srgb, var(--ow-tone) 75%, var(--ow-ink));
+    }
+
+    > span {
+        color    : var(--ow-ink-sub);
+        overflow : hidden;
+        text-overflow : ellipsis;
+    }
+}
+
+.ow-badge {
+    flex             : none;
+    padding          : 0 5px;
+    border-radius    : 4px;
+    font-size        : 10.5px;
+    font-weight      : 600;
+    line-height      : 15px;
+    overflow         : visible !important;
+}
+
+.ow-badge-risk {
+    color            : var(--ow-risk) !important;
+    background-color : color-mix(in srgb, var(--ow-risk) 15%, transparent);
+}
+
+.ow-badge-trim, .ow-badge-cancel {
+    color            : var(--ow-cancel) !important;
+    background-color : color-mix(in srgb, var(--ow-cancel) 12%, transparent);
+}
+
+.ow-trip-segs {
+    flex    : 1;
+    display : flex;
+    gap     : 2px;
+    padding : 0 3px 3px;
+}
+
+.ow-seg {
+    flex-basis      : 0;
+    min-width       : 0;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    gap             : 4px;
+    border-radius   : 3px;
+    font-size       : 11px;
+    white-space     : nowrap;
+    overflow        : hidden;
+
+    small {
+        font-size : 10px;
+        opacity   : 0.8;
+    }
+}
+
+.ow-seg-transit {
+    color            : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink-sub));
+    background-image : repeating-linear-gradient(-45deg,
+        color-mix(in srgb, var(--ow-tone) 16%, transparent) 0 3px, transparent 3px 6px);
+    font-size        : 10px;
+}
+
+.ow-seg-transit .ow-icon {
+    width  : 16px;
+    height : 16px;
+}
+
+.ow-seg-stop {
+    color            : #fff;
+    background-color : var(--ow-tone);
+}
+
+.ow-seg-preview {
+    color            : var(--ow-reach);
+    background-color : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
+    outline          : 1.5px dashed var(--ow-reach);
+    outline-offset   : -1.5px;
+}
+
+.ow-ghost {
+    position      : absolute;
+    top           : 7px;
+    bottom        : 14px;
+    border        : 1.5px dashed color-mix(in srgb, var(--ow-heli) 50%, transparent);
+    border-radius : var(--ow-radius);
+}
+
+.ow-deps {
+    position       : absolute;
+    inset          : 0;
+    width          : 100%;
+    height         : 100%;
+    z-index        : 3;
+    overflow       : visible;
+    pointer-events : none;
+}
+
+.ow-dep {
+    fill            : none;
+    stroke          : var(--ow-ink-sub);
+    stroke-width    : 1.4;
+    stroke-linejoin : round;
+}
+
+.ow-dep-head {
+    fill : var(--ow-ink-sub);
+}
+
+/* The forecast's notice */
+.ow-toast {
+    display          : flex;
+    align-items      : center;
+    gap              : 10px;
+    flex             : none;
+    padding          : 8px 16px 8px 13px;
+    border-bottom    : 1px solid var(--ow-border);
+    border-left      : 3px solid var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 7%, var(--ow-surface));
+
+    > span {
+        flex : 1;
+    }
+
+    > .ow-icon {
+        width  : 22px;
+        height : 22px;
+        color  : var(--ow-cancel);
+    }
+
+    > span {
+        line-height : 1.4;
+        font-size   : 12.5px;
+
+        b {
+            display : block;
+        }
+    }
+
+    button {
+        flex          : none;
+        height        : 30px;
+        padding       : 0 12px;
+        border        : 1px solid var(--ow-border);
+        border-radius : 6px;
+        background    : none;
+        font-weight   : 600;
+        font-size     : 12px;
+    }
+
+    .ow-toast-primary {
+        border-color     : transparent;
+        color            : #fff;
+        background-color : var(--ow-plan);
+    }
+}
+
+/* Legend */
+.ow-legend {
+    display     : flex;
+    align-items : center;
+    gap         : 16px;
+    height      : 34px;
+    padding     : 0 16px;
+    border-top  : 1px solid var(--ow-border);
+    font-size   : 11.5px;
+    color       : var(--ow-ink-sub);
+    flex        : none;
+    white-space : nowrap;
+    overflow    : hidden;
+
+    > span::before {
+        content        : '';
+        display        : inline-block;
+        width          : 10px;
+        height         : 10px;
+        margin-right   : 6px;
+        border-radius  : 2px;
+        vertical-align : -1px;
+    }
+
+    .ow-legend-credit {
+        margin-left : auto;
+
+        &::before {
+            display : none;
+        }
+    }
+}
+
+.ow-l-plan::before { background-color : var(--ow-plan); }
+.ow-l-risk::before { background-color : var(--ow-risk); }
+.ow-l-trim::before { background-color : var(--ow-plan); box-shadow : inset 0 0 0 2px var(--ow-cancel); }
+.ow-l-cancel::before { border : 1.5px dashed var(--ow-cancel); }
+.ow-l-transit::before { background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-plan) 40%, transparent) 0 2px, transparent 2px 4px); }
+.ow-l-nogo::before { background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px, transparent 2px 4px); }
+.ow-l-dep::before { width : 14px !important; height : 0 !important; border-top : 1.5px solid var(--ow-ink-sub); vertical-align : 3px !important; }
+
+/* The map */
+.ow-map {
+    position         : relative;
+    flex             : 1;
+    min-height       : 0;
+    background-color : var(--ow-sea-map);
+    overflow         : hidden;
+}
+
+.ow-map-svg {
+    position : absolute;
+    inset    : 0;
+    width    : 100%;
+    height   : 100%;
+}
+
+.ow-contours path {
+    fill         : none;
+    stroke       : var(--ow-contour);
+    stroke-width : 1;
+}
+
+.ow-depth {
+    font-size : 9px;
+    fill      : var(--ow-contour);
+    font-weight : 600;
+}
+
+.ow-cable {
+    fill             : none;
+    stroke           : color-mix(in srgb, var(--ow-ink-faint) 45%, transparent);
+    stroke-width     : 1;
+    stroke-dasharray : 1 3;
+}
+
+.ow-route {
+    fill             : none;
+    stroke           : color-mix(in srgb, var(--ow-plan) 35%, transparent);
+    stroke-width     : 1.2;
+    stroke-dasharray : 4 3;
+    stroke-linejoin  : round;
+}
+
+.ow-route-selected {
+    stroke           : var(--ow-plan);
+    stroke-width     : 2;
+    stroke-dasharray : none;
+}
+
+.ow-route-preview {
+    stroke           : var(--ow-reach);
+    stroke-width     : 2;
+    stroke-dasharray : 5 3;
+}
+
+.ow-port, .ow-oss {
+    circle {
+        fill         : var(--ow-marker);
+        stroke       : var(--ow-ink-sub);
+        stroke-width : 1.2;
+    }
+
+    .ow-icon {
+        color : var(--ow-ink-sub);
+    }
+}
+
+.ow-port {
+    text {
+        font-size   : 10.5px;
+        font-weight : 600;
+        fill        : var(--ow-ink-sub);
+    }
+}
+
+.ow-oss circle {
+    stroke : var(--ow-risk);
+}
+
+.ow-oss .ow-icon {
+    color : var(--ow-risk);
+}
+
+.ow-marker {
+    --ow-tone : var(--ow-marker-line);
+
+    .ow-marker-halo {
+        fill : none;
+    }
+
+    .ow-marker-disc {
+        fill         : var(--ow-marker);
+        stroke       : var(--ow-tone);
+        stroke-width : 1.2;
+    }
+
+    .ow-marker-glyph {
+        fill           : none;
+        stroke         : var(--ow-tone);
+        stroke-width   : 1.4;
+        stroke-linecap : round;
+    }
+}
+
+.ow-m-work, .ow-m-risk, .ow-m-fault, .ow-m-target {
+    .ow-marker-disc {
+        fill : var(--ow-tone);
+    }
+
+    .ow-marker-glyph {
+        stroke : #fff;
+    }
+}
+
+.ow-m-work, .ow-m-planned { --ow-tone : var(--ow-plan); }
+.ow-m-planned .ow-marker-disc { stroke-width : 2; }
+.ow-m-risk { --ow-tone : var(--ow-risk); }
+.ow-m-fault { --ow-tone : var(--ow-cancel); }
+.ow-m-waiting { --ow-tone : var(--ow-risk); }
+.ow-m-waiting .ow-marker-disc { stroke-width : 2; stroke-dasharray : 2.5 1.6; }
+.ow-m-moved { --ow-tone : var(--ow-cancel); }
+.ow-m-moved .ow-marker-disc { stroke-dasharray : 2.5 1.6; stroke-width : 1.6; }
+.ow-m-reach { --ow-tone : var(--ow-reach); }
+.ow-m-reach .ow-marker-disc { stroke-width : 2; }
+.ow-m-target { --ow-tone : var(--ow-reach); }
+.ow-m-target .ow-marker-halo { fill : color-mix(in srgb, var(--ow-reach) 22%, transparent); stroke : var(--ow-reach); stroke-width : 1.2; }
+.ow-m-dim { opacity : 0.4; }
+
+.ow-reach-zone {
+    fill             : color-mix(in srgb, var(--ow-reach) 8%, transparent);
+    stroke           : color-mix(in srgb, var(--ow-reach) 55%, transparent);
+    stroke-width     : 1.2;
+    stroke-dasharray : 4 3;
+}
+
+.ow-map-label text {
+    font-size       : 10.5px;
+    font-weight     : 700;
+    fill            : var(--ow-plan);
+    paint-order     : stroke;
+    stroke          : var(--ow-sea-map);
+    stroke-width    : 3.5px;
+    stroke-linejoin : round;
+}
+
+.ow-map-label-fault text { fill : var(--ow-cancel); }
+.ow-map-label-risk text { fill : var(--ow-risk); }
+.ow-map-label-target text { fill : var(--ow-reach); }
+.ow-map-label-moved text { fill : var(--ow-cancel); }
+
+.ow-map-callout {
+    position         : absolute;
+    top              : 10px;
+    left             : 10px;
+    right            : 10px;
+    padding          : 7px 10px;
+    border-radius    : 7px;
+    font-size        : 12px;
+    color            : var(--ow-ink);
+    background-color : color-mix(in srgb, var(--ow-surface) 88%, transparent);
+    border           : 1px solid color-mix(in srgb, var(--ow-reach) 45%, transparent);
+
+    b {
+        color : var(--ow-reach);
+    }
+}
+
+.ow-map-legend {
+    position         : absolute;
+    left             : 10px;
+    right            : 10px;
+    bottom           : 8px;
+    display          : flex;
+    flex-wrap        : wrap;
+    gap              : 4px 12px;
+    font-size        : 11px;
+    color            : var(--ow-ink-sub);
+
+    span {
+        display     : flex;
+        align-items : center;
+        gap         : 5px;
+    }
+
+    i {
+        width         : 10px;
+        height        : 10px;
+        border-radius : 50%;
+        border        : 2px solid var(--ow-tone);
+        box-sizing    : border-box;
+    }
+
+    .ow-m-work i, .ow-m-risk i, .ow-m-fault i {
+        background-color : var(--ow-tone);
+    }
+
+    .ow-m-waiting i {
+        border-style : dashed;
+    }
+}
+
+/* The selected turbine */
+.ow-card {
+    display               : grid;
+    grid-template-columns : 124px minmax(0, 1fr);
+    gap                   : 14px;
+    padding               : 10px 16px 12px 8px;
+    border-top            : 1px solid var(--ow-border);
+    flex                  : none;
+}
+
+.ow-card-art {
+    display     : flex;
+    align-items : flex-end;
+}
+
+.ow-turbine {
+    width  : 124px;
+    height : auto;
+}
+
+.ow-turbine-label {
+    font-size   : 8.5px;
+    font-weight : 700;
+    fill        : var(--ow-ink-sub);
+}
+
+.ow-turbine-rotor {
+    animation : ow-spin 9s linear infinite;
+}
+
+@keyframes ow-spin {
+    to {
+        rotate : 360deg;
+    }
+}
+
+.ow-card-body {
+    display        : flex;
+    flex-direction : column;
+    gap            : 4px;
+    min-width      : 0;
+    padding-top    : 6px;
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 3px 10px;
+        margin                : 4px 0;
+        font-size             : 12px;
+    }
+
+    dt {
+        color : var(--ow-ink-sub);
+    }
+
+    dd {
+        margin      : 0;
+        font-weight : 500;
+    }
+}
+
+.ow-card-title {
+    b {
+        font-size   : 18px;
+        font-weight : 700;
+    }
+
+    small {
+        margin-left : 8px;
+        color       : var(--ow-ink-sub);
+    }
+}
+
+.ow-card-job {
+    font-weight : 600;
+}
+
+.ow-card-note {
+    display          : flex;
+    align-items      : center;
+    gap              : 6px;
+    padding          : 5px 8px;
+    border-radius    : 6px;
+    font-size        : 11.5px;
+    font-weight      : 600;
+    color            : color-mix(in srgb, var(--ow-sea-ok) 75%, var(--ow-ink));
+    background-color : color-mix(in srgb, var(--ow-sea-ok) 12%, transparent);
+}
+
+.ow-state-drag .ow-card-note {
+    color            : var(--ow-reach);
+    background-color : color-mix(in srgb, var(--ow-reach) 12%, transparent);
+}
+
+.ow-card-moved .ow-card-note {
+    color            : var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 10%, transparent);
+}
+
+/* Dragging a team */
+.ow-drag-chip {
+    position         : absolute;
+    z-index          : 20;
+    display          : flex;
+    align-items      : center;
+    gap              : 7px;
+    padding          : 4px 10px 4px 4px;
+    border-radius    : 8px;
+    font-size        : 12px;
+    background-color : var(--ow-surface);
+    border           : 1px solid var(--ow-reach);
+    box-shadow       : 0 10px 24px rgb(0 0 0 / 22%);
+    rotate           : -3deg;
+    white-space      : nowrap;
+}
+
+.ow-drag-hand {
+    position  : absolute;
+    right     : -12px;
+    bottom    : -14px;
+    width     : 24px;
+    height    : 24px;
+    color     : var(--ow-ink);
+    filter    : drop-shadow(0 1px 0 var(--ow-surface));
+}
+
+.ow-drop-tip {
+    position         : absolute;
+    z-index          : 19;
+    width            : 248px;
+    padding          : 10px 12px;
+    border-radius    : 9px;
+    font-size        : 12px;
+    background-color : var(--ow-surface);
+    border           : 1px solid var(--ow-border);
+    box-shadow       : 0 10px 30px rgb(0 0 0 / 20%);
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 3px 10px;
+        margin                : 8px 0;
+    }
+
+    dt {
+        color : var(--ow-ink-sub);
+    }
+
+    dd {
+        margin : 0;
+    }
+}
+
+.ow-drop-tip-head {
+    display     : flex;
+    align-items : center;
+    gap         : 6px;
+    font-weight : 700;
+    color       : var(--ow-reach);
+}
+
+.ow-drop-tip-foot {
+    padding-top : 7px;
+    border-top  : 1px solid var(--ow-border);
+    font-size   : 11.5px;
+    color       : var(--ow-ink-sub);
+}
+
+/* Phones: the KPI bar keeps the clock and the window, the halves become tabs, the schedule scrolls sideways */
+@media (width < 760px) {
+    .ow-app {
+        --ow-resource-width : 118px;
+        --ow-row-height     : 60px;
+    }
+
+    .ow-kpis {
+        flex-wrap : wrap;
+        gap       : 10px 14px;
+        padding   : 10px 12px;
+
+        .ow-kpi {
+            display : none;
+        }
+
+        .ow-kpi-warn, .ow-kpi-alert {
+            display : block;
+        }
+    }
+
+    .ow-clock b {
+        font-size : 19px;
+    }
+
+    .ow-window {
+        order     : 3;
+        flex      : 1 1 100%;
+        padding   : 6px 10px;
+
+        .ow-window-left {
+            margin-left : auto;
+        }
+    }
+
+    .ow-kpi-warn, .ow-kpi-alert {
+        margin-left : auto;
+    }
+
+    .ow-tabs {
+        display : flex;
+        margin  : 8px 12px;
+
+        button {
+            flex   : 1;
+            height : 30px;
+        }
+    }
+
+    .ow-main {
+        grid-template-columns : minmax(0, 1fr);
+        border-top            : 1px solid var(--ow-border);
+    }
+
+    .ow-app[data-tab='schedule'] .ow-side, .ow-app[data-tab='map'] .ow-schedule {
+        display : none;
+    }
+
+    .ow-schedule {
+        border-right : 0;
+    }
+
+    .ow-schedule .ow-panel-bar, .ow-legend, .ow-tray-hint, .ow-tray-title, .ow-team-job, .ow-certs,
+    .ow-util-text, .ow-axis-label small {
+        display : none;
+    }
+
+    .ow-tray {
+        padding    : 8px 12px;
+        overflow-x : auto;
+    }
+
+    .ow-axis, .ow-rows {
+        width : calc(var(--ow-resource-width) + 12 * 44px);
+    }
+
+    .ow-axis-label .ow-axis-row, .ow-group, .ow-resource {
+        padding-left : 10px;
+    }
+
+    .ow-axis-label, .ow-resource {
+        position : sticky;
+        left     : 0;
+        z-index  : 6;
+        background-color : var(--ow-surface);
+    }
+
+    .ow-past {
+        width : calc(12 * 44px * var(--ow-frac));
+    }
+
+    .ow-resource-icon {
+        display : none;
+    }
+
+    /* Keep the date readable beside the sticky label column while the hours scroll */
+    .ow-day {
+        left : var(--ow-resource-width);
+    }
+
+    .ow-resource-text small {
+        font-size : 10px;
+    }
+
+    .ow-util-bar {
+        width : 70px;
+    }
+
+    .ow-trip-head span:not(.ow-badge) {
+        display : none;
+    }
+
+    .ow-nogo-label {
+        font-size : 10px;
+    }
+
+    .ow-toast {
+        flex-wrap : wrap;
+        padding   : 8px 12px 8px 10px;
+
+        > span {
+            flex : 1 1 80%;
+        }
+    }
+
+    .ow-side .ow-panel-bar {
+        display : none;
+    }
+
+    .ow-map {
+        min-height : 300px;
+    }
+}

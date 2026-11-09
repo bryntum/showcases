@@ -1,0 +1,60 @@
+/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows and the now
+ * line */
+
+.ow-scheduler {
+    /* The vessel column's inner inset, lined up with the card's title bar, narrower on a phone (phone.css) */
+    --ow-column-inset                       : var(--ow-inset);
+    --b-grid-row-border-color               : var(--ow-tick);
+    --b-grid-cell-border-color              : var(--ow-tick);
+    /* A selected row: a quiet tint in the work blue across the whole row, the vessel cell included, hovered or not */
+    --b-grid-cell-selected-background       : var(--ow-c-row-selected);
+    --b-grid-cell-hover-selected-background : var(--ow-c-row-selected);
+    /* The group rows, Vessels and Helicopters, a slim band in muted semibold. The Group feature sizes them from this */
+    --b-group-row-height                    : 28px;
+    --b-group-header-background             : var(--ow-c-footer);
+    --b-group-header-color                  : var(--ow-c-muted);
+    --b-group-header-font-weight            : 600;
+    /* The collapse caret no stronger than its label */
+    --b-group-header-icon-color             : var(--ow-c-muted);
+    /* Hour lines, faint */
+    --b-column-lines-tick-color             : var(--ow-tick);
+    --b-column-lines-major-color            : var(--ow-tick);
+    /* The now line, 1px, under the trips */
+    --b-time-range-line-width               : 1px;
+    --b-time-range-line-zindex              : 4;
+
+    /* The vessel column, on the card's surface also when hovered */
+    .ow-resource-cell.b-grid-cell {
+        --b-grid-cell-background       : var(--ow-surface);
+        --b-grid-cell-hover-background : var(--ow-surface);
+        --b-grid-cell-padding-inline   : var(--ow-column-inset) 8px;
+    }
+
+    /* Group rows: Vessels, Helicopters */
+    .b-grid-row.b-group-row {
+        .b-grid-cell {
+            --b-grid-cell-font-size : 11px;
+
+            letter-spacing : 0.06em;
+            text-transform : uppercase;
+        }
+
+        /* The same light shade as the row's timeline part, not the vessel column's surface */
+        .ow-resource-cell.b-grid-cell {
+            --b-grid-cell-background       : var(--b-group-header-background);
+            --b-grid-cell-hover-background : var(--b-group-header-background);
+        }
+    }
+
+    /* The hours already gone, lightly shaded in the rows */
+    .b-sch-range.ow-past {
+        --b-time-range-opacity    : 1;
+        --b-time-range-background : var(--ow-c-past);
+    }
+
+    /* The now line, in the rows */
+    .b-sch-line.ow-now {
+        --b-time-range-background : none;
+        --b-time-range-line-color : var(--ow-now);
+    }
+}

@@ -76,7 +76,8 @@ export default [
             'ev-operations/lib/simulation/*.js',
             'ev-operations/lib/gantt/SlipTracking.js',
             'logistics-control-tower/lib/schedule/DockBooking.js',
-            'logistics-control-tower/lib/schedule/Playhead.js'
+            'logistics-control-tower/lib/schedule/Playhead.js',
+            'offshore-wind-dispatch/lib/DropPreview.js'
         ],
         rules : {
             'max-lines-per-function' : 'off'
