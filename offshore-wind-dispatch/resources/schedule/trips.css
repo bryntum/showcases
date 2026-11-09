@@ -22,16 +22,6 @@
         overflow    : visible;
         box-shadow  : none;
 
-        /* The line on station: under the legs, through the hops and any wait between them */
-        &::before {
-            content           : '';
-            position          : absolute;
-            inset-inline      : 0;
-            inset-block-start : calc(var(--ow-line-y) - 1px);
-            height            : 2px;
-            background-color  : var(--ow-c-transit);
-        }
-
         /* The label, the height of the feature's `headerHeight` */
         > .b-sch-event-content {
             position      : static;
@@ -45,19 +35,31 @@
            (--ow-pre, TripRendering.js#renderTrip) */
         > .b-nested-events-container {
             translate : calc(-1 * var(--ow-pre, 0px)) 0;
+
+            /* The line on station, the sail out's line on to the sail back's: behind the legs, through the hops and
+               any wait between them. The container starts at the departure, the line from the first stop on */
+            &::before {
+                content            : '';
+                position           : absolute;
+                inset-inline-start : var(--ow-pre, 0px);
+                inset-block-start  : calc(var(--ow-line-y) - 20px - 1px);
+                width              : 100%;
+                height             : var(--ow-transit-w);
+                background-color   : var(--ow-c-transit);
+            }
         }
 
         &.ow-trip-moved {
             --b-sch-event-cursor : default;
 
-            &::before {
-                background-color : transparent;
-                border-block-start : 2px dashed var(--ow-c-transit);
-            }
-
             > .b-nested-events-container {
                 opacity : 0.35;
                 filter  : grayscale(1);
+
+                &::before {
+                    background-color   : transparent;
+                    border-block-start : var(--ow-transit-w) dashed var(--ow-c-transit);
+                }
             }
 
             .ow-trip-head > span:first-child {

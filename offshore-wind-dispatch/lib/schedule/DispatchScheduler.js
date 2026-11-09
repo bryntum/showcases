@@ -37,7 +37,7 @@ const
  * - The weather no-go of each vessel is a resource time range, from the hour the forecast crosses its limit
  * - The time axis carries the forecast: the wave height chart and the wind (ForecastHeader)
  * - The vessel column shows how much of the window left is booked, and the seats taken
- * - The shaded past and the now line are time ranges
+ * - The now line is a time range, the past is not shaded
  * - Trips are dragged along their own row only, not into the past and not once gone, their legs move with them
  *
  * Learn more:

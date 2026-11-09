@@ -1,4 +1,4 @@
-/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows, the shaded past and the now line */
+/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows and the now line */
 
 .ow-scheduler {
     --b-grid-row-border-color   : var(--ow-border);
@@ -32,12 +32,6 @@
         .ow-resource-cell.b-grid-cell.b-group-title {
             padding-inline : 24px 8px;
         }
-    }
-
-    /* The shaded past, in the rows */
-    .b-sch-time-range.ow-past {
-        --b-time-range-opacity    : 1;
-        --b-time-range-background : var(--ow-past);
     }
 
     /* The now line, in the rows */

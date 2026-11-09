@@ -54,8 +54,6 @@
         --b-sch-event-border-color : var(--ow-c-work-line);
         --b-sch-event-font-weight  : 400;
 
-        box-shadow : 0 0 0 3px var(--ow-surface);
-
         /* Two tiers: the turbine in semibold, the job type lighter, the hours at the right */
         .ow-seg-type {
             font-weight : 400;

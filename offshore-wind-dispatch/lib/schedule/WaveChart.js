@@ -19,9 +19,9 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 const fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif';
 
-// The wave height axis, metres: room under the calmest hour (0.9 m) for its value label, above the roughest one
-// (2.4 m) for its point, and between the two limits for the CTV limit's name: no label is cut at the chart's edges
-const heightRange = { bottom : 0.5, top : 2.7 };
+// Room the wave height axis keeps, px: above the roughest hour for its point and value label, under the calmest one for
+// its point, above a limit for its name. No label is cut at the chart's edges
+const room = { label : 20, point : 5, limit : 13, guide : 8 };
 
 // Hovering a point only shows its tooltip: no dimming of the series, no bigger marker, just a slightly heavier ring
 const highlight = {
@@ -72,6 +72,8 @@ function toRgba(color) {
     return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
 }
 
+// How strongly the dashed limit lines are drawn, their names keep full ink
+const limitFade = 0.45;
 export default class WaveChart {
     /**
      * @param {Object} options
@@ -195,10 +197,43 @@ export default class WaveChart {
         return all;
     }
 
+    /**
+     * The wave height axis, metres, computed from the forecast shown: from the calmest hour less room for its point to
+     * the roughest one plus room for its value label, both limits and the name above each inside. The room is in px, so
+     * metres to the chart's height: the range is solved with the room it has to leave
+     * @returns {{ bottom : Number, top : Number }}
+     */
+    range() {
+        const
+            { hs }         = this.forecast,
+            { ctv, swath } = this.limits,
+            height         = this.element.clientHeight || 67,
+            above          = [[Math.max(...hs), room.label], [swath, room.limit], [ctv, room.limit]],
+            below          = [[Math.min(...hs), room.point], [ctv, 0]];
+
+        let span = 3;
+
+        // Each pass uses the previous range's metres a px, it settles within a few
+        for (let i = 0; i < 30; i++) {
+            const
+                perPx  = span / height,
+                top    = Math.max(...above.map(([value, px]) => value + px * perPx)),
+                bottom = Math.min(...below.map(([value, px]) => value - px * perPx));
+
+            span = top - bottom;
+        }
+
+        const
+            perPx = span / height,
+            top   = Math.max(...above.map(([value, px]) => value + px * perPx));
+
+        return { top, bottom : top - span };
+    }
+
     options() {
         const
             me     = this,
-            color  = name => cssColor(me.element, name),
+            color = name => cssColor(me.element, name),
             colors = {
                 calm      : color('--ow-c-work'),
                 calmFill  : color('--ow-c-chart-fill'),
@@ -208,6 +243,8 @@ export default class WaveChart {
                 muted     : color('--ow-c-muted'),
                 surface   : color('--ow-surface')
             };
+
+        me.heightRange = me.range();
 
         return {
             container  : me.element,
@@ -319,7 +356,9 @@ export default class WaveChart {
     // A vertical line series over the whole height at one time, with a label beside its lower end: the window's close
     // where the waves cross the CTV limit, named "1.5 m at 14:00", and after a new forecast the old close, dashed
     guide({ time, stroke, dash, width, text, color, weight = 500, placement }) {
-        const { bottom, top } = heightRange;
+        const
+            { bottom, top } = this.heightRange,
+            labelAt         = bottom + room.guide * (top - bottom) / (this.element.clientHeight || 67);
 
         return {
             type : 'line',
@@ -327,7 +366,7 @@ export default class WaveChart {
             yKey : 'v',
             data : [
                 { t : time, v : bottom },
-                { t : time, v : bottom + 0.2, text },
+                { t : time, v : labelAt, text },
                 { t : time, v : top }
             ],
             stroke,
@@ -395,13 +434,15 @@ export default class WaveChart {
                 { t : dayStart, v : value },
                 { t : dayEnd, v : value }
             ],
-            stroke       : ink,
-            strokeWidth  : 1,
-            lineDash     : [3, 3],
-            marker       : { enabled : false },
+            stroke        : ink,
+            // Faded: the limits guide the eye, the wave line carries the story (the names keep full ink)
+            strokeOpacity : limitFade,
+            strokeWidth   : 1,
+            lineDash      : [3, 3],
+            marker        : { enabled : false },
             highlight,
-            showInLegend : false,
-            tooltip      : { enabled : false }
+            showInLegend  : false,
+            tooltip       : { enabled : false }
         };
     }
 
@@ -428,12 +469,13 @@ export default class WaveChart {
     // stroke or, for the CTV limit whose line is a series (limitLine), none
     limitName(value, text, ink, stroke) {
         return {
-            type        : 'line',
+            type          : 'line',
             value,
             stroke,
-            lineDash    : [3, 3],
-            strokeWidth : 1,
-            label       : { text, color : ink, placement : 'top-left', padding : 3, fontSize : 9, fontWeight : 500, fontFamily }
+            strokeOpacity : limitFade,
+            lineDash      : [3, 3],
+            strokeWidth   : 1,
+            label         : { text, color : ink, placement : 'top-left', padding : 2, fontSize : 9, fontWeight : 500, fontFamily }
         };
     }
 
@@ -443,7 +485,7 @@ export default class WaveChart {
         const
             me              = this,
             { ctv, swath }  = me.limits,
-            { bottom, top } = heightRange;
+            { bottom, top } = me.heightRange;
 
         return {
             type       : 'number',

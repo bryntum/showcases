@@ -96,13 +96,18 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
 
     for (const id of state.faults) {
         if (id !== selectedTurbine) {
-            labels.push({ id, text : `${id} · fault`, cls : 'ow-map-label-fault' });
+            labels.push({ id, text : id, cls : 'ow-map-label-fault' });
         }
     }
 
     trips.forEach(trip => {
+        // The selected turbine has its label already
         if (trip.status === 'at-risk' && trip.turbines.length) {
-            labels.push({ id : trip.turbines.at(-1), text : `${trip.turbines.at(-1)} · at risk`, cls : 'ow-map-label-risk' });
+            if (trip.turbines.at(-1) === selectedTurbine && labels.some(label => label.id === selectedTurbine)) {
+                return;
+            }
+
+            labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), cls : 'ow-map-label-risk' });
         }
         else if (trip.status === 'trimmed' && trip.removed.length) {
             labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${nextDay}`, cls : 'ow-map-label-moved' });

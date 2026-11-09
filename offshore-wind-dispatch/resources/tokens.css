@@ -31,8 +31,6 @@
     --ow-ink       : var(--b-text-1);
     --ow-ink-sub   : var(--b-text-2);
     --ow-ink-faint : var(--b-neutral-55);
-    --ow-past      : light-dark(color-mix(in srgb, var(--b-color-black) 3.5%, transparent),
-        color-mix(in srgb, var(--b-color-black) 22%, transparent));
 
     /* The map */
     --ow-sea-map     : light-dark(#eaf3f9, #0e1c29);
@@ -79,6 +77,10 @@
     --ow-resource-width : 214px;
     --ow-radius         : 5px;
     --ow-c-block        : 28px;
+    /* The transit line and the rings of its end dots, the hollow dot's outer size and the solid one's */
+    --ow-transit-w      : 1px;
+    --ow-dot-out        : 8px;
+    --ow-dot-back       : 6px;
     --ow-size-hero      : 26px;
     --ow-size-kpi       : 22px;
     --ow-bar-control    : 30px;

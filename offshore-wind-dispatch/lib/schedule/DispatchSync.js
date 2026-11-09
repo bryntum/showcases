@@ -3,8 +3,8 @@ import { hhmm, toDate } from '../util/Time.js';
 
 /**
  * Brings the scheduling project's stores in line with the dispatch state (DispatchState): the weather no-go of each
- * vessel and the old place of trips brought forward as resource time ranges, the shaded past and the now line as time
- * ranges, and the dependencies of the plan. Not a widget: it works on the stores of the DispatchScheduler that owns it.
+ * vessel and the old place of trips brought forward as resource time ranges, the now line as a time
+ * range, and the dependencies of the plan. Not a widget: it works on the stores of the DispatchScheduler that owns it.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
@@ -95,7 +95,7 @@ export default class DispatchSync {
     }
 
     /**
-     * The shaded past and the now line
+     * The now line, no shaded past
      */
     syncNow() {
         const
@@ -104,7 +104,6 @@ export default class DispatchSync {
             now           = toDate(state.now);
 
         DispatchSync.syncStore(scheduler.project.timeRangeStore, [
-            { id : 'past', startDate : scheduler.startDate, endDate : now, cls : 'ow-past' },
             { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
         ]);
     }

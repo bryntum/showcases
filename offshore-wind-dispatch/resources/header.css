@@ -222,10 +222,6 @@
 
 /* The now line in the header: a pill in the hours row, the line runs from it down through the chart into the rows */
 .ow-scheduler .b-grid-header {
-    .ow-past {
-        display : none;
-    }
-
     .ow-now {
         z-index             : 4;
         overflow            : visible;

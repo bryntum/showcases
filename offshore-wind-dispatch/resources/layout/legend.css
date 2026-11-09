@@ -40,7 +40,7 @@
     /* The line with its hollow and solid end dots */
     .ow-l-transit i {
         width            : 24px;
-        height           : 2px;
+        height           : var(--ow-transit-w);
         border-radius    : 0;
         background-color : var(--ow-c-transit);
 
@@ -49,9 +49,9 @@
             position         : absolute;
             inset-block-start : 50%;
             box-sizing       : border-box;
-            width            : 7px;
-            height           : 7px;
-            border           : 2px solid var(--ow-c-transit);
+            width            : var(--ow-dot-out);
+            height           : var(--ow-dot-out);
+            border           : var(--ow-transit-w) solid var(--ow-c-transit);
             border-radius    : 50%;
             translate        : 0 -50%;
         }
@@ -63,6 +63,8 @@
 
         &::after {
             inset-inline-end : -1px;
+            width            : var(--ow-dot-back);
+            height           : var(--ow-dot-back);
             background-color : var(--ow-c-transit);
         }
     }

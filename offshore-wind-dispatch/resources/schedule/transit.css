@@ -1,13 +1,13 @@
 /* The sail out and back of a trip, its buffer time drawn by the EventBuffer feature (TripRendering.js#renderBuffers):
- * a thin line through the middle of the work blocks, a hollow dot at the departure, a solid one at the return, the
+ * a 1px line through the middle of the work blocks, a hollow dot at the departure, a solid one at the return, the
  * clock time beyond each. A trip back after its window has the part of its sail back past the close in orange, ending
  * in a tag with the time and how late it is */
 .ow-scheduler.b-sch-horizontal .b-sch-event-wrap > .b-sch-event-buffer.ow-transit {
-    --ow-dot : 8px;
+    --ow-dot : var(--ow-dot-out);
 
     position          : relative;
     align-self        : start;
-    height            : 2px;
+    height            : var(--ow-transit-w);
     margin-block-start : calc(var(--ow-line-y) - 1px);
     background        : var(--ow-c-transit);
     overflow          : visible;
@@ -20,7 +20,7 @@
         box-sizing       : border-box;
         width            : var(--ow-dot);
         height           : var(--ow-dot);
-        border           : 2px solid var(--ow-c-transit);
+        border           : var(--ow-transit-w) solid var(--ow-c-transit);
         border-radius    : 50%;
         translate        : 0 -50%;
     }
@@ -58,6 +58,8 @@
     }
 
     &.ow-transit-back {
+        --ow-dot : var(--ow-dot-back);
+
         &::after {
             inset-inline-end : calc(var(--ow-dot) / -2);
             background-color : var(--ow-c-transit);
