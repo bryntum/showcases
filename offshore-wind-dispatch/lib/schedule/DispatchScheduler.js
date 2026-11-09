@@ -180,6 +180,8 @@ export default class DispatchScheduler extends Scheduler {
             },
             eventRenderer             : args => me.renderEvent(args),
             resourceTimeRangeRenderer : renderRange,
+            // The features whose configs call back into this scheduler (its dispatch state, its checks) are set here,
+            // where the instance exists; the others are in `configurable` above
             features                  : {
                 ...config.features,
                 // Along its own row, not into the past, not once gone or moved to tomorrow

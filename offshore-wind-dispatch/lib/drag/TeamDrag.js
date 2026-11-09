@@ -6,6 +6,22 @@ import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
 import './DropTooltip.js';
 
 /**
+ * What TeamDrag and KeyboardDrag call on the app's side of the drag (DropPreview): they move the team, it decides what
+ * the team would get and books it
+ * @typedef {Object} DropHandler
+ * @property {Object|null} drop The team held and its check, `{ target, trip, team, job, result, reach, close }`, see
+ * DropPreview#previewDrop. `null` while over nothing
+ * @property {Function} waitingTeam `(teamId)`, the team waiting at the port and its job, `{ team, job }`
+ * @property {Function} liftTeam `(teamId)`, the drag starts: the team's chip dims, the trips it fits on are outlined
+ * @property {Function} previewDrop `(teamId, target, at)`, previews the team on a trip or a vessel's row of the Day
+ * view, `at` the minute held at. Returns the check, or `null`
+ * @property {Function} previewCell `(teamId, cell)`, the same for a free cell of the Week view
+ * @property {Function} dropTeam `(teamId, target)`, released there: booked when it fits, else the reason is shown
+ * @property {Function} dropTargets `()`, the trips the keyboard steps through, in row and departure order
+ * @property {Function} endDrag `()`, the drag is over: the preview and the outlines go, the tray is drawn again
+ */
+
+/**
  * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following
  * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop. The whole time axis
  * of the schedule is its drop target: over a trip bar, or anywhere on a vessel's row, the app previews the stop the
@@ -31,8 +47,7 @@ export default class TeamDrag {
      * @param {TeamTray} options.tray The crews waiting at the port, whose chips are dragged
      * @param {Scheduler.view.Scheduler} options.scheduler
      * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
-     * @param {Object} options.handler `{ liftTeam(id), previewDrop(id, trip), dropTeam(id, trip), endDrag(),
-     * dropTargets() }`
+     * @param {DropHandler} options.handler Previews, checks and books the team
      */
     constructor({ tray, scheduler, board, handler }) {
         const me = this;
