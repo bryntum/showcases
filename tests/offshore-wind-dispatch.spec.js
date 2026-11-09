@@ -244,7 +244,7 @@ const heldState = page => page.evaluate(() => {
         pad                 = value => String(value).padStart(2, '0'),
         state               = {
             held      : app.held.result,
-            fresh     : app.checkDrop(trip, team, job),
+            fresh     : app.dropController.checkDrop(trip, team, job),
             heldClose : app.held.close,
             close,
             closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
@@ -252,10 +252,10 @@ const heldState = page => page.evaluate(() => {
             status    : trip.status
         };
 
-    app.clearPreview();
+    app.dropController.clearPreview();
     app.evaluate();
     state.planStatus = trip.status;
-    app.holdPreview(team.id, target);
+    app.dropController.holdPreview(team.id, target);
 
     return state;
 });
@@ -295,7 +295,7 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await page.evaluate(() => {
             const app = globalThis.bryntum.query('dispatchapp');
 
-            app.drag.showHeld('F', app.dropTargets()[0]);
+            app.drag.showHeld('F', app.dropController.dropTargets()[0]);
         });
         await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
@@ -417,7 +417,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
 
             return {
                 stepped : app.drag.keys.keyboard.trips.map(each => each.id),
-                fresh   : app.dropTargets().map(each => each.id)
+                fresh   : app.dropController.dropTargets().map(each => each.id)
             };
         });
 

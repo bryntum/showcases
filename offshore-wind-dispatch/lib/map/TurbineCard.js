@@ -21,7 +21,7 @@ import { rotorText, turbineSvg } from './Turbine.js';
  * @param {DispatchState} options.state
  * @param {TripModel[]} options.trips
  * @param {String} options.turbine
- * @param {Object} [options.drop] A team held over a trip, see DispatchApp#previewDrop
+ * @param {Object} [options.drop] A team held over a trip, see DropController#previewDrop
  * @param {TripModel} [options.selectedTrip] The trip selected in the schedule: of the trips serving the turbine (a
  * drop-off and a pickup), its visit is the one shown
  * @returns {Object} `{ name, sub, rating, stand, job, team, trip, when, hs, limit, note, tone, stopped, wind }`, the

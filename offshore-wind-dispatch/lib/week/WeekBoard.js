@@ -27,7 +27,7 @@ const
  *   its window is orange with how late
  * - Whole-day resource time ranges for the days without trips (VesselRangeModel): `No-go`, hatched, or `Free` until
  *   the window closes,
- *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropPreview). The cell the crew is held
+ *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropController). The cell the crew is held
  *   over is tinted blue like the Day view's target trip (`dropCell`)
  * - A header row renderer per day: the date, the crew transfer vessels' sea state, the wave height and the wind
  * - The Summary feature: the jobs planned against the jobs due, per day

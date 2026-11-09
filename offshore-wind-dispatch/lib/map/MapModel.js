@@ -113,7 +113,8 @@ const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
  * @param {TripModel[]} options.trips
  * @param {TripModel} [options.selectedTrip]
  * @param {String} [options.selectedTurbine]
- * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see DispatchApp#previewDrop
+ * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see
+ * DropController#previewDrop
  * @returns {Object} `{ markers, labels, routes, callout, selected }`: `markers` maps each turbine to
  * `{ status, dimmed }`, a label is `{ id, text, tone }`, a route `{ stops, kind }` (`selected`, `preview` or
  * none) and the callout the DomConfig children of its line, or `null`

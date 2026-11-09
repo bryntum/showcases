@@ -4,7 +4,7 @@ import { hhmm } from '../util/Time.js';
 
 /**
  * The content of the tooltip of a team held over a trip, as DomConfigs
- * @param {Object} drop See DispatchApp#previewDrop
+ * @param {Object} drop See DropController#previewDrop
  * @param {Boolean} [keyboard] Held from the keyboard, the tooltip lists the keys
  * @returns {Object[]} DomConfig
  */
@@ -80,7 +80,7 @@ export default class DropTooltip extends Tooltip {
 
     /**
      * Shows what a team gives on a trip, below a point
-     * @param {Object} drop See DispatchApp#previewDrop
+     * @param {Object} drop See DropController#previewDrop
      * @param {{x: Number, y: Number}} point In the viewport: a one px rectangle at the pointer, or at the stop held
      * from the keyboard
      * @param {Boolean} keyboard Held from the keyboard

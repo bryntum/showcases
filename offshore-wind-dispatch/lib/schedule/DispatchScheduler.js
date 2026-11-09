@@ -137,8 +137,8 @@ export default class DispatchScheduler extends Scheduler {
             header = me.forecastHeader = new ForecastHeader(config.dispatch);
 
         /**
-         * The trips a dragged team would fit on, outlined while the drag lasts (DropPreview#markFitting). Not a field
-         * of the trip: a change of the record would redraw the trip and its legs
+         * The trips a dragged team would fit on, outlined while the drag lasts (DropController#markFitting). Not a
+         * field of the trip: a change of the record would redraw the trip and its legs
          * @property {Set<TripModel>}
          */
         me.fittingTrips = new Set();
@@ -198,6 +198,9 @@ export default class DispatchScheduler extends Scheduler {
                     allowCreate     : false,
                     enableDelete    : false,
                     radius          : 3,
+                    // A short arrowhead, as the legend's key draws it (the default is a 6 × 6 triangle in its 9 × 6
+                    // box)
+                    markerDef       : 'M6,0 L6,6 L9,3 z',
                     // The line turns in the narrow gap before the stop it waits for
                     clearance       : 6,
                     showTooltip     : true,

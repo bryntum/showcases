@@ -27,7 +27,7 @@ export function createChip(team, job) {
  * Shows on the drag proxy what the team held gives, from the same check as the tooltip: green and "Fits SR-1, back
  * 12:40", red and the short reason, or neutral over empty space. Only touched when it changes, so it does not flicker
  * @param {HTMLElement} chip The proxy, or the chip held from the keyboard
- * @param {Object|null} drop See DispatchApp#previewDrop
+ * @param {Object|null} drop See DropController#previewDrop
  */
 export function showOnChip(chip, drop) {
     const

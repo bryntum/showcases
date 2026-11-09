@@ -6,11 +6,11 @@ import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
 import './DropTooltip.js';
 
 /**
- * What TeamDrag and KeyboardDrag call on the app's side of the drag (DropPreview): they move the team, it decides what
- * the team would get and books it
+ * What TeamDrag and KeyboardDrag call on the app's side of the drag (DropController): they move the team, it decides
+ * what the team would get and books it
  * @typedef {Object} DropHandler
  * @property {Object|null} held The team held and its check, `{ target, trip, team, job, result, reach, close }`, see
- * DropPreview#previewDrop. `null` while over nothing
+ * DropController#previewDrop. `null` while over nothing
  * @property {Function} waitingTeam `(teamId)`, the team waiting at the port and its job, `{ team, job }`
  * @property {Function} liftTeam `(teamId)`, the drag starts: the team's chip dims, the trips it fits on are outlined
  * @property {Function} previewDrop `(teamId, target, at)`, previews the team on a trip or a vessel's row of the Day
@@ -25,9 +25,9 @@ import './DropTooltip.js';
  * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following
  * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop. The whole time axis
  * of the schedule is its drop target: over a trip bar, or anywhere on a vessel's row, the app previews the stop the
- * team would get (DispatchApp#previewDrop), on that trip or the vessel's best one, or on a new trip from port: the trip
- * shows it, the map rings the turbines the trip can still reach, and a Bryntum Tooltip (DropTooltip), shown by the
- * point the team is held at, says when the trip is back against the window. The dispatch check is the drag's
+ * team would get (DropController#previewDrop), on that trip or the vessel's best one, or on a new trip from port: the
+ * trip shows it, the map rings the turbines the trip can still reach, and a Bryntum Tooltip (DropTooltip), shown by
+ * the point the team is held at, says when the trip is back against the window. The dispatch check is the drag's
  * validation: a team that does not fit marks the drag invalid (`context.valid`), and released there the app says why.
  * The proxy says it too (DragChip), as it moves, from the same check: "Fits SR-1, back 12:40" or "35 min after
  * window", neutral over empty space. Released where it fits, the app books it.
@@ -124,7 +124,7 @@ export default class TeamDrag {
         context.valid = Boolean(me.hover(me.targetAt(point), point)?.result.valid);
     }
 
-    // Released over a trip or a row, booked if it fits, else the app says why (DropPreview#dropTeam). Booked before
+    // Released over a trip or a row, booked if it fits, else the app says why (DropController#dropTeam). Booked before
     // the drag ends, so a new trip previewed for the team is kept
     onDrop() {
         const
@@ -220,7 +220,7 @@ export default class TeamDrag {
      * and the trip's highlight all show this one check
      * @param {TripModel|VesselModel|null} target
      * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {Object|null} See DispatchApp#previewDrop
+     * @returns {Object|null} See DropController#previewDrop
      */
     hover(target, point) {
         const

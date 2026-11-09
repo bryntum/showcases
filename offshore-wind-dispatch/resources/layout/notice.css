@@ -1,4 +1,4 @@
-/* The notice of the forecast (ForecastNotice.js) and the messages after a drop (DropPreview.js) */
+/* The notice of the forecast (ForecastNotice.js) and the messages after a drop (DropController.js) */
 
 /* The forecast's notice, a Container with an hbox layout, its Undo and Review buttons Bryntum Buttons */
 .ow-notice.b-widget {

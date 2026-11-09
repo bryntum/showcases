@@ -85,7 +85,7 @@ data/farm.json ──► DispatchState (site, forecasts, windows, teams, clock)
  (TripRendering) (resource time   (KpiBar)      (MapModel, TurbineMap,
                   ranges)                        TurbineCard)
 
-TeamTray ──► TeamDrag (DragHelper) ──► DropPreview#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
+TeamTray ──► TeamDrag (DragHelper) ──► DropController#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
 TurbineMap (turbines Store, selected Collection) ◄──► MapLink, DispatchApp ◄──► Scheduler selection and highlighting
 ```
 
@@ -117,8 +117,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
     `KpiClock`, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
-    tabs. It holds the selection and wires the parts together. `DropPreview.js` (a mixin of the app) previews and
-    books a dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
+    tabs. It holds the selection and wires the parts together. `DropController.js` previews and books a dropped
+    team (TeamDrag's handler), `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
     in the header (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a
     Container with two Buttons) and `Legend.js` the schedule's footer
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose `tbar` is the title bar, with the next forecast's

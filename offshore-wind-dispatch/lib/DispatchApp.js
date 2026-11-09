@@ -2,7 +2,7 @@ import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import { dayKpis } from './plan/Kpis.js';
-import DropPreview from './DropPreview.js';
+import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
@@ -22,7 +22,8 @@ const openingTurbine = 'T-41';
  * Offshore Wind Dispatch: the header with the weather window, the vessels and helicopters on the day's timeline with
  * the teams waiting at the port above it, and the map of the farm with the selected turbine beside it.
  *
- * The app holds the selection and the team being dragged (DropPreview), and refreshes the views when the plan changes:
+ * The app holds the selection, has the team being dragged previewed and booked (DropController), and refreshes the
+ * views when the plan changes:
  * a team dropped on a trip, a trip dragged, or a new forecast re-planning the day (ForecastPlanner). The map and the
  * schedule share the selection both ways, and the hover through MapLink.
  *
@@ -32,7 +33,7 @@ const openingTurbine = 'T-41';
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
  */
-export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
+export default class DispatchApp extends Panel.mixin(Responsive) {
     static $name = 'DispatchApp';
 
     static type = 'dispatchapp';
@@ -83,7 +84,14 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const { scheduler, board, map, tray, schedulePane, notice } = me.parts;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
-        me.drag            = new TeamDrag({ tray, scheduler, board, handler : me });
+        me.dropController  = new DropController({
+            dispatch,
+            scheduler,
+            tray,
+            onPreviewChange : () => me.refreshSide(),
+            onBooked        : booked => me.onTeamBooked(booked)
+        });
+        me.drag            = new TeamDrag({ tray, scheduler, board, handler : me.dropController });
 
         board.on({ dayClick : ({ index }) => me.openDay(index) });
 
@@ -163,6 +171,14 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     }
 
     /**
+     * The team held over a trip and its check, see DropController#held
+     * @property {Object|null}
+     */
+    get held() {
+        return this.dropController.held;
+    }
+
+    /**
      * Shows the plan: T-41 selected, the turbine the story is about, its trip with it, the forecast chart
      * drawn
      * @param {Object} [options]
@@ -216,7 +232,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.parts.schedulePane.showView('day');
 
         if (index !== me.dispatch.dayIndex) {
-            me.clearPreview();
+            me.dropController.clearPreview();
             me.scheduler.clearEventSelection();
             me.dispatch.showDay(index);
             showDay(index);
@@ -245,8 +261,16 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         });
     }
 
-    onPlanChange() {
-        this.replan();
+    // A team dropped and booked: on a trip of the Day view, its turbine and the trip selected
+    onTeamBooked({ trip, turbine }) {
+        const me = this;
+
+        if (trip) {
+            me.selectedTurbine = turbine;
+            me.scheduler.selectEvent(trip);
+        }
+
+        me.replan();
     }
 
     /**
@@ -264,7 +288,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             again = me.held && { teamId : me.held.team.id, target : me.held.target, at : me.held.at };
 
         me.replanning = true;
-        me.clearPreview();
+        me.dropController.clearPreview();
         change?.();
 
         try {
@@ -283,7 +307,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         // Held again, unless the pointer has moved on to another trip meanwhile
         if (again && !me.held) {
-            me.holdPreview(again.teamId, again.target, again.at);
+            me.dropController.holdPreview(again.teamId, again.target, again.at);
         }
 
         me.refreshAll();
@@ -324,7 +348,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             { kpis, tray, scheduler, board } = me.parts;
 
         kpis.draw({ site : dispatch.site.name, kpis : dayKpis(me.trips, dispatch) });
-        tray.draw(dispatch.waitingTeams, me.lifted);
+        tray.draw(dispatch.waitingTeams, me.dropController.lifted);
         scheduler.refreshDispatch();
         board.draw(scheduler.weekTrips);
         me.parts.schedulePane.refreshBar();

@@ -19,22 +19,54 @@ const
     tell         = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
 
 /**
- * The app's side of dragging a team onto a vessel (TeamDrag calls it): lifting the team from the tray, previewing its
- * stop on a trip and checking it against the weather window, booking it on release. The team held and its check are
- * `held`, which DispatchApp#replan checks again whenever the plan or the forecast changes.
+ * The app's side of dragging a team onto a vessel, the `handler` TeamDrag calls (see TeamDrag's DropHandler): lifting
+ * the team from the tray, previewing its stop on a trip and checking it against the weather window, booking it on
+ * release. The team held and its check are `held`, which DispatchApp#replan checks again whenever the plan or the
+ * forecast changes.
  *
  * A team is held over a trip bar or anywhere on a vessel's row. Over a trip it can still join, the stop goes on that
  * trip. Elsewhere on the row it goes on the vessel's best trip: the one it fits on that is back first, else the first
  * one, so the tooltip says why it does not fit. A vessel with no trip left to join gets a new trip from port at its
  * next sailing, a draft trip shown until the team is booked or moves on.
  *
- * A mixin of DispatchApp, which provides `dispatch`, `trips`, `scheduler`, `refreshSide()` and `onPlanChange()`.
+ * DispatchApp creates it with what it needs, and is told through two callbacks: the preview changed (the map and the
+ * card follow it), and a team was booked (the plan changed).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Toast
  */
-export default Target => class DropPreview extends Target {
-    static $name = 'DropPreview';
+export default class DropController {
+    /**
+     * @param {Object} options
+     * @param {DispatchState} options.dispatch
+     * @param {DispatchScheduler} options.scheduler The Day view, whose event store holds the trips
+     * @param {TeamTray} options.tray The crews waiting at the port
+     * @param {Function} options.onPreviewChange Called when the team held or its preview changed
+     * @param {Function} options.onBooked Called with `{ trip, turbine }` once a team is booked: on a trip of the Day
+     * view, or (no `trip`) on a new trip on a day of the Week view
+     */
+    constructor({ dispatch, scheduler, tray, onPreviewChange, onBooked }) {
+        const me = this;
+
+        Object.assign(me, { dispatch, scheduler, tray, onPreviewChange, onBooked });
+
+        /**
+         * The team held and its check, `{ target, trip, team, job, result, reach, close }` (see previewDrop), `null`
+         * while it is over nothing
+         * @property {Object|null}
+         */
+        me.held   = null;
+        // The ID of the team dragged, its chip dimmed in the tray
+        me.lifted = null;
+    }
+
+    /**
+     * The trips of the day shown
+     * @property {TripModel[]}
+     */
+    get trips() {
+        return this.scheduler.trips;
+    }
 
     /**
      * A team waiting at the port, and its job
@@ -47,7 +79,7 @@ export default Target => class DropPreview extends Target {
 
     // The team's chip stays in the tray, dimmed. Not drawn anew, DragHelper holds on to the chip it drags from
     liftTeam(teamId) {
-        const chip = this.parts.tray.chipOf(teamId);
+        const chip = this.tray.chipOf(teamId);
 
         this.lifted = teamId;
         this.markFitting(teamId);
@@ -82,7 +114,7 @@ export default Target => class DropPreview extends Target {
             me.holdPreview(teamId, target, blocked ? at : null);
         }
 
-        me.refreshSide();
+        me.onPreviewChange();
 
         return me.held;
     }
@@ -379,9 +411,7 @@ export default Target => class DropPreview extends Target {
         trip.draft = false;
         trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
         me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
-        me.selectedTurbine  = job.turbine;
-        me.scheduler.selectEvent(trip);
-        me.onPlanChange();
+        me.onBooked({ trip, turbine : job.turbine });
 
         tell(`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`);
     }
@@ -398,7 +428,7 @@ export default Target => class DropPreview extends Target {
         addTrip(me.scheduler.eventStore, vessel, { id : plan.id, departs : plan.start + (day - shownDay()) * 24 * 60,
             day }, [stopOf(team, job)]);
         me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
-        me.onPlanChange();
+        me.onBooked({ trip : null, turbine : job.turbine });
 
         tell(`${team.name} booked on ${plan.id}, ${dayName(day)}, back in port by ${hhmm(result.back)}`);
     }
@@ -416,10 +446,12 @@ export default Target => class DropPreview extends Target {
     }
 
     endDrag() {
-        this.clearFitting();
-        this.clearPreview();
-        this.lifted = null;
-        this.parts.tray.draw(this.dispatch.waitingTeams);
-        this.refreshSide();
+        const me = this;
+
+        me.clearFitting();
+        me.clearPreview();
+        me.lifted = null;
+        me.tray.draw(me.dispatch.waitingTeams);
+        me.onPreviewChange();
     }
-};
+}
