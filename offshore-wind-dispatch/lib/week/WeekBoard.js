@@ -76,6 +76,8 @@ export default class WeekBoard extends Scheduler {
         zoomOnTimeAxisDoubleClick : false,
         autoCreate                : false,
         useInitialAnimation       : false,
+        // The engine's calculations here take moments: no progress bar under the header
+        projectProgressReporting  : null,
         multiEventSelect          : false,
 
         features : {

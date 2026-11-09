@@ -84,6 +84,14 @@
         }
     }
 
+    /* A trip under the pointer (Bryntum's hover state of the NestedEvents parent): a dotted outline round the trip's
+       own element, its label and its time on station, as the drop target's but quieter */
+    .b-sch-event-wrap:is(:hover, .b-hover) > .b-sch-event.ow-trip:not(.ow-trip-drop) {
+        outline        : 1px dotted var(--ow-c-work-line);
+        outline-offset : 3px;
+        border-radius  : var(--ow-c-radius);
+    }
+
     /* The selected trip: its label in the text colour */
     .b-sch-event-wrap.b-selected > .b-sch-event.ow-trip .ow-trip-head {
         color       : var(--ow-ink);

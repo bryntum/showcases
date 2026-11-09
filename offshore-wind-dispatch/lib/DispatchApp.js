@@ -100,6 +100,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         // The responsive state may have been set before the items existed
         me.updatePhone(Boolean(me.phone));
+        // The card shows the opening turbine from the first paint, so the rail keeps its layout while start() runs
+        me.selectedTurbine = openingTurbine;
         me.evaluate();
         me.refreshAll();
     }
