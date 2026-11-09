@@ -72,7 +72,7 @@ export default class DropController {
      * @returns {Object} `{ team, job }`
      */
     waitingTeam(teamId) {
-        return this.dispatch.waitingTeams.find(({ team }) => team.id === teamId);
+        return this.dispatch.waitingStore.getById(teamId);
     }
 
     // The team's chip stays in the tray, dimmed (TeamTray follows the state's `lifted`)
@@ -402,7 +402,7 @@ export default class DropController {
         me.held    = null;
         trip.draft = false;
         trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
-        me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
+        me.dispatch.waitingStore.remove(team.id);
         me.onBooked({ trip, turbine : job.turbine });
 
         tell(`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`);
@@ -419,7 +419,7 @@ export default class DropController {
         // Its departure in minutes of that day
         addTrip(me.scheduler.eventStore, vessel,
             { id : plan.id, departs : plan.start, midnight : me.dispatch.dateOf(day), day }, [stopOf(team, job)]);
-        me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
+        me.dispatch.waitingStore.remove(team.id);
         me.onBooked({ trip : null, turbine : job.turbine });
 
         tell(`${team.name} booked on ${plan.id}, ${DateHelper.format(me.dispatch.dateOf(day), 'ddd D')}, ` +

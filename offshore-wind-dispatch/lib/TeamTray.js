@@ -7,8 +7,13 @@ import './TeamChip.js';
  * then a small card per team (TeamChip). Cards are dragged onto a trip, or held over one from the keyboard with Enter,
  * see TeamDrag.
  *
+ * It shows a Store of the teams waiting (DispatchState#waitingStore, WaitingTeamModel): a chip per record, in the
+ * store's order, kept in step by the store's `add`, `remove` and `refresh` events. A team booked is removed from the
+ * store, and its chip from the tray; the chip of a team still waiting stays, DragHelper holds on to the chip it drags.
+ *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
+ * https://bryntum.com/products/scheduler/docs/api/Core/data/Store#event-change
  */
 export default class TeamTray extends Container {
     static $name = 'TeamTray';
@@ -21,6 +26,18 @@ export default class TeamTray extends Container {
          * @config {String}
          */
         port : null,
+
+        /**
+         * The teams waiting, WaitingTeamModel records
+         * @config {Core.data.Store}
+         */
+        store : null,
+
+        /**
+         * The ID of the team dragged: its chip stays in the tray, dimmed
+         * @prp {String|null}
+         */
+        lifted : null,
 
         cls    : 'ow-tray',
         layout : { type : 'hbox', align : 'center' },
@@ -38,43 +55,62 @@ export default class TeamTray extends Container {
         return this.items.filter(item => item.isTeamChip);
     }
 
-    /**
-     * Shows the waiting teams: the chip of a team that is still waiting stays, DragHelper holds on to the chip it drags
-     * @param {Object[]} waiting `{ team, job, fault }`
-     * @param {String} [lifted] The team being dragged
-     */
-    draw(waiting, lifted) {
+    updateStore(store) {
+        const me = this;
+
+        me.detachListeners('store');
+        store?.on({ name : 'store', add : 'onStoreAdd', remove : 'onStoreRemove', refresh : 'fill', thisObj : me });
+        me.fill();
+    }
+
+    updatePort() {
+        this.updateCount();
+    }
+
+    updateLifted(lifted) {
+        this.chips.forEach(chip => chip.lifted = chip.team.id === lifted);
+    }
+
+    // A chip per team, in the store's order
+    fill() {
+        const me = this;
+
+        me.chips.forEach(chip => chip.destroy());
+        me.onStoreAdd({ records : me.store?.records ?? [], index : 0 });
+    }
+
+    // Teams waiting again or for the first time: their chips at their place, after the title and the empty note
+    onStoreAdd({ records, index }) {
         const
-            me               = this,
-            { title, empty } = me.widgetMap,
-            chips            = new Map(me.chips.map(chip => [chip.team.id, chip])),
-            ids              = new Set(waiting.map(({ team }) => team.id)),
-            // The chips go after the title and the empty note
-            first            = me.items.indexOf(empty) + 1;
+            me    = this,
+            first = me.items.indexOf(me.widgetMap.empty) + 1;
 
-        title.html = `Crews waiting at ${me.port ?? 'the port'} · ${waiting.length}`;
+        records.forEach(({ team, job, fault }, i) => me.insert({
+            type   : 'teamchip',
+            lifted : team.id === me.lifted,
+            team,
+            job,
+            fault
+        }, first + index + i));
+        me.updateCount();
+    }
 
-        // Out go the chips of the teams that have a trip now
-        chips.forEach((chip, id) => {
-            if (!ids.has(id)) {
-                chip.destroy();
-                chips.delete(id);
-            }
-        });
+    // Teams booked: their chips go
+    onStoreRemove({ records }) {
+        records.forEach(({ id }) => this.chipOf(id)?.destroy());
+        this.updateCount();
+    }
 
-        // In the order of the waiting teams
-        waiting.forEach(({ team, job, fault }, index) => {
-            const chip = chips.get(team.id);
+    // The title's count and the note shown when no team waits
+    updateCount() {
+        const
+            { title, empty } = this.widgetMap ?? {},
+            count            = this.store?.count ?? 0;
 
-            chip?.draw(job);
-
-            if (!chip || me.items.indexOf(chip) !== first + index) {
-                me.insert(chip ?? { type : 'teamchip', team, job, fault }, first + index);
-            }
-        });
-
-        me.chips.forEach(chip => chip.lifted = chip.team.id === lifted);
-        empty.hidden = Boolean(ids.size);
+        if (title) {
+            title.html   = `Crews waiting at ${this.port ?? 'the port'} · ${count}`;
+            empty.hidden = Boolean(count);
+        }
     }
 
     /**

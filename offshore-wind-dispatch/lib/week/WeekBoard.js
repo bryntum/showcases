@@ -34,6 +34,11 @@ const
  *
  * A click on a day's header or on a cell opens the Day view on that date (`dayClick`).
  *
+ * It follows the plan on its own: the Day view's project (`plan`) holds the trips of the whole week, its `dataReady`
+ * and the dispatch state's `change` (a new forecast) redraw the board, while it shows; a hidden board is drawn when it
+ * is shown again. Its cells are derived from the trips (one per vessel and day, WeekCells), its stores keep the
+ * records that stay (`syncDataOnLoad`).
+ *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler#config-fillTicks
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/preset/ViewPreset#config-headers
@@ -52,6 +57,12 @@ export default class WeekBoard extends Scheduler {
          * @config {DispatchState}
          */
         dispatch : null,
+
+        /**
+         * The Day view's project, whose event store holds the trips of the whole week
+         * @config {Scheduler.model.ProjectModelEnterprise}
+         */
+        plan : null,
 
         /**
          * `true` at phone widths: a narrow vessel column
@@ -160,12 +171,29 @@ export default class WeekBoard extends Scheduler {
         });
 
         me.days = [];
+        config.dispatch.on({ change : 'onPlanChange', buffer : 1, thisObj : me });
         me.on({
+            // Drawn when shown, if the plan changed while it was hidden
+            show                : 'onPlanChange',
             eventClick          : ({ eventRecord }) => me.openDay(eventRecord.day),
             scheduleClick       : ({ date }) => me.openDay(dayOf(me.dispatch, date)),
             timeAxisHeaderClick : ({ startDate }) => me.openDay(dayOf(me.dispatch, startDate)),
             thisObj             : me
         });
+    }
+
+    updatePlan(plan) {
+        this.detachListeners('plan');
+        plan?.on({ name : 'plan', dataReady : 'onPlanChange', buffer : 1, thisObj : this });
+    }
+
+    // The plan or the forecast changed: drawn now if the board shows, else once it is shown
+    onPlanChange() {
+        const me = this;
+
+        if (!me.isDestroyed && me.isVisible && me.plan) {
+            me.draw(me.plan.eventStore.rootNode.children ?? []);
+        }
     }
 
     updatePhone(phone) {

@@ -96,6 +96,7 @@ export default class TeamChip extends Widget {
         super.afterConstruct();
 
         this.draw();
+        this.updateLifted(this.lifted);
     }
 
     /**

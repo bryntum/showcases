@@ -119,6 +119,15 @@ export default class SchedulePanel extends Panel {
         });
     }
 
+    afterConstruct() {
+        super.afterConstruct();
+
+        const { scheduler, board } = this.widgetMap;
+
+        // The Week view follows the trips of the Day view's project
+        board.plan = scheduler.project;
+    }
+
     /**
      * Shows the Day or the Week view of the schedule
      * @param {'day'|'week'} view

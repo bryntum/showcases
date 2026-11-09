@@ -114,6 +114,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         // The trip selected is the Scheduler's own state
         scheduler.on({ eventSelectionChange : 'refreshSide', buffer : 1, thisObj : me });
 
+        // The crews waiting at the port are the dispatch state's store
+        tray.store = dispatch.waitingStore;
         board.on({ dayClick : ({ index }) => me.openDay(index) });
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
@@ -241,8 +243,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         if (state === 'forecast') {
             await me.applyForecast();
         }
-        else if (state === 'drag' && me.dispatch.waiting.length) {
-            me.drag.showHeld(me.dispatch.waitingTeams[0].team.id, first);
+        else if (state === 'drag' && me.dispatch.waitingStore.count) {
+            me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
         }
 
         await scheduler.forecastHeader.refresh();
@@ -374,18 +376,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
      */
     refreshAll() {
         const
-            me                               = this,
-            { dispatch }                     = me,
-            { kpis, tray, scheduler, board } = me.parts ?? {};
+            me                    = this,
+            { dispatch }          = me,
+            { kpis, scheduler }   = me.parts ?? {};
 
         if (me.isDestroyed || !kpis) {
             return;
         }
 
         kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dayKpis(me.trips, dispatch) });
-        tray.draw(dispatch.waitingTeams, me.appState.lifted);
         scheduler.refreshDispatch();
-        board.draw(scheduler.weekTrips);
         me.parts.schedulePane.refreshBar();
         me.refreshSide();
     }
@@ -416,10 +416,10 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         me.mapLink.refresh();
     }
 
-    // The chip of the team lifted is dimmed in the tray, at once: DragHelper holds on to it
+    // The chip of the team lifted is dimmed in the tray, at once
     onStateChange({ name, value }) {
         if (name === 'lifted') {
-            this.parts.tray.draw(this.dispatch.waitingTeams, value);
+            this.parts.tray.lifted = value;
         }
     }
 

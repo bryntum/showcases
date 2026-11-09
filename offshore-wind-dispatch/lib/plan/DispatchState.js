@@ -1,4 +1,5 @@
-import { Base, DateHelper, Events } from '@bryntum/core-enterprise';
+import { Base, DateHelper, Events, Store } from '@bryntum/core-enterprise';
+import WaitingTeamModel from '../model/WaitingTeamModel.js';
 import { closingTimes, valueAt } from './Weather.js';
 import { firstSailing } from './Farm.js';
 import { weekPlan } from './WeekPlan.js';
@@ -20,7 +21,8 @@ import { parseTime } from '../util/Time.js';
  * Scheduler in Dates: `toDate` and `toMinutes` convert between the two for the day shown, `dateOf` gives a day's
  * midnight, the day's labels (`dayShort`, `nextDay`, `nextLong`) are formatted by DateHelper.
  *
- * It fires `change` when the day shown, the forecast or the teams waiting change, the views follow it.
+ * The teams waiting at the port are a Store (`waitingStore`, WaitingTeamModel), the team tray follows it. The state
+ * fires `change` when the day shown or the forecast changes, the views follow it.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
@@ -30,9 +32,9 @@ export default class DispatchState extends Base.mixin(Events) {
     static $name = 'DispatchState';
 
     /**
-     * Fired when the day shown, the forecast in use or the teams waiting change
+     * Fired when the day shown or the forecast in use changes
      * @event change
-     * @param {String} name `day`, `forecast` or `waiting`
+     * @param {String} name `day` or `forecast`
      */
 
     /**
@@ -52,8 +54,6 @@ export default class DispatchState extends Base.mixin(Events) {
         me.dayJobs  = data.jobs;
         me.allJobs  = { ...me.week.jobs, ...data.jobs };
         me.faults   = new Set(data.faults);
-        // The turbines whose team waits at the port for a trip
-        me._waiting = [...data.waiting];
         me.day      = { dayStart : data.site.dayStart, dayEnd : data.site.dayEnd };
         // Each day's own: its forecasts and the one in use, its windows, its clock, the dependencies of its plan
         me.days     = me.week.days.map(({ forecasts }, index) => ({
@@ -65,6 +65,18 @@ export default class DispatchState extends Base.mixin(Events) {
             dependencies    : index ? [] : data.dependencies
         }));
         me.dayIndex = 0;
+        /**
+         * The teams waiting at the port for a trip, with their job, in the order they wait
+         * @member {Core.data.Store} waitingStore
+         */
+        me.waitingStore = new Store({
+            modelClass : WaitingTeamModel,
+            data       : data.waiting.map(turbine => {
+                const job = me.jobAt(turbine);
+
+                return { id : job.team, team : me.teams.get(job.team), job, fault : me.faults.has(turbine) };
+            })
+        });
         // Midnight of today, the first day of the week
         me.weekStart = DateHelper.clearTime(new Date());
     }
@@ -142,12 +154,7 @@ export default class DispatchState extends Base.mixin(Events) {
      * @property {String[]}
      */
     get waiting() {
-        return this._waiting;
-    }
-
-    set waiting(value) {
-        this._waiting = value;
-        this.trigger('change', { name : 'waiting' });
+        return this.waitingStore.map(record => record.job.turbine);
     }
 
     /**
@@ -328,14 +335,10 @@ export default class DispatchState extends Base.mixin(Events) {
 
     /**
      * The teams waiting at the port with their job, and whether its turbine is stopped
-     * @property {Object[]} `{ team, job, fault }`
+     * @property {WaitingTeamModel[]} `{ team, job, fault }`
      */
     get waitingTeams() {
-        return this.waiting.map(turbine => {
-            const job = this.jobAt(turbine);
-
-            return { team : this.teams.get(job.team), job, fault : this.faults.has(turbine) };
-        });
+        return this.waitingStore.records;
     }
 
     /**
