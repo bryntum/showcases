@@ -16,8 +16,8 @@
         flex          : none;
         display       : grid;
         place-items   : center;
-        width         : 34px;
-        height        : 34px;
+        width         : 36px;
+        height        : 36px;
         border-radius : 50%;
         background    : conic-gradient(var(--ow-ring) var(--ow-use, 0%), color-mix(in srgb, var(--ow-c-muted) 14%, transparent) 0);
 
@@ -30,8 +30,8 @@
         flex             : none;
         display          : grid;
         place-items      : center;
-        width            : 30px;
-        height           : 30px;
+        width            : 32px;
+        height           : 32px;
         border-radius    : 50%;
         color            : var(--ow-c-muted);
         /* Opaque, so the ring shows only round its edge */
@@ -39,8 +39,8 @@
     }
 
     .ow-resource-icon {
-        width  : 17px;
-        height : 17px;
+        width  : 18px;
+        height : 18px;
     }
 
     .ow-resource-text {
