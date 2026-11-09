@@ -65,8 +65,24 @@
     }
 }
 
+/* Fitted to a trip (TurbineMap#fitTo) the map zooms in, its text keeps its size */
+.ow-map-whole.b-button {
+    position         : absolute;
+    inset-block-start  : 10px;
+    inset-inline-end   : 10px;
+    min-height       : 26px;
+    padding          : 0 10px;
+    font-size        : 12px;
+    font-weight      : 600;
+    color            : var(--ow-ink);
+    background-color : var(--ow-surface);
+    border           : 1px solid var(--ow-border);
+    border-radius    : 6px;
+    box-shadow       : 0 2px 6px rgb(0 0 0 / 12%);
+}
+
 .ow-port text {
-    font-size   : 10.5px;
+    font-size   : calc(10.5px / var(--ow-map-zoom, 1));
     font-weight : 600;
     fill        : var(--ow-ink-sub);
 }
@@ -163,7 +179,7 @@
 }
 
 .ow-map-label text {
-    font-size       : 10.5px;
+    font-size       : calc(10.5px / var(--ow-map-zoom, 1));
     font-weight     : 700;
     fill            : var(--ow-plan);
     paint-order     : stroke;

@@ -1,24 +1,27 @@
-import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
+import { DomHelper, DragHelper, StringHelper } from '@bryntum/core-enterprise';
 import { teamChipHtml } from './TeamTray.js';
 import { icon } from './util/Icons.js';
 import { duration, hhmm } from './util/Time.js';
 
 /**
- * Dragging a team from the tray onto a trip, with pointer events, so mouse, pen and touch work alike. The chip follows
- * the pointer. Over a trip the app previews the stop the team would get (DispatchApp#previewDrop): the trip shows it,
- * the map rings the turbines the trip can still reach, and a tooltip says when the trip is back against the window.
- * Released over a trip the app books it if it fits. Escape or releasing anywhere else puts the team back.
+ * Dragging a team from the tray onto a trip. Bryntum's DragHelper runs the drag: the threshold, the proxy following
+ * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop, and the trip bars
+ * (`.b-sch-event-wrap`) as the drop targets. Over a trip the app previews the stop the team would get
+ * (DispatchApp#previewDrop): the trip shows it, the map rings the turbines the trip can still reach, and a tooltip says
+ * when the trip is back against the window. The dispatch checks are the drag's validation: a team that does not fit
+ * marks the drag invalid, and released there the app says why. Released over a trip that fits, the app books it.
  *
- * From the keyboard, Enter or Space on a focused chip holds the team over the selected trip (or the first one), the
- * arrow keys move it to the previous or next trip, Enter or Space books it, and Escape or Tab puts it back. The tooltip
- * is a live region, so a screen reader reads what each trip would give.
+ * DragHelper has no keyboard drag, so the keyboard holds a team over a trip itself: Enter or Space on a focused chip
+ * holds the team over the selected trip (or the first one), the arrow keys move it to the previous or next trip,
+ * Enter or Space books it, and Escape or Tab puts it back. The tooltip is a live region, so a screen reader reads what
+ * each trip would give.
  *
  * The trip under the pointer is found from the event element's `data-event-id`, which Scheduler sets on each bar.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
+ * https://bryntum.com/products/scheduler/examples/drag-from-grid/
  */
-
-const
-    // How far the pointer moves before a press becomes a drag, px
-    threshold = 4;
 
 /**
  * The tooltip of a team held over a trip
@@ -49,6 +52,8 @@ export function dropTipHtml({ trip, team, job, result, reach, close }, keyboard 
         text(result.margin < 0 ? `${result.reason}, ${duration(-result.margin)} late` : result.reason)}</div>${keys}`;
 }
 
+const chipSelector = '.ow-team[data-team]';
+
 export default class TeamDrag {
     /**
      * @param {Object} options
@@ -62,31 +67,136 @@ export default class TeamDrag {
 
         Object.assign(me, { source, scheduler, handler });
 
-        me.listeners = {
-            pointermove   : event => me.onPointerMove(event),
-            pointerup     : event => me.onPointerUp(event),
-            pointercancel : () => me.cancel(),
-            keydown       : event => event.key === 'Escape' && me.cancel()
-        };
-        me.onPointerDown = event => me.onDown(event);
-        me.onChipKey     = event => me.onChipKeyDown(event);
-        me.onHeldKey     = event => me.onHeldKeyDown(event);
-        source.addEventListener('pointerdown', me.onPointerDown);
+        me.dragHelper = new DragHelper({
+            callOnFunctions      : true,
+            outerElement         : source,
+            targetSelector       : chipSelector,
+            dropTargetSelector   : '.b-sch-event-wrap[data-event-id]',
+            // A small chip centred on the pointer, the team's place in the tray stays, dimmed
+            cloneTarget          : true,
+            autoSizeClonedTarget : false,
+            constrain            : false,
+            createProxy          : element => me.createChip(element.dataset.team),
+            // A team held from the keyboard goes back first
+            isElementDraggable   : () => {
+                me.endHeld();
+
+                return true;
+            },
+            onDragStart : ({ context }) => me.onDragStart(context),
+            onDrag      : ({ context, event }) => me.onDrag(context, event),
+            onDrop      : ({ context }) => me.onDrop(context),
+            onReset     : () => me.end()
+        });
+
+        me.onChipKey = event => me.onChipKeyDown(event);
+        me.onHeldKey = event => me.onHeldKeyDown(event);
         source.addEventListener('keydown', me.onChipKey);
     }
 
     destroy() {
-        this.cancel();
-        this.source.removeEventListener('pointerdown', this.onPointerDown);
+        this.dragHelper.abort(true);
+        this.dragHelper.destroy();
+        this.endHeld();
         this.source.removeEventListener('keydown', this.onChipKey);
     }
+
+    get isDragging() {
+        return Boolean(this.team);
+    }
+
+    //region Pointer, DragHelper
+
+    // The proxy DragHelper drags, the team's compact chip
+    createChip(teamId) {
+        const { team, job } = this.handler.waitingTeam(teamId);
+
+        return DomHelper.createElement({
+            class : 'ow-drag-chip',
+            html  : `${teamChipHtml(team, job, true)}${icon('hand-grabbing', 'ow-drag-hand')}`
+        });
+    }
+
+    onDragStart(context) {
+        this.lift(context.grabbed.dataset.team);
+    }
+
+    onDrag(context, event) {
+        const
+            me    = this,
+            point = { x : event.clientX, y : event.clientY };
+
+        // Kept for refresh(), the plan may change under a still pointer
+        me.point = point;
+
+        // The dispatch checks validate the drop: over a trip the team fits on
+        context.valid = Boolean(me.hover(me.tripOf(context.target), point)?.result.valid);
+    }
+
+    // Released over a trip, booked if it fits, else the app says why (DropPreview#dropTeam)
+    onDrop(context) {
+        const
+            me    = this,
+            // The preview redraws the trip under the pointer, its element then may not be the one of the last move
+            { point } = me,
+            trip  = me.tripOf(point ? document.elementFromPoint(point.x, point.y) : context.target),
+            team  = me.team;
+
+        me.end();
+
+        if (trip && team) {
+            me.handler.dropTeam(team, trip);
+        }
+    }
+
+    /**
+     * Checks the team again where it is held, after the plan or the forecast changed (DispatchApp#replan): the trip
+     * under the pointer, or the trip held over without one, previewed and its tooltip redrawn against the plan as it is
+     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have moved some to
+     * tomorrow
+     */
+    refresh() {
+        const
+            me   = this,
+            trip = me.handler.drop?.trip;
+
+        if (!me.isDragging) {
+            return;
+        }
+
+        if (me.keyboard) {
+            me.keyboard.trips = me.handler.dropTargets();
+            me.keyboard.index = me.keyboard.trips.indexOf(trip);
+        }
+
+        if (me.point) {
+            me.hover(me.tripOf(document.elementFromPoint(me.point.x, me.point.y)), me.point);
+        }
+        else if (trip) {
+            me.holdOver(trip);
+        }
+        // Held without a pointer, the team no longer waits: put it back
+        else {
+            me.end();
+        }
+    }
+
+    // The trip of an element in a trip bar, should it be over a leg
+    tripOf(element) {
+        const wrap = element?.closest?.('.b-sch-event-wrap[data-event-id]');
+
+        return wrap && this.scheduler.element.contains(wrap) ?
+            this.scheduler.eventStore.getById(wrap.dataset.eventId)?.trip ?? null : null;
+    }
+
+    //endregion
 
     //region Keyboard
 
     // Enter or Space on a team's chip holds it over a trip
     onChipKeyDown(event) {
         const chip = (event.key === 'Enter' || event.key === ' ') && !this.isDragging &&
-            event.target.closest('.ow-team[data-team]');
+            event.target.closest(chipSelector);
 
         if (chip) {
             event.preventDefault();
@@ -107,7 +217,6 @@ export default class TeamDrag {
         if (trips.length) {
             me.keyboard = { trips, index };
             me.showHeld(teamId, trips[index]);
-            document.addEventListener('keydown', me.onHeldKey, true);
         }
     }
 
@@ -115,29 +224,28 @@ export default class TeamDrag {
     // Tab puts it back and moves on
     onHeldKeyDown(event) {
         const
-            me           = this,
-            { keyboard } = me,
-            team         = me.press?.team,
-            step         = { ArrowRight : 1, ArrowDown : 1, ArrowLeft : -1, ArrowUp : -1 }[event.key];
+            me   = this,
+            team = me.team,
+            step = { ArrowRight : 1, ArrowDown : 1, ArrowLeft : -1, ArrowUp : -1 }[event.key];
 
-        if (!keyboard || !team) {
+        if (!team || !me.held) {
             return;
         }
 
         if (event.key === 'Tab') {
-            me.cancel();
+            me.endHeld();
 
             return;
         }
 
-        if (step) {
+        if (step && me.keyboard) {
             me.step(step);
         }
-        else if (event.key === 'Enter' || event.key === ' ') {
+        else if ((event.key === 'Enter' || event.key === ' ') && me.keyboard) {
             me.book(team);
         }
         else if (event.key === 'Escape') {
-            me.cancel();
+            me.endHeld();
             me.focusChip(team);
         }
         else {
@@ -168,7 +276,7 @@ export default class TeamDrag {
             me   = this,
             trip = me.handler.drop?.trip ?? me.keyboard.trips[me.keyboard.index];
 
-        me.end();
+        me.endHeld();
 
         if (trip) {
             me.handler.dropTeam(team, trip);
@@ -181,148 +289,7 @@ export default class TeamDrag {
     focusChip(teamId) {
         const { source } = this;
 
-        (source.querySelector(`.ow-team[data-team="${teamId}"]`) ?? source.querySelector('.ow-team[data-team]'))
-            ?.focus();
-    }
-
-    //endregion
-
-    get isDragging() {
-        return Boolean(this.chip);
-    }
-
-    onDown(event) {
-        const chip = event.button === 0 && event.target.closest('.ow-team[data-team]');
-
-        if (chip) {
-            event.preventDefault();
-            // A team held from the keyboard goes back first
-            this.cancel();
-            this.press = { x : event.clientX, y : event.clientY, team : chip.dataset.team };
-            Object.entries(this.listeners).forEach(([name, fn]) => document.addEventListener(name, fn));
-        }
-    }
-
-    onPointerMove(event) {
-        const
-            me        = this,
-            { press } = me;
-
-        if (!press) {
-            return;
-        }
-
-        if (!me.isDragging) {
-            if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < threshold) {
-                return;
-            }
-
-            me.begin(press.team);
-        }
-
-        // Kept for refresh(), the plan may change under a still pointer
-        press.point = { x : event.clientX, y : event.clientY };
-        me.moveTo(press.point.x, press.point.y);
-        me.hover(me.tripAt(press.point.x, press.point.y), press.point);
-    }
-
-    /**
-     * Checks the team again where it is held, after the plan or the forecast changed (DispatchApp#replan): the trip
-     * under the pointer, or the trip held over without one, previewed and its tooltip redrawn against the plan as it is
-     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have moved some to
-     * tomorrow
-     */
-    refresh() {
-        const
-            me            = this,
-            { press }     = me,
-            trip          = me.handler.drop?.trip;
-
-        if (!me.isDragging) {
-            return;
-        }
-
-        if (me.keyboard) {
-            me.keyboard.trips = me.handler.dropTargets();
-            me.keyboard.index = me.keyboard.trips.indexOf(trip);
-        }
-
-        if (press.point) {
-            me.hover(me.tripAt(press.point.x, press.point.y), press.point);
-        }
-        else if (trip) {
-            me.holdOver(trip);
-        }
-        // Held without a pointer, the team no longer waits: put it back
-        else {
-            me.cancel();
-        }
-    }
-
-    onPointerUp(event) {
-        const
-            me   = this,
-            trip = me.isDragging && me.tripAt(event.clientX, event.clientY),
-            team = me.press?.team;
-
-        me.end();
-
-        if (trip) {
-            me.handler.dropTeam(team, trip);
-        }
-    }
-
-    // The trip under a point, the chip and the tooltip let the pointer through
-    tripAt(x, y) {
-        const
-            { scheduler } = this,
-            wrap          = document.elementFromPoint(x, y)?.closest('.b-sch-event-wrap[data-event-id]');
-
-        // A leg's trip, should the pointer be over a leg
-        return wrap && scheduler.element.contains(wrap) ?
-            scheduler.eventStore.getById(wrap.dataset.eventId)?.trip ?? null : null;
-    }
-
-    begin(teamId) {
-        const
-            me              = this,
-            { team, job }   = me.handler.liftTeam(teamId);
-
-        me.chip = DomHelper.createElement({
-            class  : 'ow-drag-chip',
-            parent : document.body,
-            html   : `${teamChipHtml(team, job, true)}${icon('hand-grabbing', 'ow-drag-hand')}`
-        });
-        me.tip = DomHelper.createElement({ class : 'ow-drop-tip', parent : document.body, hidden : true });
-        // Read out as the team moves from trip to trip
-        me.tip.setAttribute('role', 'status');
-        me.tip.setAttribute('aria-live', 'polite');
-    }
-
-    moveTo(x, y) {
-        Object.assign(this.chip.style, { left : `${x - 20}px`, top : `${y - 14}px` });
-    }
-
-    /**
-     * Previews the team on a trip, or none, and places the tooltip below the point
-     * @param {TripModel|null} trip
-     * @param {{x: Number, y: Number}} point In the viewport
-     */
-    hover(trip, point) {
-        const
-            me   = this,
-            drop = me.handler.previewDrop(me.press.team, trip);
-
-        me.tip.hidden = !drop;
-
-        if (drop) {
-            me.tip.innerHTML = dropTipHtml(drop, Boolean(me.keyboard));
-            me.tip.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
-            Object.assign(me.tip.style, {
-                left : `${Math.min(point.x + 4, innerWidth - me.tip.offsetWidth - 8)}px`,
-                top  : `${Math.min(point.y + 42, innerHeight - me.tip.offsetHeight - 8)}px`
-            });
-        }
+        (source.querySelector(`.ow-team[data-team="${teamId}"]`) ?? source.querySelector(chipSelector))?.focus();
     }
 
     /**
@@ -334,10 +301,10 @@ export default class TeamDrag {
     showHeld(teamId, trip) {
         const me = this;
 
-        me.press = { team : teamId };
-        me.begin(teamId);
-        // Removed by end() with the other drag listeners. Held from the keyboard, onHeldKeyDown sees Escape first
-        document.addEventListener('keydown', me.listeners.keydown);
+        me.lift(teamId);
+        me.held = me.createChip(teamId);
+        document.body.appendChild(me.held);
+        document.addEventListener('keydown', me.onHeldKey, true);
         me.holdOver(trip);
     }
 
@@ -348,7 +315,7 @@ export default class TeamDrag {
     holdOver(trip) {
         const me = this;
 
-        me.handler.previewDrop(me.press.team, trip);
+        me.handler.previewDrop(me.team, trip);
 
         if (me.keyboard) {
             me.scheduler.scrollEventIntoView(trip, { block : 'nearest' });
@@ -364,31 +331,75 @@ export default class TeamDrag {
                     { x : innerWidth / 2, y : innerHeight / 2 };
 
             // Still held over this trip, the keys may have moved on
-            if (me.chip && me.handler.drop?.trip === trip) {
-                me.moveTo(point.x, point.y + 22);
+            if (me.held && me.handler.drop?.trip === trip) {
+                DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
                 me.hover(trip, point);
             }
         }));
     }
 
+    endHeld() {
+        const me = this;
+
+        if (me.held) {
+            document.removeEventListener('keydown', me.onHeldKey, true);
+            me.held.remove();
+            me.held = me.keyboard = null;
+            me.end();
+        }
+    }
+
+    //endregion
+
+    //region Shared
+
+    // Lifts the team from the tray, with the tooltip of the trip it is over
+    lift(teamId) {
+        const me = this;
+
+        me.team = teamId;
+        me.handler.liftTeam(teamId);
+        me.tip = DomHelper.createElement({ class : 'ow-drop-tip', parent : document.body, hidden : true });
+        // Read out as the team moves from trip to trip
+        me.tip.setAttribute('role', 'status');
+        me.tip.setAttribute('aria-live', 'polite');
+    }
+
+    /**
+     * Previews the team on a trip, or none, and places the tooltip below the point
+     * @param {TripModel|null} trip
+     * @param {{x: Number, y: Number}} point In the viewport
+     * @returns {Object|null} See DispatchApp#previewDrop
+     */
+    hover(trip, point) {
+        const
+            me   = this,
+            drop = me.handler.previewDrop(me.team, trip);
+
+        me.tip.hidden = !drop;
+
+        if (drop) {
+            me.tip.innerHTML = dropTipHtml(drop, Boolean(me.keyboard));
+            me.tip.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
+            Object.assign(me.tip.style, {
+                left : `${Math.min(point.x + 4, innerWidth - me.tip.offsetWidth - 8)}px`,
+                top  : `${Math.min(point.y + 42, innerHeight - me.tip.offsetHeight - 8)}px`
+            });
+        }
+
+        return drop;
+    }
+
+    // The team goes back to the tray, or was booked, the preview ends
     end() {
         const me = this;
 
-        Object.entries(me.listeners).forEach(([name, fn]) => document.removeEventListener(name, fn));
-        document.removeEventListener('keydown', me.onHeldKey, true);
-        me.keyboard = null;
-
-        if (me.chip) {
-            me.chip.remove();
+        if (me.team) {
             me.tip.remove();
-            me.chip = me.tip = null;
+            me.tip = me.team = me.point = null;
             me.handler.endDrag();
         }
-
-        me.press = null;
     }
 
-    cancel() {
-        this.end();
-    }
+    //endregion
 }

@@ -1,5 +1,5 @@
 /* A team being dragged (TeamDrag.js): the chip following the pointer and the tooltip of the trip under it. Both are
- * in the page's body, fixed to the viewport, the pointer passes through them */
+ * in the page's body, the pointer passes through them. The chip is DragHelper's proxy, moved by translate */
 
 .ow-drag-chip, .ow-drop-tip {
     position       : fixed;
@@ -10,6 +10,9 @@
 }
 
 .ow-drag-chip {
+    position           : absolute;
+    inset-block-start  : 0;
+    inset-inline-start : 0;
     z-index          : 10001;
     display          : flex;
     align-items      : center;

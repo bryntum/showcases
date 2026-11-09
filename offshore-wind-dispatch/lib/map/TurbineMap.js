@@ -1,7 +1,46 @@
-import { Collection, DomHelper, Model, Store, StringHelper, Tooltip, Widget } from '@bryntum/core-enterprise';
+import { Button, Collection, DomHelper, Model, Store, StringHelper, Tooltip, Widget } from '@bryntum/core-enterprise';
 import { mapPort, mapXY, rowName, substation, turbineIds } from '../plan/Farm.js';
 import { icon } from '../util/Icons.js';
 import { turbineMarker } from './Turbine.js';
+
+const
+    // The whole farm, the SVG's own viewBox
+    farmView    = Object.freeze({ x : 0, y : 0, width : 440, height : 330 }),
+    // The port's marker and its label, kept in view when fitted to a trip
+    portBox     = { x1 : 4, y1 : 288, x2 : 140, y2 : 310 },
+    // Room around the fitted turbines for their labels, and the closest the map zooms in
+    fitPad      = 26,
+    minWidth    = 220,
+    viewKey     = ({ x, y, width, height }) => [x, y, width, height].map(n => n.toFixed(1)).join(' ');
+
+/**
+ * The viewBox that fits turbines and the port, at the farm's aspect ratio, inside the farm
+ * @param {String[]} ids
+ * @returns {Object} `{ x, y, width, height }`
+ */
+function fitView(ids) {
+    const
+        points = ids.map(mapXY),
+        x1     = Math.min(portBox.x1, ...points.map(p => p.x)) - fitPad,
+        y1     = Math.min(portBox.y1, ...points.map(p => p.y)) - fitPad,
+        x2     = Math.max(portBox.x2, ...points.map(p => p.x)) + fitPad,
+        y2     = Math.max(portBox.y2, ...points.map(p => p.y)) + fitPad,
+        aspect = farmView.width / farmView.height,
+        width  = Math.min(farmView.width, Math.max(minWidth, x2 - x1, (y2 - y1) * aspect)),
+        height = width / aspect,
+        clamp  = (value, size, max) => Math.min(Math.max(value, 0), max - size);
+
+    if (width >= farmView.width) {
+        return farmView;
+    }
+
+    return {
+        x : clamp((x1 + x2 - width) / 2, width, farmView.width),
+        y : clamp((y1 + y2 - height) / 2, height, farmView.height),
+        width,
+        height
+    };
+}
 
 /**
  * A turbine of the map: where it is drawn and its status class (see MapModel and map.css)
@@ -143,6 +182,20 @@ export default class TurbineMap extends Widget {
             getHtml     : ({ activeTarget }) => me.tipHtml?.(activeTarget.dataset.turbine) ?? ''
         });
 
+        me.svgElement = me.element.querySelector('.ow-map-svg');
+        me.view       = { ...farmView };
+        // Back to the whole farm, shown only while the map is fitted to a trip
+        me.wholeFarmButton = new Button({
+            appendTo : me.element,
+            cls      : 'ow-map-whole',
+            text     : 'Whole farm',
+            hidden   : true,
+            onClick  : () => {
+                me.fitTo(null);
+                me.trigger('wholeFarm');
+            }
+        });
+
         me.element.addEventListener('click', event => me.onMapClick(event));
         me.element.addEventListener('keydown', event => me.onMapKeyDown(event));
         me.element.addEventListener('focusin', event => me.onMarkerFocus(event));
@@ -152,10 +205,63 @@ export default class TurbineMap extends Widget {
     }
 
     doDestroy() {
+        cancelAnimationFrame(this.frame);
+        this.wholeFarmButton?.destroy();
         this.tooltip?.destroy();
         this.turbines?.destroy();
         super.doDestroy();
     }
+
+    //region Zoom
+
+    /**
+     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. No zoom buttons and
+     * no panning, the selection decides what is shown
+     * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
+     */
+    fitTo(ids) {
+        const
+            me     = this,
+            target = ids?.length ? fitView(ids) : farmView,
+            key    = viewKey(target);
+
+        me.wholeFarmButton.hidden = target === farmView;
+        me.element.classList.toggle('ow-map-zoomed', target !== farmView);
+
+        if (key === me.viewTarget) {
+            return;
+        }
+
+        me.viewTarget = key;
+        cancelAnimationFrame(me.frame);
+
+        const
+            from     = { ...me.view },
+            started  = performance.now(),
+            duration = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 450,
+            step     = time => {
+                const
+                    t    = duration ? Math.min(1, (time - started) / duration) : 1,
+                    ease = 1 - (1 - t) ** 3;
+
+                me.setView(Object.fromEntries(Object.keys(from).map(k => [k, from[k] + (target[k] - from[k]) * ease])));
+
+                if (t < 1) {
+                    me.frame = requestAnimationFrame(step);
+                }
+            };
+
+        me.frame = requestAnimationFrame(step);
+    }
+
+    setView(view) {
+        this.view = view;
+        this.svgElement.setAttribute('viewBox', viewKey(view));
+        // Text keeps its size as the map zooms in
+        this.svgElement.style.setProperty('--ow-map-zoom', String(farmView.width / view.width));
+    }
+
+    //endregion
 
     //region Drawing
 

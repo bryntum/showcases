@@ -80,6 +80,47 @@ test.describe('Offshore Wind Dispatch map selection', () => {
     });
 });
 
+test.describe('Offshore Wind Dispatch map zoom', () => {
+    test('a trip selected fits the map to its turbines and the port, Whole farm goes back', async({ page }) => {
+        await open(page);
+
+        const
+            svg       = page.locator('.ow-side .ow-map-svg'),
+            wholeFarm = page.locator('.ow-side .ow-map-whole'),
+            // Whether a point of the map's coordinates is inside the current viewBox
+            inView    = (box, { x, y }) => x >= box[0] && y >= box[1] && x <= box[0] + box[2] && y <= box[1] + box[3],
+            viewBox   = async() => (await svg.getAttribute('viewBox')).split(' ').map(Number);
+
+        // On load the whole farm, nothing selected by the user yet
+        await expect(svg).toHaveAttribute('viewBox', '0 0 440 330');
+        await expect(wholeFarm).toBeHidden();
+
+        await trip(page, 'SR-1').click();
+
+        // Animated to a smaller box holding SR-1's turbines and the port
+        await expect(wholeFarm).toBeVisible();
+        await expect.poll(async() => (await viewBox())[2]).toBeLessThan(440);
+        await page.waitForTimeout(600);
+
+        const
+            box    = await viewBox(),
+            points = await page.evaluate(() => {
+                const map = globalThis.bryntum.query('turbinemap');
+
+                return ['T-07', 'T-08', 'T-17'].map(id => map.turbines.getById(id)).map(({ x, y }) => ({ x, y }));
+            });
+
+        for (const point of [...points, { x : 14, y : 300 }]) {
+            expect(inView(box, point)).toBe(true);
+        }
+
+        await wholeFarm.click();
+
+        await expect(svg).toHaveAttribute('viewBox', '0 0 440 330');
+        await expect(wholeFarm).toBeHidden();
+    });
+});
+
 test.describe('Offshore Wind Dispatch map hover and tooltip', () => {
     test('a turbine hovered lights up its trip, a trip hovered rings its turbines', async({ page }) => {
         await open(page);

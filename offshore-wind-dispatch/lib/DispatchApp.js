@@ -94,7 +94,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             afterEventDrop       : 'onTripDrop',
             thisObj              : me
         });
-        map.on({ selectionChange : 'onTurbineSelectionChange', thisObj : me });
+        map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
         me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
         me.element.addEventListener('click', event => me.onAction(event));
 
@@ -196,6 +196,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
 
         scheduler.selectEvent(first);
+        // From here on, a trip or turbine the user selects fits the map to it
+        me.started = true;
 
         if (state === 'forecast') {
             me.applyForecast();
@@ -303,6 +305,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }));
         // The plan under the pointer may have changed
         me.mapLink?.refresh();
+        me.fitMap(selectedTrip, turbine);
 
         if (turbine) {
             card.draw(cardInfo({ state : dispatch, trips, turbine, drop }));
@@ -388,6 +391,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             trip    = selected?.[0],
             current = me.selectedTurbine;
 
+        me.mapFollows = Boolean(me.started);
+
         // The trip's first turbine, unless the selected one is on the trip
         if (trip && !trip.allStops.some(stop => stop.turbine === current) && !trip.removed?.includes(current)) {
             me.selectedTurbine = trip.allStops[0]?.turbine;
@@ -405,6 +410,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                 leg.from <= minute && minute < leg.to);
 
         if (stop) {
+            this.mapFollows      = true;
             this.selectedTurbine = stop.turbine;
             this.refreshSide();
         }
@@ -422,6 +428,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
 
         me.selectedTurbine = turbine;
+        me.mapFollows      = true;
 
         if (trip && !me.scheduler.isEventSelected(trip)) {
             me.scheduler.selectEvent(trip);
@@ -429,6 +436,25 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
 
         me.refreshSide();
+    }
+
+    /**
+     * Fits the map to the selected trip's turbines and the port, or to the selected turbine and the port, once the
+     * user selected one. A team held over a trip shows the whole farm, what the trip can still reach is all over it
+     * @param {TripModel|null} trip
+     * @param {String|null} turbine
+     */
+    fitMap(trip, turbine) {
+        const
+            turbines = trip ? [...trip.turbines, ...(trip.removed ?? [])] : [],
+            fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
+
+        this.widgetMap.map.fitTo(this.mapFollows && !this.drop ? fit : null);
+    }
+
+    // The map's Whole farm button: the map stays on the whole farm until the user selects another trip or turbine
+    onWholeFarm() {
+        this.mapFollows = false;
     }
 
     //endregion

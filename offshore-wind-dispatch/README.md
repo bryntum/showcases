@@ -50,7 +50,7 @@ data/farm.json ──► DispatchState (site, forecasts, windows, teams, clock)
  (TripRendering) (resource time   (KpiBar)      (MapModel, TurbineMap,
                   ranges)                        TurbineCard)
 
-TeamTray ──► TeamDrag (pointer events) ──► DropPreview#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
+TeamTray ──► TeamDrag (DragHelper) ──► DropPreview#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
 TurbineMap (turbines Store, selected Collection) ◄──► MapLink, DispatchApp ◄──► Scheduler selection and highlighting
 ```
 
@@ -143,11 +143,18 @@ properties, and it is drawn again when the page switches between light and dark.
 
 ### The drag: `lib/TeamDrag.js`, `lib/plan/Planner.js`
 
-The team chips are dragged with pointer events, so mouse, pen and touch work alike. The trip under the pointer is the
-`.b-sch-event-wrap[data-event-id]` there. Over a trip, `Planner#previewDrop` places the team's stop after the last
+The team chips are dragged with Bryntum's `DragHelper` (the same helper as the Scheduler "drag from grid" demo), which
+handles the threshold, the proxy chip, mouse, pen and touch, Escape and the animated return of a refused drop. The
+trips' `.b-sch-event-wrap[data-event-id]` are its drop targets, and the dispatch check below is its validation: a team
+that does not fit marks the drag invalid. The keyboard (Enter on a chip, the arrows, Enter again) holds a team over a
+trip without DragHelper, which has no keyboard drag. Over a trip, `Planner#previewDrop` places the team's stop after the last
 one and tells when the trip would be back, whether the seats and the certificates allow it, and by how much it misses
 the window. `Planner#reachable` tries the same stop at each of the 60 turbines to find the ones the trip could still
 reach, which the map rings.
+
+A trip or turbine the user selects animates the map's viewBox to fit the trip's turbines and the port
+(`TurbineMap#fitTo`). A "Whole farm" button, shown only while zoomed, goes back. There are no zoom buttons and no
+panning. While a team is held the map shows the whole farm, since what the trip can still reach is spread across it.
 
 ### A new forecast: `lib/plan/ForecastPlanner.js`
 

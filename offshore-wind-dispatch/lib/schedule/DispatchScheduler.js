@@ -213,8 +213,13 @@ export default class DispatchScheduler extends Scheduler {
         me.fitTicks();
     }
 
+    // The Group feature runs the column renderer for its header rows too, they have no vessel to draw (renderGroup)
     renderVesselCell(vessel) {
         const state = this.dispatch;
+
+        if (vessel.isSpecialRow || vessel.isGroupHeader || !state.limits[vessel.window]) {
+            return '';
+        }
 
         return renderVessel(vessel, {
             now   : state.now,
@@ -282,7 +287,7 @@ export default class DispatchScheduler extends Scheduler {
             me            = this,
             state         = me.dispatch,
             end           = toDate(state.day.dayEnd * 60),
-            nogo          = me.resourceStore.map(vessel => ({
+            nogo          = me.resourceStore.allRecords.filter(vessel => !vessel.isSpecialRow).map(vessel => ({
                 id         : `nogo-${vessel.id}`,
                 resourceId : vessel.id,
                 startDate  : toDate(state.closeOf(vessel)),

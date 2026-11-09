@@ -19,13 +19,20 @@ const stopOf = (team, job, preview = false) => ({ turbine : job.turbine, minutes
 export default Target => class DropPreview extends Target {
     static $name = 'DropPreview';
 
+    /**
+     * A team waiting at the port, and its job
+     * @param {String} teamId
+     * @returns {Object} `{ team, job }`
+     */
+    waitingTeam(teamId) {
+        return this.dispatch.waitingTeams.find(({ team }) => team.id === teamId);
+    }
+
+    // The team's chip stays in the tray, dimmed. Not drawn anew, DragHelper holds on to the chip it drags from
     liftTeam(teamId) {
-        const entry = this.dispatch.waitingTeams.find(({ team }) => team.id === teamId);
-
         this.lifted = teamId;
-        this.widgetMap.tray.draw(this.dispatch.waitingTeams, teamId);
-
-        return entry;
+        this.widgetMap.tray.element.querySelector(`.ow-team[data-team="${CSS.escape(teamId)}"]`)
+            ?.classList.add('ow-team-lifted');
     }
 
     /**
