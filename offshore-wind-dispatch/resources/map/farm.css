@@ -55,6 +55,11 @@
 }
 
 .ow-port {
+    /* The anchor a little heavier than the Light icons' line, small as it is on the map */
+    .ow-icon :is(path, line, circle, polyline) {
+        stroke-width : 20;
+    }
+
     text {
         font-size   : calc(10.5px / var(--ow-map-zoom, 1));
         font-weight : 600;

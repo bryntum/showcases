@@ -34,7 +34,7 @@ export function mapSvg(site) {
     <path class="ow-cable" d="M${oss.x.toFixed(1)} ${oss.y.toFixed(1)} C 120 230, 40 270, -10 300"/>
     <g class="ow-routes" aria-hidden="true"></g>
     <g class="ow-port" transform="translate(14 300)">
-        <circle r="9"/>${placed('anchor', 12)}<text x="14" y="4">${text(`${site.port} · ${site.portKm} km`)}</text>
+        <circle r="9"/>${placed('anchor', 14)}<text x="14" y="4">${text(`${site.port} · ${site.portKm} km`)}</text>
     </g>
     <g class="ow-oss" transform="translate(${oss.x.toFixed(1)} ${oss.y.toFixed(1)})">
         <title>Offshore substation</title>
