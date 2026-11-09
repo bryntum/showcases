@@ -1,7 +1,7 @@
 /* The tooltip of the map on a turbine (map/TurbineTooltip.js), the turbine card at a smaller size */
 
 .ow-card.ow-card-tip {
-    grid-template-columns : 92px minmax(0, 1fr);
+    grid-template-columns : var(--ow-tip-art-w) minmax(0, 1fr);
     gap                   : 14px;
     box-sizing            : border-box;
     padding               : 16px 18px;
@@ -9,8 +9,11 @@
     max-width             : calc(100vw - 32px);
     color                 : var(--ow-ink);
 
+    /* The illustration as tall as the text beside it */
+    --ow-tip-art-w : 124px;
+
     .ow-turbine {
-        width : 92px;
+        width : var(--ow-tip-art-w);
     }
 
     .ow-card-title b {

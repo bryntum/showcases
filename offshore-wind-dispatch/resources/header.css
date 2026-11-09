@@ -222,6 +222,11 @@
 
 /* The now line in the header: a pill in the hours row, the line runs from it down through the chart into the rows */
 .ow-scheduler .b-grid-header {
+    /* The shaded past is for the rows only: its header element would cover the chart */
+    .ow-past {
+        display : none;
+    }
+
     .ow-now {
         z-index             : 4;
         overflow            : visible;

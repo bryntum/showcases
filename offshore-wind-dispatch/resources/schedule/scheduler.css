@@ -55,6 +55,12 @@
     }
 
     /* The now line, in the rows */
+    /* The hours already gone, lightly shaded in the rows */
+    .b-sch-range.ow-past {
+        --b-time-range-opacity    : 1;
+        --b-time-range-background : var(--ow-c-past);
+    }
+
     .b-sch-line.ow-now {
         --b-time-range-background : none;
         --b-time-range-line-color : var(--ow-now);

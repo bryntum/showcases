@@ -475,7 +475,7 @@ export default class WaveChart {
             strokeOpacity : limitFade,
             lineDash      : [3, 3],
             strokeWidth   : 1,
-            label         : { text, color : ink, placement : 'top-left', padding : 2, fontSize : 9, fontWeight : 500, fontFamily }
+            label         : { text, color : ink, placement : 'top-left', padding : 6, fontSize : 9, fontWeight : 500, fontFamily }
         };
     }
 

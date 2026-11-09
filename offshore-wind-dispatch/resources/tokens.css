@@ -61,6 +61,8 @@
     --ow-c-work-line   : color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 55%);
     /* A selected row's tint: opaque, so it reads the same over the white vessel cell and the timeline */
     --ow-c-row-selected : color-mix(in srgb, var(--ow-c-work) 7%, var(--ow-surface));
+    /* The hours already gone today, in the rows: a light shade */
+    --ow-c-past        : light-dark(rgb(16 24 40 / 4%), rgb(255 255 255 / 3%));
     --ow-c-risk-tint   : light-dark(#fff3e0, #3a2810);
     --ow-c-risk-line   : light-dark(#e07b00, #f0962e);
     --ow-c-risk-ink    : light-dark(#8a4500, #ffb766);
