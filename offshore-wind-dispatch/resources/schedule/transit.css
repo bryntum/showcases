@@ -70,10 +70,10 @@
         }
     }
 
-    /* Past the window: orange from the close on (--ow-late-from, set by the trip's renderer) to the return */
+    /* Back after the window: the whole sail back in the warning colour, one colour for less noise (the close is shown
+       by the 14:00 line and the hatch) */
     &.ow-transit-late {
-        background : linear-gradient(to right, var(--ow-c-transit) var(--ow-late-from, 0%),
-            var(--ow-c-risk-line) var(--ow-late-from, 0%));
+        background : var(--ow-c-risk-line);
 
         &::after {
             border-color     : var(--ow-c-risk-line);

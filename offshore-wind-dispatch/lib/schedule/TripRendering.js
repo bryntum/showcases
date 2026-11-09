@@ -1,4 +1,3 @@
-import { windowShare } from '../plan/Planner.js';
 import { portMinutes } from '../plan/Farm.js';
 import { iconConfig } from '../util/Icons.js';
 import { duration, hhmm, nextDay, shownDay, toMinutes } from '../util/Time.js';
@@ -229,13 +228,9 @@ export function renderDependency({ domConfig, dependencyRecord }, isChain) {
  * @param {Object} limit `{ hs }` or `{ wind }`
  * @returns {String}
  */
-function limitText(limit) {
-    return limit.hs == null ? `wind ≤ ${limit.wind}` : `Hs ≤ ${limit.hs.toFixed(1)}`;
-}
-
 /**
- * The vessel column: its name, and one muted line with its type, its limit, and the most people on board of its trips
- * against its seats, "CTV · Hs ≤ 1.5 · 3/12". How much of what is left of its window its trips book is in the title
+ * The vessel column: its icon in a ring of the seats taken (the limit and the seats on its tooltip), its name, and its
+ * type under it, "CTV"
  * @param {VesselModel} vessel
  * @param {Object} options `{ now, close, limit }`
  * @returns {Object} DomConfig
@@ -244,8 +239,6 @@ export function renderVessel(vessel, { now, close, limit }) {
     const
         // Its trips of the day shown, not their legs, which are assigned to it too
         trips = vessel.events.filter(trip => !trip.isLeg && trip.day === shownDay() && trip.status !== 'moved'),
-        spans = trips.map(trip => ({ start : trip.startMinute, end : trip.endMinute })),
-        share = Math.round(windowShare(spans, now, close) * 100),
         pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0),
         // The seats taken, as a ring round the icon: orange when one of its trips is back after its window
         used  = vessel.seats ? Math.round(pax / vessel.seats * 100) : 0,
@@ -255,21 +248,19 @@ export function renderVessel(vessel, { now, close, limit }) {
         class    : `ow-resource ow-resource-${vessel.mode}`,
         children : [
             {
-                class    : `ow-resource-ring${risk ? ' ow-resource-ring-risk' : ''}`,
-                style    : `--ow-use:${used}%`,
+                class       : `ow-resource-ring${risk ? ' ow-resource-ring-risk' : ''}`,
+                style       : `--ow-use:${used}%`,
+                // The limit and the seats on hover (Bryntum's own tooltip), the ring shows how full it is
+                'data-btip' : `${vessel.kind} · ${limit.hs == null ? `wind up to ${limit.wind} m/s` :
+                    `waves up to Hs ${limit.hs.toFixed(1)} m`} · ${pax} of ${vessel.seats} seats taken`,
                 children : [iconConfig(vessel.glyph, 'ow-resource-icon')]
             },
             {
                 class    : 'ow-resource-text',
                 children : [
                     { tag : 'b', text : vessel.name },
-                    {
-                        tag   : 'small',
-                        // The full type, "AW169 · hoist", the line has its first word
-                        title : `${vessel.kind}: ${pax} of ${vessel.seats} seats taken, ${share}% of the weather ` +
-                            'window left today is booked',
-                        text : `${vessel.kind.split(' · ')[0]} · ${limitText(limit)} · ${pax}/${vessel.seats}`
-                    }
+                    // Just the type, "CTV", "SWATH", "AW169": the limit and the seats are on the ring's tooltip
+                    { tag : 'small', text : vessel.kind.split(' · ')[0] }
                 ]
             }
         ]

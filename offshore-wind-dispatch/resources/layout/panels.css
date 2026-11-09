@@ -19,6 +19,9 @@
 .ow-side {
     --b-panel-gap : var(--ow-gutter);
 
+    /* Only the two cards have a surface: the column itself is transparent, or its square corners show round theirs */
+    background : transparent;
+
     flex       : none;
     min-height : 0;
 }

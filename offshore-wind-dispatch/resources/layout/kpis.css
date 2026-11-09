@@ -60,7 +60,8 @@
 
     b {
         font-size      : var(--ow-size-hero);
-        font-weight    : 600;
+        /* Large but light: the size makes it the one big thing, not the weight */
+        font-weight    : 400;
         line-height    : 1.15;
         letter-spacing : -0.01em;
         color          : var(--ow-ink);
