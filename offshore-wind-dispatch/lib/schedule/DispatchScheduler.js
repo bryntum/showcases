@@ -9,7 +9,7 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { beforeTripEditShow, canEditTrip, tripEdit } from './TripEdit.js';
+import { beforeTripEditShow, tripEdit } from './TripEdit.js';
 import { hhmm, shownDay, toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
@@ -74,7 +74,7 @@ export default class DispatchScheduler extends Scheduler {
         phone : false,
 
         cls                       : 'ow-scheduler',
-        rowHeight                 : 58,
+        rowHeight                 : 56,
         barMargin                 : 0,
         resourceMargin            : margins,
         // Fully custom bars
@@ -214,13 +214,13 @@ export default class DispatchScheduler extends Scheduler {
         }
     }
 
-    // A leg opens its trip's editor, a trip under way or moved to tomorrow none
+    // A leg opens its trip's editor. The draft trip shown while a team is dragged has none
     onBeforeTripEdit({ taskRecord }) {
-        if (taskRecord.isLeg && canEditTrip(taskRecord.trip)) {
+        if (taskRecord.isLeg && !taskRecord.trip.draft) {
             queueMicrotask(() => this.editEvent(taskRecord.trip));
         }
 
-        return !taskRecord.isLeg && canEditTrip(taskRecord);
+        return !taskRecord.isLeg && !taskRecord.draft;
     }
 
     /**
@@ -371,7 +371,7 @@ export default class DispatchScheduler extends Scheduler {
     updatePhone(phone) {
         const me = this;
 
-        me.rowHeight = phone ? 54 : 58;
+        me.rowHeight = phone ? 54 : 56;
 
         if (me.columns?.count) {
             me.columns.first.width = phone ? 118 : 214;

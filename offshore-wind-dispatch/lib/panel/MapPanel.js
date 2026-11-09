@@ -84,7 +84,7 @@ export default class MapPanel extends Panel {
                                 }
                             }
                         },
-                        map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '16 16 0' },
+                        map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '4 16 0' },
                         legend : { type : 'maplegend' }
                     }
                 },

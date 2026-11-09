@@ -90,6 +90,7 @@
     --ow-bar-control    : 30px;
     /* A card's inner inset: its title bar, its left column, and the header and crews tray lined up with them */
     --ow-inset          : 16px;
+    --ow-bar-inset      : 12px;
     /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
        the corner curve ends. The cards inside are concentric: radius less padding, never below the smallest radius a
        card keeps (which is where the two are equal) */

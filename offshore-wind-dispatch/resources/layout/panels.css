@@ -40,19 +40,20 @@
     }
 }
 
-/* The Panel's tbar as the title bar: one row 40px high, the title, a note, then the buttons at the end */
+/* The Panel's tbar as the title bar: one row, the title, a note, then the buttons at the end. As far from the card's
+   top as from its side: 12px all round, a little less than the cards' content inset to keep the schedule's rows in view
+   at 1600 x 960 */
 .ow-panel-bar.b-toolbar {
     --b-toolbar-gap     : 12px;
 
     flex             : none;
     box-sizing       : border-box;
-    height           : 40px;
     min-height       : 0;
-    padding          : 0;
+    padding          : var(--ow-bar-inset) 0;
     border-block-end : 1px solid var(--ow-border);
 
     > .b-toolbar-content {
-        padding : 0 var(--ow-inset);
+        padding : 0 var(--ow-bar-inset);
         gap     : 12px;
     }
 }
