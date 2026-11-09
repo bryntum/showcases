@@ -232,17 +232,27 @@ export default class WaveChart {
             // The values are labelled by valueLabels(), under their points
             label   : { enabled : false },
             tooltip : {
-                renderer : ({ datum }) => ({
-                    heading : `${hhmm(Math.floor(datum.t) * 60)} – ${hhmm((Math.floor(datum.t) + 1) * 60)}`,
-                    title   : 'Significant wave height',
-                    data    : [
-                        { label : 'Hs', value : `${datum.hs.toFixed(1)} m` },
-                        {
-                            label : 'Crew transfer',
-                            value : datum.hs > swath ? 'No vessel' : datum.hs > ctv ? 'SWATH only' : 'CTV and SWATH'
-                        }
-                    ]
-                })
+                // What the hour means for the crews first, then the numbers behind it. Hs (significant wave height) is
+                // the mean of the highest third of the waves; the largest in a sea state reach about 1.9 × Hs
+                // The points added where the line crosses a limit sit on the limit: they report their hour's value
+                renderer : ({ datum }) => {
+                    const
+                        hour = Math.floor(datum.t),
+                        hs   = datum.edge ? this.forecast.hs[hour - this.day.dayStart] ?? datum.hs : datum.hs;
+
+                    return {
+                        heading : `${hhmm(hour * 60)} – ${hhmm((hour + 1) * 60)}`,
+                        title   : hs > swath ? 'No crew transfer' : hs > ctv ? 'SWATH only' : 'CTV and SWATH can transfer',
+                        data    : [
+                            {
+                                label : 'Hs',
+                                value : `${hs.toFixed(1)} m${hs > swath ? `, over the SWATH limit (${swath.toFixed(1)} m)` :
+                                    hs > ctv ? `, over the CTV limit (${ctv.toFixed(1)} m)` : ''}`
+                            },
+                            { label : 'Largest waves', value : `about ${(hs * 1.9).toFixed(1)} m` }
+                        ]
+                    };
+                }
             }
         };
     }
