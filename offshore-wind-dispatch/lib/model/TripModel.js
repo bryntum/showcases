@@ -1,6 +1,6 @@
+import { DateHelper } from '@bryntum/core-enterprise';
 import { EventModelEnterprise } from '@bryntum/scheduler-enterprise';
-import { buildLegs, timeLegs, tripEnd, turbinesOf } from '../plan/Planner.js';
-import { toDate, toMinutes } from '../util/Time.js';
+import { turbinesOf } from '../plan/Planner.js';
 import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
 
 /**
@@ -24,15 +24,21 @@ import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
  *
  * The trip's stops are read from its stop children (`stops`). Changing them goes through `layout()`, which puts the
  * legs between them from the farm's geography (Planner#buildLegs). A stop child's ID is `<trip>:<turbine>`, so a
- * dependency can point at it. After each calculation `wait` holds the minutes the trip waits on station, so the planner
- * knows when it is back without waiting for the next calculation (`endMinute`, `plan`).
+ * dependency can point at it.
+ *
+ * Its times are the engine's: the departure and the return are the trip's `outerStartDate` and `outerEndDate` (its
+ * start and end with the buffer), the legs' times their records' dates, the wait on station the gaps the engine leaves
+ * between the legs. They are read once the engine has calculated a change (`await project.commitAsync()`), the app
+ * redraws on the project's `dataReady`. The planner counts in minutes since the trip's midnight, `departs`,
+ * `endMinute` and `legs` give the engine's Dates in those minutes.
  *
  * Its parts, read from different angles:
  *
  * - `legRecords` the child event records, the stops and hops at sea, in order
  * - `stops` the plan's stops as plain `{ turbine, minutes, team }`, a held team's previewed stop left out
  * - `allStops` the stops as the trip is shown: `stops` with the previewed one at the end
- * - `legs` the whole run as plain timed objects, `{ type, from, to, ... }` in minutes, the sail out and back included
+ * - `legs` the whole run as the engine placed it, plain `{ type, from, to, ... }` in minutes, the sail out and back
+ *   included
  * - `transits` only the sail out and back, the trip's buffer: `{ out, back }` in minutes
  *
  * Learn more:
@@ -48,12 +54,10 @@ export default class TripModel extends EventModelEnterprise {
         { name : 'change', defaultValue : null },
         // The turbines the forecast moved to tomorrow
         { name : 'removed', type : 'array' },
-        // The departure before the forecast brought it forward (`pulled`), minutes since midnight
-        { name : 'previousDeparts', type : 'number', defaultValue : null },
+        // The departure before the forecast brought it forward (`pulled`)
+        { name : 'previousDeparture', type : 'date', defaultValue : null },
         // `on-plan`, `at-risk` or the change, kept up to date by the app (DispatchApp#evaluate)
         { name : 'status', defaultValue : 'on-plan' },
-        // Minutes the trip waits on station for another trip, from the engine's last calculation (updateWait)
-        { name : 'wait', type : 'number', defaultValue : 0, persist : false },
         // A new trip from port, shown while a team is held over a vessel that has no trip it could join
         { name : 'draft', type : 'boolean', persist : false },
         // Drop-off, Pickup
@@ -116,20 +120,62 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The departure, minutes since midnight: the trip's start, at its first stop, less the sail out
-     * @property {Number}
+     * Midnight of the trip's day, minute 0 of its times
+     * @property {Date}
      */
-    get departs() {
-        return toMinutes(this.trip.startDate) - this.trip.transits.out;
+    get midnight() {
+        return DateHelper.clearTime(this.trip.startDate);
     }
 
     /**
-     * Back at port, minutes since midnight: the departure, the legs and the wait on station. The same as the engine's
-     * end once it has calculated, and right away after a change, before it has
+     * A Date as minutes since the trip's midnight
+     * @param {Date} date
+     * @returns {Number}
+     */
+    minutesOf(date) {
+        return DateHelper.diff(this.midnight, date, 'minute');
+    }
+
+    /**
+     * A time of the trip's day as a Date
+     * @param {Number} minutes Minutes since its midnight
+     * @returns {Date}
+     */
+    dateOf(minutes) {
+        return DateHelper.add(this.midnight, minutes, 'minute');
+    }
+
+    /**
+     * The departure, minutes since midnight: the trip's `outerStartDate`, its start at the first stop less the sail out
+     * @property {Number}
+     */
+    get departs() {
+        return this.minutesOf(this.trip.outerStartDate);
+    }
+
+    /**
+     * Back at port, minutes since midnight: the trip's `outerEndDate`, its end as the engine rolled it up from its legs
+     * (and any wait on station) plus the sail back
      * @property {Number}
      */
     get endMinute() {
-        return tripEnd({ start : this.departs, stops : this.allStops, mode : this.mode, wait : this.wait });
+        return this.minutesOf(this.trip.outerEndDate);
+    }
+
+    /**
+     * Minutes the trip waits on station for another trip: the gaps the engine left between its legs
+     * @property {Number}
+     */
+    get wait() {
+        return this.gapsBefore(this.legRecords.length - 1);
+    }
+
+    // The minutes the engine left between the legs, up to the one at an index
+    gapsBefore(index) {
+        const records = this.legRecords;
+
+        return records.slice(1, index + 1).reduce((sum, leg, i) =>
+            sum + Math.max(0, DateHelper.diff(records[i].endDate, leg.startDate, 'minute')), 0);
     }
 
     /**
@@ -162,41 +208,42 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The legs with their times, `{ type, minutes, from, to, turbine, team, hop, preview }`: as the engine placed them,
-     * or, until it has calculated a change, as the planner expects them (Planner#timeLegs)
+     * The legs with their times as the engine placed them, `{ type, minutes, from, to, turbine, team, hop, preview }`,
+     * the sail out and back (the trip's buffer) around the legs at sea
      * @property {Object[]}
      */
     get legs() {
-        const records = this.legRecords;
+        const
+            me            = this,
+            records       = me.legRecords,
+            { out, back } = me.transits;
 
-        if (records.length && !this.layoutPending && records.every(leg => leg.startDate && leg.endDate)) {
-            const
-                { out, back } = this.transits,
-                first         = toMinutes(records[0].startDate),
-                last          = toMinutes(records.at(-1).endDate);
-
-            // The sail out and back, the trip's buffer, around the legs at sea as the engine placed them
-            return [
-                { type : 'transit', minutes : out, from : first - out, to : first },
-                ...records.map(leg => ({
-                    type    : leg.kind,
-                    minutes : leg.minutes,
-                    from    : toMinutes(leg.startDate),
-                    to      : toMinutes(leg.endDate),
-                    turbine : leg.turbine,
-                    team    : leg.team,
-                    hop     : leg.hop,
-                    preview : leg.preview
-                })),
-                { type : 'transit', minutes : back, from : last, to : last + back }
-            ];
+        if (!records.length) {
+            return [];
         }
 
-        return timeLegs(this.departs, buildLegs(this.allStops, this.mode));
+        const
+            first = me.minutesOf(records[0].startDate),
+            last  = me.minutesOf(records.at(-1).endDate);
+
+        return [
+            { type : 'transit', minutes : out, from : first - out, to : first },
+            ...records.map(leg => ({
+                type    : leg.kind,
+                minutes : leg.minutes,
+                from    : me.minutesOf(leg.startDate),
+                to      : me.minutesOf(leg.endDate),
+                turbine : leg.turbine,
+                team    : leg.team,
+                hop     : leg.hop,
+                preview : leg.preview
+            })),
+            { type : 'transit', minutes : back, from : last, to : last + back }
+        ];
     }
 
     /**
-     * The stops that wait on station for another trip, and for which, from the engine's last calculation
+     * The stops that wait on station for another trip, and for which
      * @property {Object[]} `{ turbine, minutes, after }`, `after` is the trip it waits for
      */
     get waits() {
@@ -204,8 +251,7 @@ export default class TripModel extends EventModelEnterprise {
 
         return records.flatMap((record, i) => {
             const
-                minutes = i && record.startDate && records[i - 1].endDate ?
-                    toMinutes(record.startDate) - toMinutes(records[i - 1].endDate) : 0,
+                minutes = i ? DateHelper.diff(records[i - 1].endDate, record.startDate, 'minute') : 0,
                 after   = record.predecessors?.find(dependency => !dependency.isChain)?.fromEvent;
 
             return minutes > 0 ? [{ turbine : record.turbine, minutes, after : after?.id ?? '' }] : [];
@@ -218,51 +264,20 @@ export default class TripModel extends EventModelEnterprise {
      * @property {Number} Minutes since midnight, 0 when no stop waits for another trip
      */
     get earliestDeparture() {
-        const
-            me      = this,
-            records = me.legRecords;
+        const me = this;
 
-        return Math.max(0, ...records.map((record, i) => {
+        return Math.max(0, ...me.legRecords.map((record, i) => {
             const dependency = record.predecessors?.find(each => !each.isChain);
 
-            if (!dependency?.fromEvent?.endDate || !record.startDate) {
+            if (!dependency?.fromEvent?.endDate) {
                 return 0;
             }
 
-            // Where the stop is in the trip without any waiting on station: the engine's wait before it is taken off
-            const waited = records.slice(0, i + 1).reduce((sum, leg, j) => j ? sum + Math.max(0,
-                toMinutes(leg.startDate) - toMinutes(records[j - 1].endDate)) : sum, 0);
+            // Where the stop is in the trip without any waiting on station: the engine's wait before it taken off
+            const offset = me.minutesOf(record.startDate) - me.gapsBefore(i) - me.departs;
 
-            return toMinutes(dependency.fromEvent.endDate) + (dependency.lag ?? 0) -
-                (toMinutes(record.startDate) - waited - me.departs);
+            return me.minutesOf(dependency.fromEvent.endDate) + (dependency.lag ?? 0) - offset;
         }));
-    }
-
-    /**
-     * Reads the minutes the trip waits on station from the engine's calculation: the gaps between its legs
-     * @returns {Boolean} Whether it changed
-     */
-    updateWait() {
-        const
-            me      = this,
-            records = me.legRecords;
-
-        me.layoutPending = false;
-
-        if (!records.every(leg => leg.startDate && leg.endDate)) {
-            return false;
-        }
-
-        const wait = records.reduce((sum, leg, i) => i ? sum + Math.max(0,
-            toMinutes(leg.startDate) - toMinutes(records[i - 1].endDate)) : 0, 0);
-
-        if (wait !== me.wait) {
-            me.wait = wait;
-
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -313,7 +328,7 @@ export default class TripModel extends EventModelEnterprise {
      * Places the trip and its legs: the passed stops in order with the transits between them, linked so each starts
      * when the one before it ends. Legs that stay (same ID) are updated, so a dependency into a stop stays attached;
      * new ones are added and assigned to the trip's vessel, the ones gone are removed. A new departure moves the trip's
-     * constraint, its legs follow. The engine then calculates the times, `layoutPending` until it has
+     * constraint, its legs follow. The engine then calculates the times: read them after `project.commitAsync()`
      * @param {Object} [options]
      * @param {Number} [options.departs] The new departure, minutes since midnight
      * @param {Object[]} [options.stops] The new stops, `{ turbine, minutes, team, preview }`
@@ -324,7 +339,7 @@ export default class TripModel extends EventModelEnterprise {
             { resource }        = me,
             { dependencyStore } = me.project,
             existing            = new Map(me.legRecords.map(leg => [leg.id, leg])),
-            wanted              = legsData({ id : me.id, departs }, stops, me.mode),
+            wanted              = legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode),
             ids                 = new Set(wanted.map(leg => leg.id)),
             gone                = me.legRecords.filter(leg => !ids.has(leg.id)),
             // The links between the legs, laid again below in the new order
@@ -376,12 +391,10 @@ export default class TripModel extends EventModelEnterprise {
             me.set(buffers);
         }
 
-        if (start !== toMinutes(me.startDate)) {
-            const date = toDate(start);
+        if (start !== me.minutesOf(me.startDate)) {
+            const date = me.dateOf(start);
 
             me.set({ startDate : date, constraintType : 'startnoearlierthan', constraintDate : date });
         }
-
-        me.layoutPending = true;
     }
 }

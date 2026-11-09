@@ -1,13 +1,12 @@
 import { Panel, Responsive } from '@bryntum/core-enterprise';
+import AppState from './AppState.js';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import { dayKpis } from './plan/Kpis.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
-import { mapModel } from './map/MapModel.js';
-import { cardInfo, tipContent, tipInfo } from './map/TurbineCard.js';
-import { showDay, toMinutes } from './util/Time.js';
+import { tipContent, tipInfo } from './map/TurbineCard.js';
 // Also registers the widget types used below
 import './KpiBar.js';
 import './TeamTray.js';
@@ -22,16 +21,26 @@ const openingTurbine = 'T-41';
  * Offshore Wind Dispatch: the header with the weather window, the vessels and helicopters on the day's timeline with
  * the teams waiting at the port above it, and the map of the farm with the selected turbine beside it.
  *
- * The app holds the selection, has the team being dragged previewed and booked (DropController), and refreshes the
- * views when the plan changes:
- * a team dropped on a trip, a trip dragged, or a new forecast re-planning the day (ForecastPlanner). The map and the
- * schedule share the selection both ways, and the hover through MapLink.
+ * The app is the wiring between three sources of truth and the views:
+ *
+ * - The plan: the trips in the Scheduler's project, placed by its scheduling engine. A change of the plan (a team
+ *   booked, a trip dragged or edited, a new forecast, its Undo) goes through `replan()`, which lets the engine
+ *   calculate it; the project's `dataReady` then redraws the views
+ * - The dispatch state (DispatchState): the day shown, the forecast and its windows, the teams waiting. Its `change`
+ *   redraws the views
+ * - The app state (AppState): the turbine selected, whether the map follows it, the team held over a trip. Its
+ *   `change` redraws the map and the card. The trip selected is the Scheduler's own selection
+ *
+ * The trips' bars, the legs and the vessel column are drawn by the Scheduler's renderers from the records. The map and
+ * the schedule share the selection both ways, and the hover through MapLink. DropController previews and books a held
+ * team, ForecastPlanner re-plans the day for a new forecast.
  *
  * Below 760px wide it is a `phone` (the Responsive mixin): the schedule and the map are tabs.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise#event-dataReady
  */
 export default class DispatchApp extends Panel.mixin(Responsive) {
     static $name = 'DispatchApp';
@@ -71,9 +80,12 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const
             me       = this,
             dispatch = new DispatchState(config.data),
+            // The card shows the opening turbine from the first paint, so the rail keeps its layout while start() runs
+            state    = new AppState({ selectedTurbine : openingTurbine }),
             { site } = dispatch;
 
-        me.dispatch = dispatch;
+        // Not `state`: that is the widget's own Stateful state
+        Object.assign(me, { dispatch, appState : state });
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
@@ -83,37 +95,42 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         const { scheduler, board, map, tray, schedulePane, notice } = me.parts;
 
-        me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
+        me.forecastPlanner = new ForecastPlanner({ dispatch, project : scheduler.project, trips : () => me.trips });
         me.dropController  = new DropController({
             dispatch,
             scheduler,
-            tray,
-            onPreviewChange : () => me.refreshSide(),
-            onBooked        : booked => me.onTeamBooked(booked)
+            state,
+            onBooked : booked => me.onTeamBooked(booked)
         });
         me.drag            = new TeamDrag({ tray, scheduler, board, handler : me.dropController });
+        me.mapLink         = new MapLink({ map, scheduler, focusTrip : () => state.held?.trip ?? me.selectedTrip });
+
+        // What the views follow: the plan as the engine placed it, the dispatch state and the app state. Several
+        // changes made together redraw once (`buffer`)
+        scheduler.project.on({ dataReady : 'onPlanReady', buffer : 1, thisObj : me });
+        dispatch.on({ change : 'onDispatchChange', buffer : 1, thisObj : me });
+        state.on({ change : 'refreshSide', buffer : 1, thisObj : me });
+        state.on({ change : 'onStateChange', thisObj : me });
+        // The trip selected is the Scheduler's own state
+        scheduler.on({ eventSelectionChange : 'refreshSide', buffer : 1, thisObj : me });
 
         board.on({ dayClick : ({ index }) => me.openDay(index) });
-
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
             afterEventDrop       : 'onTripDrop',
             tripTimeChange       : 'onTripTimeChange',
-            waitChange           : 'onWaitChange',
             thisObj              : me
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
-        me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.held?.trip ?? scheduler.selectedEvents[0] });
         schedulePane.on({ forecast : 'applyForecast', thisObj : me });
         notice.on({ undo : 'undoForecast', review : 'reviewNext', thisObj : me });
 
+        // The no-go ranges and the now line follow from the dispatch state alone, the rest of the views is drawn once
+        // the engine has placed the plan (start)
+        scheduler.refreshDispatch();
         // The responsive state may have been set before the items existed
         me.updatePhone(Boolean(me.phone));
-        // The card shows the opening turbine from the first paint, so the rail keeps its layout while start() runs
-        me.selectedTurbine = openingTurbine;
-        me.evaluate();
-        me.refreshAll();
     }
 
     // The header, the schedule half and the map half, and the tab panel that holds the two halves on a phone
@@ -159,6 +176,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     doDestroy() {
         this.drag?.destroy();
+        this.appState?.destroy();
+        this.dispatch?.destroy();
         super.doDestroy();
     }
 
@@ -166,16 +185,28 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         return this.parts.scheduler;
     }
 
+    /**
+     * The trips of the day shown
+     * @property {TripModel[]}
+     */
     get trips() {
         return this.scheduler.trips;
     }
 
     /**
-     * The team held over a trip and its check, see DropController#held
+     * The trip selected in the schedule
+     * @property {TripModel|null}
+     */
+    get selectedTrip() {
+        return this.scheduler.selectedEvents[0] ?? null;
+    }
+
+    /**
+     * The team held over a trip and its check, see AppState#held
      * @property {Object|null}
      */
     get held() {
-        return this.dropController.held;
+        return this.appState.held;
     }
 
     /**
@@ -201,11 +232,11 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         me.evaluate();
         me.refreshAll();
 
-        // The turbine first: selecting its trip keeps it, as it is on the trip (onTripSelectionChange)
-        me.selectedTurbine = openingTurbine;
+        // The turbine first: selecting its trip keeps it, as it is on the trip (onTripSelectionChange). The opening
+        // selection is the page's, not the user's: the map stays on the whole farm until the user selects
+        me.appState.selectedTurbine = openingTurbine;
         scheduler.selectEvent(opening);
-        // From here on, a trip or turbine the user selects fits the map to it
-        me.started = true;
+        me.appState.mapFollows = false;
 
         if (state === 'forecast') {
             await me.applyForecast();
@@ -235,18 +266,17 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             me.dropController.clearPreview();
             me.scheduler.clearEventSelection();
             me.dispatch.showDay(index);
-            showDay(index);
             me.scheduler.showDay();
-            me.fitKey = null;
             await me.replan();
             await me.scheduler.forecastHeader.refresh();
         }
     }
 
-    //region Plan state
+    //region Plan
 
     /**
-     * Sets each trip's status: moved to tomorrow, else past its window (even if the forecast changed it), else as is
+     * Sets each trip's status from the plan as the engine placed it: moved to tomorrow, else past its window (even if
+     * the forecast changed it), else as is
      */
     evaluate() {
         const { dispatch } = this;
@@ -266,38 +296,32 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const me = this;
 
         if (trip) {
-            me.selectedTurbine = turbine;
+            me.appState.selectedTurbine = turbine;
             me.scheduler.selectEvent(trip);
         }
 
-        me.replan();
+        return me.replan();
     }
 
     /**
-     * Changes the plan, lets the scheduling engine place it, and draws it. A team held over a trip has its previewed
-     * stop taken off first, so the change and the trips' status see the plan only, then previewed again and checked
-     * against the plan and forecast as they are now: the trip, the map, the card and the drag's tooltip never show a
-     * check made against the old ones
-     * @param {Function} [change] Changes the plan
-     * @returns {Promise} Resolves once drawn
+     * Changes the plan and lets the scheduling engine place it; the views follow the project's `dataReady`. A team
+     * held over a trip has its previewed stop taken off first, so the change and the trips' status see the plan only,
+     * then previewed again and checked against the plan and forecast as they are now: the trip, the map, the card and
+     * the drag's tooltip never show a check made against the old ones
+     * @param {Function} [change] Changes the plan, may return a Promise
+     * @returns {Promise} Resolves once the engine has placed it
      */
     async replan(change) {
         const
-            me    = this,
+            me      = this,
+            { held } = me,
             // The team held, to hold it again once the plan has changed
-            again = me.held && { teamId : me.held.team.id, target : me.held.target, at : me.held.at };
+            again   = held && { teamId : held.team.id, target : held.target, at : held.at };
 
-        me.replanning = true;
         me.dropController.clearPreview();
-        change?.();
-
-        try {
-            // The engine pushes the stops that wait for another trip, and the legs after them
-            await me.scheduler.project.commitAsync();
-        }
-        finally {
-            me.replanning = false;
-        }
+        await change?.();
+        // The engine pushes the stops that wait for another trip, and the legs after them
+        await me.scheduler.project.commitAsync();
 
         if (me.isDestroyed) {
             return;
@@ -310,17 +334,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             me.dropController.holdPreview(again.teamId, again.target, again.at);
         }
 
-        me.refreshAll();
         me.drag?.refresh();
-    }
-
-    // The engine changed how long a trip waits on station, outside a change of the app's own (a trip dragged): its end
-    // and status follow. Not while a team is held: its previewed stop is no change of the plan, the plan is checked
-    // again once it comes off
-    onWaitChange() {
-        if (!this.replanning && !this.held) {
-            this.replan();
-        }
     }
 
     // A trip dragged to a new departure: the engine moves its legs with it, and pushes any stop that waits for it. The
@@ -338,17 +352,38 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         return this.replan(() => trip.layout({ departs : this.scheduler.departsAt(trip, startDate) }));
     }
 
+    // The engine has placed a change. While a team is held that is its previewed stop: only the map and the card
+    // follow it, the plan's own counts and ranges are unchanged
+    onPlanReady() {
+        if (this.held) {
+            this.refreshSide();
+        }
+        else {
+            this.refreshAll();
+        }
+    }
+
+    // The day, the forecast or the teams waiting changed, mostly with the plan: drawn once the engine has placed it
+    async onDispatchChange() {
+        await this.scheduler?.project.commitAsync();
+        this.refreshAll();
+    }
+
     /**
-     * Draws everything that follows the plan
+     * Draws everything that follows the plan and the dispatch state
      */
     refreshAll() {
         const
             me                               = this,
             { dispatch }                     = me,
-            { kpis, tray, scheduler, board } = me.parts;
+            { kpis, tray, scheduler, board } = me.parts ?? {};
 
-        kpis.draw({ site : dispatch.site.name, kpis : dayKpis(me.trips, dispatch) });
-        tray.draw(dispatch.waitingTeams, me.dropController.lifted);
+        if (me.isDestroyed || !kpis) {
+            return;
+        }
+
+        kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dayKpis(me.trips, dispatch) });
+        tray.draw(dispatch.waitingTeams, me.appState.lifted);
         scheduler.refreshDispatch();
         board.draw(scheduler.weekTrips);
         me.parts.schedulePane.refreshBar();
@@ -360,37 +395,40 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
      */
     refreshSide() {
         const
-            me                                           = this,
-            { dispatch, trips, held, selectedTurbine }   = me,
-            { map, card }                                = me.parts,
-            selectedTrip                                 = me.scheduler.selectedEvents[0] ?? null,
-            turbine                                      = held?.job.turbine ?? selectedTurbine;
+            me                             = this,
+            { dispatch, appState : state } = me,
+            // A team held over a cell of the Week view previews nothing on the day the map shows
+            held                           = state.held?.target.isWeekCell ? null : state.held;
 
-        map.draw(mapModel({
-            state           : dispatch,
-            trips,
-            selectedTrip,
-            selectedTurbine : turbine,
-            drop            : held
-        }));
+        if (me.isDestroyed || !me.parts) {
+            return;
+        }
+
+        me.parts.side.draw({
+            state        : dispatch,
+            trips        : me.trips,
+            selectedTrip : me.selectedTrip,
+            turbine      : held?.job.turbine ?? state.selectedTurbine,
+            held,
+            follow       : state.mapFollows
+        });
         // The plan under the pointer may have changed
-        me.mapLink?.refresh();
-        me.fitMap(selectedTrip, turbine);
+        me.mapLink.refresh();
+    }
 
-        if (turbine) {
-            card.draw(cardInfo({ state : dispatch, trips, turbine, drop : held, selectedTrip }));
+    // The chip of the team lifted is dimmed in the tray, at once: DragHelper holds on to it
+    onStateChange({ name, value }) {
+        if (name === 'lifted') {
+            this.parts.tray.draw(this.dispatch.waitingTeams, value);
         }
     }
 
     // The map's tooltip on a turbine: the card's turbine at the forecast wave height, its job, team and when a trip
     // reaches it, and its rotor
     turbineTip(turbine) {
-        const
-            { dispatch, trips, held } = this,
-            selectedTrip              = this.scheduler.selectedEvents[0] ?? null,
-            info                      = tipInfo({ state : dispatch, trips, turbine, drop : held, selectedTrip });
+        const { dispatch, trips, held, selectedTrip } = this;
 
-        return tipContent(info);
+        return tipContent(tipInfo({ state : dispatch, trips, turbine, drop : held, selectedTrip }));
     }
 
     //endregion
@@ -399,20 +437,21 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     /**
      * Brings in the next forecast and re-plans the day against it
-     * @returns {Promise} Resolves once the plan is drawn
+     * @returns {Promise} Resolves once the plan is placed
      */
     async applyForecast() {
-        const me = this;
+        const
+            me                  = this,
+            { forecastPlanner } = me;
 
         let changes = [];
 
-        await me.replan(() => {
-            changes = me.forecastPlanner.apply(me.dispatch.waiting);
+        await me.replan(async() => {
+            changes = await forecastPlanner.apply(me.dispatch.waiting);
         });
-        me.reviewIndex = -1;
 
         if (changes.length) {
-            me.parts.notice.draw({ ...me.forecastPlanner.summary(changes), changes : changes.length });
+            me.parts.notice.draw({ ...forecastPlanner.summary(changes), changes : changes.length });
             me.reviewNext();
         }
     }
@@ -431,15 +470,13 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     // Selects the next trip the forecast changed
     reviewNext() {
         const
-            me          = this,
-            { changes } = me.forecastPlanner,
-            change      = changes[me.reviewIndex = (me.reviewIndex + 1) % changes.length];
+            me     = this,
+            change = me.forecastPlanner.nextChange();
 
         if (change) {
-            me.selectedTurbine = change.removed[0] ?? change.trip.turbines[0];
+            me.appState.selectedTurbine = change.removed[0] ?? change.trip.turbines[0];
             me.scheduler.selectEvent(change.trip);
             me.scheduler.scrollEventIntoView(change.trip, { block : 'center', highlight : true });
-            me.refreshSide();
         }
     }
 
@@ -447,101 +484,66 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     //region Selection
 
+    // A trip selected: the map follows it, the turbine selected stays if it is on the trip, else it is the trip's first
     onTripSelectionChange({ selected }) {
         const
-            me      = this,
-            trip    = selected?.[0],
-            current = me.selectedTurbine;
+            { appState : state } = this,
+            trip      = selected?.[0],
+            current   = state.selectedTurbine;
 
-        me.mapFollows = Boolean(me.started);
+        state.mapFollows = true;
 
-        // The trip's first turbine, unless the selected one is on the trip
         if (trip && !trip.allStops.some(stop => stop.turbine === current) && !trip.removed?.includes(current)) {
-            me.selectedTurbine = trip.allStops[0]?.turbine;
+            state.selectedTurbine = trip.allStops[0]?.turbine;
         }
-
-        me.refreshSide();
     }
 
     // A click on a stop selects its turbine. The legs let the pointer through to their trip, the stop is the one at
     // the time clicked
     onTripClick({ eventRecord, event }) {
         const
-            minute = event && toMinutes(this.scheduler.getDateFromDomEvent(event)),
-            stop   = minute != null && eventRecord.trip.legs.find(leg => leg.type === 'stop' && !leg.preview &&
+            { trip } = eventRecord,
+            minute   = event && trip.minutesOf(this.scheduler.getDateFromDomEvent(event)),
+            stop     = minute != null && trip.legs.find(leg => leg.type === 'stop' && !leg.preview &&
                 leg.from <= minute && minute < leg.to);
 
         if (stop) {
-            this.mapFollows      = true;
-            this.selectedTurbine = stop.turbine;
-            this.refreshSide();
+            this.appState.mapFollows      = true;
+            this.appState.selectedTurbine = stop.turbine;
         }
     }
 
     // A turbine selected on the map, by a click or the keyboard, selects its trip
     onTurbineSelectionChange({ selection, user }) {
         const
-            me      = this,
-            turbine = selection[0]?.id,
-            trip    = tripsOf(me.trips, turbine)[0];
+            me        = this,
+            { appState : state } = me,
+            turbine   = selection[0]?.id,
+            trip      = tripsOf(me.trips, turbine)[0];
 
         if (!user || !turbine) {
             return;
         }
 
-        me.selectedTurbine = turbine;
-        me.mapFollows      = true;
-        // A turbine picked on the map is already in view: the map stays where it is (fitMap)
-        me.keepMapView     = true;
+        state.selectedTurbine = turbine;
+        state.mapFollows      = true;
 
         if (trip && !me.scheduler.isEventSelected(trip)) {
             me.scheduler.selectEvent(trip);
             me.scheduler.scrollEventIntoView(trip, { block : 'center' });
         }
 
-        me.refreshSide();
-        me.keepMapView = false;
-    }
-
-    /**
-     * Fits the map to the selected trip's turbines and the port, or to the selected turbine and the port, once the
-     * user selected one. A team held over a trip shows the whole farm, what the trip can still reach is all over it.
-     *
-     * Only a change of what is shown moves the map: another trip or turbine selected, the map following or not, a team
-     * held or not. Not a turbine picked on the map itself (`keepMapView`). A redraw of the same selection (the plan,
-     * the clock, a hover) leaves the view the user panned or zoomed to where it is
-     * @param {TripModel|null} trip
-     * @param {String|null} turbine
-     */
-    fitMap(trip, turbine) {
-        const
-            me       = this,
-            follow   = Boolean(me.mapFollows && !me.held),
-            key      = me.fitKeyOf(trip, turbine),
-            turbines = trip ? [...trip.turbines, ...(trip.removed ?? [])] : [],
-            fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
-
-        if (key !== me.fitKey) {
-            me.fitKey = key;
-
-            if (!me.keepMapView) {
-                me.parts.map.fitTo(follow ? fit : null);
-            }
-        }
-    }
-
-    // What the map is fitted to, see fitMap
-    fitKeyOf(trip, turbine) {
-        return [trip?.id, turbine, Boolean(this.mapFollows && !this.held), Boolean(this.held)].join('|');
+        // A turbine picked on the map is already in view: the map stays where it is
+        me.parts.side.keepView(me.selectedTrip, turbine, true);
     }
 
     // The map's Show all button (it has gone to the whole farm): the map stays there, or where the user pans or zooms
     // it, until the user selects another trip or turbine
     onWholeFarm() {
-        const me = this;
+        const { appState : state } = this;
 
-        me.mapFollows = false;
-        me.fitKey     = me.fitKeyOf(me.scheduler.selectedEvents[0] ?? null, me.held?.job.turbine ?? me.selectedTurbine);
+        state.mapFollows = false;
+        this.parts.side.keepView(this.selectedTrip, state.held?.job.turbine ?? state.selectedTurbine, false);
     }
 
     //endregion

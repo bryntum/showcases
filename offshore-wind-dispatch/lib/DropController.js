@@ -1,16 +1,13 @@
-import { StringHelper, Toast } from '@bryntum/core-enterprise';
+import { DateHelper, StringHelper, Toast } from '@bryntum/core-enterprise';
 import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
 import { addTrip } from './model/TripData.js';
-import { dayDate, hhmm, shownDay } from './util/Time.js';
+import { hhmm } from './util/Time.js';
 
 const
     // The stop a team's job adds to a trip
     stopOf       = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
         preview }),
-    // "Thu 12"
-    dayName      = index => dayDate(index).toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' })
-        .replace(',', ''),
     // The plan of a new trip from port, with no stops yet
     newPlan      = (id, start, vessel) => ({
         id, start, stops : [], mode : vessel.mode, wait : 0, change : null, pax : 0, seats : vessel.seats
@@ -21,16 +18,16 @@ const
 /**
  * The app's side of dragging a team onto a vessel, the `handler` TeamDrag calls (see TeamDrag's DropHandler): lifting
  * the team from the tray, previewing its stop on a trip and checking it against the weather window, booking it on
- * release. The team held and its check are `held`, which DispatchApp#replan checks again whenever the plan or the
- * forecast changes.
+ * release. The team held and its check are the app state's `held` (AppState), which DispatchApp#replan checks again
+ * whenever the plan or the forecast changes; the map and the card follow it.
  *
  * A team is held over a trip bar or anywhere on a vessel's row. Over a trip it can still join, the stop goes on that
  * trip. Elsewhere on the row it goes on the vessel's best trip: the one it fits on that is back first, else the first
  * one, so the tooltip says why it does not fit. A vessel with no trip left to join gets a new trip from port at its
  * next sailing, a draft trip shown until the team is booked or moves on.
  *
- * DispatchApp creates it with what it needs, and is told through two callbacks: the preview changed (the map and the
- * card follow it), and a team was booked (the plan changed).
+ * DispatchApp creates it with what it needs, and is told through a callback when a team was booked (the plan
+ * changed).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Toast
@@ -40,24 +37,25 @@ export default class DropController {
      * @param {Object} options
      * @param {DispatchState} options.dispatch
      * @param {DispatchScheduler} options.scheduler The Day view, whose event store holds the trips
-     * @param {TeamTray} options.tray The crews waiting at the port
-     * @param {Function} options.onPreviewChange Called when the team held or its preview changed
+     * @param {AppState} options.state Holds the team lifted and the team held with its check
      * @param {Function} options.onBooked Called with `{ trip, turbine }` once a team is booked: on a trip of the Day
      * view, or (no `trip`) on a new trip on a day of the Week view
      */
-    constructor({ dispatch, scheduler, tray, onPreviewChange, onBooked }) {
-        const me = this;
+    constructor({ dispatch, scheduler, state, onBooked }) {
+        Object.assign(this, { dispatch, scheduler, state, onBooked });
+    }
 
-        Object.assign(me, { dispatch, scheduler, tray, onPreviewChange, onBooked });
+    /**
+     * The team held and its check, `{ target, trip, team, job, result, reach, close }` (see previewDrop), `null` while
+     * it is over nothing: the app state's
+     * @property {Object|null}
+     */
+    get held() {
+        return this.state.held;
+    }
 
-        /**
-         * The team held and its check, `{ target, trip, team, job, result, reach, close }` (see previewDrop), `null`
-         * while it is over nothing
-         * @property {Object|null}
-         */
-        me.held   = null;
-        // The ID of the team dragged, its chip dimmed in the tray
-        me.lifted = null;
+    set held(held) {
+        this.state.held = held;
     }
 
     /**
@@ -77,16 +75,10 @@ export default class DropController {
         return this.dispatch.waitingTeams.find(({ team }) => team.id === teamId);
     }
 
-    // The team's chip stays in the tray, dimmed. Not drawn anew, DragHelper holds on to the chip it drags from
+    // The team's chip stays in the tray, dimmed (TeamTray follows the state's `lifted`)
     liftTeam(teamId) {
-        const chip = this.tray.chipOf(teamId);
-
-        this.lifted = teamId;
+        this.state.lifted = teamId;
         this.markFitting(teamId);
-
-        if (chip) {
-            chip.lifted = true;
-        }
     }
 
     /**
@@ -113,8 +105,6 @@ export default class DropController {
         if (target) {
             me.holdPreview(teamId, target, blocked ? at : null);
         }
-
-        me.onPreviewChange();
 
         return me.held;
     }
@@ -221,8 +211,10 @@ export default class DropController {
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
-        const shown = trip ?? addTrip(me.scheduler.eventStore, vessel,
-            { id : plan.id, departs : plan.start, draft : true, day : shownDay() }, [stop]);
+        const
+            { midnight, dayIndex } = me.dispatch,
+            shown                  = trip ?? addTrip(me.scheduler.eventStore, vessel,
+                { id : plan.id, departs : plan.start, midnight, draft : true, day : dayIndex }, [stop]);
 
         if (trip && vessel.mode !== 'heli') {
             trip.layout({ stops : [...trip.stops, stop] });
@@ -424,13 +416,14 @@ export default class DropController {
         const me = this;
 
         me.held = null;
-        // Its departure in minutes of the day shown, which the times count from
-        addTrip(me.scheduler.eventStore, vessel, { id : plan.id, departs : plan.start + (day - shownDay()) * 24 * 60,
-            day }, [stopOf(team, job)]);
+        // Its departure in minutes of that day
+        addTrip(me.scheduler.eventStore, vessel,
+            { id : plan.id, departs : plan.start, midnight : me.dispatch.dateOf(day), day }, [stopOf(team, job)]);
         me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
         me.onBooked({ trip : null, turbine : job.turbine });
 
-        tell(`${team.name} booked on ${plan.id}, ${dayName(day)}, back in port by ${hhmm(result.back)}`);
+        tell(`${team.name} booked on ${plan.id}, ${DateHelper.format(me.dispatch.dateOf(day), 'ddd D')}, ` +
+            `back in port by ${hhmm(result.back)}`);
     }
 
     /**
@@ -446,12 +439,8 @@ export default class DropController {
     }
 
     endDrag() {
-        const me = this;
-
-        me.clearFitting();
-        me.clearPreview();
-        me.lifted = null;
-        me.tray.draw(me.dispatch.waitingTeams);
-        me.onPreviewChange();
+        this.clearFitting();
+        this.clearPreview();
+        this.state.lifted = null;
     }
 }

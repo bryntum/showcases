@@ -1,5 +1,3 @@
-import { nextDay } from '../util/Time.js';
-
 /**
  * The day's counts of the KPI header (KpiBar): turbines due, turbines on a trip, either the trips past their window
  * (when any) or the turbines a forecast moved to the next day, and the turbines stopped
@@ -19,7 +17,7 @@ export function dayKpis(trips, dispatch) {
         // One slot: trips past their window need acting on now, so they win over what a forecast already moved
         atRisk || !moved.size ?
             { label : 'At risk', value : atRisk, tone : 'warn' } :
-            { label : `Moved to ${nextDay}`, value : moved.size, tone : 'alert' },
+            { label : `Moved to ${dispatch.nextDay}`, value : moved.size, tone : 'alert' },
         { label : 'Stopped', value : dispatch.faults.size, tone : 'stop' }
     ];
 }

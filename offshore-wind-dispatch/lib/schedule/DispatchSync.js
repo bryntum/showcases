@@ -1,5 +1,6 @@
 import { dependencyData } from '../model/TripData.js';
-import { hhmm, toDate } from '../util/Time.js';
+import { DateHelper } from '@bryntum/core-enterprise';
+import { hhmm } from '../util/Time.js';
 
 /**
  * Brings the scheduling project's stores in line with the dispatch state (DispatchState): the weather no-go of each
@@ -59,22 +60,24 @@ export default class DispatchSync {
         const
             { scheduler } = this,
             state         = scheduler.dispatch,
-            end           = toDate(state.day.dayEnd * 60),
+            end           = state.toDate(state.day.dayEnd * 60),
             // The Group feature's header rows are records of the store too
             nogo          = scheduler.resourceStore.allRecords.filter(vessel => !vessel.isGroupHeader).map(vessel => ({
                 id         : `nogo-${vessel.id}`,
                 kind       : 'nogo',
                 resourceId : vessel.id,
-                startDate  : toDate(state.closeOf(vessel)),
+                startDate  : state.toDate(state.closeOf(vessel)),
                 endDate    : end,
                 name       : state.limits[vessel.window].noGo
             })),
-            ghosts        = scheduler.trips.filter(trip => trip.status === 'pulled').map(trip => ({
+            ghosts        = scheduler.trips.filter(trip => trip.status === 'pulled' && trip.previousDeparture).map(trip => ({
                 id         : `ghost-${trip.id}`,
                 kind       : 'ghost',
                 resourceId : trip.resource?.id,
-                startDate  : toDate(trip.previousDeparts),
-                endDate    : toDate(trip.previousDeparts + trip.endMinute - trip.departs)
+                // As long as the trip is now, from its old departure
+                startDate  : trip.previousDeparture,
+                endDate    : DateHelper.add(trip.previousDeparture,
+                    trip.outerEndDate.getTime() - trip.outerStartDate.getTime(), 'millisecond')
             })),
             shown         = ghosts.filter(ghost => ghost.startDate < end);
 
@@ -105,7 +108,7 @@ export default class DispatchSync {
         const
             { scheduler } = this,
             state         = scheduler.dispatch,
-            now           = toDate(state.now);
+            now           = state.toDate(state.now);
 
         DispatchSync.syncStore(scheduler.project.timeRangeStore, !state.isToday ? [] : [
             { id : 'past', startDate : scheduler.startDate, endDate : now, cls : 'ow-past' },

@@ -1,6 +1,6 @@
 import { portMinutes } from '../plan/Farm.js';
 import { iconConfig } from '../util/Icons.js';
-import { duration, hhmm, nextDay, shownDay, toMinutes } from '../util/Time.js';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
  * The Scheduler's cells and bars, plain functions returning DomConfigs, styled in resources/schedule/.
@@ -102,13 +102,14 @@ export function paxText(trip) {
  * What changed, after the trip's label: set by a forecast. Past its window needs no word here, the sail back says it
  * @param {TripModel} trip
  * @param {Number} firstSailing When the next day's first trips sail, minutes since midnight
+ * @param {String} nextDay The day after the one shown, "Tue"
  * @returns {String|null}
  */
-function changeText(trip, firstSailing) {
+function changeText(trip, firstSailing, nextDay) {
     return {
         trimmed : () => `${trip.removed.join(', ')} → ${nextDay}`,
         moved   : () => `moved to ${nextDay} ${hhmm(firstSailing)}`,
-        pulled  : () => `${duration(trip.previousDeparts - trip.departs)} earlier`
+        pulled  : () => `${duration(trip.minutesOf(trip.previousDeparture) - trip.departs)} earlier`
     }[trip.status]?.() ?? null;
 }
 
@@ -126,7 +127,7 @@ function renderLeg(leg, renderData, close, typeOf) {
     const
         { cls }   = renderData,
         isTransit = leg.kind === 'transit',
-        back      = !isTransit && leg.endDate ? toMinutes(leg.endDate) + portMinutes(leg.turbine, leg.mode) : 0,
+        back      = !isTransit && leg.endDate ? leg.minutesOf(leg.endDate) + portMinutes(leg.turbine, leg.mode) : 0,
         risk      = !isTransit && !leg.preview && leg.trip.status === 'at-risk' && back > close;
 
     cls['ow-seg']         = 1;
@@ -165,18 +166,19 @@ function renderLeg(leg, renderData, close, typeOf) {
  * @param {Number} options.close When the trip's window closes
  * @param {Number} options.sailOut How wide the trip's sail out is drawn, px
  * @param {Number} options.firstSailing When the next day's first trips sail, minutes since midnight
+ * @param {String} options.nextDay The day after the one shown, "Tue"
  * @param {Boolean} options.dropFit A team is dragged and would fit on the trip
  * @param {Function} options.typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstSailing, dropFit, typeOf }) {
+export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstSailing, nextDay, dropFit, typeOf }) {
     if (eventRecord.isLeg) {
         return renderLeg(eventRecord, renderData, close, typeOf);
     }
 
     const
         trip   = eventRecord,
-        change = changeText(trip, firstSailing);
+        change = changeText(trip, firstSailing, nextDay);
 
     renderData.cls['ow-trip']                = 1;
     // On the wrapper, which also holds the sail out and back (EventBuffer): the hover's outline goes round all of it
@@ -259,13 +261,13 @@ export function renderDependency({ domConfig, dependencyRecord }) {
  * The vessel column: its icon in a ring of the seats taken (the limit and the seats on its tooltip), its name, and its
  * type under it, "CTV"
  * @param {VesselModel} vessel
- * @param {Object} options `{ now, close, limit }`
+ * @param {Object} options `{ day, now, close, limit }`, `day` the day shown
  * @returns {Object} DomConfig
  */
-export function renderVessel(vessel, { now, close, limit }) {
+export function renderVessel(vessel, { day, close, limit }) {
     const
         // Its trips of the day shown, not their legs, which are assigned to it too
-        trips = vessel.events.filter(trip => !trip.isLeg && trip.day === shownDay() && trip.status !== 'moved'),
+        trips = vessel.events.filter(trip => !trip.isLeg && trip.day === day && trip.status !== 'moved'),
         pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0),
         // The seats taken, as a ring round the icon: orange when one of its trips is back after its window
         used  = vessel.seats ? Math.round(pax / vessel.seats * 100) : 0,

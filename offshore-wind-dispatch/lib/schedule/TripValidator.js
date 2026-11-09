@@ -1,5 +1,5 @@
 import { noGoText } from '../plan/Planner.js';
-import { hhmm, toMinutes } from '../util/Time.js';
+import { hhmm } from '../util/Time.js';
 
 /**
  * The checks of a trip moved to a new time, by a drag (the EventDrag feature's `validatorFn`) or by the trip editor's
@@ -31,8 +31,8 @@ export function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
             const
                 shift = record => (record.trip === trip ? delta : 0),
                 // Where the stop could start without waiting on station, and where the trip it follows is done
-                free  = toMinutes(toEvent.startDate) - dependent.wait + shift(toEvent),
-                done  = toMinutes(fromEvent.endDate) + shift(fromEvent) + (dependency.lag ?? 0),
+                free  = toEvent.minutesOf(toEvent.startDate) - dependent.wait + shift(toEvent),
+                done  = fromEvent.minutesOf(fromEvent.endDate) + shift(fromEvent) + (dependency.lag ?? 0),
                 wait  = Math.max(0, done - free),
                 back  = dependent.endMinute - dependent.wait + wait + shift(toEvent),
                 close = dispatch.closeOf(dependent.resource);

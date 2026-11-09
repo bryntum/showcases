@@ -1,92 +1,9 @@
 /**
- * Times of the dispatch day. The planner works in minutes since midnight of the day shown, the Scheduler in dates:
- * these helpers convert between the two and format both. The page opens on the real current date, today, the first of
- * the seven days of the week (lib/plan/WeekPlan.js); the Day view shows one of them at a time (`showDay`). The times of
- * day come from the data, so the story reads the same on every day.
+ * Times of day as the dispatch planner counts them, in minutes since midnight of the day a trip is on: formatting and
+ * parsing only, no state. The records hold Dates, the scheduling engine calculates them; the day shown and the
+ * conversion between its Dates and its minutes is the dispatch state's (DispatchState#toDate, #toMinutes), formatting
+ * a Date is DateHelper's.
  */
-
-const
-    minuteMs = 60_000,
-    now      = new Date(),
-    format   = (date, options) => date.toLocaleDateString('en-GB', options).replace(',', '');
-
-/**
- * Midnight of a day of the week, 0 is today
- * @param {Number} index
- * @returns {Date}
- */
-export function dayDate(index) {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate() + index);
-}
-
-// The day shown, its midnight is minute 0
-let
-    shown    = 0,
-    midnight = dayDate(0);
-
-export let
-    /**
-     * The day shown, short, "Mon 9 Nov", for the KPI bar
-     */
-    dayShort = '',
-
-    /**
-     * Where work the weather pushes out goes, the day after the one shown: "Tue" and "Tuesday"
-     */
-    nextDay  = '',
-    nextLong = '';
-
-/**
- * Shows a day of the week: its midnight is minute 0 from now on, the labels name it
- * @param {Number} index 0 is today
- */
-export function showDay(index) {
-    const tomorrow = dayDate(index + 1);
-
-    shown    = index;
-    midnight = dayDate(index);
-    dayShort = format(midnight, { weekday : 'short', day : 'numeric', month : 'short' });
-    nextDay  = format(tomorrow, { weekday : 'short' });
-    nextLong = format(tomorrow, { weekday : 'long' });
-}
-
-showDay(0);
-
-/**
- * The day shown, 0 is today
- * @returns {Number}
- */
-export function shownDay() {
-    return shown;
-}
-
-/**
- * A date as minutes since midnight of a day of the week
- * @param {Date} date
- * @param {Number} index 0 is today
- * @returns {Number}
- */
-export function minutesOn(date, index) {
-    return Math.round((date.getTime() - dayDate(index).getTime()) / minuteMs);
-}
-
-/**
- * A time of the day shown as a date
- * @param {Number} minutes Minutes since midnight
- * @returns {Date}
- */
-export function toDate(minutes) {
-    return new Date(midnight.getTime() + minutes * minuteMs);
-}
-
-/**
- * A date of the day shown as minutes since midnight
- * @param {Date} date
- * @returns {Number}
- */
-export function toMinutes(date) {
-    return Math.round((date.getTime() - midnight.getTime()) / minuteMs);
-}
 
 /**
  * "07:40" as minutes since midnight

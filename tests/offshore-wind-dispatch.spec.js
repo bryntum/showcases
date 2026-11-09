@@ -269,6 +269,9 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await expect(tip).toContainText('window closes 14:00');
 
         await page.locator('.ow-forecast-button').click();
+        // The engine places each trip the forecast changes, then the team is held again
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').held?.close))
+            .toBeLessThan(14 * 60);
 
         const state = await heldState(page);
 

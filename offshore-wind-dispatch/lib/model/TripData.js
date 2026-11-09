@@ -1,5 +1,9 @@
+import { DateHelper } from '@bryntum/core-enterprise';
 import { buildLegs, timeLegs } from '../plan/Planner.js';
-import { parseTime, toDate } from '../util/Time.js';
+import { parseTime } from '../util/Time.js';
+
+// A time of a day as a Date: its midnight and minutes since
+const at = (midnight, minutes) => DateHelper.add(midnight, minutes, 'minute');
 
 /**
  * A trip and its legs as Scheduler data, and the links between the legs: plain functions from the planner's trips and
@@ -35,12 +39,12 @@ export function bufferData({ out, back }) {
  * The data of a trip's legs at sea: the turbine stops and the short hops between them. The sail out and back are not
  * legs but the trip's event buffer (`transitsOf`). Their start is where the planner expects them, the engine then
  * places each after the one before it
- * @param {Object} trip `{ id, departs }`
+ * @param {Object} trip `{ id, departs, midnight }`, `departs` in minutes since the trip's `midnight`
  * @param {Object[]} stops `{ turbine, minutes, team, preview }`
  * @param {String} mode
  * @returns {Object[]}
  */
-export function legsData({ id, departs }, stops, mode) {
+export function legsData({ id, departs, midnight }, stops, mode) {
     return timeLegs(departs, buildLegs(stops, mode)).slice(1, -1).map(({ type, from, to, ...leg }, index) => ({
         // A hop keeps its place among all the legs, the sail out counted, in its ID
         id           : type === 'stop' ? `${id}:${leg.preview ? 'preview' : leg.turbine}` : `${id}:leg-${index + 1}`,
@@ -51,7 +55,7 @@ export function legsData({ id, departs }, stops, mode) {
         minutes      : leg.minutes,
         hop          : Boolean(leg.hop),
         preview      : Boolean(leg.preview),
-        startDate    : toDate(from),
+        startDate    : at(midnight, from),
         duration     : to - from,
         durationUnit : 'minute',
         // A leg moves with its trip, never on its own
@@ -62,16 +66,16 @@ export function legsData({ id, departs }, stops, mode) {
 
 /**
  * The data of a trip and its legs
- * @param {Object} trip `{ id, departs, ... }`, `departs` in minutes since midnight
+ * @param {Object} trip `{ id, departs, midnight, ... }`, `departs` in minutes since the trip's `midnight`
  * @param {Object[]} stops `{ turbine, minutes, team, preview }`
  * @param {String} mode `vessel` or `heli`
  * @returns {Object} The trip's data, its legs at sea as `children`, the sail out and back as its buffer. The trip
  * starts at its first stop, it has no duration of its own, the engine rolls it up from its legs
  */
-export function tripData({ departs, ...trip }, stops, mode) {
+export function tripData({ departs, midnight, ...trip }, stops, mode) {
     const
         transits = transitsOf(stops, mode),
-        start    = toDate(departs + transits.out);
+        start    = at(midnight, departs + transits.out);
 
     return {
         ...trip,
@@ -80,7 +84,7 @@ export function tripData({ departs, ...trip }, stops, mode) {
         startDate      : start,
         constraintType : 'startnoearlierthan',
         constraintDate : start,
-        children       : legsData({ id : trip.id, departs }, stops, mode)
+        children       : legsData({ id : trip.id, departs, midnight }, stops, mode)
     };
 }
 
@@ -127,13 +131,14 @@ export function dependencyData({ id, from, to, toStop, lag = 0, sides = [], text
  * between the legs and the dependencies of the plan. The trips of the whole week, each on its `day` (0 is today), today
  * being the day shown
  * @param {Object} data `{ vessels, trips, dependencies }`
+ * @param {Function} dateOf Midnight of a day of the week, `(index)`, see DispatchState#dateOf
  * @returns {Object} `{ resources, events, assignments, dependencies }`
  */
-export function projectData({ vessels, trips, dependencies }) {
+export function projectData({ vessels, trips, dependencies }, dateOf) {
     const
         modeOf      = id => vessels.find(vessel => vessel.id === id)?.mode ?? 'vessel',
         events      = trips.map(({ start, resourceId, stops, day = 0, ...trip }) =>
-            tripData({ ...trip, day, departs : parseTime(start) + day * 24 * 60 }, stops, modeOf(resourceId))),
+            tripData({ ...trip, day, departs : parseTime(start), midnight : dateOf(day) }, stops, modeOf(resourceId))),
         assignments = events.flatMap((trip, index) => [trip, ...trip.children].map(event => ({
             id       : `a-${event.id}`,
             event    : event.id,
@@ -155,7 +160,7 @@ export function projectData({ vessels, trips, dependencies }) {
  * Adds a trip and its legs to an event store, assigned to a vessel, its legs linked in order
  * @param {Scheduler.data.EventStore} eventStore
  * @param {VesselModel} vessel
- * @param {Object} trip `{ id, departs, draft }`
+ * @param {Object} trip `{ id, departs, midnight, day, draft }`, `departs` in minutes since `midnight`
  * @param {Object[]} stops
  * @returns {TripModel}
  */
@@ -164,7 +169,6 @@ export function addTrip(eventStore, vessel, trip, stops) {
 
     [added, ...added.children].forEach(event => event.assign(vessel));
     added.project.dependencyStore.add(chainData(added.children));
-    added.layoutPending = true;
 
     return added;
 }

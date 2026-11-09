@@ -2,7 +2,7 @@ import { Widget } from '@bryntum/core-enterprise';
 import { rowName, substation } from '../plan/Farm.js';
 import { appendStop } from '../plan/Planner.js';
 import { iconConfig } from '../util/Icons.js';
-import { duration, hhmm, nextDay } from '../util/Time.js';
+import { duration, hhmm } from '../util/Time.js';
 import { stoppedOf } from './MapModel.js';
 import { rotorText, turbineSvg } from './Turbine.js';
 
@@ -45,7 +45,7 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
         wind    : state.windAt(),
         stand,
         trip    : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
-        when    : whenOf(stand, stop, state.firstSailing),
+        when    : whenOf(stand, stop, state),
         hs      : state.hsAt(stop?.from ?? state.now),
         limit   : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
         ...noteOf({ state, turbine, trip : planned, drop, stand })
@@ -81,7 +81,7 @@ function standOf(held, trip, trimmed) {
 }
 
 // When the turbine is worked on: on station today, or the first sailing of the next day it was moved to
-function whenOf(stand, stop, firstSailing) {
+function whenOf(stand, stop, { firstSailing, nextDay }) {
     if (stand === 'moved') {
         return `Moved to ${nextDay} ${hhmm(firstSailing)}`;
     }

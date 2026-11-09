@@ -1,5 +1,5 @@
 import { replanTrip } from './Planner.js';
-import { duration, hhmm, nextLong } from '../util/Time.js';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
  * Re-plans the day when a new forecast comes in. Each trip that no longer gets back before its window closes is
@@ -15,17 +15,19 @@ export default class ForecastPlanner {
      * @param {Object} options
      * @param {DispatchState} options.dispatch
      * @param {Function} options.trips Returns the trips, TripModel records
+     * @param {Scheduler.model.ProjectModelEnterprise} options.project The project whose engine places the trips
      */
-    constructor({ dispatch, trips }) {
-        Object.assign(this, { dispatch, getTrips : trips, changes : [], snapshot : null });
+    constructor({ dispatch, trips, project }) {
+        Object.assign(this, { dispatch, project, getTrips : trips, changes : [], snapshot : null });
     }
 
     /**
-     * Takes the next forecast and re-plans the trips against it
+     * Takes the next forecast and re-plans the trips against it, a vessel's trips in departure order: each trip changed
+     * is placed by the engine before the next one is planned, which may not leave before it is back
      * @param {String[]} waiting The turbines whose team waits at the port, kept for the undo
-     * @returns {Object[]} The changes, `{ trip, change, removed, was }`
+     * @returns {Promise<Object[]>} The changes, `{ trip, change, removed, was }`
      */
-    apply(waiting) {
+    async apply(waiting) {
         const
             me           = this,
             { dispatch } = me,
@@ -37,12 +39,12 @@ export default class ForecastPlanner {
             waiting : [...waiting],
             trips   : trips.map(trip => ({
                 trip,
-                departs         : trip.departs,
-                stops           : trip.stops,
-                change          : trip.change,
+                departs           : trip.departs,
+                stops             : trip.stops,
+                change            : trip.change,
                 // Never undefined: until the app evaluates the trips again, a trip put back may still render as trimmed
-                removed         : [...(trip.removed ?? [])],
-                previousDeparts : trip.previousDeparts
+                removed           : [...(trip.removed ?? [])],
+                previousDeparture : trip.previousDeparture
             }))
         };
 
@@ -62,13 +64,15 @@ export default class ForecastPlanner {
 
             if (result) {
                 trip.set({
-                    change          : result.change,
-                    removed         : result.removed,
-                    previousDeparts : result.previousDeparts ?? null
+                    change            : result.change,
+                    removed           : result.removed,
+                    previousDeparture : result.change === 'pulled' ? trip.outerStartDate : null
                 });
-                // Its legs placed again: from the new departure, without the stops cut
+                // Its legs placed again: from the new departure, without the stops cut. The engine places them, the
+                // trips after it on the vessel wait for its return
                 trip.layout({ departs : result.start, stops : result.stops });
                 me.changes.push({ trip, ...result });
+                await me.project.commitAsync();
             }
 
             if (trip.change !== 'moved') {
@@ -77,8 +81,21 @@ export default class ForecastPlanner {
         }
 
         me.changes.sort((a, b) => reviewOrder[a.change] - reviewOrder[b.change]);
+        me.reviewIndex = -1;
 
         return me.changes;
+    }
+
+    /**
+     * The next change to review, round and round, the first after a new forecast
+     * @returns {Object|undefined} `{ trip, change, removed }`
+     */
+    nextChange() {
+        const { changes } = this;
+
+        this.reviewIndex = ((this.reviewIndex ?? -1) + 1) % Math.max(1, changes.length);
+
+        return changes[this.reviewIndex];
     }
 
     /**
@@ -96,7 +113,7 @@ export default class ForecastPlanner {
             trimmed         = count('trimmed'),
             parts           = [
                 trimmed.length ? `${trimmed.length} ${trimmed.length === 1 ? 'trip' : 'trips'} trimmed` : null,
-                ...count('moved').map(({ trip }) => `${trip.resource.name} moved to ${nextLong}`),
+                ...count('moved').map(({ trip }) => `${trip.resource.name} moved to ${dispatch.nextLong}`),
                 ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`)
             ].filter(Boolean),
             earlier         = was != null && was > closes ? `, ${duration(was - closes)} earlier` : '';
@@ -114,9 +131,9 @@ export default class ForecastPlanner {
     undo() {
         const { snapshot } = this;
 
-        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, previousDeparts }) => {
+        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, previousDeparture }) => {
             if (!trip.isDestroyed) {
-                trip.set({ change, removed, previousDeparts });
+                trip.set({ change, removed, previousDeparture });
                 trip.layout({ departs, stops });
             }
         });

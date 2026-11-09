@@ -32,7 +32,7 @@ const directions = {
  *   keyboard focus
  * - It zooms like a map (MapViewport): the wheel and a trackpad or finger pinch zoom around the pointer, a drag or a
  *   two finger scroll pans. `fitTo()` fits it to a trip, the Show all button (ShowAllButton) goes back to the whole
- *   farm. The view the user chose stays until the app fits it again (DispatchApp#fitMap)
+ *   farm. The view the user chose stays until the app fits it again (MapPanel#fit)
  *
  * Drawn in `currentColor` and CSS custom properties, so it follows light and dark.
  *
@@ -163,7 +163,7 @@ export default class TurbineMap extends Widget {
 
     /**
      * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. The app calls it
-     * when the selection changes (DispatchApp#fitMap), so a view the user panned or zoomed to stays until then
+     * when the selection changes (MapPanel#fit), so a view the user panned or zoomed to stays until then
      * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
      */
     fitTo(ids) {

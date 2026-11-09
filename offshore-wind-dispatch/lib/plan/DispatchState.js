@@ -1,3 +1,4 @@
+import { Base, DateHelper, Events } from '@bryntum/core-enterprise';
 import { closingTimes, valueAt } from './Weather.js';
 import { firstSailing } from './Farm.js';
 import { weekPlan } from './WeekPlan.js';
@@ -11,16 +12,36 @@ import { parseTime } from '../util/Time.js';
  * moves to when it was received and the windows close where the new forecast says, the previous closing times are
  * kept to show what changed.
  *
- * The week (WeekPlan) gives each of the next six days a forecast of its own. The Day view shows one day at a time
- * (`showDay`): the forecast, the windows, the clock and the dependencies are that day's. A later day is planned
- * before it starts, its clock stands at the start of the day.
+ * The week (WeekPlan) gives each of the next six days a forecast of its own, from today, the real current date. The
+ * Day view shows one day at a time (`dayIndex`, `showDay`): the forecast, the windows, the clock and the dependencies
+ * are that day's. A later day is planned before it starts, its clock stands at the start of the day.
+ *
+ * The planner counts the times of the day shown in minutes since its midnight (Planner), the records and the
+ * Scheduler in Dates: `toDate` and `toMinutes` convert between the two for the day shown, `dateOf` gives a day's
+ * midnight, the day's labels (`dayShort`, `nextDay`, `nextLong`) are formatted by DateHelper.
+ *
+ * It fires `change` when the day shown, the forecast or the teams waiting change, the views follow it.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
+ * https://bryntum.com/products/scheduler/docs/api/Core/helper/DateHelper
  */
-export default class DispatchState {
+export default class DispatchState extends Base.mixin(Events) {
+    static $name = 'DispatchState';
+
+    /**
+     * Fired when the day shown, the forecast in use or the teams waiting change
+     * @event change
+     * @param {String} name `day`, `forecast` or `waiting`
+     */
+
     /**
      * @param {Object} data The parsed data/farm.json
      */
-    constructor(data) {
+    construct(data) {
         const me = this;
+
+        super.construct();
 
         me.site     = data.site;
         me.limits   = data.limits;
@@ -32,7 +53,7 @@ export default class DispatchState {
         me.allJobs  = { ...me.week.jobs, ...data.jobs };
         me.faults   = new Set(data.faults);
         // The turbines whose team waits at the port for a trip
-        me.waiting  = [...data.waiting];
+        me._waiting = [...data.waiting];
         me.day      = { dayStart : data.site.dayStart, dayEnd : data.site.dayEnd };
         // Each day's own: its forecasts and the one in use, its windows, its clock, the dependencies of its plan
         me.days     = me.week.days.map(({ forecasts }, index) => ({
@@ -44,6 +65,67 @@ export default class DispatchState {
             dependencies    : index ? [] : data.dependencies
         }));
         me.dayIndex = 0;
+        // Midnight of today, the first day of the week
+        me.weekStart = DateHelper.clearTime(new Date());
+    }
+
+    /**
+     * Midnight of a day of the week
+     * @param {Number} index 0 is today
+     * @returns {Date}
+     */
+    dateOf(index) {
+        return DateHelper.add(this.weekStart, index, 'day');
+    }
+
+    /**
+     * Midnight of the day shown, minute 0 of the planner's times
+     * @property {Date}
+     */
+    get midnight() {
+        return this.dateOf(this.dayIndex);
+    }
+
+    /**
+     * A time of the day shown as a Date
+     * @param {Number} minutes Minutes since midnight
+     * @returns {Date}
+     */
+    toDate(minutes) {
+        return DateHelper.add(this.midnight, minutes, 'minute');
+    }
+
+    /**
+     * A Date as minutes since midnight of the day shown
+     * @param {Date} date
+     * @returns {Number}
+     */
+    toMinutes(date) {
+        return DateHelper.diff(this.midnight, date, 'minute');
+    }
+
+    /**
+     * The day shown, short, "Mon 9 Nov", for the KPI bar
+     * @property {String}
+     */
+    get dayShort() {
+        return DateHelper.format(this.midnight, 'ddd D MMM');
+    }
+
+    /**
+     * Where work the weather pushes out goes, the day after the one shown, "Tue"
+     * @property {String}
+     */
+    get nextDay() {
+        return DateHelper.format(this.dateOf(this.dayIndex + 1), 'ddd');
+    }
+
+    /**
+     * The day after the one shown in full, "Tuesday"
+     * @property {String}
+     */
+    get nextLong() {
+        return DateHelper.format(this.dateOf(this.dayIndex + 1), 'dddd');
     }
 
     /**
@@ -52,6 +134,20 @@ export default class DispatchState {
      */
     showDay(index) {
         this.dayIndex = index;
+        this.trigger('change', { name : 'day' });
+    }
+
+    /**
+     * The turbines whose team waits at the port for a trip
+     * @property {String[]}
+     */
+    get waiting() {
+        return this._waiting;
+    }
+
+    set waiting(value) {
+        this._waiting = value;
+        this.trigger('change', { name : 'waiting' });
     }
 
     /**
@@ -189,6 +285,7 @@ export default class DispatchState {
         me.forecastIndex++;
         me.windows = closingTimes(me.forecast, me.limits, me.day);
         me.now     = parseTime(me.forecast.received ?? me.forecast.issued);
+        me.trigger('change', { name : 'forecast' });
     }
 
     /**
@@ -258,3 +355,5 @@ export default class DispatchState {
         return this.week.days[index].due;
     }
 }
+
+DispatchState.initClass();

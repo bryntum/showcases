@@ -1,5 +1,4 @@
 import { Widget } from '@bryntum/core-enterprise';
-import { dayShort } from './util/Time.js';
 
 /**
  * The site and the day, quiet; the time is the schedule's now line
@@ -20,11 +19,12 @@ export default class KpiClock extends Widget {
      * Shows the site and the day shown
      * @param {Object} values
      * @param {String} values.site
+     * @param {String} values.day The day shown, "Mon 9 Nov"
      */
-    draw({ site }) {
+    draw({ site, day }) {
         this.html = [
             { tag : 'b', text : site },
-            { tag : 'small', text : dayShort }
+            { tag : 'small', text : day }
         ];
     }
 }

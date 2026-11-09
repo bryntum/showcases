@@ -1,6 +1,5 @@
 import { DragHelper, Widget } from '@bryntum/core-enterprise';
 import { createChip, showOnChip } from './DragChip.js';
-import { toMinutes } from '../util/Time.js';
 import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
 // Also registers the tooltip type used below
 import './DropTooltip.js';
@@ -230,7 +229,7 @@ export default class TeamDrag {
             date = target?.isWeekCell || me.keys.keyboard ? null :
                 me.scheduler.getDateFromCoordinate(point.x, null, false),
             drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
-                me.handler.previewDrop(me.team, target, date ? toMinutes(date) : null);
+                me.handler.previewDrop(me.team, target, date ? me.scheduler.dispatch.toMinutes(date) : null);
 
         showOnChip(me.keys.heldChip ?? me.proxy, drop);
 

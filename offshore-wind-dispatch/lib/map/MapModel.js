@@ -1,5 +1,5 @@
 import { turbineIds } from '../plan/Farm.js';
-import { duration, hhmm, nextDay } from '../util/Time.js';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
  * What the turbine map shows, worked out from the trips and the dispatcher's state: a status per turbine, the labels,
@@ -93,10 +93,10 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
             labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), tone : 'risk' });
         }
         else if (trip.status === 'trimmed' && trip.removed.length) {
-            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${nextDay}`, tone : 'moved' });
+            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${state.nextDay}`, tone : 'moved' });
         }
         else if (trip.status === 'moved' && trip.turbines.length) {
-            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${nextDay}`, tone : 'moved' });
+            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${state.nextDay}`, tone : 'moved' });
         }
     });
 

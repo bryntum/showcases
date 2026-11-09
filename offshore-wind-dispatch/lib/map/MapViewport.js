@@ -75,7 +75,7 @@ export default class MapViewport {
 
     /**
      * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. The app calls it
-     * when the selection changes (DispatchApp#fitMap), so a view the user panned or zoomed to stays until then
+     * when the selection changes (MapPanel#fit), so a view the user panned or zoomed to stays until then
      * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
      */
     fitTo(ids) {

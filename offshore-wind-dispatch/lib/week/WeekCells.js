@@ -1,5 +1,6 @@
 import { substation } from '../plan/Farm.js';
-import { dayDate, duration, hhmm, minutesOn } from '../util/Time.js';
+import { DateHelper } from '@bryntum/core-enterprise';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
  * The week as a day board, plain functions from the week's trips and the dispatch state to the Week view's data
@@ -8,27 +9,16 @@ import { dayDate, duration, hhmm, minutesOn } from '../util/Time.js';
  * its window never opens, else `Free` until its window closes.
  */
 
-const
-    minuteMs = 60_000,
-    dayCount = 7;
-
-/**
- * A time of a day of the week as a date
- * @param {Number} index 0 is today
- * @param {Number} minutes Minutes since that day's midnight
- * @returns {Date}
- */
-export function dateOn(index, minutes) {
-    return new Date(dayDate(index).getTime() + minutes * minuteMs);
-}
+const dayCount = 7;
 
 /**
  * The day of the week a date is on
+ * @param {DispatchState} state
  * @param {Date} date
  * @returns {Number} 0 is today, -1 or 7 outside the week
  */
-export function dayOf(date) {
-    return Math.max(-1, Math.min(dayCount, Math.floor(minutesOn(date, 0) / (24 * 60))));
+export function dayOf(state, date) {
+    return Math.max(-1, Math.min(dayCount, Math.floor(DateHelper.diff(state.dateOf(0), date, 'day', true))));
 }
 
 /**
@@ -55,18 +45,6 @@ function hourText(minutes) {
 }
 
 /**
- * A trip of the week on its own day: when it leaves port and is back, minutes since that day's midnight
- * @param {TripModel} trip
- * @returns {Object} `{ departs, back }`
- */
-function timesOf(trip) {
-    const departs = minutesOn(trip.startDate, trip.day) - trip.transits.out;
-
-    // The trip's length does not depend on the day shown
-    return { departs, back : departs + trip.endMinute - trip.departs };
-}
-
-/**
  * The days of the week, for the header and the summary
  * @param {DispatchState} state
  * @param {TripModel[]} trips The trips of the whole week
@@ -81,7 +59,7 @@ export function weekDays(state, trips) {
 
         return {
             index,
-            date    : dayDate(index),
+            date    : state.dateOf(index),
             sea     : seaState(state.windowsOf(index).ctv, state.day),
             hs      : [Math.min(...hs), Math.max(...hs)],
             wind    : Math.max(...wind),
@@ -117,10 +95,10 @@ export function weekCells(state, vessels, trips) {
                 id    = `${vessel.id}:${index}`;
 
             if (own.length) {
+                // When the first trip leaves port and the last one is back, as the engine placed them
                 const
-                    times    = own.map(timesOf),
-                    departs  = Math.min(...times.map(time => time.departs)),
-                    back     = Math.max(...times.map(time => time.back)),
+                    departs  = Math.min(...own.map(trip => trip.departs)),
+                    back     = Math.max(...own.map(trip => trip.endMinute)),
                     // Each turbine once, the substation by its name: a helicopter's drop-off and pick-up are one visit
                     turbines = [...new Set(own.flatMap(trip => trip.stops.map(stop => stop.turbine)))],
                     pax      = Math.max(...own.map(trip => trip.pax));
@@ -129,8 +107,8 @@ export function weekCells(state, vessels, trips) {
                     id,
                     resourceId  : vessel.id,
                     day         : index,
-                    startDate   : dateOn(index, departs),
-                    endDate     : dateOn(index, back),
+                    startDate   : DateHelper.add(state.dateOf(index), departs, 'minute'),
+                    endDate     : DateHelper.add(state.dateOf(index), back, 'minute'),
                     name        : `${hhmm(departs)}–${hhmm(back)}`,
                     trips       : own.map(trip => trip.id).join(' '),
                     turbines    : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
@@ -148,8 +126,8 @@ export function weekCells(state, vessels, trips) {
                     id,
                     resourceId : vessel.id,
                     day        : index,
-                    startDate  : dateOn(index, 0),
-                    endDate    : dateOn(index + 1, 0),
+                    startDate  : state.dateOf(index),
+                    endDate    : state.dateOf(index + 1),
                     kind       : free ? 'free' : 'nogo',
                     name       : free ? `Free · ${close >= end ? 'all day' : `until ${hourText(close)}`}` : 'No-go'
                 });

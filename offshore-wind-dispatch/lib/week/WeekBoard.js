@@ -2,7 +2,7 @@ import { Scheduler } from '@bryntum/scheduler-enterprise';
 import VesselModel from '../model/VesselModel.js';
 import VesselRangeModel from '../model/VesselRangeModel.js';
 import WeekCellModel from './WeekCellModel.js';
-import { dateOn, dayOf, lateText, weekCells, weekDays } from './WeekCells.js';
+import { dayOf, lateText, weekCells, weekDays } from './WeekCells.js';
 
 const
     // A day as one cell: the planning answer, not the times of the legs. The days share the width down to the tick
@@ -114,8 +114,8 @@ export default class WeekBoard extends Scheduler {
 
         super.construct({
             ...config,
-            startDate  : dateOn(0, 0),
-            endDate    : dateOn(7, 0),
+            startDate  : config.dispatch.dateOf(0),
+            endDate    : config.dispatch.dateOf(7),
             viewPreset : {
                 ...dayPreset,
                 headers : [{
@@ -162,8 +162,8 @@ export default class WeekBoard extends Scheduler {
         me.days = [];
         me.on({
             eventClick          : ({ eventRecord }) => me.openDay(eventRecord.day),
-            scheduleClick       : ({ date }) => me.openDay(dayOf(date)),
-            timeAxisHeaderClick : ({ startDate }) => me.openDay(dayOf(startDate)),
+            scheduleClick       : ({ date }) => me.openDay(dayOf(me.dispatch, date)),
+            timeAxisHeaderClick : ({ startDate }) => me.openDay(dayOf(me.dispatch, startDate)),
             thisObj             : me
         });
     }
@@ -230,7 +230,7 @@ export default class WeekBoard extends Scheduler {
             inDays  = element && me.timeAxisSubGridElement.contains(element),
             vessel  = inDays ? me.resolveResourceRecord(element, [x, y]) : null,
             date    = vessel && me.getDateFromCoordinate(x, null, false),
-            day     = date ? dayOf(date) : -1,
+            day     = date ? dayOf(me.dispatch, date) : -1,
             range   = vessel?.timeRanges.find(each => each.day === day);
 
         if (!range) {
@@ -253,7 +253,7 @@ export default class WeekBoard extends Scheduler {
     // The day's header cell: the date, the sea state pill, the wave height and the wind
     renderDay(startDate, cell) {
         const
-            day   = this.days?.[dayOf(startDate)],
+            day   = this.days?.[dayOf(this.dispatch, startDate)],
             today = day?.index === 0;
 
         cell.headerCellCls = `ow-week-day${today ? ' ow-week-today' : ''}`;
@@ -303,7 +303,7 @@ export default class WeekBoard extends Scheduler {
 
     // The summary of a day: the jobs planned against the jobs due
     jobsText(startDate) {
-        const day = this.days?.[dayOf(startDate)];
+        const day = this.days?.[dayOf(this.dispatch, startDate)];
 
         return day ? `${day.planned} / ${day.due}` : '';
     }

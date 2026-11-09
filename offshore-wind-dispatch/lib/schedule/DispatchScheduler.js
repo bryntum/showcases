@@ -13,7 +13,6 @@ import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, 
 import { tripTipContent } from './TripTip.js';
 import { beforeTripEditShow, tripEdit } from './TripEdit.js';
 import { tripTimeError, validateTripDrag } from './TripValidator.js';
-import { shownDay, toDate, toMinutes } from '../util/Time.js';
 
 const
     // The trips' place in their 56px row (54px on a phone), 3px above and below: the label, then the 28px work blocks
@@ -227,23 +226,6 @@ export default class DispatchScheduler extends Scheduler {
             paint              : 'onSchedulerPaint',
             thisObj            : me
         });
-        me.project.on({ dataReady : 'onPlanCalculated', thisObj : me });
-    }
-
-    /**
-     * Fired after the scheduling engine has calculated a change, when it changed how long a trip waits on station for
-     * another trip: the trips' ends and status may have changed
-     * @event waitChange
-     * @param {TripModel[]} trips The trips whose wait changed
-     */
-
-    // The engine has placed the legs: each trip reads its wait on station from them
-    onPlanCalculated() {
-        const changed = this.trips.filter(trip => trip.updateWait());
-
-        if (changed.length) {
-            this.trigger('waitChange', { trips : changed });
-        }
     }
 
     // Trips are edited, not their legs: a double click on a leg reaches its trip, the legs let the pointer through
@@ -312,7 +294,7 @@ export default class DispatchScheduler extends Scheduler {
      * @property {TripModel[]}
      */
     get trips() {
-        const day = shownDay();
+        const day = this.dispatch.dayIndex;
 
         return this.weekTrips.filter(trip => trip.day === day);
     }
@@ -340,6 +322,7 @@ export default class DispatchScheduler extends Scheduler {
             close        : dispatch.closeOf(trip.resource),
             sailOut      : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
             firstSailing : dispatch.firstSailing,
+            nextDay      : dispatch.nextDay,
             dropFit      : this.fittingTrips.has(trip),
             typeOf       : turbine => dispatch.jobAt(turbine)?.type ?? ''
         });
@@ -363,6 +346,7 @@ export default class DispatchScheduler extends Scheduler {
         }
 
         return renderVessel(vessel, {
+            day   : state.dayIndex,
             now   : state.now,
             close : state.closeOf(vessel),
             limit : state.limits[vessel.window]
@@ -372,15 +356,15 @@ export default class DispatchScheduler extends Scheduler {
     //region Views
 
     /**
-     * Shows the day the dispatch state and the times are on (DispatchState#showDay, Time#showDay): its hours, from the
-     * start of the day
+     * Shows the day the dispatch state is on (DispatchState#showDay): its hours, from the start of the day
      */
     showDay() {
         const
-            me      = this,
-            { day } = me.dispatch;
+            me           = this,
+            { dispatch } = me,
+            { day }      = dispatch;
 
-        me.setTimeSpan(toDate(day.dayStart * 60), toDate(day.dayEnd * 60));
+        me.setTimeSpan(dispatch.toDate(day.dayStart * 60), dispatch.toDate(day.dayEnd * 60));
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
     }
 
@@ -424,7 +408,7 @@ export default class DispatchScheduler extends Scheduler {
     departsAt(trip, startDate) {
         const step = this.timeResolution.increment;
 
-        return Math.round((toMinutes(startDate) - trip.transits.out) / step) * step;
+        return Math.round((trip.minutesOf(startDate) - trip.transits.out) / step) * step;
     }
 
     /**
