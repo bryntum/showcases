@@ -108,32 +108,38 @@ function describe(state, turbine) {
     };
 }
 
-// The line on the weather window, and its tone
+// A time in the card's one line, semibold
+const clock = minutes => ({ tag : 'b', text : hhmm(minutes) });
+
+// The line on the weather window as DomConfig children, one line, and its tone
 function noteOf({ state, turbine, trip, drop, stand }) {
     const
         close = trip && state.closeOf(trip.resource),
+        name  = trip && state.limits[trip.resource.window].name,
         notes = {
             held : () => drop.result.valid ?
                 {
-                    note : `Back in port by ${hhmm(drop.result.back)}, ${duration(drop.result.margin)} before ` +
-                        state.limits[trip.resource.window].noGo,
+                    note : ['Back ', clock(drop.result.back), ` · ${duration(drop.result.margin)} before the ${name} window`],
                     tone : 'reach'
                 } :
-                { note : drop.result.reason, tone : 'cancel' },
+                { note : [drop.result.short], tone : 'cancel' },
             moved : () => ({
-                note : `Its return leg would meet Hs ${state.hsAt(trip.endMinute).toFixed(1)} m`,
+                note : [`Return leg would meet Hs ${state.hsAt(trip.endMinute).toFixed(1)} m`],
                 tone : 'cancel'
             }),
             'at-risk' : () => ({
-                note : `Back in port by ${hhmm(trip.endMinute)}, ${duration(trip.endMinute - close)} after the window closes`,
+                note : ['Back ', clock(trip.endMinute), ` · ${duration(trip.endMinute - close)} after the ${name} window`],
                 tone : 'risk'
             }),
             none : () => state.waiting.includes(turbine) ?
-                { note : `${state.teams.get(state.jobAt(turbine).team)?.name} waits at the port, drag it onto a trip`, tone : 'risk' } :
-                { note : `CTV window open until ${hhmm(state.windows.ctv)}`, tone : 'ok' }
+                {
+                    note : [`${state.teams.get(state.jobAt(turbine).team)?.name} waits · drag it on a trip`],
+                    tone : 'risk'
+                } :
+                { note : ['Window open until ', clock(state.windows.ctv)], tone : 'ok' }
         };
 
-    return notes[stand]?.() ?? { note : `Window open until ${hhmm(close)}`, tone : 'ok' };
+    return notes[stand]?.() ?? { note : ['Window open until ', clock(close)], tone : 'ok' };
 }
 
 /**
@@ -223,7 +229,7 @@ export function cardContent(info, id = 'ow') {
                 },
                 { class : 'ow-card-job', text : info.job },
                 { tag : 'dl', children : rows },
-                { class : 'ow-card-note', children : [iconConfig('waves'), { tag : 'span', text : info.note }] }
+                { class : 'ow-card-note', children : [iconConfig('waves'), { tag : 'span', children : info.note }] }
             ]
         }
     ];

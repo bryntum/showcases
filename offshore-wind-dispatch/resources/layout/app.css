@@ -6,6 +6,9 @@
     background-color : var(--ow-page);
     font-size        : 13px;
 
+    /* The shell frames the app with this radius (shared/shell.css), see the tokens */
+    --sc-panel-radius : var(--ow-frame-radius);
+
     /* Plain buttons take the app's text, a class on one sets its own colour */
     :where(button) {
         font   : inherit;

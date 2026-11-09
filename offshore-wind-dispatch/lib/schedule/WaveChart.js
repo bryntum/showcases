@@ -222,14 +222,14 @@ export default class WaveChart {
             // lines and the CTV limit are series listed before the wave line, and the ring of the crossing covers them
             series     : [
                 ...me.windowLines(colors),
-                me.limitLine(me.limits.ctv, `CTV limit ${me.limits.ctv.toFixed(1)}`, colors.muted),
+                me.limitLine(me.limits.ctv, colors.muted),
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
                 me.valueLabels(colors, 'first', 'top'),
                 me.valueLabels(colors, 'last', 'top')
             ],
             axes : {
-                x : me.timeAxis(color('--ow-grid')),
+                x : me.timeAxis(color('--ow-tick')),
                 y : me.heightAxis(colors.muted)
             }
         };
@@ -381,9 +381,10 @@ export default class WaveChart {
         ].filter(Boolean);
     }
 
-    // The CTV limit, a thin dashed line over the whole day named above its left end. A series for the same reason as
-    // the window's lines: it runs under the ring where the waves cross it
-    limitLine(value, text, ink) {
+    // The CTV limit, a thin dashed line over the whole day. A series for the same reason as the window's lines: it runs
+    // under the ring where the waves cross it. Its name is the label of an invisible cross line (heightAxis), which
+    // sits at the left end just above the line, as the SWATH limit's does
+    limitLine(value, ink) {
         const { dayStart, dayEnd } = this.day;
 
         return {
@@ -392,8 +393,6 @@ export default class WaveChart {
             yKey : 'v',
             data : [
                 { t : dayStart, v : value },
-                // Where the name sits, centred above it
-                { t : dayStart + 0.62, v : value, text },
                 { t : dayEnd, v : value }
             ],
             stroke       : ink,
@@ -402,17 +401,7 @@ export default class WaveChart {
             marker       : { enabled : false },
             highlight,
             showInLegend : false,
-            tooltip      : { enabled : false },
-            label        : {
-                enabled    : true,
-                placement  : 'top',
-                padding    : 3,
-                fontFamily,
-                fontSize   : 9,
-                fontWeight : 500,
-                color      : ink,
-                formatter  : ({ datum }) => datum.text ?? ''
-            }
+            tooltip      : { enabled : false }
         };
     }
 
@@ -435,11 +424,25 @@ export default class WaveChart {
         };
     }
 
-    // Metres, with the SWATH limit as a thin dashed line in the same quiet tone as the CTV one (limitLine), named above
-    // its left end. Nothing crosses the waves there, so it stays a cross line
+    // A limit's name at the left end of the day, just above its line: the label of a cross line, drawn with its own
+    // stroke or, for the CTV limit whose line is a series (limitLine), none
+    limitName(value, text, ink, stroke) {
+        return {
+            type        : 'line',
+            value,
+            stroke,
+            lineDash    : [3, 3],
+            strokeWidth : 1,
+            label       : { text, color : ink, placement : 'top-left', padding : 3, fontSize : 9, fontWeight : 500, fontFamily }
+        };
+    }
+
+    // Metres, with the SWATH limit as a thin dashed line in the same quiet tone as the CTV one (limitLine). Nothing
+    // crosses the waves there, so it stays a cross line. Both limits are named at the left end, each above its line
     heightAxis(ink) {
         const
-            { swath }       = this.limits,
+            me              = this,
+            { ctv, swath }  = me.limits,
             { bottom, top } = heightRange;
 
         return {
@@ -453,22 +456,10 @@ export default class WaveChart {
             line       : { enabled : false },
             tick       : { enabled : false },
             gridLine   : { enabled : false },
-            crossLines : [{
-                type        : 'line',
-                value       : swath,
-                stroke      : ink,
-                lineDash    : [3, 3],
-                strokeWidth : 1,
-                label       : {
-                    text       : `SWATH limit ${swath.toFixed(1)}`,
-                    color      : ink,
-                    placement  : 'top-left',
-                    padding    : 3,
-                    fontSize   : 9,
-                    fontWeight : 500,
-                    fontFamily
-                }
-            }]
+            crossLines : [
+                me.limitName(swath, `SWATH limit ${swath.toFixed(1)}`, ink, ink),
+                me.limitName(ctv, `CTV limit ${ctv.toFixed(1)}`, ink, 'transparent')
+            ]
         };
     }
 }

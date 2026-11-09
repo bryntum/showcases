@@ -26,6 +26,8 @@
     --ow-raised    : light-dark(var(--b-neutral-99), var(--b-neutral-96));
     --ow-border    : var(--b-border-7);
     --ow-grid      : color-mix(in srgb, var(--b-border-7) 70%, transparent);
+    /* The hour lines, a step lighter than the row lines: they guide the eye, the trips lead */
+    --ow-tick      : color-mix(in srgb, var(--b-border-7) 45%, transparent);
     --ow-ink       : var(--b-text-1);
     --ow-ink-sub   : var(--b-text-2);
     --ow-ink-faint : var(--b-neutral-55);
@@ -53,6 +55,10 @@
        red only what is stopped. Exact values of the calm redesign, each with its dark counterpart */
     --ow-c-work        : light-dark(#1f6fb8, #2a6db0);
     --ow-c-on-work     : #fff;
+    /* The tonal work block, as Bryntum's tonal event style makes it from the work blue: a tint and a hairline */
+    --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 86%),
+        color-mix(in srgb, var(--ow-c-work), var(--b-mix, #000) 80%));
+    --ow-c-work-line   : color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 55%);
     --ow-c-risk-tint   : light-dark(#fff3e0, #3a2810);
     --ow-c-risk-line   : light-dark(#e07b00, #f0962e);
     --ow-c-risk-ink    : light-dark(#8a4500, #ffb766);
@@ -76,8 +82,13 @@
     --ow-size-hero      : 26px;
     --ow-size-kpi       : 22px;
     --ow-bar-control    : 30px;
-    --ow-gutter         : 24px;
-    --ow-card-radius    : 8px;
+    /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
+       the corner curve ends. The cards inside are concentric: radius less padding, never below the smallest radius a
+       card keeps (which is where the two are equal) */
+    --ow-frame-radius   : 24px;
+    --ow-gutter         : var(--ow-frame-radius);
+    --ow-card-radius-min : 8px;
+    --ow-card-radius    : max(calc(var(--ow-frame-radius) - var(--ow-gutter)), var(--ow-card-radius-min));
     --ow-card-shadow    : 0 1px 3px light-dark(rgb(16 24 40 / 8%), rgb(0 0 0 / 45%)),
         0 1px 2px light-dark(rgb(16 24 40 / 4%), rgb(0 0 0 / 30%));
     --ow-c-radius       : 4px;

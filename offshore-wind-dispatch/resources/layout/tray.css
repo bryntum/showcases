@@ -4,7 +4,7 @@
 .ow-tray {
     flex       : none;
     gap        : 16px;
-    padding    : 16px 0 0;
+    padding    : 8px 0 0;
     overflow   : hidden;
 }
 
@@ -25,7 +25,7 @@
     display          : flex;
     align-items      : center;
     gap              : 12px;
-    padding          : 8px 16px 8px 8px;
+    padding          : 6px 16px 6px 8px;
     border-radius    : 8px;
     background-color : var(--ow-surface);
     box-shadow       : 0 1px 3px rgb(0 0 0 / 8%);

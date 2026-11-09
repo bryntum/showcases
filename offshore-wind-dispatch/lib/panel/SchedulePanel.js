@@ -8,8 +8,8 @@ import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
 
 /**
- * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button, the Day and Week views
- * and their arrows, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler),
+ * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the Day | Week
+ * toggle, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler),
  * and its footer with the legend. The crews waiting at the port sit under it, on the page (DispatchApp). On a phone
  * it is the Schedule tab.
  *
@@ -72,14 +72,6 @@ export default class SchedulePanel extends Panel {
                         hidden  : true,
                         onClick : () => me.trigger('forecast')
                     },
-                    // Earlier: two hours along the day, a week in the Week view
-                    previous : {
-                        type      : 'button',
-                        cls       : 'ow-nudge',
-                        icon      : 'b-icon b-icon-previous',
-                        ariaLabel : 'Earlier',
-                        onClick   : () => me.nudge(-1)
-                    },
                     view : {
                         type  : 'buttongroup',
                         items : {
@@ -95,13 +87,6 @@ export default class SchedulePanel extends Panel {
                                 onToggle    : ({ pressed }) => pressed && me.showView('week')
                             }
                         }
-                    },
-                    next : {
-                        type      : 'button',
-                        cls       : 'ow-nudge',
-                        icon      : 'b-icon b-icon-next',
-                        ariaLabel : 'Later',
-                        onClick   : () => me.nudge(1)
                     }
                 }
             },
@@ -111,8 +96,7 @@ export default class SchedulePanel extends Panel {
                     type      : 'dispatchscheduler',
                     flex      : 1,
                     listeners : {
-                        paint                  : 'up.onSchedulerPaint',
-                        timelineViewportResize : 'up.refreshBar'
+                        paint : 'up.refreshBar'
                     },
                     dispatch,
                     startDate : toDate(day.dayStart * 60),
@@ -125,23 +109,6 @@ export default class SchedulePanel extends Panel {
         });
     }
 
-    // The scheduler paints after the panel: the arrows follow what it can show, its scrolling and its width
-    onSchedulerPaint() {
-        const { scheduler } = this.widgetMap;
-
-        scheduler.timeAxisSubGrid.scrollable.on({ scroll : 'refreshBar', thisObj : this });
-        this.refreshBar();
-    }
-
-    /**
-     * Moves the schedule earlier or later, see DispatchScheduler#nudge
-     * @param {Number} direction -1 or 1
-     */
-    nudge(direction) {
-        this.widgetMap.scheduler.nudge(direction);
-        this.refreshBar();
-    }
-
     /**
      * Shows the Day or the Week view of the schedule
      * @param {'day'|'week'} view
@@ -152,14 +119,13 @@ export default class SchedulePanel extends Panel {
     }
 
     /**
-     * Updates the tbar: the next forecast's button, and the arrows, off at the ends of what can be shown
+     * Updates the tbar: the next forecast's button
      */
     refreshBar() {
         const
-            { dispatch }                  = this,
-            { scheduler }                 = this.widgetMap,
-            { forecast, previous, next : later } = this.tbar.widgetMap,
-            next                          = dispatch.nextForecast;
+            { dispatch } = this,
+            { forecast } = this.tbar.widgetMap,
+            next         = dispatch.nextForecast;
 
         forecast.hidden = !next;
 
@@ -174,13 +140,6 @@ export default class SchedulePanel extends Panel {
                 label?.replaceChildren(`Forecast ${next.issued} is in · `,
                     Object.assign(document.createElement('b'), { textContent : 'Re-plan' }));
             }
-        }
-
-        if (scheduler.isPainted) {
-            const can = scheduler.canNudge;
-
-            previous.disabled = !can.previous;
-            later.disabled    = !can.next;
         }
     }
 }

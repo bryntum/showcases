@@ -186,6 +186,8 @@ export default class TeamDrag {
         const me = this;
 
         me.team = teamId;
+        // The trip's own tooltip stays away while a team is held: the drop tooltip speaks for the trip
+        me.scheduler.features.eventTooltip.disabled = true;
         me.handler.liftTeam(teamId);
         me.tip = Widget.create({ type : 'droptooltip' });
     }
@@ -223,6 +225,7 @@ export default class TeamDrag {
         if (me.team) {
             me.tip.destroy();
             me.tip = me.team = me.point = me.proxy = null;
+            me.scheduler.features.eventTooltip.disabled = false;
             me.handler.endDrag();
         }
     }

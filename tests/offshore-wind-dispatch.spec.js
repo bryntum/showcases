@@ -53,6 +53,48 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(tray(page).locator('.ow-team')).toHaveCount(3);
     });
 
+    test('at 1600 x 960 the page and the schedule do not scroll, the frame is aligned to its corner, the status line is one line', async({ page }) => {
+        await page.setViewportSize({ width : 1600, height : 960 });
+        await open(page);
+
+        const m = await page.evaluate(() => {
+            const
+                left   = selector => document.querySelector(selector).getBoundingClientRect().left,
+                right  = selector => document.querySelector(selector).getBoundingClientRect().right,
+                app    = document.querySelector('.ow-app'),
+                kpis   = [...document.querySelectorAll('.ow-kpis > *')].at(-1),
+                note   = document.querySelector('.ow-side .ow-card-note > span:last-child'),
+                { scheduler } = globalThis.bryntum.query('dispatchapp'),
+                radius = parseFloat(getComputedStyle(app).borderTopLeftRadius),
+                border = parseFloat(getComputedStyle(app).borderLeftWidth);
+
+            return {
+                body     : [document.body.scrollHeight, document.body.clientHeight],
+                scroll   : scheduler.scrollable.maxY,
+                clock    : left('.ow-clock'),
+                schedule : left('.ow-schedule'),
+                tray     : left('.ow-tray'),
+                kpis     : kpis.getBoundingClientRect().right,
+                side     : right('.ow-side'),
+                inset    : left('.ow-clock') - app.getBoundingClientRect().left - border,
+                radius,
+                noteCut  : note.scrollWidth > note.clientWidth,
+                noteRows : note.getBoundingClientRect().height < 20
+            };
+        });
+
+        expect(m.body[0]).toBe(m.body[1]);
+        expect(m.scroll).toBe(0);
+        // The header text, the schedule card and the crews tray share one x, the KPIs and the rail card another; the
+        // frame's padding is its corner radius
+        expect(Math.abs(m.clock - m.schedule)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.tray - m.schedule)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.kpis - m.side)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.inset - m.radius)).toBeLessThanOrEqual(1);
+        expect(m.noteCut).toBe(false);
+        expect(m.noteRows).toBe(true);
+    });
+
     test('dragging a team onto a trip previews the stop, then books it', async({ page }) => {
         await open(page);
 
@@ -389,42 +431,24 @@ test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
             };
         });
 
-    test('the Day view shows the whole day where it fits, its arrows off; narrower, they move the hours by two to the ends', async({ page }) => {
-        const
-            previous = () => bar(page).locator('.ow-nudge').first(),
-            next     = () => bar(page).locator('.ow-nudge').last();
-
+    test('the Day | Week toggle stands alone, the Day view shows the whole day where it fits and scrolls where it does not', async({ page }) => {
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
         await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
-        await expect(previous()).toBeDisabled();
-        await expect(next()).toBeDisabled();
+        await expect(bar(page).locator('.b-button-group .b-button')).toHaveCount(2);
+        await expect(bar(page).locator('.ow-nudge')).toHaveCount(0);
+        expect((await axis(page)).x).toBe(0);
+        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid.scrollable.maxX))
+            .toBeLessThan(1);
 
-        // Narrow enough for the hours to scroll, wide enough for the cards (with their gutters) to hold the title bar
+        // Narrower, the hours keep their width and the timeline scrolls, as Scheduler does
         await page.setViewportSize({ width : 1100, height : 800 });
         await open(page);
-        await expect(previous()).toBeDisabled();
-        await expect(next()).toBeEnabled();
-
-        const first = await axis(page);
-
-        await next().click();
-        await expect.poll(async() => (await axis(page)).x).toBeCloseTo(2 * first.tick, 0);
-        await expect(previous()).toBeEnabled();
-
-        // On to the end of the day, where the arrow goes off, then back to its start
-        for (let i = 0; i < 12 && await next().isEnabled(); i++) {
-            await next().click();
-        }
-        await expect(next()).toBeDisabled();
-        for (let i = 0; i < 12 && await previous().isEnabled(); i++) {
-            await previous().click();
-        }
-        await expect(previous()).toBeDisabled();
-        await expect(next()).toBeEnabled();
+        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid.scrollable.maxX))
+            .toBeGreaterThan(1);
     });
 
-    test('the Week view has a column per day, keeps the weather rows and shifts a week with the arrows', async({ page }) => {
+    test('the Week view has a column per day for this week only, and keeps the weather rows', async({ page }) => {
         await open(page);
         await bar(page).getByRole('button', { name : 'Week' }).click();
 
@@ -434,16 +458,14 @@ test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
         await expect(scheduler(page).locator('.ow-sea-today .ow-wave-chart')).toHaveCount(1);
         await expect(scheduler(page).locator('.ow-wind[data-peak]')).toHaveCount(1);
 
-        const
-            previous = bar(page).locator('.ow-nudge').first(),
-            next     = bar(page).locator('.ow-nudge').last(),
-            first    = await axis(page);
+        // Monday 9 to Sunday 15: seven days from today
+        const { start, end } = await page.evaluate(() => {
+            const { scheduler : s } = globalThis.bryntum.query('dispatchapp');
 
-        await expect(previous).toBeDisabled();
-        await next.click();
-        await expect.poll(async() => (await axis(page)).start - first.start).toBe(7 * 24 * 3600_000);
-        await next.click();
-        await expect(next).toBeDisabled();
+            return { start : s.startDate.getTime(), end : s.endDate.getTime() };
+        });
+
+        expect(end - start).toBe(7 * 24 * 3600_000);
 
         // Back to the day, which is where the data is
         await bar(page).getByRole('button', { name : 'Day' }).click();
@@ -740,20 +762,22 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         expect(teams).toEqual(['F', 'G', 'H']);
         expect(vessels).toHaveLength(6);
 
-        // The Day view shows ten of the day's twelve hours: scrolled to the end of the day, the point is near 18:00
-        await page.evaluate(() => {
-            const { scrollable } = globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid;
+        // Half past twelve: inside every weather window, on a stretch of each row that holds no trip
+        const noon = await page.evaluate(() => {
+            const { scheduler : s } = globalThis.bryntum.query('dispatchapp');
 
-            scrollable.x = scrollable.maxX;
+            return s.getCoordinateFromDate(new Date(s.startDate.getFullYear(), s.startDate.getMonth(),
+                s.startDate.getDate(), 12, 30), true);
         });
 
         for (const teamId of teams) {
             for (const { id, name } of vessels) {
-                // A point on the vessel's row in the time axis, near its end, clear of its trips
+                // A point on the vessel's row in the time axis, at half past twelve
                 const
                     axis   = scheduler(page).locator('.b-time-axis-sub-grid'),
+                    axisBox = await axis.boundingBox(),
                     rowBox = await axis.locator(`.b-grid-row[data-id="${id}"]`).boundingBox(),
-                    point  = { x : rowBox.x + rowBox.width - 20, y : rowBox.y + rowBox.height / 2 };
+                    point  = { x : axisBox.x + noon, y : rowBox.y + rowBox.height / 2 };
 
                 await holdAt(page, teamId, point);
                 await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop?.target.id),
@@ -774,9 +798,17 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
 
                 results.push({ team : teamId, vessel : name, ...held });
 
+                // The trips it would fit on are outlined for the whole drag, from the same check
+                const outlined = await scheduler(page).locator('.ow-trip-fits').evaluateAll(elements =>
+                    elements.map(element => element.closest('[data-event-id]').dataset.eventId));
+
+                expect(outlined).toEqual(teamId === 'F' ? ['NT-1'] : []);
+
                 await page.keyboard.press('Escape');
                 await page.mouse.up();
                 await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
+                // The outline goes when the drag ends
+                await expect(scheduler(page).locator('.ow-trip-fits')).toHaveCount(0);
             }
         }
 
@@ -786,40 +818,75 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         console.log(results.map(each => `${each.team} → ${each.vessel} (${each.trip}): ${each.valid ? 'fits' : each.reason}`)
             .join('\n'));
 
-        // Dropped at the end of the day, inside every window's no-go range: none fits there
-        expect(fits).toEqual([]);
+        // F, the converter fault, 48 min, fits on the trip of Northern Tern that has not left yet, wherever on its row
+        // it is dropped (the other vessels' trips are under way, or back after their windows). Nothing else fits
+        expect(fits).toEqual(['F on NT-1']);
 
-        // Refused in plain words: when it would be back and the window that closes, with the weather that closes it
-        expect(results.find(each => each.team === 'G' && each.vessel === 'Northern Tern').reason)
-            .toBe('Back in port 17:47, the CTV window closes 14:00 (waves over 1.5 m)');
-        // Not only trips that come back late: F would be back at 13:19, but is dropped at the end of the day
-        expect(results.find(each => each.team === 'F' && each.vessel === 'Northern Tern').reason)
-            .toBe('Back in port 13:19, the CTV window closes 14:00 (waves over 1.5 m)');
+        // G (4 h) and H (6 h) fit on no trip and no new trip of any vessel today, and are refused saying so
+        for (const [team, hours] of [['G', '4 h'], ['H', '6 h']]) {
+            for (const each of results.filter(result => result.team === team && result.vessel !== 'Heli 1' &&
+                result.vessel !== 'Heli 2')) {
+                expect(each.reason).toBe(`${hours} on site does not fit before any window closes today`);
+            }
+        }
 
-        // The same team dropped on the same row before the window closes fits, the day scrolled back to its start
-        await page.evaluate(() => {
-            globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid.scrollable.x = 0;
-        });
-
-        const
-            axisBox = await scheduler(page).locator('.b-time-axis-sub-grid').boundingBox(),
-            rowBox  = await scheduler(page).locator('.b-grid-row[data-id="nt"]').first().boundingBox(),
-            noon    = await page.evaluate(() => {
-                const { scheduler : s } = globalThis.bryntum.query('dispatchapp');
-
-                return s.getCoordinateFromDate(new Date(s.startDate.getFullYear(), s.startDate.getMonth(),
-                    s.startDate.getDate(), 12), true);
-            });
-
-        await holdAt(page, 'F', { x : axisBox.x + noon, y : rowBox.y + rowBox.height / 2 });
-        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop?.result.valid))
-            .toBe(true);
-        await page.keyboard.press('Escape');
-        await page.mouse.up();
+        // F on a trip that is back after its window: in plain words, when and which window
+        expect(results.find(each => each.team === 'F' && each.vessel === 'Sea Puffin').reason)
+            .toBe('Back in port 16:01, the CTV window closes 14:00 (waves over 1.5 m)');
 
         // A vessel with no trip left to join gets a new trip from port
         expect(results.find(each => each.team === 'F' && each.vessel === 'Skarv Runner').trip).toBe('SR-2');
         expect(results.find(each => each.team === 'F' && each.vessel === 'Heli 1').short).toBe('Vessels only');
+    });
+
+    test('the drag chip carries only the team and what it gives, the certificates are icons, the trip tooltip stays away', async({ page }) => {
+        await open(page);
+
+        const
+            nt = await trip(page, 'NT-1').boundingBox();
+
+        await holdAt(page, 'F', { x : nt.x + nt.width / 2, y : nt.y + nt.height / 2 });
+        await expect(page.locator('.ow-drop-tip')).toBeVisible();
+
+        // No debug text, no coordinates: the team, its certificate and the short verdict
+        await expect(page.locator('.ow-drag-chip')).toHaveText('Team FHVFits NT-1, back 13:19');
+
+        // HV held: a check icon in the work blue, no ✓ character
+        const cert = page.locator('.ow-drop-tip .ow-drop-cert-held').first();
+
+        await expect(cert).toContainText('HV');
+        await expect(cert.locator('svg.ow-icon-check')).toHaveCount(1);
+        await expect(page.locator('.ow-drop-tip')).not.toContainText('✓');
+        expect(await cert.locator('svg').evaluate(svg => svg.getBoundingClientRect().width)).toBeCloseTo(12, 0);
+
+        // The trip's own tooltip does not open over the drag
+        await expect(page.locator('.b-sch-event-tooltip, .ow-tip')).toHaveCount(0);
+
+        await page.keyboard.press('Escape');
+        await page.mouse.up();
+    });
+
+    test('the trip tooltip: the vessel, a status pill, the trip drawn to scale and a grid of facts', async({ page }) => {
+        await open(page);
+
+        for (const [id, pill] of [['SR-1', '56 min to spare'], ['SP-1', '+17 min late']]) {
+            const box = await trip(page, id).boundingBox();
+
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.7, { steps : 3 });
+
+            const tip = page.locator('.b-tooltip .ow-tip');
+
+            await expect(tip).toBeVisible();
+            await expect(tip.locator('.ow-tip-status')).toHaveText(pill);
+            await expect(tip.locator('.ow-tip-block')).not.toHaveCount(0);
+            await expect(tip.locator('dt', { hasText : 'Back in port' })).toBeVisible();
+            // Hours and minutes, never decimals
+            await expect(tip).not.toContainText(/\d\.\d+ h/);
+            // The grid's own styles, not the browser's indentation
+            expect(await tip.locator('dd').first().evaluate(dd => getComputedStyle(dd).marginInlineStart)).toBe('0px');
+            await page.mouse.move(5, 5);
+            await expect(tip).toHaveCount(0);
+        }
     });
 
     test('the proxy turns green or red as it moves, and neutral over empty space', async({ page }) => {

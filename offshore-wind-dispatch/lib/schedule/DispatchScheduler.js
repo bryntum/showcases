@@ -18,11 +18,7 @@ const
     // The trip's label above its legs, the NestedEvents feature's header
     headHeight  = 20,
     // The hours of the day share the width, down to this many px per hour, then the timeline scrolls
-    minTick     = { wide : 50, phone : 44 },
-    // How far the Day view's arrows move the day, hours
-    nudgeHours  = 2,
-    // The Week view, one column per day, shifts a week at a time, up to this many weeks after the one of today
-    weekReach   = 2;
+    minTick     = { wide : 50, phone : 44 };
 
 /**
  * The vessels and helicopters on the day's timeline, a Scheduler on the Enterprise tier:
@@ -77,7 +73,7 @@ export default class DispatchScheduler extends Scheduler {
         phone : false,
 
         /**
-         * `'day'`: the day's hours, some of them in view at a time (nudge moves them), or `'week'`: one column a day
+         * `'day'`: the day's hours, scrolling where it does not fit, or `'week'`: one column a day, this week
          * @prp {'day'|'week'}
          */
         view : 'day',
@@ -179,7 +175,7 @@ export default class DispatchScheduler extends Scheduler {
                 eventModelClass    : TripModel,
                 resourceModelClass : VesselModel
             },
-            eventRenderer             : args => renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource)),
+            eventRenderer             : args => me.renderEvent(args),
             resourceTimeRangeRenderer : renderRange,
             features                  : {
                 ...config.features,
@@ -260,6 +256,14 @@ export default class DispatchScheduler extends Scheduler {
         me.fitTicks();
     }
 
+    // A trip or one of its legs, against its vessel's window; a work block names its job's short type
+    renderEvent(args) {
+        const { dispatch } = this;
+
+        return renderTrip(args, dispatch.closeOf(args.eventRecord.trip.resource),
+            turbine => dispatch.jobAt(turbine)?.type ?? '');
+    }
+
     // The EventBuffer feature's renderer: a trip's sail out and back against its window and the start of the day, the
     // tick being an hour wide
     renderTransits(args) {
@@ -301,8 +305,8 @@ export default class DispatchScheduler extends Scheduler {
             return;
         }
 
-        // The whole working day when it fits (the arrows then have nothing to move); on a narrower screen the hours
-        // keep their minimum width and the arrows scroll the rest into view
+        // The whole working day when it fits; on a narrower screen the hours keep their minimum width and the timeline
+        // scrolls
         const
             { day } = me.dispatch,
             tick    = Math.max(minimum, Math.floor(width / (week ? 7 : day.dayEnd - day.dayStart)));
@@ -329,50 +333,6 @@ export default class DispatchScheduler extends Scheduler {
         // Back at the start of the day or the week
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
         me.forecastHeader.refresh();
-    }
-
-    /**
-     * Whether the arrows can go on. The Day view moves along the day, the Week view along the weeks from the one of
-     * today
-     * @returns {{ previous : Boolean, next : Boolean }}
-     */
-    get canNudge() {
-        const me = this;
-
-        if (me.view === 'week') {
-            const weeks = Math.round((me.startDate - toDate(0)) / (7 * 24 * 3600_000));
-
-            return { previous : weeks > 0, next : weeks < weekReach };
-        }
-
-        const { x, maxX } = me.timeAxisSubGrid.scrollable;
-
-        return { previous : x > 0.5, next : x < maxX - 0.5 };
-    }
-
-    /**
-     * The arrows: the Day view moves the visible hours of the day by two hours, never past its ends (the data is one
-     * day), the Week view shifts by a week, the Scheduler's own shiftPrevious() and shiftNext()
-     * @param {Number} direction -1 for earlier, 1 for later
-     */
-    nudge(direction) {
-        const me = this;
-
-        if (me.view === 'week') {
-            if (direction < 0) {
-                me.shiftPrevious();
-            }
-            else {
-                me.shiftNext();
-            }
-
-            me.forecastHeader.refresh();
-        }
-        else {
-            const { scrollable } = me.timeAxisSubGrid;
-
-            scrollable.x = Math.min(Math.max(scrollable.x + direction * nudgeHours * me.tickSize, 0), scrollable.maxX);
-        }
     }
 
     updatePhone(phone) {

@@ -91,7 +91,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
     (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a Container with
     two Buttons), `IconButton.js` a Button with an inline SVG icon and `Legend.js` the schedule's footer
   * `panel/` the panels of the app, each a Panel whose `tbar` is the title bar, with `ButtonGroup`s for the Day / Week
-    views (with arrows) and the Status / Access switch: `SchedulePanel` (the notice, the scheduler, its footer and the tray), `MapPanel` (the
+    views and the Status / Access switch: `SchedulePanel` (the notice, the scheduler, its footer and the tray), `MapPanel` (the
     map and the turbine card) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip

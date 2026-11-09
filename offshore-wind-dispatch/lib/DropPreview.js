@@ -40,6 +40,7 @@ export default Target => class DropPreview extends Target {
         const chip = this.widgetMap.tray.chipOf(teamId);
 
         this.lifted = teamId;
+        this.markFitting(teamId);
 
         if (chip) {
             chip.lifted = true;
@@ -96,8 +97,8 @@ export default Target => class DropPreview extends Target {
             { team, job }          = entry,
             { plan, trip, vessel } = me.tripFor(target, team, job),
             close                  = me.dispatch.closeOf(vessel),
-            result          = me.checkPlan(plan, vessel, team, job, at),
-            stop           = stopOf(team, job, true);
+            stop                   = stopOf(team, job, true),
+            result                 = me.checkPlan(plan, vessel, team, job, at);
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
@@ -139,7 +140,7 @@ export default Target => class DropPreview extends Target {
             open   = trips.filter(joinable).map(trip => ({ trip, plan : trip.plan, vessel }));
 
         if (open.length) {
-            const checked = open.map(option => ({ ...option, result : me.checkPlan(option.plan, vessel, team, job) }));
+            const checked = open.map(option => ({ ...option, result : me.rawCheck(option.plan, vessel, team, job) }));
 
             return checked.filter(option => option.result.valid).sort((a, b) => a.result.back - b.result.back)[0] ??
                 checked[0];
@@ -177,11 +178,68 @@ export default Target => class DropPreview extends Target {
         return this.checkPlan(trip.plan, trip.resource, team, job);
     }
 
-    // Whether a team's job fits on a trip's plan, on a vessel
+    /**
+     * Whether a team's job fits anywhere today: on the trip it would join, or on a new trip, of any vessel
+     * @param {Object} team
+     * @param {Object} job
+     * @returns {Boolean}
+     */
+    fitsAnywhere(team, job) {
+        const
+            me      = this,
+            vessels = me.scheduler.resourceStore.records.filter(each => !each.isSpecialRow && !each.isGroupHeader);
+
+        return vessels.some(vessel => {
+            const { plan } = me.tripFor(vessel, team, job);
+
+            return me.rawCheck(plan, vessel, team, job).valid;
+        });
+    }
+
+    // Whether a team's job fits on a trip's plan, on a vessel. A job that fits nowhere today says so, rather than how
+    // late this one trip would be
     checkPlan(plan, vessel, team, job, at = null) {
+        const
+            me     = this,
+            result = me.rawCheck(plan, vessel, team, job, at);
+
+        return !result.valid && result.back > me.dispatch.closeOf(vessel) && !me.fitsAnywhere(team, job) ?
+            me.rawCheck(plan, vessel, team, job, at, true) : result;
+    }
+
+    /**
+     * Outlines the trips a team would fit on, for as long as it is dragged: the same dispatch check as the drop, run
+     * once when the team is lifted
+     * @param {String} teamId
+     */
+    markFitting(teamId) {
+        const
+            me    = this,
+            entry = me.waitingTeam(teamId);
+
+        me.clearFitting();
+        entry && me.dropTargets().filter(trip => me.checkDrop(trip, entry.team, entry.job).valid)
+            .forEach(trip => TripModel.fitting.add(trip));
+        me.outlineFitting(true);
+    }
+
+    clearFitting() {
+        this.outlineFitting(false);
+        TripModel.fitting.clear();
+    }
+
+    // The outline is the trip's class, put on its element now, no redraw (the renderer keeps it on a later one)
+    outlineFitting(on) {
+        TripModel.fitting.forEach(trip => this.scheduler.getElementFromEventRecord(trip)
+            ?.classList.toggle('ow-trip-fits', on));
+    }
+
+    // The dispatch check itself, see Planner#previewDrop
+    rawCheck(plan, vessel, team, job, at = null, nowhere = false) {
         const { dispatch } = this;
 
         return previewDrop({
+            nowhere,
             trip   : plan,
             team,
             job,
@@ -262,6 +320,7 @@ export default Target => class DropPreview extends Target {
     }
 
     endDrag() {
+        this.clearFitting();
         this.clearPreview();
         this.lifted = null;
         this.widgetMap.tray.draw(this.dispatch.waitingTeams);

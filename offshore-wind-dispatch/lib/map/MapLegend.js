@@ -18,7 +18,7 @@ export default class MapLegend extends Widget {
     static configurable = {
         cls  : 'ow-map-legend',
         html : statuses.map(([cls, label]) =>
-            `<span><svg class="ow-legend-mark ${cls}" viewBox="-8 -8 19 19" aria-hidden="true">${markerParts()}</svg>${label}</span>`).join('')
+            `<span><svg class="ow-legend-mark ${cls}" viewBox="-8 -8 16 16" aria-hidden="true">${markerParts()}</svg>${label}</span>`).join('')
     };
 }
 

@@ -7,7 +7,7 @@
     display               : grid;
     grid-template-columns : 124px minmax(0, 1fr);
     align-items           : stretch;
-    gap                   : 14px;
+    gap                   : 10px;
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
     &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
@@ -16,7 +16,7 @@
 
 .ow-card.b-widget {
     flex               : none;
-    padding            : 12px;
+    padding            : 12px 10px;
     border-block-start : 1px solid var(--ow-border);
 }
 
@@ -68,15 +68,20 @@
     }
 }
 
+/* The id, its row and the rating pill share one text baseline, the pill is centred on that line */
 .ow-card-title {
+    display     : flex;
+    flex-wrap   : wrap;
+    align-items : baseline;
+    gap         : 0 8px;
+
     b {
         font-size   : 18px;
         font-weight : 700;
     }
 
     small {
-        margin-inline-start : 8px;
-        color       : var(--ow-ink-sub);
+        color : var(--ow-ink-sub);
     }
 }
 
@@ -87,22 +92,33 @@
 .ow-card-note {
     display          : flex;
     align-items      : center;
-    gap              : 6px;
-    padding          : 5px 8px;
+    gap              : 4px;
+    padding          : 4px 5px;
     border-radius    : 6px;
-    font-size        : 11.5px;
-    font-weight      : 600;
+    font-size        : 10.5px;
+    font-weight      : 400;
     color            : color-mix(in srgb, var(--ow-tone) 75%, var(--ow-ink));
     background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
 
-    /* A long note wraps inside the pill, never past the card's edge */
+    /* One line: the time in semibold, a line too long for the card is cut with an ellipsis */
     > span {
         min-width     : 0;
-        overflow-wrap : anywhere;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        white-space   : nowrap;
+
+        b {
+            font-weight : 600;
+        }
     }
 
-    > .ow-icon {
+    :is(.ow-icon, .ow-icon-host) {
         flex : none;
+    }
+
+    .ow-icon {
+        width  : 1em;
+        height : 1em;
     }
 }
 
@@ -111,11 +127,10 @@
     display             : inline-flex;
     align-items         : center;
     gap                 : 3px;
-    margin-inline-start : 8px;
-    padding             : 1px 7px 1px 5px;
+    padding             : 3px 10px;
     border-radius       : 99px;
-    vertical-align      : 2px;
     font-size           : 11px;
+    line-height         : 1;
     font-weight         : 500;
     color               : var(--ow-ink-sub);
     background-color    : color-mix(in srgb, var(--ow-ink-sub) 12%, transparent);

@@ -65,6 +65,13 @@
             }
         }
 
+        /* A team dragged, and it would fit on the trip: a quiet outline in the work blue while the drag lasts */
+        &.ow-trip-fits {
+            outline        : 1.5px solid color-mix(in srgb, var(--ow-c-work) 45%, transparent);
+            outline-offset : 3px;
+            border-radius  : var(--ow-c-radius);
+        }
+
         /* A team held over the trip: what it can reach, outlined */
         &.ow-trip-drop > .b-nested-events-container {
             outline        : 1.5px dashed var(--ow-reach);

@@ -38,19 +38,25 @@ function textWidth(text) {
 }
 
 /**
- * What a work block of a width has room for: the turbine and the hours, the turbine, or nothing. Its text never
- * wraps nor is cut off
+ * What a work block of a width has room for, in the order it gives things up: the turbine, the job type after it, the
+ * hours at the right. Its text never wraps nor is cut off
  * @param {Object} stop `{ turbine, minutes }`
  * @param {Number} width px
- * @returns {Object} `{ turbine, hours }` booleans
+ * @param {String} [type] The short job type, "Service"
+ * @returns {Object} `{ turbine, type, hours }` booleans
  */
-export function blockText({ turbine, minutes }, width) {
+export function blockText({ turbine, minutes }, width, type = '') {
     const
-        room  = width - 2 * blockFont.padding,
-        name  = textWidth(turbine),
-        hours = textWidth(hoursText(minutes));
+        room     = width - 2 * blockFont.padding,
+        name     = textWidth(turbine),
+        withType = type ? name + blockFont.gap + textWidth(type) : name,
+        hours    = textWidth(hoursText(minutes));
 
-    return { turbine : name <= room, hours : name + blockFont.gap + hours <= room };
+    return {
+        turbine : name <= room,
+        type    : Boolean(type) && withType <= room,
+        hours   : withType + blockFont.gap + hours <= room
+    };
 }
 
 /**
@@ -82,9 +88,10 @@ function changeText(trip) {
  * @param {TripModel} leg
  * @param {Object} renderData
  * @param {Number} close When the trip's window closes
+ * @param {Function} typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-function renderLeg(leg, renderData, close) {
+function renderLeg(leg, renderData, close, typeOf) {
     const
         { cls }   = renderData,
         isTransit = leg.kind === 'transit',
@@ -100,12 +107,18 @@ function renderLeg(leg, renderData, close) {
         return '';
     }
 
-    const fits = blockText(leg, renderData.width);
+    // Bryntum's tonal event style, tuned by its variables (resources/schedule/legs.css)
+    cls['b-style-tonal'] = 1;
+
+    const
+        type = typeOf(leg.turbine),
+        fits = blockText(leg, renderData.width, type);
 
     return [
         // Too short for its name: it is set just under the block, quiet (resources/schedule/legs.css)
         { tag : 'b', class : fits.turbine ? null : 'ow-seg-name', text : leg.turbine },
-        fits.hours ? { tag : 'span', text : hoursText(leg.minutes) } : null
+        fits.type ? { tag : 'span', class : 'ow-seg-type', text : type } : null,
+        fits.hours ? { tag : 'span', class : 'ow-seg-hours', text : hoursText(leg.minutes) } : null
     ];
 }
 
@@ -115,11 +128,12 @@ function renderLeg(leg, renderData, close) {
  * label starts over the departure: its margin is the sail out, as a share of the trip's own width
  * @param {Object} renderData The event renderer's arguments
  * @param {Number} close When the trip's window closes
+ * @param {Function} typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, close) {
+export function renderTrip({ eventRecord, renderData }, close, typeOf) {
     if (eventRecord.isLeg) {
-        return renderLeg(eventRecord, renderData, close);
+        return renderLeg(eventRecord, renderData, close, typeOf);
     }
 
     const
@@ -133,6 +147,7 @@ export function renderTrip({ eventRecord, renderData }, close) {
     renderData.cls[`ow-trip-${trip.status}`] = 1;
     renderData.cls['ow-trip-heli']           = trip.mode === 'heli';
     renderData.cls['ow-trip-drop']           = trip.hasPreview;
+    renderData.cls['ow-trip-fits']           = trip.dropFit;
 
     // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
     // the trip's start: the legs' container is shifted back by the sail out (resources/schedule/trips.css)

@@ -69,6 +69,21 @@ export default class TripModel extends EventModelEnterprise {
     static teams = new Map();
 
     /**
+     * The trips a team dragged would fit on, outlined while the drag lasts (DropPreview#markFitting). Not a field: a
+     * change of the record would redraw the trip and its legs
+     * @type {Set<TripModel>}
+     */
+    static fitting = new Set();
+
+    /**
+     * A team is dragged and would fit on the trip
+     * @property {Boolean}
+     */
+    get dropFit() {
+        return TripModel.fitting.has(this);
+    }
+
+    /**
      * Whether a dragged team's stop is previewed on the trip
      * @property {Boolean}
      */

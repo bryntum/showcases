@@ -21,10 +21,21 @@
         stroke-linecap : round;
     }
 
-    /* The wrench of a turbine under repair, bottom right, shown for the turbines in work only */
-    .ow-marker-badge {
+    /* The wrench of a turbine in work, full size in the disc in place of the rotor, white */
+    .ow-marker-wrench {
         display        : none;
+        fill           : var(--b-color-white);
         pointer-events : none;
+    }
+}
+
+.ow-m-work {
+    .ow-marker-glyph {
+        display : none;
+    }
+
+    .ow-marker-wrench {
+        display : inline;
     }
 }
 
@@ -32,14 +43,14 @@
     cursor : pointer;
 }
 
-/* Phosphor's light wrench, thickened by a stroke of its own colour so it reads at the size of a marker */
-:is(.ow-marker-badge, .ow-turbine-badge) {
+/* The wrench badge of the turbine illustration (Phosphor's light wrench, thickened by a stroke of its own colour) */
+.ow-turbine-badge {
     color : var(--ow-plan);
 
     .ow-badge-disc {
         fill         : var(--ow-marker);
         stroke       : currentColor;
-        stroke-width : 1;
+        stroke-width : 1.4;
     }
 
     .ow-badge-glyph {
@@ -48,14 +59,6 @@
         stroke-width    : 14px;
         stroke-linejoin : round;
     }
-}
-
-.ow-turbine-badge .ow-badge-disc {
-    stroke-width : 1.4;
-}
-
-.ow-m-work .ow-marker-badge {
-    display : inline;
 }
 
 /* A running turbine's rotor turns when hovered, at the speed of the wind now (--ow-rotor-period, see Turbine.js). A

@@ -55,7 +55,7 @@
             font-weight          : 600;
             color                : var(--ow-ink-sub);
             font-variant-numeric : tabular-nums;
-            border-inline-color  : var(--ow-row-line);
+            border-inline-color  : var(--ow-tick);
         }
 
         /* The hours are centred in their row, on the same middle line as the now pill (below) */

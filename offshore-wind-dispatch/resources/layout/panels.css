@@ -50,7 +50,7 @@
 }
 
 /* The schedule's card, a container of its own: its title bar gives up the note under 640px, and the title under 540px,
-   so the next forecast's button and the arrows still fit */
+   so the next forecast's button and the Day | Week toggle still fit */
 .ow-schedule {
     container : ow-schedule / inline-size;
 }
@@ -94,22 +94,6 @@
     /* The action in the same weight as the title bar's other buttons, its name semibold */
     b {
         font-weight : 600;
-    }
-}
-
-/* The schedule's arrows, quiet icon buttons */
-.ow-nudge.b-button {
-    --b-button-color            : var(--ow-ink-sub);
-    --b-button-background       : transparent;
-    --b-button-hover-background : var(--b-neutral-95);
-    --b-button-border-width     : 0;
-    --b-button-border-radius    : 6px;
-    --b-button-height           : var(--ow-bar-control);
-
-    width : var(--ow-bar-control);
-
-    &.b-disabled {
-        opacity : 0.4;
     }
 }
 

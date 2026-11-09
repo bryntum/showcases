@@ -7,8 +7,8 @@
     --b-group-row-height        : 32px;
     --b-group-header-background : var(--ow-c-footer);
     /* Hour lines, faint */
-    --b-column-lines-tick-color  : var(--ow-grid);
-    --b-column-lines-major-color : var(--ow-grid);
+    --b-column-lines-tick-color  : var(--ow-tick);
+    --b-column-lines-major-color : var(--ow-tick);
     /* The now line, 1px, under the trips */
     --b-time-range-line-width  : 1px;
     --b-time-range-line-zindex : 4;

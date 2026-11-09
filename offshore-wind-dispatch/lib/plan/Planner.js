@@ -173,7 +173,7 @@ export function noGoText(back, close, limit) {
  * proxy. One check gives both, so they never disagree
  * @returns {String[]} `[reason, short]`, `[null, null]` when it breaks none
  */
-function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at }) {
+function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at, nowhere }) {
     const
         missing = (job.certs ?? []).filter(cert => !team.certs.includes(cert)),
         late    = back - close;
@@ -199,7 +199,10 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, a
     }
 
     if (late > 0) {
-        return [noGoText(back, close, limit), `${duration(late)} after window`];
+        // A job no trip or vessel can fit before its window closes today says so, instead of one trip's lateness
+        return nowhere ?
+            [`${duration(job.minutes)} on site does not fit before any window closes today`, 'Fits nowhere today'] :
+            [noGoText(back, close, limit), `${duration(late)} after window`];
     }
 
     // Dropped where the weather is already over the limit
@@ -221,15 +224,16 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, a
  * @param {Number} options.now
  * @param {String} options.vessel The vessel's name, for the messages
  * @param {Number} [options.at] Where on the time axis the team is dropped, minutes. Not inside the no-go range
+ * @param {Boolean} [options.nowhere] The job fits on no trip or vessel today: the reason says so
  * @returns {Object} `{ valid, reason, short, stops, stop, back, margin, seats, certs }`. `reason` is a sentence,
  * `short` a few words for the drag proxy: why it does not fit, or "Fits SR-1, back 12:40"
  */
-export function previewDrop({ trip, team, job, close, limit, now, vessel, at }) {
+export function previewDrop({ trip, team, job, close, limit, now, vessel, at, nowhere = false }) {
     const
         { stops, stop, back } = appendStop(trip,
             { turbine : job.turbine, minutes : job.minutes, team : team.id, preview : true }),
         seats                 = trip.pax + team.techs,
-        [reason, short]       = brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at });
+        [reason, short]       = brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at, nowhere });
 
     return {
         valid  : !reason,

@@ -9,7 +9,6 @@
     > .b-sch-event.ow-seg {
         --b-sch-event-border-width   : 0;
         --b-sch-event-border-radius  : var(--ow-c-radius);
-        --b-sch-event-background     : transparent;
         /* As TripRendering.js#blockText counts it */
         --b-sch-event-padding-inline : 6px;
         --b-sch-event-font-size      : 12px;
@@ -43,18 +42,39 @@
         }
     }
 
-    /* Work: solid blue, white text */
-    > .b-sch-event.ow-seg-stop {
-        --b-sch-event-color      : var(--ow-c-on-work);
-        --b-sch-event-background : var(--ow-c-work);
+    > .b-sch-event.ow-seg-hop {
+        --b-sch-event-background : transparent;
     }
 
-    /* The stop the vessel cannot get back from before its window closes */
-    > .b-sch-event.ow-seg-risk {
-        --b-sch-event-color      : var(--ow-c-risk-ink);
-        --b-sch-event-background : var(--ow-c-risk-tint);
+    /* Work, Bryntum's tonal event style (the `b-style-tonal` class, TripRendering.js) from the work blue: its tint, dark
+       text, and a hairline border. The row's colour round the block parts the trip's line from it */
+    > .b-sch-event.ow-seg-stop {
+        --b-primary                : var(--ow-c-work);
+        --b-sch-event-border-width : 1px;
+        --b-sch-event-border-color : var(--ow-c-work-line);
+        --b-sch-event-font-weight  : 400;
 
-        box-shadow : inset 0 0 0 1.5px var(--ow-c-risk-line);
+        box-shadow : 0 0 0 3px var(--ow-surface);
+
+        /* Two tiers: the turbine in semibold, the job type lighter, the hours at the right */
+        .ow-seg-type {
+            font-weight : 400;
+        }
+
+        .ow-seg-hours {
+            margin-inline-start : auto;
+            font-weight         : 400;
+            font-variant-numeric : tabular-nums;
+        }
+    }
+
+    /* The stop the vessel cannot get back from before its window closes: the same tone through the same variables, in
+       the at-risk orange */
+    > .b-sch-event.ow-seg-risk {
+        --b-primary                : var(--ow-c-risk-line);
+        --b-sch-event-color        : var(--ow-c-risk-ink);
+        --b-sch-event-background   : var(--ow-c-risk-tint);
+        --b-sch-event-border-color : var(--ow-c-risk-line);
     }
 
     /* The stop of a team held over the trip */

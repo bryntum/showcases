@@ -300,7 +300,7 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         const
             glyph     = id => marker(page, id).locator('.ow-marker-glyph'),
             animation = id => glyph(id).evaluate(el => getComputedStyle(el).animationName),
-            badge     = id => marker(page, id).locator('.ow-marker-badge'),
+            badge     = id => marker(page, id).locator('.ow-marker-wrench'),
             // Off the map first, the tooltip of the last turbine may cover the next one
             hover     = async id => {
                 await page.mouse.move(5, 5);
@@ -340,7 +340,25 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         const entries = page.locator('.ow-side .ow-map-legend > span');
 
         await expect(entries).toHaveText(['In work', 'Planned', 'Waiting', 'At risk', 'Stopped']);
-        await expect(entries.first().locator('.ow-marker-badge')).toBeVisible();
+        // A solid disc with a full size wrench, nothing sticking out of the marker's box, the same size as the others
+        await expect(entries.first().locator('.ow-marker-wrench')).toBeVisible();
+        await expect(entries.first().locator('.ow-marker-glyph')).toBeHidden();
+
+        const marks = await entries.evaluateAll(spans => spans.map(span => {
+            const
+                svg  = span.querySelector('svg').getBoundingClientRect(),
+                part = [...span.querySelectorAll('svg > *')].filter(el => el.getBoundingClientRect().width)
+                    .map(el => el.getBoundingClientRect());
+
+            return {
+                width  : svg.width,
+                inside : part.every(box => box.left >= svg.left - 0.5 && box.right <= svg.right + 0.5 &&
+                    box.top >= svg.top - 0.5 && box.bottom <= svg.bottom + 0.5)
+            };
+        }));
+
+        expect(marks.every(mark => mark.inside)).toBe(true);
+        expect(new Set(marks.map(mark => mark.width)).size).toBe(1);
 
         const tops = await entries.evaluateAll(spans => spans.map(span => span.getBoundingClientRect().top));
 

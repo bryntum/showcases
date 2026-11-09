@@ -28,6 +28,38 @@
         font-variant-numeric : tabular-nums;
     }
 
+    /* A certificate and its mark: the icon is the size of the text, on its line, a little gap before it */
+    dd:has(.ow-drop-cert) {
+        display     : flex;
+        flex-wrap   : wrap;
+        align-items : center;
+        gap         : 2px 10px;
+    }
+
+    .ow-drop-cert {
+        display     : inline-flex;
+        align-items : center;
+        gap         : 3px;
+
+        .ow-icon-host {
+            display : inline-flex;
+        }
+
+        .ow-icon {
+            width          : 12px;
+            height         : 12px;
+            vertical-align : middle;
+        }
+    }
+
+    .ow-drop-cert-held .ow-icon {
+        color : var(--ow-c-work);
+    }
+
+    .ow-drop-cert-missing .ow-icon {
+        color : var(--ow-c-stop-ink);
+    }
+
     &.ow-drop-tip-invalid {
         --ow-tone : var(--ow-cancel);
     }

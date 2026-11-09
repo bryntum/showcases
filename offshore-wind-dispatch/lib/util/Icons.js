@@ -10,6 +10,7 @@ import anchor from '@phosphor-icons/core/assets/light/anchor-simple-light.svg?ra
 import arrowUndo from '@phosphor-icons/core/assets/light/arrow-u-up-left-light.svg?raw';
 import broadcast from '@phosphor-icons/core/assets/light/broadcast-light.svg?raw';
 import caretDown from '@phosphor-icons/core/assets/light/caret-down-light.svg?raw';
+import check from '@phosphor-icons/core/assets/light/check-light.svg?raw';
 import checkCircle from '@phosphor-icons/core/assets/light/check-circle-light.svg?raw';
 import hardHat from '@phosphor-icons/core/assets/light/hard-hat-light.svg?raw';
 import lightning from '@phosphor-icons/core/assets/light/lightning-light.svg?raw';
@@ -17,6 +18,9 @@ import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
 import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
 import wrench from '@phosphor-icons/core/assets/light/wrench-light.svg?raw';
+import x from '@phosphor-icons/core/assets/light/x-light.svg?raw';
+// The one filled icon: the wrench of the map's In work marker, solid at the size of a marker
+import wrenchFill from '@phosphor-icons/core/assets/fill/wrench-fill.svg?raw';
 
 /*
  * The transport icons, from Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter), drawn in a lighter line to sit
@@ -62,13 +66,16 @@ const phosphor = {
     'arrow-undo'   : arrowUndo,
     broadcast,
     'caret-down'   : caretDown,
+    check,
     'check-circle' : checkCircle,
     'hard-hat'     : hardHat,
     lightning,
     warning,
     waves,
     wind,
-    wrench
+    wrench,
+    'wrench-fill'  : wrenchFill,
+    x
 };
 
 /**

@@ -14,7 +14,16 @@ export function dropTipContent({ trip, team, job, result, reach, close }, keyboa
         name  = trip.draft ? `a new trip, ${trip.id} from port at ${hhmm(trip.departs)}` : trip.id,
         head  = result.valid ? [iconConfig('check-circle'), { tag : 'span', text : `${job.turbine} fits on ${name}` }] :
             [iconConfig('warning'), { tag : 'span', text : `${job.turbine} does not fit on ${name}` }],
-        certs = result.certs.map(cert => `${cert} ${team.certs.includes(cert) ? '✓' : '✗'}`).join(' '),
+        // Each certificate with a small icon: a check in the work blue if the team holds it, a red cross if not
+        certs = result.certs.map(cert => {
+            const held = team.certs.includes(cert);
+
+            return {
+                tag      : 'span',
+                class    : `ow-drop-cert ow-drop-cert-${held ? 'held' : 'missing'}`,
+                children : [cert, iconConfig(held ? 'check' : 'x')]
+            };
+        }),
         rows  = [
             ['On station', `${hhmm(result.stop.from)} – ${hhmm(result.stop.to)}`],
             ['Back in port by', [{ tag : 'b', text : hhmm(result.back) }, `, window closes ${hhmm(close)}`]],

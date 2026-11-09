@@ -170,14 +170,14 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, repair = false,
 
 /**
  * The parts of a map marker, centred on 0 0: a disc in the status colour with a three blade glyph (the rotor, it turns
- * when hovered if the turbine runs), and the wrench badge, shown under repair (resources/map/turbines.css)
+ * when hovered if the turbine runs), and the wrench a turbine in work shows in its place (resources/map/turbines.css)
  * @returns {String} SVG markup
  */
 export function markerParts() {
     return `
     <circle class="ow-marker-disc" r="6.5"/>
     <path class="ow-marker-glyph" d="M0 0 L0 -5 M0 0 L4.3 2.5 M0 0 L-4.3 2.5"/>
-    <g class="ow-marker-badge" transform="translate(6 6)">${wrenchBadge(5.2)}</g>`;
+    <path class="ow-marker-wrench" d="${iconPath('wrench-fill')}" transform="scale(0.044) translate(-128 -128)"/>`;
 }
 
 /**
