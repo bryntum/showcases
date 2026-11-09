@@ -42,7 +42,7 @@ export function scheduleBarHtml({ vessels, next, zoomStep, lastZoomStep }) {
  */
 export function sideBarHtml({ site, turbines, due, mapView }) {
     return `
-        <span class="ow-panel-title">${StringHelper.encodeHtml(site)} <small>${turbines} turbines · ${due} due today</small></span>
+        <span class="ow-panel-title">${StringHelper.encodeHtml(site)} <small title="${turbines} turbines">${icon('turbine')} ${turbines}</small></span>
         <span class="ow-seg-buttons" role="group" aria-label="Map view">
             <button type="button" data-action="view" data-view="status"${pressed(mapView === 'status')}>Status</button>
             <button type="button" data-action="view" data-view="access"${pressed(mapView === 'access')}>Access</button>

@@ -17,7 +17,9 @@
     }
 
     .b-horizontal-time-axis {
+        /* Rows of a fixed height, not shared out, so they line up with the names in the vessel column's header */
         .b-sch-header-row {
+            flex             : none;
             box-sizing       : border-box;
             min-height       : 0;
             height           : var(--ow-row-hours);
@@ -211,21 +213,23 @@
         opacity             : 1;
         background          : none;
         border              : 0;
-        border-inline-start : 2px solid var(--ow-now);
-        /* From the hours row down */
+        border-inline-start : 1px solid var(--ow-now);
+        /* From the hours row down to the bottom of the header */
         inset-block-start   : var(--ow-row-day);
+        height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
 
+        /* The time, docked at the bottom of the time header, clear of the hour labels. It starts at the line, so it
+           keeps clear of the wind of the hour the line is in */
         label {
             position           : absolute;
-            inset-block-start  : calc(var(--ow-row-hours) / 2);
+            inset-block        : auto 1px;
             inset-inline-start : -1px;
-            translate        : -50% -50%;
-            padding          : 1px 6px;
+            padding          : 0 4px;
             white-space      : nowrap;
-            border-radius    : 9px;
-            font-size        : 10.5px;
+            border-radius    : 0 8px 8px 0;
+            font-size        : 10px;
             font-weight      : 700;
-            line-height      : 1.4;
+            line-height      : 1.5;
             color            : #fff;
             background-color : var(--ow-now);
         }

@@ -39,7 +39,8 @@ export default class ForecastPlanner {
                 departs : trip.departs,
                 stops   : trip.stops,
                 change  : trip.change,
-                removed : trip.removed,
+                // Never undefined: until the app evaluates the trips again, a trip put back may still render as trimmed
+                removed : [...(trip.removed ?? [])],
                 was     : trip.was
             }))
         };

@@ -6,7 +6,7 @@ import TripModel from '../model/TripModel.js';
 import VesselModel from '../model/VesselModel.js';
 import ForecastHeader from './ForecastHeader.js';
 import { hoursText, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
-import { duration, hhmm, toDate } from '../util/Time.js';
+import { duration, hhmm, toDate, toMinutes } from '../util/Time.js';
 
 const
     // The trips' place in their 64px row: 7px above, 14px below, room for the dependency line to pass under a trip
@@ -335,7 +335,7 @@ export default class DispatchScheduler extends Scheduler {
         timeRangeStore.removeAll();
         timeRangeStore.add([
             { id : 'past', startDate : me.startDate, endDate : now, cls : 'ow-past' },
-            { id : 'now', startDate : now, name : `Now ${hhmm(state.now)}`, cls : 'ow-now' }
+            { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
         ]);
     }
 
@@ -371,6 +371,40 @@ export default class DispatchScheduler extends Scheduler {
 
         if (startDate < now) {
             return { valid : false, message : 'Cannot leave port in the past' };
+        }
+
+        return this.validateDependencies(trip, toMinutes(startDate) - trip.departs);
+    }
+
+    /**
+     * The trip's active dependencies, finish-to-start, with the trip moved by `shift` minutes: its stop that waits for
+     * another trip starts after that trip is back, and it is back before the stop of another trip that waits for it
+     * @param {TripModel} trip
+     * @param {Number} shift Minutes
+     * @returns {Boolean|Object} `true`, or `{ valid : false, message }`
+     */
+    validateDependencies(trip, shift) {
+        const stopFrom = stop => stop.trip.legs.find(leg => leg.type === 'stop' && leg.turbine === stop.turbine)?.from;
+
+        for (const dependency of this.dependencyStore) {
+            const { fromEvent, toEvent, active } = dependency;
+
+            if (!active || !fromEvent || !toEvent) {
+                continue;
+            }
+
+            const
+                into = toEvent.trip === trip,
+                from = fromEvent === trip,
+                back = fromEvent.endMinute + (from ? shift : 0),
+                stop = stopFrom(toEvent) + (into ? shift : 0);
+
+            if ((into || from) && back > stop) {
+                return {
+                    valid   : false,
+                    message : `${toEvent.turbine} on ${toEvent.trip.id} must wait for ${fromEvent.id}, back ${hhmm(back)}`
+                };
+            }
         }
 
         return true;

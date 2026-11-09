@@ -2,11 +2,14 @@
  * in the page's body, the pointer passes through them. The chip is DragHelper's proxy, moved by translate */
 
 .ow-drag-chip, .ow-drop-tip {
-    position       : fixed;
     pointer-events : none;
     color          : var(--ow-ink);
     font-family    : inherit;
     font-size      : 12px;
+}
+
+.ow-drag-chip {
+    position : fixed;
 }
 
 .ow-drag-chip {
@@ -40,20 +43,22 @@
     filter   : drop-shadow(0 1px 0 var(--ow-surface));
 }
 
-.ow-drop-tip {
+/* The Bryntum Tooltip of the trip under a held team, styled as a card */
+.b-tooltip.ow-drop-tip {
     --ow-tone : var(--ow-reach);
 
-    z-index          : 10000;
     width            : 248px;
-    padding          : 10px 12px;
     box-sizing       : border-box;
     border-radius    : 9px;
     background-color : var(--ow-surface);
     border           : 1px solid var(--ow-border);
     box-shadow       : 0 10px 30px rgb(0 0 0 / 20%);
 
-    &[hidden] {
-        display : none;
+    .b-tooltip-content, .b-panel-content {
+        padding          : 10px 12px;
+        color            : var(--ow-ink);
+        font-size        : 12px;
+        background-color : transparent;
     }
 
     dl {

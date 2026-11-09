@@ -29,6 +29,8 @@ export default class ForecastHeader {
 
         me.state     = state;
         me.chartHost = DomHelper.createElement({ class : 'ow-wave-chart' });
+        // Not the header's own content: DomSync keeps it where it is mounted instead of releasing (hiding) it
+        me.chartHost.retainElement = true;
         me.chart     = new WaveChart({
             element : me.chartHost,
             limits  : { ctv : state.limits.ctv.hs, swath : state.limits.swath.hs },

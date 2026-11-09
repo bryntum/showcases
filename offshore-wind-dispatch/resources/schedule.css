@@ -5,6 +5,8 @@
     --b-grid-row-border-color  : var(--ow-border);
     --b-grid-cell-border-color : var(--ow-border);
     --b-grid-row-border-width  : 1px;
+    /* The group rows, Crew transfer vessels and Helicopters, a slim band. The Group feature sizes them from this */
+    --b-group-row-height       : 30px;
 
     /* Hour lines, faint */
     .b-column-line, .b-column-line-major {
@@ -42,7 +44,7 @@
         width               : 0;
         opacity             : 1;
         background          : none;
-        border-inline-start : 2px solid var(--ow-now);
+        border-inline-start : 1px solid var(--ow-now);
     }
 }
 
@@ -382,11 +384,12 @@
     }
 }
 
-/* The dependency line, drawn by the Dependencies feature from a trip into a stop. Drawn only (inactive), solid */
+/* The dependency line, drawn by the Dependencies feature from a trip into a stop, solid, 1px */
 .ow-scheduler .b-sch-dependency.ow-dep {
     --b-dependency-color        : var(--ow-ink-sub);
-    --b-dependency-stroke-width : 1.4;
+    --b-dependency-stroke-width : 1;
 
+    stroke-width     : 1px;
     stroke-dasharray : none;
     stroke-linejoin  : round;
 

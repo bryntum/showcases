@@ -11,7 +11,9 @@ const
     // Room around the fitted turbines for their labels, and the closest the map zooms in
     fitPad      = 26,
     minWidth    = 220,
-    viewKey     = ({ x, y, width, height }) => [x, y, width, height].map(n => n.toFixed(1)).join(' ');
+    // A press that moves this many px pans the map, less is a click
+    panThreshold = 4,
+    viewKey     = ({ x, y, width, height }) => [x, y, width, height].map(n => Number(n.toFixed(1))).join(' ');
 
 /**
  * The viewBox that fits turbines and the port, at the farm's aspect ratio, inside the farm
@@ -186,9 +188,10 @@ export default class TurbineMap extends Widget {
         me.view       = { ...farmView };
         // Back to the whole farm, shown only while the map is fitted to a trip
         me.wholeFarmButton = new Button({
-            appendTo : me.element,
+            // In one row with the callout, so the two never overlap
+            appendTo : me.element.querySelector('.ow-map-top'),
             cls      : 'ow-map-whole',
-            text     : 'Whole farm',
+            text     : 'Show all',
             hidden   : true,
             onClick  : () => {
                 me.fitTo(null);
@@ -197,6 +200,7 @@ export default class TurbineMap extends Widget {
         });
 
         me.element.addEventListener('click', event => me.onMapClick(event));
+        me.svgElement.addEventListener('pointerdown', event => me.onPanStart(event));
         me.element.addEventListener('keydown', event => me.onMapKeyDown(event));
         me.element.addEventListener('focusin', event => me.onMarkerFocus(event));
         me.element.addEventListener('focusout', event => me.onMarkerBlur(event));
@@ -215,8 +219,8 @@ export default class TurbineMap extends Widget {
     //region Zoom
 
     /**
-     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. No zoom buttons and
-     * no panning, the selection decides what is shown
+     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. Zoomed in, the user
+     * can pan it (onPanStart)
      * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
      */
     fitTo(ids) {
@@ -228,7 +232,8 @@ export default class TurbineMap extends Widget {
         me.wholeFarmButton.hidden = target === farmView;
         me.element.classList.toggle('ow-map-zoomed', target !== farmView);
 
-        if (key === me.viewTarget) {
+        // Already there, unless panned away since
+        if (key === me.viewTarget && key === viewKey(me.view)) {
             return;
         }
 
@@ -252,6 +257,75 @@ export default class TurbineMap extends Widget {
             };
 
         me.frame = requestAnimationFrame(step);
+    }
+
+    /**
+     * A press on the map pans it once it moves a few px: the view follows the pointer, kept inside the farm. A press
+     * that starts on a turbine still selects it, moved or not. A press without a move is a click (onMapClick)
+     * @param {PointerEvent} event
+     */
+    onPanStart(event) {
+        if (event.button !== 0 || !event.isPrimary) {
+            return;
+        }
+
+        const
+            me     = this,
+            svg    = me.svgElement,
+            marker = event.target.closest?.('.ow-marker')?.dataset.turbine ?? null,
+            start  = { x : event.clientX, y : event.clientY, view : { ...me.view } },
+            clamp  = (value, size, max) => Math.min(Math.max(value, 0), max - size),
+            move   = ev => {
+                const
+                    dx = ev.clientX - start.x,
+                    dy = ev.clientY - start.y;
+
+                if (!me.panning && Math.hypot(dx, dy) < panThreshold) {
+                    return;
+                }
+
+                if (!me.panning) {
+                    me.panning = true;
+                    cancelAnimationFrame(me.frame);
+                    svg.setPointerCapture(ev.pointerId);
+                    me.element.classList.add('ow-map-panning');
+                    me.tooltip.hide();
+                }
+
+                // The viewBox keeps the farm's aspect ratio, one scale for both axes
+                const
+                    { view } = start,
+                    scale    = view.width / svg.clientWidth;
+
+                me.setView({
+                    ...view,
+                    x : clamp(view.x - dx * scale, view.width, farmView.width),
+                    y : clamp(view.y - dy * scale, view.height, farmView.height)
+                });
+            },
+            up     = () => {
+                svg.removeEventListener('pointermove', move);
+                svg.removeEventListener('pointerup', up);
+                svg.removeEventListener('pointercancel', up);
+                me.element.classList.remove('ow-map-panning');
+
+                if (me.panning) {
+                    // The click that follows a pan is not a selection, the press on a turbine is
+                    me.panning = false;
+                    me.panned  = true;
+                    setTimeout(() => {
+                        me.panned = false;
+                    }, 0);
+
+                    if (marker) {
+                        me.select(marker);
+                    }
+                }
+            };
+
+        svg.addEventListener('pointermove', move);
+        svg.addEventListener('pointerup', up);
+        svg.addEventListener('pointercancel', up);
     }
 
     setView(view) {
@@ -303,7 +377,7 @@ export default class TurbineMap extends Widget {
     </g>
     <g class="ow-labels" aria-hidden="true"></g>
 </svg>
-<div class="ow-map-callout" hidden></div>
+<div class="ow-map-top"><div class="ow-map-callout" hidden></div></div>
 <div class="ow-map-legend">
     <span class="ow-m-work"><i></i>In work</span><span class="ow-m-planned"><i></i>Planned</span>
     <span class="ow-m-waiting"><i></i>Waiting</span><span class="ow-m-risk"><i></i>At risk</span>
@@ -416,7 +490,7 @@ export default class TurbineMap extends Widget {
     onMapClick(event) {
         const id = event.target.closest?.('.ow-marker')?.dataset.turbine;
 
-        if (id) {
+        if (id && !this.panned) {
             this.select(id);
         }
     }

@@ -35,7 +35,28 @@ function cssColor(element, name) {
 
     probe.remove();
 
-    return color;
+    return toRgba(color);
+}
+
+let pixel;
+
+/**
+ * A colour as `rgba()`. The browser computes `color-mix()` to `color(srgb …)`, which AG Charts does not read, so the
+ * colour is painted on a one pixel canvas and read back
+ * @param {String} color Any CSS colour
+ * @returns {String}
+ */
+function toRgba(color) {
+    pixel ??= Object.assign(document.createElement('canvas'), { width : 1, height : 1 })
+        .getContext('2d', { willReadFrequently : true });
+
+    pixel.clearRect(0, 0, 1, 1);
+    pixel.fillStyle = color;
+    pixel.fillRect(0, 0, 1, 1);
+
+    const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data;
+
+    return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
 }
 
 export default class WaveChart {
@@ -127,7 +148,7 @@ export default class WaveChart {
             seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
             animation  : { enabled : false },
             legend     : { enabled : false },
-            series     : [me.series(colors, tone)],
+            series     : [me.series(colors, tone), me.valueLabels(tone)],
             axes       : {
                 x : me.timeAxis(colors, color('--ow-ink-sub'), color('--ow-grid')),
                 y : me.heightAxis(colors)
@@ -156,14 +177,8 @@ export default class WaveChart {
                     { size : 0 } :
                     { fill : tone(datum.hs), stroke : tone(datum.hs) }
             },
-            label : {
-                enabled    : true,
-                fontFamily,
-                fontSize   : 10,
-                fontWeight : 600,
-                formatter  : ({ datum }) => datum.edge ? '' : datum.hs.toFixed(1),
-                itemStyler : ({ datum }) => ({ color : tone(datum.hs) })
-            },
+            // The values are labelled by valueLabels(), under their points
+            label   : { enabled : false },
             tooltip : {
                 renderer : ({ datum }) => ({
                     heading : `${hhmm(Math.floor(datum.t) * 60)} – ${hhmm((Math.floor(datum.t) + 1) * 60)}`,
@@ -180,13 +195,40 @@ export default class WaveChart {
         };
     }
 
+    // The value of each hour under its point: an area series cannot place its labels, a line series can. Under the
+    // points, the labels keep clear of the CTV and SWATH labels above their lines and of the window's label at the foot
+    valueLabels(tone) {
+        return {
+            type         : 'line',
+            xKey         : 't',
+            yKey         : 'hs',
+            yName        : 'Wave height',
+            strokeWidth  : 0,
+            marker       : { enabled : false },
+            showInLegend : false,
+            tooltip      : { enabled : false },
+            label        : {
+                enabled    : true,
+                placement  : 'bottom',
+                fontFamily,
+                fontSize   : 10,
+                fontWeight : 600,
+                formatter  : ({ datum }) => datum.edge ? '' : datum.hs.toFixed(1),
+                itemStyler : ({ datum }) => ({ color : tone(datum.hs) })
+            }
+        };
+    }
+
     // The day of the schedule, the hour lines, and the window's close as a cross line (with the old one dashed)
     timeAxis(colors, ink, grid) {
         const
             { closes, was }      = this.forecast,
             { dayStart, dayEnd } = this.day,
             tone                 = was == null ? colors.amber : colors.red,
-            label                = { fontFamily, fontSize : 9.5 };
+            label                = { fontFamily, fontSize : 9.5 },
+            // At the top of the chart, clear of the value labels under the points. The earlier of the two lines has its
+            // label on its left, the later one on its right, so they part
+            side                 = later => later ? 'inside-top-right' : 'inside-top-left';
 
         return {
             type       : 'number',
@@ -207,7 +249,7 @@ export default class WaveChart {
                     stroke      : ink,
                     lineDash    : [2, 3],
                     strokeWidth : 1,
-                    label       : { ...label, text : `was ${hhmm(was)}`, placement : 'inside-top-left', color : ink }
+                    label       : { ...label, text : `was ${hhmm(was)}`, placement : side(was > closes), color : ink }
                 },
                 {
                     type        : 'line',
@@ -217,7 +259,7 @@ export default class WaveChart {
                     label       : {
                         ...label,
                         text       : `CTV window closes ${hhmm(closes)}`,
-                        placement  : 'inside-top-right',
+                        placement  : side(was != null && closes > was),
                         color      : tone,
                         fontWeight : 700
                     }
@@ -230,13 +272,25 @@ export default class WaveChart {
     heightAxis(colors) {
         const
             { ctv, swath } = this.limits,
+            // From the calmest sea of the day to room above the highest values: the CTV and SWATH lines far enough
+            // apart for a label above each, and room under the lowest points for their values
+            bottom         = 0.2,
             top            = 2.7,
-            label          = (text, color) => ({ text, placement : 'inside-left', color, fontSize : 9, fontWeight : 700, fontFamily });
+            // Above its line at the left. The value labels are under their points
+            label          = (text, color) => ({
+                text,
+                color,
+                placement  : 'inside-top-left',
+                padding    : 2,
+                fontSize   : 9,
+                fontWeight : 700,
+                fontFamily
+            });
 
         return {
             type       : 'number',
             position   : 'left',
-            min        : 0,
+            min        : bottom,
             max        : top,
             nice       : false,
             thickness  : 0,

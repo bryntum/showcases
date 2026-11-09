@@ -1,4 +1,4 @@
-import { DomHelper, DragHelper, StringHelper } from '@bryntum/core-enterprise';
+import { DomHelper, DragHelper, Rectangle, StringHelper, Tooltip } from '@bryntum/core-enterprise';
 import { teamChipHtml } from './TeamTray.js';
 import { icon } from './util/Icons.js';
 import { duration, hhmm } from './util/Time.js';
@@ -7,9 +7,10 @@ import { duration, hhmm } from './util/Time.js';
  * Dragging a team from the tray onto a trip. Bryntum's DragHelper runs the drag: the threshold, the proxy following
  * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop, and the trip bars
  * (`.b-sch-event-wrap`) as the drop targets. Over a trip the app previews the stop the team would get
- * (DispatchApp#previewDrop): the trip shows it, the map rings the turbines the trip can still reach, and a tooltip says
- * when the trip is back against the window. The dispatch checks are the drag's validation: a team that does not fit
- * marks the drag invalid, and released there the app says why. Released over a trip that fits, the app books it.
+ * (DispatchApp#previewDrop): the trip shows it, the map rings the turbines the trip can still reach, and a Bryntum
+ * Tooltip, shown by the point the team is held at, says when the trip is back against the window. The dispatch checks
+ * are the drag's validation: a team that does not fit marks the drag invalid, and released there the app says why.
+ * Released over a trip that fits, the app books it.
  *
  * DragHelper has no keyboard drag, so the keyboard holds a team over a trip itself: Enter or Space on a focused chip
  * holds the team over the selected trip (or the first one), the arrow keys move it to the previous or next trip,
@@ -43,7 +44,7 @@ export function dropTipHtml({ trip, team, job, result, reach, close }, keyboard 
         <div class="ow-drop-tip-head">${head}</div>
         <dl>
             <dt>On station</dt><dd>${hhmm(result.stop.from)} – ${hhmm(result.stop.to)}</dd>
-            <dt>Back at port</dt><dd><b>${hhmm(result.back)}</b>, window closes ${hhmm(close)}</dd>
+            <dt>Back in port by</dt><dd><b>${hhmm(result.back)}</b>, window closes ${hhmm(close)}</dd>
             <dt>Seats</dt><dd>${result.seats} / ${trip.resource?.seats} PAX</dd>
             <dt>Certificates</dt><dd>${certs}</dd>
         </dl>
@@ -359,33 +360,46 @@ export default class TeamDrag {
 
         me.team = teamId;
         me.handler.liftTeam(teamId);
-        me.tip = DomHelper.createElement({ class : 'ow-drop-tip', parent : document.body, hidden : true });
+        // A Bryntum Tooltip, shown by the point the team is held at. Its alignment keeps it in the viewport
+        me.tip = new Tooltip({
+            cls          : 'ow-drop-tip',
+            anchor       : false,
+            // Shown and hidden by hover(), not by hovering an element
+            autoShow     : false,
+            hideDelay    : false,
+            dismissDelay : 0
+        });
         // Read out as the team moves from trip to trip
-        me.tip.setAttribute('role', 'status');
-        me.tip.setAttribute('aria-live', 'polite');
+        me.tip.element.setAttribute('role', 'status');
+        me.tip.element.setAttribute('aria-live', 'polite');
     }
 
     /**
-     * Previews the team on a trip, or none, and places the tooltip below the point
+     * Previews the team on a trip, or none, and shows the tooltip below the point
      * @param {TripModel|null} trip
      * @param {{x: Number, y: Number}} point In the viewport
      * @returns {Object|null} See DispatchApp#previewDrop
      */
     hover(trip, point) {
         const
-            me   = this,
-            drop = me.handler.previewDrop(me.team, trip);
+            me      = this,
+            { tip } = me,
+            drop    = me.handler.previewDrop(me.team, trip);
 
-        me.tip.hidden = !drop;
+        if (!drop) {
+            tip.hide();
 
-        if (drop) {
-            me.tip.innerHTML = dropTipHtml(drop, Boolean(me.keyboard));
-            me.tip.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
-            Object.assign(me.tip.style, {
-                left : `${Math.min(point.x + 4, innerWidth - me.tip.offsetWidth - 8)}px`,
-                top  : `${Math.min(point.y + 42, innerHeight - me.tip.offsetHeight - 8)}px`
-            });
+            return drop;
         }
+
+        tip.html = dropTipHtml(drop, Boolean(me.keyboard));
+        tip.element.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
+        // By a point: a one px rectangle at the pointer, or at the stop held from the keyboard
+        tip.showBy({
+            target : new Rectangle(point.x, point.y, 1, 1),
+            align  : 't0-b0',
+            offset : 42
+        });
 
         return drop;
     }
@@ -395,7 +409,7 @@ export default class TeamDrag {
         const me = this;
 
         if (me.team) {
-            me.tip.remove();
+            me.tip.destroy();
             me.tip = me.team = me.point = null;
             me.handler.endDrag();
         }

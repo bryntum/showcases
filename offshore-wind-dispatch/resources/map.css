@@ -65,11 +65,38 @@
     }
 }
 
+/* Zoomed in, the map pans by dragging (TurbineMap#onPanStart) */
+.ow-map-svg {
+    touch-action : none;
+}
+
+.ow-map-zoomed .ow-map-svg {
+    cursor : grab;
+}
+
+.ow-map-panning .ow-map-svg, .ow-map-panning .ow-marker {
+    cursor : grabbing;
+}
+
+/* The callout and the Whole farm button share one row over the map, so they never overlap. The row lets the pointer
+   through to the map where it is empty */
+.ow-map-top {
+    position       : absolute;
+    inset          : 10px 10px auto;
+    display        : flex;
+    align-items    : flex-start;
+    gap            : 8px;
+    pointer-events : none;
+
+    > * {
+        pointer-events : auto;
+    }
+}
+
 /* Fitted to a trip (TurbineMap#fitTo) the map zooms in, its text keeps its size */
 .ow-map-whole.b-button {
-    position         : absolute;
-    inset-block-start  : 10px;
-    inset-inline-end   : 10px;
+    flex                : none;
+    margin-inline-start : auto;
     min-height       : 26px;
     padding          : 0 10px;
     font-size        : 12px;
@@ -195,8 +222,8 @@
 .ow-map-label-moved text { fill : var(--ow-cancel); }
 
 .ow-map-callout {
-    position         : absolute;
-    inset            : 10px 10px auto;
+    flex             : 1 1 auto;
+    min-width        : 0;
     padding          : 7px 10px;
     border-radius    : 7px;
     font-size        : 12px;

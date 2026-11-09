@@ -128,8 +128,10 @@ legs are placed again from its new departure.
 ### A dependency into a stop: `lib/model/TripModel.js`, `lib/schedule/DispatchScheduler.js`
 
 The Dependencies feature draws the line from the helicopter's trip into the T-45 stop, a nested event of the SWATH's
-trip (`toEvent : 'BP-1:T-45'`). It is inactive (`active : false`): the planner owns the times, the engine does not move
-the stop. Its renderer (`renderDependency`) turns it red when the predecessor is back after the stop starts, and hides
+trip (`toEvent : 'BP-1:T-45'`). It is active, as the feature has it by default: a trip drag that would start the stop
+before the helicopter is back, or bring the helicopter back after it, is refused (`validateDependencies()`, from the
+EventDrag feature's `validatorFn`). Its renderer (`renderDependency`) turns it red when a forecast pushes the predecessor
+back after the stop starts, and hides
 it while the stop's trip is moved to tomorrow. `syncDependencies()` adds it again whenever both ends are in the plan,
 so it comes back when Undo brings back a stop a forecast had cut.
 
@@ -149,12 +151,12 @@ trips' `.b-sch-event-wrap[data-event-id]` are its drop targets, and the dispatch
 that does not fit marks the drag invalid. The keyboard (Enter on a chip, the arrows, Enter again) holds a team over a
 trip without DragHelper, which has no keyboard drag. Over a trip, `Planner#previewDrop` places the team's stop after the last
 one and tells when the trip would be back, whether the seats and the certificates allow it, and by how much it misses
-the window. `Planner#reachable` tries the same stop at each of the 60 turbines to find the ones the trip could still
+the window, shown in a Bryntum `Tooltip` aligned to the point the team is held at. `Planner#reachable` tries the same stop at each of the 60 turbines to find the ones the trip could still
 reach, which the map rings.
 
 A trip or turbine the user selects animates the map's viewBox to fit the trip's turbines and the port
-(`TurbineMap#fitTo`). A "Whole farm" button, shown only while zoomed, goes back. There are no zoom buttons and no
-panning. While a team is held the map shows the whole farm, since what the trip can still reach is spread across it.
+(`TurbineMap#fitTo`). Zoomed in, a drag on the map pans it within the farm (`TurbineMap#onPanStart`); a drag that starts
+on a turbine still selects it. A "Show all" button, shown only while zoomed, goes back. While a team is held the map shows the whole farm, since what the trip can still reach is spread across it.
 
 ### A new forecast: `lib/plan/ForecastPlanner.js`
 

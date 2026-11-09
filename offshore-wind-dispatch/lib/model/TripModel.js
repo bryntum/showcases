@@ -103,13 +103,14 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip. It is drawn, not
-     * scheduled (`active : false`): the planner keeps the times, and a dependency the plan breaks shows red
+     * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip, finish-to-start.
+     * It is active, the Dependencies feature's own default: a trip drag that would start the stop before its
+     * predecessor is back is refused (DispatchScheduler#validateTripDrag), and one the forecast breaks shows red
      * @param {Object} dependency `{ id, from, to, toStop }`
      * @returns {Object}
      */
     static dependencyData({ id, from, to, toStop }) {
-        return { id, fromEvent : from, toEvent : `${to}:${toStop}`, active : false };
+        return { id, fromEvent : from, toEvent : `${to}:${toStop}` };
     }
 
     /**
