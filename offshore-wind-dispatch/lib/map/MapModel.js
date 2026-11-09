@@ -16,7 +16,7 @@ import { duration, hhmm, nextDay } from '../util/Time.js';
  * @returns {String|null} `repair`, `fault` or `null` when it runs
  */
 export function stoppedOf(state, trips, id) {
-    if (trips.some(trip => trip.status !== 'moved' && trip.startMinute <= state.now && trip.turbines.includes(id))) {
+    if (trips.some(trip => trip.status !== 'moved' && trip.departs <= state.now && trip.turbines.includes(id))) {
         return 'repair';
     }
 
@@ -57,7 +57,7 @@ function planStatusOf(id, { state, byTurbine, removed }) {
     }
 
     if (trip) {
-        return trip.status === 'at-risk' ? 'risk' : trip.startMinute <= state.now ? 'work' : 'planned';
+        return trip.status === 'at-risk' ? 'risk' : trip.departs <= state.now ? 'work' : 'planned';
     }
 
     if (state.faults.has(id)) {

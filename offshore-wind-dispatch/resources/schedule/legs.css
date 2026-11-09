@@ -1,14 +1,5 @@
 /* The legs of a trip at sea, its nested events (schedule/TripRendering.js) */
 
-/* A trip under the pointer: its work blocks a step stronger, tint and hairline, the at-risk one in orange. To move to
- * tokens.css */
-.ow-scheduler {
-    --ow-c-work-hover-tint : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 80%),
-        color-mix(in srgb, var(--ow-c-work), var(--b-mix, #000) 72%));
-    --ow-c-work-hover-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 35%);
-    --ow-c-risk-hover-tint : color-mix(in srgb, var(--ow-c-risk-line) 16%, var(--ow-c-risk-tint));
-}
-
 /* The legs, nested events. They let the pointer through to their trip, which is dragged, hovered and clicked as one
  * (a click on a stop finds it by time, DispatchApp#onTripClick). The feature's margins give them their height on the
  * trip's line. A hop between two turbines is empty, the line shows through it */

@@ -1,5 +1,5 @@
 /* Phones (DispatchApp#phone, below 760px): the KPI header keeps the site and the alert, the schedule and the map
- * become tabs, the schedule's hours scroll sideways at 44px an hour (DispatchScheduler#fitTicks). The title bars and the
+ * become tabs, the schedule's hours scroll sideways at 44px an hour at least (the day preset's tick width). The title bars and the
  * legend are hidden by the panels themselves (SchedulePanel#phone, MapPanel#phone) */
 
 .ow-app.ow-phone {

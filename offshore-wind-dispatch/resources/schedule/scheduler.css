@@ -1,15 +1,6 @@
 /* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows and the now
  * line */
 
-/* Shared by the Day and the Week view (week/board.css): the weather no-go hatch, a helicopter's purple tinted, and the
- * drop target of a crew held over a trip or a free day, a subtle blue tint with a thin blue outline */
-.ow-scheduler, .ow-week-board {
-    --ow-hatch        : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
-    --ow-hatch-heli   : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
-    --ow-drop-outline : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
-    --ow-drop-tint    : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
-}
-
 .ow-scheduler {
     /* The vessel column's inner inset, lined up with the card's title bar, narrower on a phone (phone.css) */
     --ow-column-inset                       : var(--ow-inset);

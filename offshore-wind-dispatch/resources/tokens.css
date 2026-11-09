@@ -97,4 +97,15 @@
     --ow-shadow-chip    : 0 1px 3px rgb(0 0 0 / 8%);
     --ow-shadow-lifted  : 0 10px 24px rgb(0 0 0 / 22%);
     --ow-shadow-float   : 0 10px 30px rgb(0 0 0 / 20%);
+    /* Shared by the Day and the Week view: the weather no-go hatch (a helicopter's purple tinted), and the drop target of
+       a crew held over a trip or a free day, a subtle blue tint with a thin blue outline */
+    --ow-hatch             : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
+    --ow-hatch-heli        : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
+    --ow-drop-outline      : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+    --ow-drop-tint         : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
+    /* A trip under the pointer: its work blocks a step stronger, tint and hairline, the at-risk one in orange */
+    --ow-c-work-hover-tint : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%),
+        color-mix(in srgb, var(--ow-c-work), var(--b-mix) 72%));
+    --ow-c-work-hover-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 35%);
+    --ow-c-risk-hover-tint : color-mix(in srgb, var(--ow-c-risk-line) 16%, var(--ow-c-risk-tint));
 }

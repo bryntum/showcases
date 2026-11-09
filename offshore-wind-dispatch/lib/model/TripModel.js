@@ -137,15 +137,6 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The departure, minutes since midnight. The same as `departs`, which this showcase reads; kept for the map
-     * (MapModel) until it reads `departs` too
-     * @property {Number}
-     */
-    get startMinute() {
-        return this.departs;
-    }
-
-    /**
      * Back at port, minutes since midnight: the departure, the legs and the wait on station. The same as the engine's
      * end once it has calculated, and right away after a change, before it has
      * @property {Number}

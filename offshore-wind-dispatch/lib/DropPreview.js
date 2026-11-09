@@ -8,8 +8,6 @@ const
     // The stop a team's job adds to a trip
     stopOf       = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
         preview }),
-    // A later day's first trip leaves port half an hour after the day starts
-    firstSailing = 30,
     // "Thu 12"
     dayName      = index => dayDate(index).toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' })
         .replace(',', ''),
@@ -130,7 +128,7 @@ export default Target => class DropPreview extends Target {
             vessel        = me.scheduler.resourceStore.getById(cell.vesselId),
             close         = dispatch.windowsOf(day)[vessel.window],
             now           = day ? dispatch.day.dayStart * 60 : dispatch.days[0].now,
-            start         = day ? dispatch.day.dayStart * 60 + firstSailing : nextSailing([], now),
+            start         = day ? dispatch.firstSailing : nextSailing([], now),
             plan          = newPlan(me.newTripId(vessel), start, vessel),
             limit         = dispatch.limits[vessel.window],
             result        = previewDrop({ trip : plan, team, job, close, limit, now, vessel : vessel.name });

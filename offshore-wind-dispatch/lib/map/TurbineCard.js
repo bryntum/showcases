@@ -15,8 +15,6 @@ import { rotorText, turbineSvg } from './Turbine.js';
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
  */
 
-const firstSailing = 6 * 60 + 30;
-
 /**
  * What the card says about a turbine
  * @param {Object} options
@@ -47,7 +45,7 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
         wind    : state.windAt(),
         stand,
         trip    : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
-        when    : whenOf(stand, stop),
+        when    : whenOf(stand, stop, state.firstSailing),
         hs      : state.hsAt(stop?.from ?? state.now),
         limit   : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
         ...noteOf({ state, turbine, trip : planned, drop, stand })
@@ -82,7 +80,8 @@ function standOf(held, trip, trimmed) {
     return trip?.status ?? 'none';
 }
 
-function whenOf(stand, stop) {
+// When the turbine is worked on: on station today, or the first sailing of the next day it was moved to
+function whenOf(stand, stop, firstSailing) {
     if (stand === 'moved') {
         return `Moved to ${nextDay} ${hhmm(firstSailing)}`;
     }

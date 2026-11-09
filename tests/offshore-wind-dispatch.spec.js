@@ -778,9 +778,9 @@ test.describe('Offshore Wind Dispatch trips', () => {
             const
                 { scheduler } = globalThis.bryntum.query('dispatchapp'),
                 read          = id => {
-                    const { fromEvent, toEvent, lag } = scheduler.dependencyStore.getById(id);
+                    const { fromEvent, toEvent, lag, text } = scheduler.dependencyStore.getById(id);
 
-                    return [fromEvent.id, toEvent.id, toEvent.parent.id, lag, scheduler.dependencyText({ id })];
+                    return [fromEvent.id, toEvent.id, toEvent.parent.id, lag, text];
                 };
 
             return [read('hv-t45'), read('pickup-t58')];
