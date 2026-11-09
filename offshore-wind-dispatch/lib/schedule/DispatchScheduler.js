@@ -105,8 +105,9 @@ export default class DispatchScheduler extends Scheduler {
             nestedEvents       : {
                 eventLayout             : 'none',
                 headerHeight            : headHeight,
-                resourceMargin          : 0,
-                barMargin               : 0,
+                // The inset of the legs from the trip's edge, the same on all sides, and between rows of legs
+                resourceMargin          : 1,
+                barMargin               : 1,
                 constrainDragToParent   : true,
                 allowNestingOnDrop      : false,
                 allowDeNestingOnDrop    : false,
@@ -156,7 +157,7 @@ export default class DispatchScheduler extends Scheduler {
                 eventModelClass    : TripModel,
                 resourceModelClass : VesselModel
             },
-            eventRenderer             : args => renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource)),
+            eventRenderer             : args => renderTrip(args, me.dispatch.closeOf(args.eventRecord.trip.resource), me.dispatch.now),
             resourceTimeRangeRenderer : args => renderRange(args, range => me.dispatch.previousCloseOf(range.resource)),
             features                  : {
                 ...config.features,
@@ -407,10 +408,7 @@ export default class DispatchScheduler extends Scheduler {
             return { valid : false, message : `${trip.id} is moved to tomorrow` };
         }
 
-        if (trip.departs <= this.dispatch.now) {
-            return { valid : false, message : `${trip.id} has left port` };
-        }
-
+        // Trips under way are not draggable at all (their `draggable` field, DispatchApp#evaluate)
         if (startDate < now) {
             return { valid : false, message : 'Cannot leave port in the past' };
         }
@@ -432,7 +430,9 @@ export default class DispatchScheduler extends Scheduler {
         return `<div class="ow-tip">
             <header><b>${StringHelper.encodeHtml(trip.id)}</b> ${StringHelper.encodeHtml(trip.resource?.name ?? '')}</header>
             <dl>
-                <dt>Leaves</dt><dd>${hhmm(trip.startMinute)}</dd>
+                ${trip.startMinute <= this.dispatch.now ?
+        `<dt>Under way</dt><dd>since ${hhmm(trip.startMinute)}</dd>` :
+        `<dt>Leaves</dt><dd>${hhmm(trip.startMinute)}</dd>`}
                 ${stops.join('')}
                 ${waits.join('')}
                 <dt>Back in port by</dt><dd>${hhmm(back)}, ${back > close ? `${duration(back - close)} after` : `${duration(close - back)} before`} the window closes at ${hhmm(close)}</dd>

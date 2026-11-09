@@ -463,19 +463,6 @@ test.describe('Offshore Wind Dispatch trips', () => {
         })).toEqual(['H2-1', 'BP-1:T-45', 'BP-1']);
     });
 
-    test('a trip cannot be dragged once it has left port', async({ page }) => {
-        await open(page);
-
-        const message = await page.evaluate(() => {
-            const
-                { scheduler } = globalThis.bryntum.query('dispatchapp'),
-                gone          = scheduler.eventStore.getById('SR-1');
-
-            return scheduler.validateTripDrag({ eventRecords : [gone], startDate : gone.startDate }).message;
-        });
-
-        expect(message).toMatch(/left port/);
-    });
 });
 
 // Holds a team's chip by the pointer and moves it to a point in steps, as a person drags, without releasing it

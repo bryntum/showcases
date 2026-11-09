@@ -245,6 +245,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
             // A field set to its own value is no change, the trip is not redrawn
             trip.status = trip.change === 'moved' ? 'moved' : late ? 'at-risk' : trip.change ?? 'on-plan';
+            // A trip that has left port is under way: no drag, no grab cursor (EventDrag reads the field)
+            trip.draggable = trip.departs > dispatch.now && trip.status !== 'moved' && !trip.draft;
         });
     }
 
