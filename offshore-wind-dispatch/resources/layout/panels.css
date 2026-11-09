@@ -31,7 +31,11 @@
 
 /* The map is inset with its own rounded edge: no line under the site card's title bar */
 .ow-side-card {
+    /* No buttons in this card's title bar: the card's inset above it, and the title and the count lined up with the
+       map's straight edges, past its rounded corners */
     .ow-panel-bar.b-toolbar {
+        --b-toolbar-padding : var(--ow-inset) calc(var(--ow-inset) + var(--ow-card-radius));
+
         border-block-end : 0;
     }
 }
