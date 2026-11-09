@@ -9,7 +9,7 @@ import './DropTooltip.js';
  * What TeamDrag and KeyboardDrag call on the app's side of the drag (DropPreview): they move the team, it decides what
  * the team would get and books it
  * @typedef {Object} DropHandler
- * @property {Object|null} drop The team held and its check, `{ target, trip, team, job, result, reach, close }`, see
+ * @property {Object|null} held The team held and its check, `{ target, trip, team, job, result, reach, close }`, see
  * DropPreview#previewDrop. `null` while over nothing
  * @property {Function} waitingTeam `(teamId)`, the team waiting at the port and its job, `{ team, job }`
  * @property {Function} liftTeam `(teamId)`, the drag starts: the team's chip dims, the trips it fits on are outlined
@@ -149,7 +149,7 @@ export default class TeamDrag {
     refresh() {
         const
             me   = this,
-            trip = me.handler.drop?.target;
+            trip = me.handler.held?.target;
 
         if (!me.isDragging) {
             return;
@@ -232,7 +232,7 @@ export default class TeamDrag {
             drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
                 me.handler.previewDrop(me.team, target, date ? toMinutes(date) : null);
 
-        showOnChip(me.keys.held ?? me.proxy, drop);
+        showOnChip(me.keys.heldChip ?? me.proxy, drop);
 
         // The Week view tints the cell held over, as the Day view does the trip (TripRendering, `hasPreview`)
         if (me.board) {

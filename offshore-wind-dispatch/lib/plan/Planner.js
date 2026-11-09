@@ -115,7 +115,8 @@ export function turbinesOf(stops) {
  * @param {Number} context.close When its window closes
  * @param {Number} context.now
  * @param {Number} context.earliest The earliest start it could be brought forward to: the end of the trip before it
- * @returns {Object|null} `{ change, start, stops, removed, was }`, `change` is `pulled`, `trimmed` or `moved`
+ * @returns {Object|null} `{ change, start, stops, removed, previousDeparts }`, `change` is `pulled`, `trimmed` or
+ * `moved`
  */
 export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earliest }) {
     const fits = kept => start + wait + tripMinutes(kept, mode) <= close;
@@ -131,7 +132,7 @@ export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earli
         const latest = Math.floor((close - wait - tripMinutes(stops, mode)) / quarter) * quarter;
 
         if (latest >= Math.max(earliest, now + quarter)) {
-            return { change : 'pulled', start : latest, stops, removed : [], was : start };
+            return { change : 'pulled', start : latest, stops, removed : [], previousDeparts : start };
         }
     }
 

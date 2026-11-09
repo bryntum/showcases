@@ -27,6 +27,14 @@ import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
  * dependency can point at it. After each calculation `wait` holds the minutes the trip waits on station, so the planner
  * knows when it is back without waiting for the next calculation (`endMinute`, `plan`).
  *
+ * Its parts, read from different angles:
+ *
+ * - `legRecords` the child event records, the stops and hops at sea, in order
+ * - `stops` the plan's stops as plain `{ turbine, minutes, team }`, a held team's previewed stop left out
+ * - `allStops` the stops as the trip is shown: `stops` with the previewed one at the end
+ * - `legs` the whole run as plain timed objects, `{ type, from, to, ... }` in minutes, the sail out and back included
+ * - `transits` only the sail out and back, the trip's buffer: `{ out, back }` in minutes
+ *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/EventModelEnterprise
@@ -40,8 +48,8 @@ export default class TripModel extends EventModelEnterprise {
         { name : 'change', defaultValue : null },
         // The turbines the forecast moved to tomorrow
         { name : 'removed', type : 'array' },
-        // The departure before the forecast brought it forward, minutes since midnight
-        { name : 'was', type : 'number', defaultValue : null },
+        // The departure before the forecast brought it forward (`pulled`), minutes since midnight
+        { name : 'previousDeparts', type : 'number', defaultValue : null },
         // `on-plan`, `at-risk` or the change, kept up to date by the app (DispatchApp#evaluate)
         { name : 'status', defaultValue : 'on-plan' },
         // Minutes the trip waits on station for another trip, from the engine's last calculation (updateWait)

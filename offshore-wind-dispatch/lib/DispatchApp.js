@@ -96,7 +96,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             thisObj              : me
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
-        me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
+        me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.held?.trip ?? scheduler.selectedEvents[0] });
         schedulePane.on({ forecast : 'applyForecast', thisObj : me });
         notice.on({ undo : 'undoForecast', review : 'reviewNext', thisObj : me });
 
@@ -259,8 +259,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
      */
     async replan(change) {
         const
-            me   = this,
-            held = me.drop && { teamId : me.drop.team.id, target : me.drop.target, at : me.drop.at };
+            me    = this,
+            // The team held, to hold it again once the plan has changed
+            again = me.held && { teamId : me.held.team.id, target : me.held.target, at : me.held.at };
 
         me.replanning = true;
         me.clearPreview();
@@ -281,8 +282,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.evaluate();
 
         // Held again, unless the pointer has moved on to another trip meanwhile
-        if (held && !me.drop) {
-            me.holdPreview(held.teamId, held.target, held.at);
+        if (again && !me.held) {
+            me.holdPreview(again.teamId, again.target, again.at);
         }
 
         me.refreshAll();
@@ -293,7 +294,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     // and status follow. Not while a team is held: its previewed stop is no change of the plan, the plan is checked
     // again once it comes off
     onWaitChange() {
-        if (!this.replanning && !this.drop) {
+        if (!this.replanning && !this.held) {
             this.replan();
         }
     }
@@ -336,24 +337,24 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     refreshSide() {
         const
             me                                           = this,
-            { dispatch, trips, drop, selectedTurbine }   = me,
+            { dispatch, trips, held, selectedTurbine }   = me,
             { map, card }                                = me.parts,
             selectedTrip                                 = me.scheduler.selectedEvents[0] ?? null,
-            turbine                                      = drop?.job.turbine ?? selectedTurbine;
+            turbine                                      = held?.job.turbine ?? selectedTurbine;
 
         map.draw(mapModel({
             state           : dispatch,
             trips,
             selectedTrip,
             selectedTurbine : turbine,
-            drop
+            drop            : held
         }));
         // The plan under the pointer may have changed
         me.mapLink?.refresh();
         me.fitMap(selectedTrip, turbine);
 
         if (turbine) {
-            card.draw(cardInfo({ state : dispatch, trips, turbine, drop, selectedTrip }));
+            card.draw(cardInfo({ state : dispatch, trips, turbine, drop : held, selectedTrip }));
         }
     }
 
@@ -361,9 +362,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     // reaches it, and its rotor
     turbineTip(turbine) {
         const
-            { dispatch, trips, drop } = this,
+            { dispatch, trips, held } = this,
             selectedTrip              = this.scheduler.selectedEvents[0] ?? null,
-            info                      = tipInfo({ state : dispatch, trips, turbine, drop, selectedTrip });
+            info                      = tipInfo({ state : dispatch, trips, turbine, drop : held, selectedTrip });
 
         return tipContent(info);
     }
@@ -491,7 +492,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     fitMap(trip, turbine) {
         const
             me       = this,
-            follow   = Boolean(me.mapFollows && !me.drop),
+            follow   = Boolean(me.mapFollows && !me.held),
             key      = me.fitKeyOf(trip, turbine),
             turbines = trip ? [...trip.turbines, ...(trip.removed ?? [])] : [],
             fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
@@ -507,7 +508,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // What the map is fitted to, see fitMap
     fitKeyOf(trip, turbine) {
-        return [trip?.id, turbine, Boolean(this.mapFollows && !this.drop), Boolean(this.drop)].join('|');
+        return [trip?.id, turbine, Boolean(this.mapFollows && !this.held), Boolean(this.held)].join('|');
     }
 
     // The map's Show all button (it has gone to the whole farm): the map stays there, or where the user pans or zooms
@@ -516,7 +517,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const me = this;
 
         me.mapFollows = false;
-        me.fitKey     = me.fitKeyOf(me.scheduler.selectedEvents[0] ?? null, me.drop?.job.turbine ?? me.selectedTurbine);
+        me.fitKey     = me.fitKeyOf(me.scheduler.selectedEvents[0] ?? null, me.held?.job.turbine ?? me.selectedTurbine);
     }
 
     //endregion

@@ -21,7 +21,7 @@ const
 /**
  * The app's side of dragging a team onto a vessel (TeamDrag calls it): lifting the team from the tray, previewing its
  * stop on a trip and checking it against the weather window, booking it on release. The team held and its check are
- * `drop`, which DispatchApp#replan checks again whenever the plan or the forecast changes.
+ * `held`, which DispatchApp#replan checks again whenever the plan or the forecast changes.
  *
  * A team is held over a trip bar or anywhere on a vessel's row. Over a trip it can still join, the stop goes on that
  * trip. Elsewhere on the row it goes on the vessel's best trip: the one it fits on that is back first, else the first
@@ -72,8 +72,8 @@ export default Target => class DropPreview extends Target {
             // Held where the weather is over the vessel's limit
             blocked = at != null && at >= me.dispatch.closeOf(vessel);
 
-        if (me.drop?.target === target && me.drop?.team.id === teamId && (me.drop.at != null) === blocked) {
-            return me.drop;
+        if (me.held?.target === target && me.held?.team.id === teamId && (me.held.at != null) === blocked) {
+            return me.held;
         }
 
         me.clearPreview();
@@ -84,7 +84,7 @@ export default Target => class DropPreview extends Target {
 
         me.refreshSide();
 
-        return me.drop;
+        return me.held;
     }
 
     /**
@@ -97,12 +97,12 @@ export default Target => class DropPreview extends Target {
     previewCell(teamId, cell) {
         const me = this;
 
-        if (me.drop?.target !== cell || me.drop.team.id !== teamId) {
+        if (me.held?.target !== cell || me.held.team.id !== teamId) {
             me.clearPreview();
-            me.drop = me.cellDrop(teamId, cell);
+            me.held = me.cellDrop(teamId, cell);
         }
 
-        return me.drop;
+        return me.held;
     }
 
     /**
@@ -177,7 +177,7 @@ export default Target => class DropPreview extends Target {
         }
 
         if (target.isWeekCell) {
-            return me.drop = me.cellDrop(teamId, target);
+            return me.held = me.cellDrop(teamId, target);
         }
 
         const
@@ -189,15 +189,15 @@ export default Target => class DropPreview extends Target {
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
-        const held = trip ?? addTrip(me.scheduler.eventStore, vessel,
+        const shown = trip ?? addTrip(me.scheduler.eventStore, vessel,
             { id : plan.id, departs : plan.start, draft : true, day : shownDay() }, [stop]);
 
         if (trip && vessel.mode !== 'heli') {
             trip.layout({ stops : [...trip.stops, stop] });
         }
 
-        return me.drop = {
-            target, at, trip : held, team, job, result, close, reach : reachable(plan, job.minutes, close)
+        return me.held = {
+            target, at, trip : shown, team, job, result, close, reach : reachable(plan, job.minutes, close)
         };
     }
 
@@ -330,10 +330,10 @@ export default Target => class DropPreview extends Target {
     }
 
     clearPreview() {
-        const trip = this.drop?.trip;
+        const trip = this.held?.trip;
 
         // A cell of the week previews nothing in the store
-        if (trip && !trip.isDestroyed && !this.drop.target.isWeekCell) {
+        if (trip && !trip.isDestroyed && !this.held.target.isWeekCell) {
             if (trip.draft) {
                 this.scheduler.eventStore.remove(trip);
             }
@@ -342,7 +342,7 @@ export default Target => class DropPreview extends Target {
             }
         }
 
-        this.drop = null;
+        this.held = null;
     }
 
     /**
@@ -353,7 +353,7 @@ export default Target => class DropPreview extends Target {
     dropTeam(teamId, target) {
         const me = this;
 
-        let { drop } = me;
+        let drop = me.held;
 
         if (drop?.team.id !== teamId || drop.target !== target) {
             me.clearPreview();
@@ -375,7 +375,7 @@ export default Target => class DropPreview extends Target {
         const { trip, team, job, result } = drop;
 
         // Booked: the previewed stop becomes the trip's, a draft trip a trip of the plan
-        me.drop    = null;
+        me.held    = null;
         trip.draft = false;
         trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
         me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
@@ -393,7 +393,7 @@ export default Target => class DropPreview extends Target {
     bookCell({ team, job, result, plan, vessel, day }) {
         const me = this;
 
-        me.drop = null;
+        me.held = null;
         // Its departure in minutes of the day shown, which the times count from
         addTrip(me.scheduler.eventStore, vessel, { id : plan.id, departs : plan.start + (day - shownDay()) * 24 * 60,
             day }, [stopOf(team, job)]);

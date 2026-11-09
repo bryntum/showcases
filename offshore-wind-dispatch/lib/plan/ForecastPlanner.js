@@ -37,12 +37,12 @@ export default class ForecastPlanner {
             waiting : [...waiting],
             trips   : trips.map(trip => ({
                 trip,
-                departs : trip.departs,
-                stops   : trip.stops,
-                change  : trip.change,
+                departs         : trip.departs,
+                stops           : trip.stops,
+                change          : trip.change,
                 // Never undefined: until the app evaluates the trips again, a trip put back may still render as trimmed
-                removed : [...(trip.removed ?? [])],
-                was     : trip.was
+                removed         : [...(trip.removed ?? [])],
+                previousDeparts : trip.previousDeparts
             }))
         };
 
@@ -62,9 +62,9 @@ export default class ForecastPlanner {
 
             if (result) {
                 trip.set({
-                    change  : result.change,
-                    removed : result.removed,
-                    was     : result.was ?? null
+                    change          : result.change,
+                    removed         : result.removed,
+                    previousDeparts : result.previousDeparts ?? null
                 });
                 // Its legs placed again: from the new departure, without the stops cut
                 trip.layout({ departs : result.start, stops : result.stops });
@@ -114,9 +114,9 @@ export default class ForecastPlanner {
     undo() {
         const { snapshot } = this;
 
-        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, was }) => {
+        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, previousDeparts }) => {
             if (!trip.isDestroyed) {
-                trip.set({ change, removed, was });
+                trip.set({ change, removed, previousDeparts });
                 trip.layout({ departs, stops });
             }
         });

@@ -193,11 +193,11 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
         const statuses = await page.evaluate(() => {
             const
                 app   = globalThis.bryntum.query('dispatchapp'),
-                own   = new Set(app.drop.trip.turbines),
-                reach = app.drop.reach;
+                own   = new Set(app.held.trip.turbines),
+                reach = app.held.reach;
 
             // Turbines on other trips, outside the reach of the held trip
-            return app.trips.filter(each => each !== app.drop.trip).flatMap(each => each.turbines)
+            return app.trips.filter(each => each !== app.held.trip).flatMap(each => each.turbines)
                 .filter(id => !reach.has(id) && !own.has(id));
         });
 
@@ -208,7 +208,7 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
         }
 
         // The held trip's own stops and the turbines it can reach are not dimmed
-        for (const id of await page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop.trip.turbines)) {
+        for (const id of await page.evaluate(() => globalThis.bryntum.query('dispatchapp').held.trip.turbines)) {
             await expect(marker(id)).not.toHaveClass(/\bow-m-dim\b/);
         }
 
@@ -239,13 +239,13 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
 const heldState = page => page.evaluate(() => {
     const
         app                         = globalThis.bryntum.query('dispatchapp'),
-        { trip, team, job, target } = app.drop,
+        { trip, team, job, target } = app.held,
         close               = app.dispatch.closeOf(trip.resource),
         pad                 = value => String(value).padStart(2, '0'),
         state               = {
-            held      : app.drop.result,
+            held      : app.held.result,
             fresh     : app.checkDrop(trip, team, job),
-            heldClose : app.drop.close,
+            heldClose : app.held.close,
             close,
             closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
             previews  : trip.children.filter(leg => leg.preview).length,
@@ -381,7 +381,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
         const [departs, wanted] = await page.evaluate(async() => {
             const
                 app  = globalThis.bryntum.query('dispatchapp'),
-                trip = app.drop.trip,
+                trip = app.held.trip,
                 // An hour later, late enough for the previewed stop to bring it back after the window
                 to   = trip.departs + 60;
 
@@ -429,7 +429,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
         const state = await heldState(page);
 
         expect(state.held).toEqual(state.fresh);
-        expect(targets.fresh).toContain(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop.target.id));
+        expect(targets.fresh).toContain(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').held.target.id));
     });
 });
 
@@ -950,15 +950,15 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
                     point  = { x : axisBox.x + noon, y : rowBox.y + rowBox.height / 2 };
 
                 await holdAt(page, teamId, point);
-                await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop?.target.id),
+                await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').held?.target.id),
                     { message : `${teamId} held over ${name}` }).toBeTruthy();
                 await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
                 const held = await page.evaluate(() => {
-                    const { drop } = globalThis.bryntum.query('dispatchapp');
+                    const { held } = globalThis.bryntum.query('dispatchapp');
 
-                    return { trip   : drop.trip.id, valid  : drop.result.valid, reason : drop.result.reason,
-                        short  : drop.result.short };
+                    return { trip   : held.trip.id, valid  : held.result.valid, reason : held.result.reason,
+                        short  : held.result.short };
                 });
 
                 // The proxy says the same as the check, in short

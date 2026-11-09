@@ -81,7 +81,7 @@ export default class KeyboardDrag {
             team = me.drag.team,
             step = { ArrowRight : 1, ArrowDown : 1, ArrowLeft : -1, ArrowUp : -1 }[event.key];
 
-        if (!team || !me.held) {
+        if (!team || !me.heldChip) {
             return;
         }
 
@@ -127,7 +127,7 @@ export default class KeyboardDrag {
     book(team) {
         const
             me     = this,
-            target = me.drag.handler.drop?.target ?? me.keyboard.trips[me.keyboard.index];
+            target = me.drag.handler.held?.target ?? me.keyboard.trips[me.keyboard.index];
 
         if (target) {
             me.drag.handler.dropTeam(team, target);
@@ -156,8 +156,8 @@ export default class KeyboardDrag {
             { team, job } = me.drag.handler.waitingTeam(teamId);
 
         me.drag.lift(teamId);
-        me.held = createChip(team, job);
-        document.body.appendChild(me.held);
+        me.heldChip = createChip(team, job);
+        document.body.appendChild(me.heldChip);
         document.addEventListener('keydown', me.onHeldKey, true);
         me.holdOver(trip);
     }
@@ -182,15 +182,15 @@ export default class KeyboardDrag {
         await scheduler.project.commitAsync();
 
         const
-            drop  = handler.drop,
+            drop  = handler.held,
             rect  = (await me.previewElement(drop?.trip))?.getBoundingClientRect(),
             point = rect ?
                 { x : rect.left + rect.width / 2, y : rect.top + 8 } :
                 { x : innerWidth / 2, y : innerHeight / 2 };
 
         // Still held over this trip, the keys may have moved on
-        if (me.held && handler.drop === drop && drop?.target === trip) {
-            DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
+        if (me.heldChip && handler.held === drop && drop?.target === trip) {
+            DomHelper.setTranslateXY(me.heldChip, point.x - 20, point.y + 8);
             me.drag.hover(trip, point);
         }
     }
@@ -229,10 +229,10 @@ export default class KeyboardDrag {
     endHeld() {
         const me = this;
 
-        if (me.held) {
+        if (me.heldChip) {
             document.removeEventListener('keydown', me.onHeldKey, true);
-            me.held.remove();
-            me.held = me.keyboard = null;
+            me.heldChip.remove();
+            me.heldChip = me.keyboard = null;
             me.drag.end();
         }
     }

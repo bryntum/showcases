@@ -73,8 +73,8 @@ export default class DispatchSync {
                 id         : `ghost-${trip.id}`,
                 kind       : 'ghost',
                 resourceId : trip.resource?.id,
-                startDate  : toDate(trip.was),
-                endDate    : toDate(trip.was + trip.endMinute - trip.departs)
+                startDate  : toDate(trip.previousDeparts),
+                endDate    : toDate(trip.previousDeparts + trip.endMinute - trip.departs)
             })),
             shown         = ghosts.filter(ghost => ghost.startDate < end);
 

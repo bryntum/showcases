@@ -81,7 +81,7 @@ function changeText(trip, firstSailing) {
     return {
         trimmed : () => `${trip.removed.join(', ')} → ${nextDay}`,
         moved   : () => `moved to ${nextDay} ${hhmm(firstSailing)}`,
-        pulled  : () => `${duration(trip.was - trip.departs)} earlier`
+        pulled  : () => `${duration(trip.previousDeparts - trip.departs)} earlier`
     }[trip.status]?.() ?? null;
 }
 
