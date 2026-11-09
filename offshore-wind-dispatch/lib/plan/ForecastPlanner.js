@@ -3,8 +3,15 @@ import { duration, hhmm } from '../util/Time.js';
 
 /**
  * Re-plans the day when a new forecast comes in. Each trip that no longer gets back before its window closes is
- * changed by the rules of Planner#replanTrip: brought forward, trimmed, or moved to tomorrow. The trips as they were
- * are kept, so the change can be undone.
+ * changed by the rules of Planner#replanTrip: brought forward, trimmed, or moved to tomorrow.
+ *
+ * The re-plan is one transaction of the project's StateTrackingManager, so Undo is the STM's `undo()`: every change to
+ * the trips, their legs and their dependencies, the engine's own included, goes back. The STM records nothing else:
+ * it is enabled for the forecast's transaction and its undo only, a team previewed on a trip is no change to undo. The
+ * forecast itself is the dispatch state's and stays.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/data/stm/StateTrackingManager
  */
 
 // The order the changes are reviewed in: what is lost first
@@ -18,39 +25,51 @@ export default class ForecastPlanner {
      * @param {Scheduler.model.ProjectModelEnterprise} options.project The project whose engine places the trips
      */
     constructor({ dispatch, trips, project }) {
-        Object.assign(this, { dispatch, project, getTrips : trips, changes : [], snapshot : null });
+        Object.assign(this, { dispatch, project, getTrips : trips, changes : [] });
     }
 
     /**
      * Takes the next forecast and re-plans the trips against it, a vessel's trips in departure order: each trip changed
      * is placed by the engine before the next one is planned, which may not leave before it is back
-     * @param {String[]} waiting The turbines whose team waits at the port, kept for the undo
-     * @returns {Promise<Object[]>} The changes, `{ trip, change, removed, was }`
+     * @returns {Promise<Object[]>} The changes, `{ trip, change, removed }`
      */
-    async apply(waiting) {
+    async apply() {
         const
-            me           = this,
-            { dispatch } = me,
+            me                    = this,
+            { dispatch, project } = me,
+            { stm }               = project,
             // Not a new trip shown for a team held over a vessel
-            trips        = me.getTrips().filter(trip => !trip.draft).sort((a, b) => a.departs - b.departs),
-            ends         = new Map();
-
-        me.snapshot = {
-            waiting : [...waiting],
-            trips   : trips.map(trip => ({
-                trip,
-                departs           : trip.departs,
-                stops             : trip.stops,
-                change            : trip.change,
-                // Never undefined: until the app evaluates the trips again, a trip put back may still render as trimmed
-                removed           : [...(trip.removed ?? [])],
-                previousDeparture : trip.previousDeparture
-            }))
-        };
+            trips                 = me.getTrips().filter(trip => !trip.draft).sort((a, b) => a.departs - b.departs);
 
         dispatch.applyForecast();
 
         me.changes = [];
+        // An earlier forecast's re-plan is no longer undone
+        stm.resetQueue();
+        stm.enable();
+        stm.startTransaction('Forecast');
+
+        try {
+            await me.replan(trips);
+        }
+        finally {
+            await project.commitAsync();
+            stm.stopTransaction();
+            stm.disable();
+        }
+
+        me.changes.sort((a, b) => reviewOrder[a.change] - reviewOrder[b.change]);
+        me.reviewIndex = -1;
+
+        return me.changes;
+    }
+
+    // Each trip against the new windows, see apply()
+    async replan(trips) {
+        const
+            me           = this,
+            { dispatch } = me,
+            ends         = new Map();
 
         for (const trip of trips) {
             const
@@ -79,11 +98,6 @@ export default class ForecastPlanner {
                 ends.set(resource, trip.endMinute);
             }
         }
-
-        me.changes.sort((a, b) => reviewOrder[a.change] - reviewOrder[b.change]);
-        me.reviewIndex = -1;
-
-        return me.changes;
     }
 
     /**
@@ -125,22 +139,22 @@ export default class ForecastPlanner {
     }
 
     /**
-     * Puts the trips back as they were before the forecast
-     * @returns {String[]} The turbines waiting at the port then
+     * Puts the trips back as they were before the forecast: the STM undoes its transaction
+     * @returns {Promise} Resolves once the records are back, the engine then places them
      */
-    undo() {
-        const { snapshot } = this;
+    async undo() {
+        const { stm } = this.project;
 
-        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, previousDeparture }) => {
-            if (!trip.isDestroyed) {
-                trip.set({ change, removed, previousDeparture });
-                trip.layout({ departs, stops });
-            }
-        });
+        this.changes = [];
 
-        this.changes  = [];
-        this.snapshot = null;
+        // A disabled STM can undo nothing
+        stm.enable();
 
-        return snapshot?.waiting ?? this.dispatch.waiting;
+        if (stm.canUndo) {
+            await stm.undo();
+        }
+
+        stm.resetQueue();
+        stm.disable();
     }
 }

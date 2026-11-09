@@ -182,6 +182,8 @@ export default class DispatchScheduler extends Scheduler {
                 ...config.project,
                 // The trips read the teams on board from their project
                 teams                       : config.dispatch.teams,
+                // Undo of a forecast's re-plan (ForecastPlanner): recorded as one transaction, not automatically
+                stm                         : { autoRecord : false },
                 eventModelClass             : TripModel,
                 resourceModelClass          : VesselModel,
                 dependencyModelClass        : PlanDependencyModel,

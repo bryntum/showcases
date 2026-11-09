@@ -447,7 +447,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         let changes = [];
 
         await me.replan(async() => {
-            changes = await forecastPlanner.apply(me.dispatch.waiting);
+            changes = await forecastPlanner.apply();
         });
 
         if (changes.length) {
@@ -462,9 +462,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         me.parts.notice.hidden = true;
 
-        return me.replan(() => {
-            me.dispatch.waiting = me.forecastPlanner.undo();
-        });
+        return me.replan(() => me.forecastPlanner.undo());
     }
 
     // Selects the next trip the forecast changed

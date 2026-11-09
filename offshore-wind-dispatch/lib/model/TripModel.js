@@ -52,8 +52,8 @@ export default class TripModel extends EventModelEnterprise {
     static fields = [
         // Set by the forecast: `trimmed` (last stops to tomorrow), `moved` (all of it) or `pulled` (brought forward)
         { name : 'change', defaultValue : null },
-        // The turbines the forecast moved to tomorrow
-        { name : 'removed', type : 'array' },
+        // The turbines the forecast moved to tomorrow. Never undefined, so the forecast's Undo puts back an empty list
+        { name : 'removed', type : 'array', defaultValue : [] },
         // The departure before the forecast brought it forward (`pulled`)
         { name : 'previousDeparture', type : 'date', defaultValue : null },
         // `on-plan`, `at-risk` or the change, kept up to date by the app (DispatchApp#evaluate)

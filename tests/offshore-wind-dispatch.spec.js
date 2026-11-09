@@ -303,6 +303,12 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
         await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        // The project's STM undoes the re-plan, the engine places it, then the team is held again
+        await expect.poll(() => page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return Boolean(app.held) && app.trips.every(each => !each.change);
+        })).toBe(true);
 
         const state = await heldState(page);
 
@@ -705,7 +711,8 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await notice.getByRole('button', { name : 'Undo' }).click();
 
         await expect(notice).toBeHidden();
-        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips
+        // The project's STM undoes the re-plan
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips
             .filter(each => each.change).map(each => each.id))).toEqual([]);
         expect(await legsOf()).toEqual(before);
         // Undo brought the dependencies back with their stops
