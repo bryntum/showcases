@@ -2,24 +2,25 @@
 
 /* A Container with an hbox layout: the title, then a small card per team */
 .ow-tray {
-    --b-container-gap     : 16px;
+    --b-container-gap     : 1rem;
     /* Room around the cards for their hover ring and shadow */
-    --b-container-padding : 6px 0;
+    --b-container-padding : 0.375rem 0;
 
     flex                 : none;
-    /* The tray still clips what is too wide for it, but 6px past its edges, so the ring of the first card is whole */
+    /* The tray still clips what is too wide for it, but as far past its edges as its padding, so the ring of the first
+       card is whole */
     overflow             : clip;
-    overflow-clip-margin : 6px;
+    overflow-clip-margin : 0.375rem;
 }
 
 .ow-tray-title {
-    font-size   : 13px;
+    font-size   : var(--ow-size-base);
     font-weight : 500;
     white-space : nowrap;
 }
 
 .ow-tray-empty {
-    font-size   : 12px;
+    font-size   : var(--ow-size-sm);
     color       : var(--ow-c-muted);
     white-space : nowrap;
 }
@@ -29,12 +30,12 @@
     flex             : none;
     display          : flex;
     align-items      : center;
-    gap              : 12px;
-    padding          : 6px 16px 6px 8px;
-    border-radius    : 8px;
+    gap              : 0.9231em;
+    padding          : 0.462em 1.231em 0.462em 0.6154em;
+    border-radius    : 0.5rem;
     background-color : var(--ow-surface);
     box-shadow       : var(--ow-shadow-chip);
-    font-size        : 13px;
+    font-size        : var(--ow-size-base);
     white-space      : nowrap;
     cursor           : grab;
     user-select      : none;
@@ -51,21 +52,21 @@
     opacity    : 0.45;
 }
 
-/* The people icon (Tabler's outline users, as the vessels' icons) in a 32px neutral circle */
+/* The people icon (Tabler's outline users, as the vessels' icons) in a neutral circle */
 .ow-team-crew {
     display          : grid;
     place-items      : center;
     flex             : none;
-    width            : 32px;
-    height           : 32px;
+    width            : 2.462em;
+    height           : 2.462em;
     border-radius    : 50%;
-    font-size        : 13px;
+    font-size        : var(--ow-size-base);
     color            : var(--ow-c-muted);
     background-color : var(--ow-c-neutral-bg);
 
     svg {
-        width  : 18px;
-        height : 18px;
+        width  : 1.385em;
+        height : 1.385em;
     }
 }
 
@@ -86,7 +87,7 @@
 }
 
 .ow-team-job {
-    font-size : 12px;
+    font-size : var(--ow-size-sm);
     color     : var(--ow-c-muted);
 }
 

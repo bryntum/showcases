@@ -2,8 +2,8 @@
 
 /* The forecast's notice, a Container with an hbox layout, its Undo and Review buttons Bryntum Buttons */
 .ow-notice.b-widget {
-    --b-container-gap          : 10px;
-    --b-container-padding      : 8px 16px 8px 24px;
+    --b-container-gap          : 0.625rem;
+    --b-container-padding      : 0.5rem 1rem 0.5rem 1.5rem;
     /* Undo in the notice's text colour */
     --b-button-type-text-color : var(--ow-ink);
     /* The theme's filled button takes dark text in dark: white on the work blue */
@@ -18,13 +18,13 @@
         flex        : 1;
         display     : flex;
         align-items : center;
-        gap         : 10px;
+        gap         : 0.8em;
         line-height : 1.4;
-        font-size   : 12.5px;
+        font-size   : 0.78125rem;
 
         > .ow-icon-host > .ow-icon {
-            width  : 22px;
-            height : 22px;
+            width  : 1.76em;
+            height : 1.76em;
             color  : var(--ow-c-work);
         }
 
@@ -43,5 +43,5 @@
 
 /* Messages after a drop */
 .ow-toast-message {
-    font-size : 13px;
+    font-size : var(--ow-size-base);
 }

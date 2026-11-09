@@ -6,21 +6,21 @@
     --ow-tone               : var(--ow-reach);
     --b-popup-background    : var(--ow-surface);
     --b-popup-border        : 1px solid var(--ow-border);
-    --b-popup-border-radius : 9px;
-    --b-popup-padding       : 10px 12px;
+    --b-popup-border-radius : 0.5625rem;
+    --b-popup-padding       : 0.625rem 0.75rem;
 
-    width          : 248px;
+    width          : 15.5rem;
     box-shadow     : var(--ow-shadow-float);
     pointer-events : none;
     color          : var(--ow-ink);
     font-family    : inherit;
-    font-size      : 12px;
+    font-size      : var(--ow-size-sm);
 
     dl {
         display               : grid;
         grid-template-columns : auto 1fr;
-        gap                   : 3px 10px;
-        margin                : 8px 0;
+        gap                   : 0.25em 0.8334em;
+        margin                : 0.667em 0;
     }
 
     dt {
@@ -37,21 +37,21 @@
         display     : flex;
         flex-wrap   : wrap;
         align-items : center;
-        gap         : 2px 10px;
+        gap         : 0.167em 0.8334em;
     }
 
     .ow-drop-cert {
         display     : inline-flex;
         align-items : center;
-        gap         : 3px;
+        gap         : 0.25em;
 
         .ow-icon-host {
             display : inline-flex;
         }
 
         .ow-icon {
-            width          : 12px;
-            height         : 12px;
+            width          : 1em;
+            height         : 1em;
             vertical-align : middle;
         }
     }
@@ -72,28 +72,28 @@
 .ow-drop-tip-head {
     display     : flex;
     align-items : center;
-    gap         : 6px;
+    gap         : 0.5em;
     font-weight : 700;
     color       : var(--ow-tone);
 }
 
 .ow-drop-tip-foot {
-    padding-block-start : 7px;
+    padding-block-start : 0.609em;
     border-block-start  : 1px solid var(--ow-border);
-    font-size           : 11.5px;
+    font-size           : 0.71875rem;
     color               : var(--ow-ink-sub);
 }
 
 /* Held from the keyboard, the keys that move, book or cancel */
 .ow-drop-tip-keys {
-    margin-block-start : 6px;
-    font-size          : 11px;
+    margin-block-start : 0.546em;
+    font-size          : var(--ow-size-xs);
     color              : var(--ow-ink-sub);
 
     kbd {
-        padding       : 0 4px;
+        padding       : 0 0.364em;
         border        : 1px solid var(--ow-border);
-        border-radius : 3px;
+        border-radius : 0.1875rem;
         font          : inherit;
         font-weight   : 600;
     }

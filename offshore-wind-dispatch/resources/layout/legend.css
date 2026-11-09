@@ -1,16 +1,16 @@
-/* The schedule's footer (Legend.js): 36px under the last row, the legend on the left, the credit on the right */
+/* The schedule's footer (Legend.js): a bar under the last row, the legend on the left, the credit on the right */
 
 .ow-legend {
     flex               : none;
     display            : flex;
     align-items        : center;
-    gap                : 24px;
+    gap                : 2em;
     box-sizing         : border-box;
-    height             : 36px;
+    height             : var(--ow-footer-h);
     padding            : 0 var(--ow-inset);
     background-color   : var(--ow-c-footer);
     border-block-start : 1px solid var(--ow-border);
-    font-size          : 12px;
+    font-size          : var(--ow-size-sm);
     color              : var(--ow-c-muted);
     white-space        : nowrap;
     overflow           : hidden;
@@ -18,7 +18,7 @@
     .ow-l {
         display     : inline-flex;
         align-items : center;
-        gap         : 8px;
+        gap         : 0.667em;
     }
 
     /* The swatch */
@@ -26,9 +26,9 @@
         position      : relative;
         flex          : none;
         box-sizing    : border-box;
-        width         : 16px;
-        height        : 10px;
-        border-radius : 2px;
+        width         : 1rem;
+        height        : 0.625rem;
+        border-radius : 0.125rem;
     }
 
     /* The tonal work block, and the Week view's day with trips: its tint and hairline (tokens.css) */
@@ -39,7 +39,7 @@
 
     /* The line with its hollow and solid end dots */
     .ow-l-transit i {
-        width            : 24px;
+        width            : 1.5rem;
         height           : var(--ow-transit-w);
         border-radius    : 0;
         background-color : var(--ow-c-transit);
@@ -71,7 +71,7 @@
 
     /* A line with an arrowhead, as the dependency drawn in the schedule */
     .ow-l-dependency i {
-        width            : 24px;
+        width            : 1.5rem;
         height           : 1.25px;
         border-radius    : 0;
         background-color : var(--ow-c-work-line);

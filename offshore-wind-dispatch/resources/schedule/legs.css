@@ -9,7 +9,7 @@
     > .b-sch-event.ow-seg {
         --b-sch-event-border-width   : 0;
         --b-sch-event-border-radius  : var(--ow-c-radius);
-        /* As TripRendering.js#blockText counts it */
+        /* px, as TripRendering.js#blockText counts them (also the gap and the narrow block's padding below) */
         --b-sch-event-padding-inline : 6px;
         --b-sch-event-font-size      : 12px;
 

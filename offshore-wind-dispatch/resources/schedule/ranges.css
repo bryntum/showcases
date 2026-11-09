@@ -14,7 +14,7 @@
         --b-resource-time-range-background : var(--ow-hatch-heli);
     }
 
-    /* The old place of a trip brought forward: a dashed outline where its work blocks were */
+    /* The old place of a trip brought forward: a dashed outline where its work blocks were, px as the row's geometry */
     &.ow-ghost::before {
         content       : '';
         position      : absolute;

@@ -7,10 +7,10 @@
     --b-button-idle-border-width   : 1px;
     --b-button-font-weight         : 600;
     --b-button-idle-border-color   : var(--ow-border);
-    --b-button-border-radius       : 6px;
-    --b-button-height              : 26px;
-    --b-button-padding-inline      : 10px;
-    --b-widget-font-size           : 12px;
+    --b-button-border-radius       : 0.375rem;
+    --b-button-height              : 1.625rem;
+    --b-button-padding-inline      : 0.625rem;
+    --b-widget-font-size           : var(--ow-size-sm);
 
     flex                : none;
     margin-inline-start : auto;

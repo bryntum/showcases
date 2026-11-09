@@ -5,23 +5,23 @@
     flex        : none;
     display     : flex;
     /* Lined up with the map's straight edges above it, past its rounded corners */
-    padding     : var(--ow-inset) calc(var(--ow-inset) + var(--ow-card-radius));
+    padding     : var(--ow-inset) calc(var(--ow-map-margin) + var(--ow-card-radius));
     flex-wrap   : wrap;
-    gap         : 4px 8px;
-    font-size   : 11px;
+    gap         : 0.364em 0.7273em;
+    font-size   : var(--ow-size-xs);
     color       : var(--ow-ink-sub);
     white-space : nowrap;
 
     span {
         display     : flex;
         align-items : center;
-        gap         : 4px;
+        gap         : 0.364em;
     }
 
     .ow-legend-mark {
         flex     : none;
-        width    : 16px;
-        height   : 16px;
+        width    : 1rem;
+        height   : 1rem;
     }
 }
 

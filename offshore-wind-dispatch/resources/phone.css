@@ -7,11 +7,11 @@
     --ow-card-radius  : 0;
     --ow-card-shadow  : none;
     /* The vessel column and the axis labels closer to the edge (schedule/scheduler.css) */
-    --ow-column-inset : 10px;
+    --ow-column-inset : 0.625rem;
 
     .ow-kpis {
-        --b-container-gap     : 10px 14px;
-        --b-container-padding : 10px 12px;
+        --b-container-gap     : 0.625rem 0.875rem;
+        --b-container-padding : 0.625rem 0.75rem;
 
         flex-wrap : wrap;
         height    : auto;
@@ -34,9 +34,9 @@
 
     .ow-tab-bar.b-tab-bar {
         --b-tab-bar-background          : var(--b-neutral-95);
-        --b-tab-bar-padding             : 2px;
+        --b-tab-bar-padding             : 0.125rem;
         --b-tab-bar-border-bottom-width : 0;
-        --b-tab-border-radius           : 5px;
+        --b-tab-border-radius           : 0.3125rem;
         --b-tab-font-weight             : 600;
         --b-tab-color                   : var(--ow-ink);
         --b-tab-hover-color             : var(--ow-ink);
@@ -46,14 +46,14 @@
         --b-tab-indicator-display       : none;
 
         min-height    : 0;
-        margin        : 8px 12px;
+        margin        : 0.5rem 0.75rem;
         gap           : 0;
-        border-radius : 7px;
+        border-radius : 0.4375rem;
 
         .b-tab {
             flex       : 1;
-            min-height : 30px;
-            font-size  : 13px;
+            min-height : var(--ow-bar-control);
+            font-size  : var(--ow-size-base);
 
             &.b-active {
                 --b-tab-hover-background : var(--ow-surface);
@@ -75,7 +75,7 @@
     .ow-schedule .ow-panel-bar.b-toolbar {
         --b-toolbar-padding : 0 calc(var(--ow-bar-inset) * 2);
 
-        min-height : 40px;
+        min-height : 2.5rem;
 
         .ow-forecast-button {
             flex            : 1;
@@ -84,7 +84,7 @@
     }
 
     .ow-tray {
-        --b-container-padding : 8px 12px;
+        --b-container-padding : 0.5rem 0.75rem;
 
         overflow-x : auto;
     }
@@ -99,7 +99,7 @@
 
     /* The muted line gives way in the narrow column */
     .ow-resource small {
-        font-size     : 10px;
+        font-size     : var(--ow-size-2xs);
         overflow      : hidden;
         text-overflow : ellipsis;
     }
@@ -109,7 +109,7 @@
     }
 
     .ow-notice.b-widget {
-        --b-container-padding : 8px 12px 8px 10px;
+        --b-container-padding : 0.5rem 0.75rem 0.5rem 0.625rem;
 
         flex-wrap : wrap;
 
@@ -119,6 +119,6 @@
     }
 
     .ow-map.b-widget {
-        min-height : 300px;
+        min-height : 18.75rem;
     }
 }

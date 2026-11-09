@@ -5,19 +5,19 @@
 .ow-resource {
     display     : flex;
     align-items : center;
-    gap         : 10px;
+    gap         : 0.7693em;
     min-width   : 0;
     line-height : 1.3;
 
-    /* The seats taken (--ow-use, set by the renderer) as a 2px ring round the icon's circle */
+    /* The seats taken (--ow-use, set by the renderer) as a ring round the icon's circle */
     .ow-resource-ring {
         --ow-ring : var(--ow-c-work);
 
         flex          : none;
         display       : grid;
         place-items   : center;
-        width         : 36px;
-        height        : 36px;
+        width         : 2.7693em;
+        height        : 2.7693em;
         border-radius : 50%;
         background    : conic-gradient(var(--ow-ring) var(--ow-use, 0%), color-mix(in srgb, var(--ow-c-muted) 14%, transparent) 0);
 
@@ -30,8 +30,8 @@
         flex             : none;
         display          : grid;
         place-items      : center;
-        width            : 32px;
-        height           : 32px;
+        width            : 2.462em;
+        height           : 2.462em;
         border-radius    : 50%;
         color            : var(--ow-c-muted);
         /* Opaque, so the ring shows only round its edge */
@@ -39,25 +39,25 @@
     }
 
     .ow-resource-icon {
-        width  : 18px;
-        height : 18px;
+        width  : 1.385em;
+        height : 1.385em;
     }
 
     .ow-resource-text {
         display        : flex;
         flex-direction : column;
-        gap            : 2px;
+        gap            : 0.154em;
         min-width      : 0;
     }
 
     b {
-        font-size   : 14px;
+        font-size   : var(--ow-size-md);
         font-weight : 500;
         white-space : nowrap;
     }
 
     small {
-        font-size   : 12px;
+        font-size   : var(--ow-size-sm);
         color       : var(--ow-c-muted);
         white-space : nowrap;
     }

@@ -9,10 +9,10 @@
 
     flex       : none;
     box-sizing : border-box;
-    height     : 72px;
+    height     : var(--ow-header-h);
 
     :is(.ow-kpis-lead, .ow-kpis-counts) {
-        --b-container-gap     : 32px;
+        --b-container-gap     : 2rem;
         --b-container-padding : 0 var(--ow-inset);
 
         box-sizing : border-box;
@@ -52,11 +52,11 @@
             .ow-tray {
                 overflow-x      : auto;
                 scrollbar-width : none;
-                mask-image      : linear-gradient(to right, #000 calc(100% - 24px), transparent);
+                mask-image      : linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
             }
 
             .ow-tray .ow-team {
-                padding-inline : 12px;
+                padding-inline : 0.9231em;
 
                 .ow-team-crew {
                     display : none;
@@ -82,7 +82,7 @@
 :where(.ow-clock, .ow-kpi) {
     small {
         display     : block;
-        font-size   : 12px;
+        font-size   : var(--ow-size-sm);
         font-weight : 400;
         color       : var(--ow-c-muted);
         white-space : nowrap;
@@ -98,13 +98,13 @@
 /* "Skarv Bank" over "Mon 9 Nov" */
 .ow-clock {
     b {
-        font-size   : 16px;
+        font-size   : var(--ow-size-lg);
         font-weight : 600;
     }
 
     small {
-        margin-block-start : 2px;
-        font-size          : 13px;
+        margin-block-start : 0.125rem;
+        font-size          : var(--ow-size-base);
     }
 }
 
@@ -116,7 +116,7 @@
     }
 
     small {
-        margin-block-start : 2px;
+        margin-block-start : 0.125rem;
     }
 }
 
@@ -124,7 +124,7 @@
 .ow-kpi-split {
     align-self         : stretch;
     width               : 0;
-    margin-block        : 18px;
+    margin-block        : 1.125rem;
     border-inline-start : 1px solid var(--ow-border);
 }
 

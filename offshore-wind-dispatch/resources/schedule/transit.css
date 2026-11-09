@@ -32,7 +32,7 @@
         }
 
         /* The clock time beyond the dot, no background: it reads on the white row and on the shaded past, and the 1px
-           now line may cross it */
+           now line may cross it. px, as TripRendering.js#edgeRoom counts its width */
         .b-buffer-label {
             position          : absolute;
             inset-block-start : 50%;
