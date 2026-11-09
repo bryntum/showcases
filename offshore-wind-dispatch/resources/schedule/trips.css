@@ -86,11 +86,14 @@
 
     /* A trip under the pointer (Bryntum's hover state of the NestedEvents parent): a dotted outline round all of it,
        its wrapper, the label, the sail out, the time on station and the sail back, as the drop target's but quieter */
-    .b-sch-event-wrap.ow-trip-wrap:is(:hover, .b-hover):not(.ow-trip-held) {
-        outline        : 1px dotted var(--ow-c-work-line);
-        /* Clear of the end dots, which sit on the wrapper's edges */
-        outline-offset : 5px;
+    .b-sch-event-wrap.ow-trip-wrap:is(:hover, .b-hover):not(.ow-trip-held)::after {
+        content        : '';
+        position       : absolute;
+        /* Clear of the end dots, which sit on the wrapper's ends, and inside the row's lines above and below */
+        inset          : -1px -6px;
+        border         : 1px dotted var(--ow-c-work-line);
         border-radius  : var(--ow-c-radius);
+        pointer-events : none;
     }
 
     /* The selected trip: its label in the text colour */
