@@ -64,31 +64,6 @@ npx playwright install chromium
 Inside a showcase, `app.js` is the entry point, `lib/` holds the classes (one per file), `resources/` the CSS and
 `data/` the JSON it loads.
 
-## What a showcase is built from
-
-A showcase exists to show off our own products, so build it from them as much as possible:
-
-| Need                                       | Use                                   |
-|--------------------------------------------|---------------------------------------|
-| Tables and data grids                      | AG Grid                               |
-| Charts                                     | AG Charts                             |
-| Dashboards                                 | AG Studio                             |
-| Resource scheduling and timelines          | Bryntum Scheduler or Scheduler Pro    |
-| Project plans with tasks and dependencies  | Bryntum Gantt                         |
-| Calendars                                  | Bryntum Calendar                      |
-| Kanban boards                              | Bryntum TaskBoard                     |
-
-* Use the products' built-in features (dependencies, nested events, drag and drop, editors, histograms, tooltips…)
-  and style them to match the design. Never re-implement a feature or switch one off to imitate a mockup; if the
-  design can't be reached with the feature, change the design or ask
-* Write UI by hand only for what none of the products covers
-
-### Third-party libraries
-
-Apart from our own products, a showcase may only use libraries under MIT or a similarly permissive licence: MIT,
-BSD, ISC or Apache-2.0 (SIL OFL for fonts). No GPL, LGPL, AGPL, MPL, Creative Commons non-commercial, or "free for
-non-commercial use" licences. Check the `license` field in the package's `package.json` before you add it.
-
 ## Build your own showcase
 
 1. Copy a showcase folder, for example `ev-operations/`, rename it, and set the `name` in its `package.json`. Replace
