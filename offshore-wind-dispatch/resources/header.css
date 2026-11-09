@@ -52,7 +52,7 @@
         .b-sch-header-time-axis-cell {
             border-block-end     : 0;
             font-size            : 11.5px;
-            font-weight          : 600;
+            font-weight          : 500;
             color                : var(--ow-ink-sub);
             font-variant-numeric : tabular-nums;
             border-inline-color  : var(--ow-tick);
