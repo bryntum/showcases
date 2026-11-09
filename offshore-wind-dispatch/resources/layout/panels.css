@@ -150,3 +150,11 @@
         }
     }
 }
+
+/* On a short screen the map needs the rail's height more than the turbine's card does: the map's tooltip still names
+   the turbine */
+@media (max-height: 820px) {
+    .ow-side .ow-card.b-widget {
+        display : none;
+    }
+}
