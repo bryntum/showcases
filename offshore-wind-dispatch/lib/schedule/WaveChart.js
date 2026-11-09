@@ -217,7 +217,8 @@ export default class WaveChart {
             series     : [
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
-                me.valueLabels(colors)
+                me.valueLabels(colors, 'first', 'top'),
+                me.valueLabels(colors, 'last', 'top')
             ],
             axes : {
                 x : me.timeAxis(colors, color('--ow-grid')),
@@ -278,9 +279,10 @@ export default class WaveChart {
         };
     }
 
-    // The values of the first and the last hour, under their points: an area series cannot place its labels, a line
-    // series can. The crossing is named on the window's line (timeAxis)
-    valueLabels(colors) {
+    // The value of the first hour or the last one, above its point: under the last one it would sit on the SWATH line,
+    // under the first one it would be cut at the chart's foot. One series each, so each can be placed on its own; an
+    // area series cannot place its labels, a line series can. The crossing is named on the window's line (timeAxis)
+    valueLabels(colors, which, placement) {
         return {
             type         : 'line',
             xKey         : 't',
@@ -293,11 +295,11 @@ export default class WaveChart {
             tooltip      : { enabled : false },
             label        : {
                 enabled    : true,
-                placement  : 'bottom',
+                placement,
                 fontFamily,
                 fontSize   : 10,
                 fontWeight : 500,
-                formatter  : ({ datum }) => datum.first || datum.last ? datum.hs.toFixed(1) : '',
+                formatter  : ({ datum }) => (datum[which] ? datum.hs.toFixed(1) : ''),
                 // The last hour past the crossing in the orange of the line there
                 itemStyler : ({ datum }) => ({
                     color : datum.last && datum.rough != null ? colors.roughInk : colors.muted
@@ -366,10 +368,10 @@ export default class WaveChart {
             { ctv, swath } = this.limits,
             // Room under the calmest hour (0.9 m) for its value label, above the roughest one (2.4 m) for its point,
             // and between the two limits for the CTV limit's name: no label is cut at the chart's edges or overlaps
-            bottom         = 0.3,
+            bottom         = 0.5,
             top            = 2.7,
-            // Named above their line at its left end, 20px apart in the 67px row: the two never meet
-            limit          = (value, text) => ({
+            // Named above their line at its left end (about 15px apart in the 67px row, enough for a 9px name)
+            limit          = (value, text, placement) => ({
                 type        : 'line',
                 value,
                 stroke      : ink,
@@ -378,8 +380,8 @@ export default class WaveChart {
                 label       : {
                     text,
                     color      : ink,
-                    placement  : 'top-left',
-                    padding    : 6,
+                    placement,
+                    padding    : 3,
                     fontSize   : 9,
                     fontWeight : 500,
                     fontFamily
@@ -397,7 +399,10 @@ export default class WaveChart {
             line       : { enabled : false },
             tick       : { enabled : false },
             gridLine   : { enabled : false },
-            crossLines : [limit(ctv, `CTV limit ${ctv.toFixed(1)}`), limit(swath, `SWATH limit ${swath.toFixed(1)}`)]
+            crossLines : [
+                limit(ctv, `CTV limit ${ctv.toFixed(1)}`, 'top-left'),
+                limit(swath, `SWATH limit ${swath.toFixed(1)}`, 'top-left')
+            ]
         };
     }
 }

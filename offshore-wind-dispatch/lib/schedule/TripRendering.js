@@ -103,7 +103,8 @@ function renderLeg(leg, renderData, close) {
     const fits = blockText(leg, renderData.width);
 
     return [
-        fits.turbine ? { tag : 'b', text : leg.turbine } : null,
+        // Too short for its name: it is set just under the block, quiet (resources/schedule/legs.css)
+        { tag : 'b', class : fits.turbine ? null : 'ow-seg-name', text : leg.turbine },
         fits.hours ? { tag : 'span', text : hoursText(leg.minutes) } : null
     ];
 }
@@ -126,12 +127,7 @@ export function renderTrip({ eventRecord, renderData }, close) {
         { out, back } = trip.transits,
         onStation     = Math.max(1, toMinutes(trip.endDate) - toMinutes(trip.startDate)),
         late          = trip.endMinute - close,
-        change        = changeText(trip),
-        // The trip's own width, the buffers left out: the stops too short to name their turbine name it here
-        perMinute     = Math.max(0, renderData.width - (renderData.bufferBeforeWidth ?? 0) -
-            (renderData.bufferAfterWidth ?? 0)) / onStation,
-        unnamed       = trip.stops.filter(stop => !blockText(stop, stop.minutes * perMinute).turbine)
-            .map(stop => stop.turbine);
+        change        = changeText(trip);
 
     renderData.cls['ow-trip']                = 1;
     renderData.cls[`ow-trip-${trip.status}`] = 1;
@@ -153,7 +149,7 @@ export function renderTrip({ eventRecord, renderData }, close) {
         children : [
             {
                 tag  : 'span',
-                text : [trip.id, ...unnamed, trip.teamText, `${trip.pax} pax`, trip.note?.toLowerCase()]
+                text : [trip.id, trip.teamText, `${trip.pax} pax`, trip.note?.toLowerCase()]
                     .filter(Boolean).join(' · ')
             },
             change ? { tag : 'span', class : 'ow-trip-change', text : change } : null

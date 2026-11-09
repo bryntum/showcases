@@ -17,8 +17,11 @@
         margin      : 0;
         translate   : none;
         line-height : 1;
+        /* Its text is never cut off (blockText), a name too long for the block hangs under it */
+        overflow    : visible;
 
         > .b-sch-event-content {
+            overflow      : visible;
             gap           : 6px;
             padding-block : 0;
             line-height   : 1;
@@ -27,6 +30,16 @@
 
         b {
             font-weight : 600;
+        }
+
+        /* A stop too short for its name grows just wide enough to hold it, as in the mockup: min-width wins over the
+           width the feature sets */
+        &:has(b.ow-seg-name) {
+            min-width : max-content;
+
+            > .b-sch-event-content {
+                padding-inline : 6px;
+            }
         }
     }
 
