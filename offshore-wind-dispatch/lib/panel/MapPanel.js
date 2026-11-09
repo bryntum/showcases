@@ -12,7 +12,6 @@ import '../map/TurbineCard.js';
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
  */
 export default class MapPanel extends Panel {
     static $name = 'MapPanel';

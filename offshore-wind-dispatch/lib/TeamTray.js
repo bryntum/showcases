@@ -3,9 +3,9 @@ import { Container } from '@bryntum/core-enterprise';
 import './TeamChip.js';
 
 /**
- * The crews waiting at the port with no trip yet, a slim tray under the schedule: its title with their count, then a
- * small card per team (TeamChip). Cards are dragged onto a trip, or held over one from the keyboard with Enter, see
- * TeamDrag.
+ * The crews waiting at the port with no trip yet, a slim tray in the header (KpiBar): its title with their count,
+ * then a small card per team (TeamChip). Cards are dragged onto a trip, or held over one from the keyboard with Enter,
+ * see TeamDrag.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container

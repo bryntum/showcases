@@ -6,6 +6,29 @@ in a Bryntum Scheduler. The Week view shows the week as a day board: one cell pe
 The plan does not run against fixed sites but against the weather. Each vessel may only transfer people while the
 significant wave height (Hs) stays under its limit, and a trip has to be back at port before that window closes.
 
+The schedule, the Week view, the header, the tooltips and the panels are Bryntum widgets and features. The map of the
+farm is not: it is a custom SVG drawing in a plain Bryntum `Widget` (`lib/map/`), with its turbines in a Bryntum
+`Store`, since no Bryntum product draws maps.
+
+### Glossary
+
+| Term | Meaning |
+|------|---------|
+| Hs | Significant wave height, in metres: what decides whether a vessel may transfer people onto a turbine |
+| CTV | Crew transfer vessel, a small fast catamaran, limit 1.5 m Hs |
+| SWATH | Small waterplane area twin hull vessel, steadier in a swell, limit 2.0 m Hs |
+| Window | The time until the forecast Hs crosses a vessel's limit. After it, the vessel's row is a hatched no-go area |
+| Trip | One run of a vessel or a helicopter from the port and back. A parent event in the Scheduler |
+| Leg | A child event of a trip, drawn inside it by the NestedEvents feature: a stop or a hop |
+| Stop | A turbine a team works at on a trip, `{ turbine, minutes, team }`, the solid blue work block |
+| Transit | Time at sea between two places. The sail out from the port and back to it are the trip's buffer time, its `preamble` and `postamble` (the EventBuffer feature) |
+| Hop | A transit between two turbines, a leg of the trip |
+| Held team | A team dragged from the tray (or held from the keyboard) over a trip or a vessel's row: the trip previews its stop until it is dropped or moves on |
+| Ring | The map's circle round a turbine: the turbines of the trip hovered or selected, and while a team is held the turbines its trip can still reach |
+| Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
+| Pulled, moved, trimmed | What a new forecast did to a trip: brought forward, moved to tomorrow, or its last stops moved to tomorrow |
+| Draft | A new trip from port, shown while a team is held over a vessel with no trip it could join, removed unless the team is booked on it |
+
 * **Schedule**: one row per vessel or helicopter. A trip is a parent event over its time on station, its turbine stops
   are nested events inside it, solid blue work blocks with the turbine and the hours. The sail out and back are the
   trip's buffer time (the EventBuffer feature): a thin line with the departure and return times at its ends. From the
@@ -15,14 +38,16 @@ significant wave height (Hs) stays under its limit, and a trip has to be back at
 * **Weather in the time axis**: under the hours, the hourly Hs forecast is drawn as an AG Charts area chart against the
   1.5 m CTV and 2.0 m SWATH limits, blue up to where it crosses the CTV limit and orange after, then the wind at hub
   height for the helicopters (limit 20 m/s, bold above it)
-* **Header**: the CTV window's close is the one big figure, with a countdown (a Bryntum ProgressBar); the day's counts
-  are quiet, At risk in orange and Stopped in red
+* **Header**: over the schedule, the site and the day shown, and at its right end the crews waiting at the port; over
+  the map, the day's counts: due, assigned, at risk in orange (or, once a forecast moved some, moved to tomorrow) and
+  stopped in red. The weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and a
+  late trip's tag
 * **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
 * **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
   its cable work, and Team J is picked up from T-58 three hours after the drop-off. The Dependencies feature draws both
   as thin lines with an arrowhead, each with its reason in the tooltip
-* **Crews waiting**: under the schedule, a card per team waiting at the port, its certificates and job in its tooltip
-* **Map**: the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
+* **Crews waiting**: in the header, a card per team waiting at the port, its certificates and job in its tooltip
+* **Map** (custom SVG): the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
   turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
   limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
   select a trip and its turbines are ringed; hover a turbine and its trips light up (the Scheduler's event
@@ -30,7 +55,8 @@ significant wave height (Hs) stays under its limit, and a trip has to be back at
   wave height with its job, its team and when a trip reaches it. The map is one tab stop: the arrow keys move to the
   nearest turbine in that direction, Enter or Space selects it
 
-**Drag a team waiting at the port onto a trip.** The trip shows the stop it would get, a tooltip says when the trip
+**Drag a team waiting at the port onto a trip** (or onto an empty part of a vessel's row, which books it on the
+vessel's best trip, or on a new trip from port). The trip shows the stop it would get, a tooltip says when the trip
 would be back against the window, and checks the seats and the certificates (GWO, HV, rope access). The map rings
 every turbine the trip could still reach before the window closes and dims the rest. Drop it to book it. Should the
 plan or the forecast change while a team is held, the team is checked again against it. Then press
@@ -38,8 +64,12 @@ plan or the forecast change while a team is held, the team is checked again agai
 not yet gone are brought forward, trimmed (their last stops go to tomorrow) or moved to tomorrow. A notice offers Undo
 and a review of each change.
 
+The **Week** button shows the week as a day board; a free cell takes a team too, as a new trip on that day. A click on
+a day opens it in the Day view.
+
 The page opens on T-41, the turbine the weather puts at risk. `?state=drag` opens with Team F held over Northern Tern's
-trip, `?state=forecast` with the 08:00 forecast applied, `?tab=map` on the map tab at phone widths.
+trip, `?state=forecast` with the 08:00 forecast applied, `?view=week` on the Week view, `?tab=map` on the map tab at
+phone widths.
 
 ## How it works
 
@@ -85,15 +115,16 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
   dependency
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`, a Container of
-    `KpiClock`, `KpiWindow` (with a `ProgressBar`) and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
+    `KpiClock`, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
     tabs. It holds the selection and wires the parts together. `DropPreview.js` (a mixin of the app) previews and
     books a dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
-    (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a Container with
-    two Buttons), `IconButton.js` a Button with an inline SVG icon and `Legend.js` the schedule's footer
-  * `panel/` the panels of the app, each a Panel whose `tbar` is the title bar, with `ButtonGroup`s for the Day / Week
-    views and the Status / Access switch: `SchedulePanel` (the notice, the scheduler, its footer and the tray), `MapPanel` (the
-    map and the turbine card) and `PhoneTabs` (a `TabPanel` with the arrow keys)
+    in the header (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a
+    Container with two Buttons) and `Legend.js` the schedule's footer
+  * `panel/` the panels of the app: `SchedulePanel` (a Panel whose `tbar` is the title bar, with the next forecast's
+    button and a `ButtonGroup` for the Day / Week views; it holds the notice, the scheduler, the Week view and the
+    footer), `MapPanel` (the map with its title bar and legend, and the turbine card) and `PhoneTabs` (a `TabPanel`
+    with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
     that follows the pointer)
@@ -174,8 +205,9 @@ properties, and it is drawn again when the page switches between light and dark.
 
 The team chips are dragged with Bryntum's `DragHelper` (the same helper as the Scheduler "drag from grid" demo), which
 handles the threshold, the proxy chip, mouse, pen and touch, Escape and the animated return of a refused drop. The
-trips' `.b-sch-event-wrap[data-event-id]` are its drop targets, and the dispatch check below is its validation: a team
-that does not fit marks the drag invalid. The keyboard (Enter on a chip, the arrows, Enter again) holds a team over a
+whole time axis is its drop target: the Scheduler resolves the trip and the vessel under the pointer
+(`resolveEventRecord`, `resolveResourceRecord`), and the dispatch check below is its validation: a team that does not
+fit marks the drag invalid. The keyboard (Enter on a chip, the arrows, Enter again) holds a team over a
 trip without DragHelper, which has no keyboard drag. Over a trip, `Planner#previewDrop` places the team's stop after the last
 one and tells when the trip would be back, whether the seats and the certificates allow it, and by how much it misses
 the window, shown in a Bryntum `Tooltip` aligned to the point the team is held at. `Planner#reachable` tries the same stop at each of the 60 turbines to find the ones the trip could still
