@@ -1,16 +1,20 @@
 /* The tooltip of a team held over a trip (drag/DropTooltip.js) */
 
-/* The Bryntum Tooltip of the trip under a held team, styled as a card */
+/* The Bryntum Tooltip of the trip under a held team, styled as a card. In the float root, the pointer passes through
+   it */
 .b-tooltip.ow-drop-tip {
-    --ow-tone : var(--ow-reach);
-
+    --ow-tone               : var(--ow-reach);
     --b-popup-background    : var(--ow-surface);
     --b-popup-border        : 1px solid var(--ow-border);
     --b-popup-border-radius : 9px;
     --b-popup-padding       : 10px 12px;
 
-    width      : 248px;
-    box-shadow : 0 10px 30px rgb(0 0 0 / 20%);
+    width          : 248px;
+    box-shadow     : var(--ow-shadow-float);
+    pointer-events : none;
+    color          : var(--ow-ink);
+    font-family    : inherit;
+    font-size      : 12px;
 
     dl {
         display               : grid;

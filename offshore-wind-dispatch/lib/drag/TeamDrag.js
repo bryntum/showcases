@@ -18,8 +18,8 @@ import './DropTooltip.js';
  *
  * The keyboard drag is KeyboardDrag, which works through this class.
  *
- * The trip under the pointer is found from the event element's `data-event-id`, which Scheduler sets on each bar, the
- * vessel from the row's `data-id`.
+ * The trip and the vessel under the pointer are resolved by the Scheduler itself (`resolveEventRecord`,
+ * `resolveResourceRecord`) from the elements at the point in its time axis (`timeAxisSubGridElement`).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -28,25 +28,23 @@ import './DropTooltip.js';
 export default class TeamDrag {
     /**
      * @param {Object} options
-     * @param {HTMLElement} options.source The element holding the team chips (`.ow-team[data-team]`)
+     * @param {TeamTray} options.tray The crews waiting at the port, whose chips are dragged
      * @param {Scheduler.view.Scheduler} options.scheduler
      * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
      * @param {Object} options.handler `{ liftTeam(id), previewDrop(id, trip), dropTeam(id, trip), endDrag(),
      * dropTargets() }`
      */
-    constructor({ source, scheduler, board, handler }) {
+    constructor({ tray, scheduler, board, handler }) {
         const me = this;
 
-        Object.assign(me, { source, scheduler, board, handler });
+        Object.assign(me, { tray, scheduler, board, handler });
 
         me.keys = new KeyboardDrag({ drag : me });
 
         me.dragHelper = new DragHelper({
             callOnFunctions      : true,
-            outerElement         : source,
+            outerElement         : tray.element,
             targetSelector       : chipSelector,
-            // The trips and the vessels' rows, the cells of the Week view
-            dropTargetSelector   : '.ow-scheduler .b-time-axis-sub-grid, .ow-week-board .b-time-axis-sub-grid',
             // A small chip centred on the pointer, the team's place in the tray stays, dimmed
             cloneTarget          : true,
             autoSizeClonedTarget : false,
@@ -106,7 +104,8 @@ export default class TeamDrag {
         // Kept for refresh(), the plan may change under a still pointer
         me.point = point;
 
-        // The dispatch check validates the drop: over a trip or a row where the team fits
+        // The dispatch check validates the drop: over a trip or a row where the team fits. Over anything else there is
+        // no target, the drop is invalid and the chip goes back
         context.valid = Boolean(me.hover(me.targetAt(point), point)?.result.valid);
     }
 
@@ -167,22 +166,23 @@ export default class TeamDrag {
         return board && !board.hidden ? board.cellAt(point) : this.rowTargetAt(point);
     }
 
-    // What a team held at a point of the Day view is over, see targetAt
+    // What a team held at a point of the Day view is over, see targetAt: the Scheduler resolves the trip (or the leg,
+    // whose trip it is) and the vessel from the elements at the point in its time axis, top first
     rowTargetAt({ x, y }) {
         const
             { scheduler } = this,
             axis          = scheduler.timeAxisSubGridElement,
             elements      = document.elementsFromPoint(x, y).filter(element => axis?.contains(element)),
-            wrap          = elements.find(element => element.matches('.b-sch-event-wrap[data-event-id]')),
-            trip          = wrap && scheduler.eventStore.getById(wrap.dataset.eventId)?.trip,
-            row           = elements.find(element => element.matches('.b-grid-row[data-id]')),
-            vessel        = row && scheduler.resourceStore.getById(row.dataset.id);
+            event         = elements.map(element => scheduler.resolveEventRecord(element)).find(Boolean),
+            trip          = event?.trip,
+            vessel        = elements.map(element => scheduler.resolveResourceRecord(element, [x, y])).find(Boolean);
 
         if (trip && !trip.draft) {
             return trip;
         }
 
-        return vessel && !vessel.isSpecialRow && !vessel.isGroupHeader ? vessel : trip?.resource ?? null;
+        // Not a group header, which resolves to no resource
+        return vessel ?? trip?.resource ?? null;
     }
 
     //endregion

@@ -1,7 +1,5 @@
 import { Container } from '@bryntum/core-enterprise';
 import { iconConfig } from './util/Icons.js';
-// Also registers the widget types used below
-import './IconButton.js';
 
 /**
  * The notice of a new forecast above the schedule: what it says, what the planner changed because of it, an Undo and
@@ -18,16 +16,18 @@ export default class ForecastNotice extends Container {
     static type = 'forecastnotice';
 
     static configurable = {
-        cls    : 'ow-toast',
+        cls    : 'ow-notice',
         hidden : true,
+        role   : 'status',
         layout : { type : 'hbox', align : 'center' },
         items  : {
-            text : { type : 'widget', cls : 'ow-toast-text' },
+            text : { type : 'widget', cls : 'ow-notice-text' },
+            // A Button's text takes DomConfigs: the showcase's SVG icon goes in with the word
             undo : {
-                type      : 'iconbutton',
+                type      : 'button',
                 rendition : 'text',
-                text      : 'Undo',
-                svg       : 'arrow-undo',
+                cls       : 'ow-notice-undo',
+                text      : [iconConfig('arrow-undo'), 'Undo'],
                 onClick   : 'up.clickUndo'
             },
             // The theme's own filled blue button: white text on the work blue
@@ -35,17 +35,11 @@ export default class ForecastNotice extends Container {
                 type      : 'button',
                 rendition : 'filled',
                 color     : 'b-blue',
-                cls       : 'ow-toast-primary',
+                cls       : 'ow-notice-primary',
                 onClick   : 'up.clickReview'
             }
         }
     };
-
-    afterConstruct() {
-        super.afterConstruct();
-
-        this.element.setAttribute('role', 'status');
-    }
 
     /**
      * Draws the notice and shows it

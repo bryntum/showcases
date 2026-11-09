@@ -2,12 +2,13 @@
 
 /* A Container with an hbox layout: the title, then a small card per team */
 .ow-tray {
-    flex       : none;
-    gap        : 16px;
-    /* Air between the schedule card and the crews, and room under the cards for their hover ring and shadow. The tray still clips what is too wide for it, but
-       6px past its edges, so the ring of the first card is whole */
-    padding    : 12px 0 6px var(--ow-inset);
-    overflow   : clip;
+    --b-container-gap     : 16px;
+    /* Air between the schedule card and the crews, and room under the cards for their hover ring and shadow */
+    --b-container-padding : 12px 0 6px var(--ow-inset);
+
+    flex                 : none;
+    /* The tray still clips what is too wide for it, but 6px past its edges, so the ring of the first card is whole */
+    overflow             : clip;
     overflow-clip-margin : 6px;
 }
 
@@ -31,7 +32,7 @@
     padding          : 6px 16px 6px 8px;
     border-radius    : 8px;
     background-color : var(--ow-surface);
-    box-shadow       : 0 1px 3px rgb(0 0 0 / 8%);
+    box-shadow       : var(--ow-shadow-chip);
     font-size        : 13px;
     white-space      : nowrap;
     cursor           : grab;
@@ -40,7 +41,7 @@
     touch-action     : none;
 
     &:hover {
-        box-shadow : 0 0 0 1.5px color-mix(in srgb, var(--ow-reach) 50%, transparent), 0 1px 3px rgb(0 0 0 / 8%);
+        box-shadow : 0 0 0 1.5px color-mix(in srgb, var(--ow-reach) 50%, transparent), var(--ow-shadow-chip);
     }
 }
 
@@ -60,6 +61,11 @@
     font-size        : 13px;
     color            : var(--ow-c-muted);
     background-color : var(--ow-c-neutral-bg);
+
+    svg {
+        width  : 18px;
+        height : 18px;
+    }
 }
 
 .ow-team-text {
@@ -68,22 +74,19 @@
     line-height    : 1.35;
 }
 
-.ow-team-name b {
-    font-weight : 500;
-}
-
 .ow-team-name, .ow-team-job {
     white-space : nowrap;
+}
+
+.ow-team-name {
+    b {
+        font-weight : 500;
+    }
 }
 
 .ow-team-job {
     font-size : 12px;
     color     : var(--ow-c-muted);
-}
-
-.ow-team-crew svg {
-    width  : 18px;
-    height : 18px;
 }
 
 /* Waiting for a stopped turbine: the icon's circle tinted red, the task in red */
@@ -96,25 +99,4 @@
     .ow-team-job {
         color : var(--ow-c-stop-ink);
     }
-}
-
-/* The certificates of the card that follows the pointer (drag/DragChip.js), quiet text, HV emphasised */
-.ow-certs {
-    display : flex;
-    gap     : 4px;
-}
-
-.ow-cert {
-    font-size : 10.5px;
-    color     : var(--ow-c-muted);
-
-    & + &::before {
-        content           : '/';
-        margin-inline-end : 4px;
-    }
-}
-
-.ow-cert-hv {
-    font-weight : 700;
-    color       : var(--ow-ink);
 }

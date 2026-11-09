@@ -2,7 +2,6 @@ import { Panel } from '@bryntum/core-enterprise';
 import { projectData } from '../model/TripData.js';
 import { toDate } from '../util/Time.js';
 // Also registers the widget types used below
-import '../IconButton.js';
 import '../ForecastNotice.js';
 import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
@@ -39,6 +38,13 @@ export default class SchedulePanel extends Panel {
          */
         data : null,
 
+        /**
+         * At phone widths the title bar holds the next forecast's button only, and goes when there is none; the
+         * legend goes too. Set by DispatchApp#updatePhone
+         * @prp {Boolean}
+         */
+        phone : false,
+
         cls    : 'ow-schedule',
         flex   : 1,
         layout : 'vbox'
@@ -73,19 +79,20 @@ export default class SchedulePanel extends Panel {
                         hidden  : true,
                         onClick : () => me.trigger('forecast')
                     },
+                    // A segmented control: the pressed button is the raised one
                     view : {
-                        type  : 'buttongroup',
-                        items : {
+                        type        : 'buttongroup',
+                        rendition   : 'padded',
+                        toggleGroup : true,
+                        items       : {
                             day : {
-                                text        : 'Day',
-                                pressed     : true,
-                                toggleGroup : 'view',
-                                onToggle    : ({ pressed }) => pressed && me.showView('day')
+                                text     : 'Day',
+                                pressed  : true,
+                                onToggle : ({ pressed }) => pressed && me.showView('day')
                             },
                             week : {
-                                text        : 'Week',
-                                toggleGroup : 'view',
-                                onToggle    : ({ pressed }) => pressed && me.showView('week')
+                                text     : 'Week',
+                                onToggle : ({ pressed }) => pressed && me.showView('week')
                             }
                         }
                     }
@@ -132,33 +139,35 @@ export default class SchedulePanel extends Panel {
         scheduler.hidden = isWeek;
         board.hidden     = !isWeek;
         legend.view      = view;
-        this.currentView = view;
         this.refreshBar();
-        this.trigger('viewChange', { view });
+    }
+
+    updatePhone() {
+        if (this.tbar) {
+            this.refreshBar();
+        }
     }
 
     /**
-     * Updates the tbar: the next forecast's button
+     * Updates the tbar: the next forecast's button, and on a phone only that
      */
     refreshBar() {
         const
-            { dispatch } = this,
-            { forecast } = this.tbar.widgetMap,
-            next         = dispatch.nextForecast;
+            me                                       = this,
+            { dispatch, tbar }                       = me,
+            phone                                    = Boolean(me.phone),
+            { title, count, spacer, forecast, view } = tbar.widgetMap,
+            next                                     = dispatch.nextForecast;
 
         forecast.hidden = !next;
+        tbar.hidden     = phone && !next;
+        title.hidden    = count.hidden = spacer.hidden = view.hidden = phone;
+
+        me.widgetMap.legend.hidden = phone;
 
         if (next) {
-            const text = `Forecast ${next.issued} is in · Re-plan`;
-
-            if (forecast.text !== text) {
-                forecast.text = text;
-                // The action in semibold, the button's label kept as it is (a Button has no markup in its text)
-                const label = forecast.element.querySelector('.b-button-label');
-
-                label?.replaceChildren(`Forecast ${next.issued} is in · `,
-                    Object.assign(document.createElement('b'), { textContent : 'Re-plan' }));
-            }
+            // The action in semibold: a Button's text takes DomConfigs. In one span, which keeps the space before it
+            forecast.text = { tag : 'span', children : [`Forecast ${next.issued} is in · `, { tag : 'b', text : 'Re-plan' }] };
         }
     }
 }

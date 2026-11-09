@@ -12,7 +12,13 @@ const
     firstSailing = 30,
     // "Thu 12"
     dayName      = index => dayDate(index).toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' })
-        .replace(',', '');
+        .replace(',', ''),
+    // The plan of a new trip from port, with no stops yet
+    newPlan      = (id, start, vessel) => ({
+        id, start, stops : [], mode : vessel.mode, wait : 0, change : null, pax : 0, seats : vessel.seats
+    }),
+    // What a drop gave, a Toast: booked, or why not. The text is encoded, the reason comes from the plan
+    tell         = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
 
 /**
  * The app's side of dragging a team onto a vessel (TeamDrag calls it): lifting the team from the tray, previewing its
@@ -125,16 +131,7 @@ export default Target => class DropPreview extends Target {
             close         = dispatch.windowsOf(day)[vessel.window],
             now           = day ? dispatch.day.dayStart * 60 : dispatch.days[0].now,
             start         = day ? dispatch.day.dayStart * 60 + firstSailing : nextSailing([], now),
-            plan          = {
-                id     : me.newTripId(vessel),
-                start,
-                stops  : [],
-                mode   : vessel.mode,
-                wait   : 0,
-                change : null,
-                pax    : 0,
-                seats  : vessel.seats
-            },
+            plan          = newPlan(me.newTripId(vessel), start, vessel),
             limit         = dispatch.limits[vessel.window],
             result        = previewDrop({ trip : plan, team, job, close, limit, now, vessel : vessel.name });
 
@@ -244,16 +241,7 @@ export default Target => class DropPreview extends Target {
         return {
             trip : null,
             vessel,
-            plan : {
-                id     : me.newTripId(vessel),
-                start  : nextSailing(backs, now),
-                stops  : [],
-                mode   : vessel.mode,
-                wait   : 0,
-                change : null,
-                pax    : 0,
-                seats  : vessel.seats
-            }
+            plan : newPlan(me.newTripId(vessel), nextSailing(backs, now), vessel)
         };
     }
 
@@ -373,10 +361,7 @@ export default Target => class DropPreview extends Target {
         }
 
         if (!drop?.result.valid) {
-            Toast.show({
-                html : StringHelper.encodeHtml(drop?.result.reason ?? 'The team is not waiting'),
-                cls  : 'ow-toast-message'
-            });
+            tell(drop?.result.reason ?? 'The team is not waiting');
 
             return;
         }
@@ -398,10 +383,7 @@ export default Target => class DropPreview extends Target {
         me.scheduler.selectEvent(trip);
         me.onPlanChange();
 
-        Toast.show({
-            html : StringHelper.xss`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`,
-            cls  : 'ow-toast-message'
-        });
+        tell(`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`);
     }
 
     /**
@@ -418,10 +400,7 @@ export default Target => class DropPreview extends Target {
         me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
         me.onPlanChange();
 
-        Toast.show({
-            html : StringHelper.xss`${team.name} booked on ${plan.id}, ${dayName(day)}, back in port by ${hhmm(result.back)}`,
-            cls  : 'ow-toast-message'
-        });
+        tell(`${team.name} booked on ${plan.id}, ${dayName(day)}, back in port by ${hhmm(result.back)}`);
     }
 
     /**

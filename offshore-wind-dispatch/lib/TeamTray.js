@@ -48,7 +48,9 @@ export default class TeamTray extends Container {
             me               = this,
             { title, empty } = me.widgetMap,
             chips            = new Map(me.chips.map(chip => [chip.team.id, chip])),
-            ids              = new Set(waiting.map(({ team }) => team.id));
+            ids              = new Set(waiting.map(({ team }) => team.id)),
+            // The chips go after the title and the empty note
+            first            = me.items.indexOf(empty) + 1;
 
         title.html = `Crews waiting at ${me.port ?? 'the port'} · ${waiting.length}`;
 
@@ -60,14 +62,14 @@ export default class TeamTray extends Container {
             }
         });
 
-        // After the title and the empty note, in the order of the waiting teams
+        // In the order of the waiting teams
         waiting.forEach(({ team, job, fault }, index) => {
             const chip = chips.get(team.id);
 
             chip?.draw(job);
 
-            if (!chip || me.items.indexOf(chip) !== index + 2) {
-                me.insert(chip ?? { type : 'teamchip', team, job, fault }, index + 2);
+            if (!chip || me.items.indexOf(chip) !== first + index) {
+                me.insert(chip ?? { type : 'teamchip', team, job, fault }, first + index);
             }
         });
 

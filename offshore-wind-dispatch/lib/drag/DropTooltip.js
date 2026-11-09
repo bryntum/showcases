@@ -67,20 +67,16 @@ export default class DropTooltip extends Tooltip {
     static type = 'droptooltip';
 
     static configurable = {
-        cls          : 'ow-drop-tip',
-        anchor       : false,
+        cls               : 'ow-drop-tip',
+        anchor            : false,
         // Shown and hidden by showDrop(), not by hovering an element
-        autoShow     : false,
-        hideDelay    : false,
-        dismissDelay : 0
+        autoShow          : false,
+        hideDelay         : false,
+        dismissDelay      : 0,
+        // A live region, read out as the team moves from trip to trip
+        role              : 'status',
+        elementAttributes : { 'aria-live' : 'polite' }
     };
-
-    afterConstruct() {
-        super.afterConstruct();
-
-        this.element.setAttribute('role', 'status');
-        this.element.setAttribute('aria-live', 'polite');
-    }
 
     /**
      * Shows what a team gives on a trip, below a point

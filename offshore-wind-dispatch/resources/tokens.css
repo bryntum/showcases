@@ -9,23 +9,15 @@
     --ow-risk    : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
     --ow-cancel  : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
-    --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal, #14b8a6) 75%, var(--b-color-black)),
-        var(--b-color-teal, #2dd4bf));
-    /* The sea state: calm, past the CTV limit, past the SWATH limit */
+    --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
+    /* The calm sea */
     --ow-sea-ok  : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
-    --ow-sea-amb : var(--ow-risk);
-    --ow-sea-red : var(--ow-cancel);
-    --ow-weather : light-dark(color-mix(in srgb, var(--b-color-orange) 70%, var(--b-color-black)),
-        color-mix(in srgb, var(--b-color-orange) 75%, var(--b-color-white)));
     --ow-now     : var(--b-color-blue);
 
     /* Neutrals */
     /* Cards sit a step lighter than the page behind them, in dark too */
     --ow-surface   : light-dark(var(--b-neutral-100), #1e1e1e);
     --ow-page      : light-dark(#f4f5f7, #141414);
-    --ow-card-border : light-dark(rgb(16 24 40 / 10%), rgb(255 255 255 / 9%));
-    --ow-sunken    : var(--b-neutral-98);
-    --ow-raised    : light-dark(var(--b-neutral-99), var(--b-neutral-96));
     --ow-border    : var(--b-border-7);
     --ow-grid      : color-mix(in srgb, var(--b-border-7) 70%, transparent);
     /* The hour lines, a step lighter than the row lines: they guide the eye, the trips lead */
@@ -54,11 +46,10 @@
     /* The schedule, the header and the tray: neutrals and blue carry the plan, orange only what is past the window,
        red only what is stopped. Exact values of the calm redesign, each with its dark counterpart */
     --ow-c-work        : light-dark(#1f6fb8, #2a6db0);
-    --ow-c-on-work     : #fff;
     /* The tonal work block, as Bryntum's tonal event style makes it from the work blue: a tint and a hairline */
-    --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 86%),
-        color-mix(in srgb, var(--ow-c-work), var(--b-mix, #000) 80%));
-    --ow-c-work-line   : color-mix(in srgb, var(--ow-c-work), var(--b-mix, #fff) 55%);
+    --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 86%),
+        color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%));
+    --ow-c-work-line   : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%);
     /* A selected row's tint: opaque, so it reads the same over the white vessel cell and the timeline */
     --ow-c-row-selected : color-mix(in srgb, var(--ow-c-work) 7%, var(--ow-surface));
     /* The hours already gone today, in the rows: a light shade */
@@ -69,7 +60,6 @@
     --ow-c-stop-ink    : light-dark(#b71c1c, #ff8f86);
     --ow-c-stop-tint   : light-dark(#fdecea, #3b1a1a);
     --ow-c-transit     : light-dark(#b8c0c8, #5e6975);
-    --ow-c-dependency  : color-mix(in srgb, var(--ow-c-transit) 70%, var(--ow-ink));
     --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
     --ow-c-nogo        : light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%));
@@ -80,42 +70,31 @@
     --ow-c-chart-risk  : light-dark(rgb(224 123 0 / 12%), rgb(240 150 46 / 14%));
 
     /* Sizes */
-    --ow-resource-width : 214px;
-    --ow-radius         : 5px;
     --ow-c-block        : 28px;
     /* The transit line and the rings of its end dots, the hollow dot's outer size and the solid one's */
     --ow-transit-w      : 1px;
     --ow-dot-out        : 8px;
     --ow-dot-back       : 6px;
-    --ow-size-hero      : 22px;
     --ow-size-kpi       : 19px;
     --ow-bar-control    : 30px;
     /* A card's inner inset: its title bar, its left column, and the header and crews tray lined up with them */
     --ow-inset          : 16px;
     --ow-bar-inset      : 12px;
     /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
-       the corner curve ends. The cards inside are concentric: radius less padding, never below the smallest radius a
-       card keeps (which is where the two are equal) */
+       the corner curve ends. A card concentric with it would have that radius less the padding, none at all: the
+       cards keep a radius of their own */
     --ow-frame-radius   : 24px;
     --ow-gutter         : var(--ow-frame-radius);
-    --ow-card-radius-min : 8px;
-    --ow-card-radius    : max(calc(var(--ow-frame-radius) - var(--ow-gutter)), var(--ow-card-radius-min));
+    --ow-card-radius    : 8px;
     /* One soft, diffuse shadow, no ring: a ring with an offset shadow read as a second, darker edge. In dark the cards
        are a step lighter than the frame, which already sets them off */
     --ow-card-shadow    : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
     --ow-c-radius       : 4px;
-}
 
-/* The icons, inline SVG in the text colour (lib/util/Icons.js) */
-.ow-icon {
-    flex           : none;
-    width          : 1.2em;
-    height         : 1.2em;
-    vertical-align : -0.25em;
-}
-
-/* An icon in a DomConfig or a button, in a box of its own (iconConfig in lib/util/Icons.js) */
-.ow-icon-host {
-    display     : inline-flex;
-    align-items : center;
+    /* Shadows: the pressed segment of a segmented control, a crew's card in the tray, the card following the pointer
+       in a drag and the tooltip beside it */
+    --ow-shadow-raised  : 0 1px 2px rgb(0 0 0 / 12%);
+    --ow-shadow-chip    : 0 1px 3px rgb(0 0 0 / 8%);
+    --ow-shadow-lifted  : 0 10px 24px rgb(0 0 0 / 22%);
+    --ow-shadow-float   : 0 10px 30px rgb(0 0 0 / 20%);
 }

@@ -1,12 +1,11 @@
 /* The two halves and their headers (panel/SchedulePanel.js, panel/MapPanel.js) */
 
-/* The two halves */
-.ow-main {
-    min-height : 0;
-}
-
-/* Each half is a card on the page: a surface, 8px radius, one soft shadow. The inside is clipped to the corners */
+/* Each half is a card on the page: a surface, rounded, one soft shadow (no radius and no shadow on a phone, see
+   phone.css). The inside is clipped to the corners. The schedule's card is a Panel, whose tbar takes the panel
+   background; the site's card is a Container and the turbine's a Widget */
 .ow-schedule, .ow-side-card, .ow-side .ow-card.b-widget {
+    --b-panel-background : var(--ow-surface);
+
     min-width        : 0;
     min-height       : 0;
     overflow         : hidden;
@@ -17,10 +16,9 @@
 
 /* The map half is a column of two such cards, a gutter apart: the site's (title bar, map, legend) and the turbine's */
 .ow-side {
-    --b-panel-gap : var(--ow-gutter);
-
+    --b-panel-gap        : var(--ow-gutter);
     /* Only the two cards have a surface: the column itself is transparent, or its square corners show round theirs */
-    background : transparent;
+    --b-panel-background : transparent;
 
     flex       : none;
     min-height : 0;
@@ -31,11 +29,9 @@
     }
 }
 
+/* The map is inset with its own rounded edge: no line under the site card's title bar */
 .ow-side-card {
-    --b-container-gap : 0;
-
-    /* The map is inset with its own rounded edge: no line under this card's title bar */
-    > .b-panel-body-wrap > .ow-panel-bar.b-toolbar, .ow-panel-bar.b-toolbar {
+    .ow-panel-bar.b-toolbar {
         border-block-end : 0;
     }
 }
@@ -45,17 +41,12 @@
    at 1600 x 960 */
 .ow-panel-bar.b-toolbar {
     --b-toolbar-gap     : 12px;
+    --b-toolbar-padding : var(--ow-bar-inset);
 
     flex             : none;
     box-sizing       : border-box;
     min-height       : 0;
-    padding          : var(--ow-bar-inset) 0;
     border-block-end : 1px solid var(--ow-border);
-
-    > .b-toolbar-content {
-        padding : 0 var(--ow-bar-inset);
-        gap     : 12px;
-    }
 }
 
 .ow-panel-title {
@@ -68,17 +59,17 @@
    so the next forecast's button and the Day | Week toggle still fit */
 .ow-schedule {
     container : ow-schedule / inline-size;
-}
 
-@container ow-schedule (max-width: 640px) {
-    .ow-schedule .ow-panel-count {
-        display : none;
+    @container ow-schedule (max-width: 640px) {
+        .ow-panel-count {
+            display : none;
+        }
     }
-}
 
-@container ow-schedule (max-width: 540px) {
-    .ow-schedule .ow-panel-title {
-        display : none;
+    @container ow-schedule (max-width: 540px) {
+        .ow-panel-title {
+            display : none;
+        }
     }
 }
 
@@ -92,70 +83,39 @@
     white-space : nowrap;
 }
 
-/* The next forecast, in: the one action that changes the plan, a quiet blue button */
+/* The next forecast, in: the one action that changes the plan, a quiet button on the work blue's tint */
 .ow-forecast-button.b-button {
-    --b-button-color            : var(--ow-c-work);
-    --b-button-hover-color      : var(--ow-c-work);
-    --b-button-border-width     : 0;
-    --b-button-background       : var(--ow-c-button-tint);
-    --b-button-hover-background : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
-    --b-button-border-radius    : 6px;
-    --b-button-height           : var(--ow-bar-control);
-    --b-button-padding-inline   : 12px;
+    --b-button-color             : var(--ow-ink);
+    --b-button-idle-border-width : 0;
+    --b-button-background        : var(--ow-c-button-tint);
+    --b-button-hover-background  : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
+    --b-button-border-radius     : 6px;
+    --b-button-height            : var(--ow-bar-control);
+    --b-button-padding-inline    : 12px;
 
-    font-size   : 13px;
-    font-weight : 400;
-
-    /* The action in the same weight as the title bar's other buttons, its name semibold */
+    /* The action in the same weight as the title bar's other text, its name semibold */
     b {
         font-weight : 600;
     }
 }
 
-/* The button groups as a segmented control: the pressed button is the raised one */
+/* The button groups as a segmented control, the ButtonGroup's `padded` rendition: a grey track, the pressed button
+   raised on it */
 .ow-panel-bar .b-button-group {
-    --b-button-group-border-width  : 0;
-    --b-button-group-border-radius : 7px;
-    --b-button-group-box-shadow    : none;
-
-    box-sizing       : border-box;
-    /* The grey track rounded like its buttons (the theme variable alone left it square) */
-    border-radius    : var(--ow-card-radius);
-    height           : var(--ow-bar-control);
-    padding          : 2px;
-    background-color : var(--b-neutral-95);
+    --b-button-height                                : var(--ow-bar-control);
+    --b-button-group-border-radius                   : 7px;
+    --b-button-group-padded-padding                  : 2px;
+    --b-button-group-padded-button-opacity           : 1;
+    --b-button-group-padded-pressed-background       : var(--ow-surface);
+    --b-button-group-padded-pressed-hover-background : var(--ow-surface);
+    --b-button-group-padded-pressed-box-shadow       : var(--ow-shadow-raised);
+    --b-widget-font-size                             : 12px;
 
     .b-button {
-        --b-button-background         : transparent;
-        --b-button-hover-background   : transparent;
-        --b-button-color              : var(--ow-ink);
-        --b-button-pressed-background : var(--ow-surface);
-        --b-button-pressed-hover-background : var(--ow-surface);
-        --b-button-pressed-color      : var(--ow-ink);
-        --b-button-border-width       : 0;
-        --b-button-border-radius      : 5px;
+        --b-button-color         : var(--ow-ink);
+        --b-button-pressed-color : var(--ow-ink);
+        --b-button-font-weight   : 500;
 
-        --b-button-height : calc(var(--ow-bar-control) - 4px);
-
-        min-width   : 30px;
-        font-size   : 12px;
-        font-weight : 500;
-
-        &.b-pressed {
-            background-color : var(--ow-surface);
-            box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
-        }
-
-        &.b-disabled {
-            opacity : 0.4;
-        }
-    }
-}
-
-/* On a short screen the map needs the rail's height more than the turbine's card does: the map's tooltip still names
-   the turbine */
-@media (max-height: 820px) {
-    .ow-side .ow-card.b-widget {
-        display : none;
+        min-width : 30px;
     }
 }

@@ -2,6 +2,7 @@ import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import { reachable } from './plan/Planner.js';
+import { dayKpis } from './plan/Kpis.js';
 import TripModel from './model/TripModel.js';
 import DropPreview from './DropPreview.js';
 import TeamDrag from './drag/TeamDrag.js';
@@ -10,7 +11,7 @@ import { mapModel } from './map/MapModel.js';
 import { cardInfo, tipContent, tipInfo } from './map/TurbineCard.js';
 import { showDay, toMinutes } from './util/Time.js';
 // Also registers the widget types used below
-import { dayKpis } from './KpiBar.js';
+import './KpiBar.js';
 import './TeamTray.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
@@ -87,7 +88,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const { scheduler, board, map, tray, schedulePane, side, notice } = me.widgetMap;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
-        me.drag            = new TeamDrag({ source : tray.element, scheduler, board, handler : me });
+        me.drag            = new TeamDrag({ tray, scheduler, board, handler : me });
 
         board.on({ dayClick : ({ index }) => me.openDay(index) });
 
@@ -168,7 +169,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     }
 
     /**
-     * Shows the plan once painted: T-41 selected, the turbine the story is about, its trip with it, the forecast chart
+     * Shows the plan: T-41 selected, the turbine the story is about, its trip with it, the forecast chart
      * drawn
      * @param {Object} [options]
      * @param {String} [options.state] `forecast` brings in the next forecast, `drag` holds Team F over Northern Tern's
@@ -184,11 +185,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             // Its trip, Sea Puffin's
             opening       = tripsOf(me.trips, openingTurbine)[0] ?? first;
 
-        if (!scheduler.isPainted) {
-            await new Promise(resolve => scheduler.on({ paint : resolve, once : true }));
-        }
-
-        // The engine's first calculation: the legs placed, the waits on station known
+        // No need to wait for the scheduler's `paint`: the app is constructed into the page, and a widget rendered into
+        // a visible element paints as it renders. The engine's first calculation: the legs placed, the waits known
         await scheduler.project.commitAsync();
         me.evaluate();
         me.refreshAll();
@@ -326,19 +324,11 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
      */
     refreshAll() {
         const
-            me                          = this,
-            { dispatch }                = me,
+            me                               = this,
+            { dispatch }                     = me,
             { kpis, tray, scheduler, board } = me.widgetMap;
 
-        kpis.draw({
-            site   : dispatch.site.name,
-            opens  : dispatch.day.dayStart * 60,
-            now    : dispatch.now,
-            today  : dispatch.isToday,
-            closes : dispatch.windows.ctv,
-            was    : dispatch.previousWindows?.ctv,
-            kpis   : dayKpis(me.trips, dispatch)
-        });
+        kpis.draw({ site : dispatch.site.name, kpis : dayKpis(me.trips, dispatch) });
         tray.draw(dispatch.waitingTeams, me.lifted);
         scheduler.refreshDispatch();
         board.draw(scheduler.weekTrips);
@@ -567,7 +557,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, board, column, side, main, tabs } = this.widgetMap ?? {};
+        const { scheduler, board, column, schedulePane, side, main, tabs } = this.widgetMap ?? {};
 
         // Applied again once the items exist, see construct
         if (!scheduler) {
@@ -576,8 +566,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         const home = phone ? tabs : main;
 
-        scheduler.phone = board.phone = phone;
-        side.flex      = phone ? 1 : null;
+        scheduler.phone = board.phone = schedulePane.phone = side.phone = phone;
+        side.flex       = phone ? 1 : null;
         side.width      = phone ? null : 400;
 
         if (column.owner !== home) {

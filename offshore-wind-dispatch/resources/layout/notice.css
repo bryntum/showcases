@@ -1,19 +1,20 @@
 /* The notice of the forecast (ForecastNotice.js) and the messages after a drop (DropPreview.js) */
 
 /* The forecast's notice, a Container with an hbox layout, its Undo and Review buttons Bryntum Buttons */
-.ow-toast.b-widget {
-    flex                : none;
-    gap                 : 10px;
-    padding             : 8px 16px 8px 24px;
-    border-block-end    : 1px solid var(--ow-border);
+.ow-notice.b-widget {
+    --b-container-gap          : 10px;
+    --b-container-padding      : 8px 16px 8px 24px;
+    /* Undo in the notice's text colour */
+    --b-button-type-text-color : var(--ow-ink);
+    /* The theme's filled button takes dark text in dark: white on the work blue */
+    --b-button-filled-color    : var(--b-color-white);
+
+    flex             : none;
+    border-block-end : 1px solid var(--ow-border);
     /* The plan's blue: the re-plan is news, not an alarm */
-    background-color    : var(--ow-c-button-tint);
+    background-color : var(--ow-c-button-tint);
 
-    &.b-hidden {
-        display : none;
-    }
-
-    .ow-toast-text {
+    .ow-notice-text {
         flex        : 1;
         display     : flex;
         align-items : center;
@@ -31,19 +32,16 @@
             display : block;
         }
     }
-}
 
+    /* The icon in the Undo button's text, as far from the word as a Button's own icon */
+    .ow-notice-undo {
+        .ow-icon-host {
+            margin-inline-end : var(--b-button-gap);
+        }
+    }
+}
 
 /* Messages after a drop */
 .ow-toast-message {
     font-size : 13px;
-}
-
-/* The theme's filled button takes dark text in light: white on the work blue, through its own variables (set where
-   the colour class sets them, on the button, with the toast's specificity) */
-.ow-toast .ow-toast-primary.b-button {
-    --b-button-filled-color : var(--b-color-white);
-    --b-button-color        : var(--b-color-white);
-
-    color : var(--b-color-white);
 }
