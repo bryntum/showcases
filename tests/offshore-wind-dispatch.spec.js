@@ -51,13 +51,13 @@ test.describe('Offshore Wind Dispatch', () => {
         await open(page);
 
         await expect(scheduler(page)).toHaveClass(/\bb-scheduler\b/);
-        // Five vessels, the standby Kittiwake among them, and two helicopters
-        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(7);
-        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('5 CTV · 2 heli');
-        await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 2']);
+        // Five vessels, the standby Kittiwake among them, and three helicopters, Heli 3 on standby
+        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(8);
+        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('5 CTV · 3 heli');
+        await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 3']);
         await expect(trip(page, 'NT-1')).toBeVisible();
         // The weather no-go of every vessel is a resource time range
-        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(7);
+        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(8);
         expect((await ctvClose(page)).closes).toBe('14:00');
         await expect(page.locator('.ow-side .ow-turbine')).toBeVisible();
         await expect(page.locator('.ow-side [data-turbine]')).not.toHaveCount(0);
@@ -506,20 +506,21 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         // Every vessel's day is one cell: a trip, free or no-go, never two
         const all = await cells(page);
 
-        expect(Object.keys(all)).toHaveLength(49);
+        expect(Object.keys(all)).toHaveLength(56);
 
         const
-            vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'],
+            vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2', 'h3'],
             kinds   = day => vessels.map(vessel => all[`${vessel}:${day}`].kind);
 
         // Tuesday: no crew transfer vessel, no helicopter, the SWATH until 13
-        expect(kinds(1)).toEqual(['nogo', 'nogo', 'nogo', 'nogo', 'trip', 'nogo', 'nogo']);
+        expect(kinds(1)).toEqual(['nogo', 'nogo', 'nogo', 'nogo', 'trip', 'nogo', 'nogo', 'nogo']);
         // Sunday: no-go for all
         expect(kinds(6)).toEqual(vessels.map(() => 'nogo'));
-        // Thursday and Friday, the best days: no no-go, the standby vessel free all day
+        // Thursday and Friday, the best days: no no-go, the standby vessel and helicopter free all day
         for (const day of [3, 4]) {
             expect(kinds(day)).not.toContain('nogo');
             expect(all[`kw:${day}`]).toEqual({ kind : 'free', name : 'Free · all day' });
+            expect(all[`h3:${day}`].kind).toBe('free');
         }
 
         // Saturday the crew transfer vessels go until 11: a free one says so
@@ -668,7 +669,7 @@ test.describe('Offshore Wind Dispatch weather windows', () => {
             // The hour before is within the limit, the hour it starts is over it
             expect(dayStart + first).toBe(hour);
             expect(wind[first - 1]).toBeLessThanOrEqual(20);
-            expect(starts).toEqual([hour, hour]);
+            expect(starts).toEqual([hour, hour, hour]);
         });
     }
 });
@@ -930,7 +931,7 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
             results = [];
 
         expect(teams).toEqual(['F', 'G', 'H']);
-        expect(vessels).toHaveLength(7);
+        expect(vessels).toHaveLength(8);
 
         // Half past twelve: inside every weather window, on a stretch of each row that holds no trip
         const noon = await page.evaluate(() => {

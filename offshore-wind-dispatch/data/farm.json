@@ -34,7 +34,8 @@
         { "id": "kw", "group": "ctv", "name": "Kittiwake", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12, "standby": true },
         { "id": "bp", "group": "ctv", "name": "Brine Petrel", "kind": "SWATH", "window": "swath", "mode": "vessel", "seats": 24 },
         { "id": "h1", "group": "heli", "name": "Heli 1", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 },
-        { "id": "h2", "group": "heli", "name": "Heli 2", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 }
+        { "id": "h2", "group": "heli", "name": "Heli 2", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 },
+        { "id": "h3", "group": "heli", "name": "Heli 3", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6, "standby": true }
     ],
     "teams": [
         { "id": "A", "name": "Team A", "techs": 3, "certs": ["GWO", "HV"] },
