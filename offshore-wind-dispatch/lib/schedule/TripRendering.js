@@ -1,6 +1,6 @@
 import { windowShare } from '../plan/Planner.js';
 import { portMinutes } from '../plan/Farm.js';
-import { duration, hhmm, nextDay, toMinutes } from '../util/Time.js';
+import { duration, hhmm, nextDay, shownDay, toMinutes } from '../util/Time.js';
 
 /**
  * The Scheduler's cells and bars, plain functions returning DomConfigs, styled in resources/schedule/.
@@ -241,8 +241,8 @@ function limitText(limit) {
  */
 export function renderVessel(vessel, { now, close, limit }) {
     const
-        // Its trips, not their legs, which are assigned to it too
-        trips = vessel.events.filter(trip => !trip.isLeg && trip.status !== 'moved'),
+        // Its trips of the day shown, not their legs, which are assigned to it too
+        trips = vessel.events.filter(trip => !trip.isLeg && trip.day === shownDay() && trip.status !== 'moved'),
         spans = trips.map(trip => ({ start : trip.startMinute, end : trip.endMinute })),
         share = Math.round(windowShare(spans, now, close) * 100),
         pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0);

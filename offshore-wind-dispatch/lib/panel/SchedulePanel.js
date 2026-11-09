@@ -6,15 +6,16 @@ import '../IconButton.js';
 import '../ForecastNotice.js';
 import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
+import '../week/WeekBoard.js';
 
 /**
  * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the Day | Week
- * toggle, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler),
- * and its footer with the legend. The crews waiting at the port sit under it, on the page (DispatchApp). On a phone
- * it is the Schedule tab.
+ * toggle, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler) or the week
+ * as a day board (WeekBoard), and its footer with the legend. The crews waiting at the port sit under it, on the page
+ * (DispatchApp). On a phone it is the Schedule tab.
  *
- * The scheduler runs from today 06:00 to 18:00 over the vessels, the trips with their legs nested in them and the
- * dependency of the farm data.
+ * The scheduler runs from 06:00 to 18:00 of the day shown, today first, over the vessels, the trips of the week with
+ * their legs nested in them and the dependencies of the farm data.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
@@ -95,14 +96,15 @@ export default class SchedulePanel extends Panel {
                 scheduler : {
                     type      : 'dispatchscheduler',
                     flex      : 1,
-                    listeners : {
-                        paint : 'up.refreshBar'
-                    },
+                    listeners : { paint : 'up.refreshBar' },
                     dispatch,
                     startDate : toDate(day.dayStart * 60),
                     endDate   : toDate(day.dayEnd * 60),
-                    project   : projectData(data)
+                    // The trips of the whole week, the Day view shows one day's
+                    project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) })
                 },
+                // The Week view, a day board of the same trips
+                board  : { type : 'weekboard', flex : 1, hidden : true, dispatch },
                 // The schedule's footer
                 legend : { type : 'legend' }
             }
@@ -114,8 +116,25 @@ export default class SchedulePanel extends Panel {
      * @param {'day'|'week'} view
      */
     showView(view) {
-        this.widgetMap.scheduler.view = view;
+        const
+            { scheduler, board, legend } = this.widgetMap,
+            { day, week }                = this.tbar.widgetMap,
+            isWeek                       = view === 'week',
+            button                       = isWeek ? week : day;
+
+        // Opened otherwise, by a click on a day of the week: the toggle is pressed, which shows the view
+        if (!button.pressed) {
+            button.pressed = true;
+
+            return;
+        }
+
+        scheduler.hidden = isWeek;
+        board.hidden     = !isWeek;
+        legend.view      = view;
+        this.currentView = view;
         this.refreshBar();
+        this.trigger('viewChange', { view });
     }
 
     /**

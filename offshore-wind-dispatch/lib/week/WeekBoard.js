@@ -1,0 +1,292 @@
+import { Scheduler } from '@bryntum/scheduler-enterprise';
+import { dateOn, dayOf, lateText, weekCells, weekDays } from './WeekCells.js';
+
+const
+    // A day as one cell: the planning answer, not the times of the legs
+    dayPreset = {
+        base           : 'dayAndWeek',
+        tickWidth      : 120,
+        shiftUnit      : 'week',
+        shiftIncrement : 1,
+        timeResolution : { unit : 'day', increment : 1 }
+    };
+
+/**
+ * The Week view, the week as a day board: one cell per vessel per day, Mon 9 to Sun 15, a stock Scheduler tuned by
+ * its configs:
+ *
+ * - A view preset of one tick a day, `fillTicks` so each vessel-day is one full cell, the seven days sharing the width
+ *   down to a readable cell, then the week scrolls
+ * - One derived event per vessel and day with trips (WeekCells), so cells never stack: its times top left, its seats
+ *   top right, its turbines, and the seats used as the PercentBar feature's thin bar. A day back after its window is
+ *   orange with how late
+ * - Whole-day resource time ranges for the days without trips: `No-go`, hatched, or `Free` until the window closes,
+ *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropPreview)
+ * - A header row renderer per day: the date, the crew transfer vessels' sea state, the wave height and the wind
+ * - The Summary feature: the jobs planned against the jobs due, per day
+ *
+ * A click on a day's header or on a cell opens the Day view on that date (`dayClick`).
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler#config-fillTicks
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/preset/ViewPreset#config-headers
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Summary
+ * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/PercentBar
+ */
+export default class WeekBoard extends Scheduler {
+    static $name = 'WeekBoard';
+
+    static type = 'weekboard';
+
+    static configurable = {
+        /**
+         * The dispatcher's state, the week's forecasts and windows
+         * @config {DispatchState}
+         */
+        dispatch : null,
+
+        /**
+         * `true` at phone widths: a narrow vessel column
+         * @prp {Boolean}
+         */
+        phone : false,
+
+        cls                       : 'ow-week-board',
+        rowHeight                 : 64,
+        barMargin                 : 0,
+        resourceMargin            : 5,
+        fillTicks                 : true,
+        eventStyle                : null,
+        eventColor                : null,
+        zoomOnMouseWheel          : false,
+        zoomOnTimeAxisDoubleClick : false,
+        autoCreate                : false,
+        useInitialAnimation       : false,
+        multiEventSelect          : false,
+
+        /**
+         * The days share the width down to this many px each, then the week scrolls
+         * @config {Number}
+         */
+        minDayWidth : 112,
+
+        features : {
+            cellEdit           : false,
+            cellMenu           : false,
+            headerMenu         : false,
+            timeAxisHeaderMenu : false,
+            sort               : false,
+            eventEdit          : false,
+            eventMenu          : false,
+            scheduleMenu       : false,
+            eventDrag          : false,
+            eventResize        : false,
+            eventDragCreate    : false,
+            eventTooltip       : false,
+            scheduleTooltip    : false,
+            stickyEvents       : false,
+            resourceTimeRanges : true,
+            // The seats used, a thin bar along the cell's foot
+            percentBar         : { allowResize : false, showPercentage : false },
+            summary            : {}
+        }
+    };
+
+    construct(config) {
+        const me = this;
+
+        super.construct({
+            ...config,
+            startDate  : dateOn(0, 0),
+            endDate    : dateOn(7, 0),
+            viewPreset : {
+                ...dayPreset,
+                headers : [{
+                    unit     : 'day',
+                    align    : 'start',
+                    renderer : (startDate, endDate, cell) => me.renderDay(startDate, cell)
+                }]
+            },
+            columns : [{
+                field          : 'name',
+                text           : 'Sea state',
+                width          : 168,
+                cls            : 'ow-week-axis',
+                cellCls        : 'ow-week-vessel',
+                sortable       : false,
+                groupable      : false,
+                headerRenderer : () => '<b>Sea state</b><small>CTV window, Hs, wind</small>',
+                renderer       : ({ record }) => [
+                    { tag : 'b', text : record.name },
+                    { tag : 'small', text : `${record.kind.split(' · ')[0]} · ${record.seats} pax` }
+                ],
+                // The summary row's label: the time axis has the values
+                summaries : [{ sum : () => 0, renderer : () => 'Jobs · planned / due' }]
+            }],
+            project : {
+                resourceStore : { fields : ['kind', 'seats', 'window', 'mode'], data : config.dispatch.vessels },
+                eventStore    : {
+                    fields         : ['day', 'trips', 'turbines', 'pax', 'seats', 'late', 'percentDone'],
+                    syncDataOnLoad : true
+                },
+                resourceTimeRangeStore : { fields : ['day', 'kind'], syncDataOnLoad : true }
+            },
+            eventRenderer             : args => me.renderCell(args),
+            resourceTimeRangeRenderer : args => me.renderFree(args),
+            features                  : {
+                ...config.features,
+                summary : {
+                    summaries : [{ label : 'Jobs per day', renderer : ({ startDate }) => me.jobsText(startDate) }]
+                }
+            }
+        });
+
+        me.days = [];
+        me.on({
+            eventClick             : ({ eventRecord }) => me.openDay(eventRecord.day),
+            scheduleClick          : ({ date }) => me.openDay(dayOf(date)),
+            timeAxisHeaderClick    : ({ startDate }) => me.openDay(dayOf(startDate)),
+            timelineViewportResize : 'fitTicks',
+            paint                  : 'fitTicks',
+            thisObj                : me
+        });
+    }
+
+    /**
+     * The seven days share the width, down to `minDayWidth` each, then the week scrolls
+     */
+    fitTicks() {
+        const width = this.timeAxisSubGridElement?.clientWidth;
+
+        if (width && !this.isDestroyed) {
+            this.tickSize = Math.max(this.minDayWidth, Math.floor(width / 7));
+        }
+    }
+
+    updatePhone(phone) {
+        if (this.columns?.count) {
+            this.columns.first.width = phone ? 118 : 168;
+        }
+    }
+
+    /**
+     * Fired when a day's header or cell is clicked, to open the Day view on that date
+     * @event dayClick
+     * @param {Number} index 0 is today
+     */
+    openDay(index) {
+        if (index >= 0 && index < 7) {
+            this.trigger('dayClick', { index });
+        }
+    }
+
+    /**
+     * Draws the week from the trips of the whole week and the state's forecasts
+     * @param {TripModel[]} trips
+     */
+    draw(trips) {
+        const
+            me                 = this,
+            { dispatch }       = me,
+            { events, ranges } = weekCells(dispatch, dispatch.vessels, trips);
+
+        me.days = weekDays(dispatch, trips);
+        me.eventStore.data = events;
+        me.resourceTimeRangeStore.data = ranges;
+        // The header and the summary show the days' forecasts and counts, which change with the plan
+        me.timeAxisColumn?.refreshHeader?.();
+        me.features.summary.refresh?.();
+    }
+
+    /**
+     * The cell a crew is dragged over: a vessel's day without a trip, by a point in the viewport. The same object for
+     * the same cell, so the drag sees it is still over it
+     * @param {{x: Number, y: Number}} point
+     * @returns {Object|null} `{ isWeekCell, vesselId, day, kind }`
+     */
+    cellAt({ x, y }) {
+        const
+            me    = this,
+            axis  = me.timeAxisSubGridElement,
+            row   = document.elementsFromPoint(x, y).find(element => axis?.contains(element) &&
+                element.matches('.b-grid-row[data-id]')),
+            date  = row && me.getDateFromCoordinate(x, null, false),
+            day   = date ? dayOf(date) : -1,
+            range = row && me.resourceTimeRangeStore.getById(`${row.dataset.id}:${day}`);
+
+        if (!range) {
+            return null;
+        }
+
+        me.cells ??= new Map();
+
+        const key = `${range.id}:${range.kind}`;
+
+        if (!me.cells.has(key)) {
+            me.cells.set(key, { isWeekCell : true, vesselId : row.dataset.id, day, kind : range.kind });
+        }
+
+        return me.cells.get(key);
+    }
+
+    //region Rendering
+
+    // The day's header cell: the date, the sea state pill, the wave height and the wind
+    renderDay(startDate, cell) {
+        const
+            day   = this.days?.[dayOf(startDate)],
+            today = day?.index === 0;
+
+        cell.headerCellCls = `ow-week-day${today ? ' ow-week-today' : ''}`;
+
+        if (!day) {
+            return '';
+        }
+
+        const
+            date = startDate.toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' }).replace(',', ''),
+            [lo, hi] = day.hs;
+
+        return `<span class="ow-week-date">${date}${today ? ' · today' : ''}</span>` +
+            `<span class="ow-sea ow-sea-${day.sea.tone}">${day.sea.text}</span>` +
+            // Where the column is too narrow for one line, it wraps before the wind
+            `<small><span>Hs ${lo.toFixed(1)}–${hi.toFixed(1)} m</span> · <span>wind ${day.wind}</span></small>`;
+    }
+
+    // A vessel's day with trips: its times top left, its seats top right, its turbines, and the seats bar
+    renderCell({ eventRecord : cell, renderData }) {
+        renderData.cls['ow-cell']      = 1;
+        renderData.cls['ow-cell-late'] = cell.late > 0;
+        renderData.cls['ow-cell-heli'] = cell.resource?.mode === 'heli';
+
+        return [
+            {
+                class    : 'ow-cell-head',
+                children : [{ tag : 'b', text : cell.name }, { tag : 'span', text : `${cell.pax}/${cell.seats}` }]
+            },
+            {
+                class : 'ow-cell-jobs',
+                text  : cell.late > 0 ? `${lateText(cell.late)} · ${cell.turbines}` : cell.turbines
+            }
+        ];
+    }
+
+    // A vessel's day without trips: free until its window closes, or no-go
+    renderFree({ resourceTimeRangeRecord : range, renderData }) {
+        renderData.cls[`ow-week-${range.kind}`] = 1;
+
+        return range.name;
+    }
+
+    // The summary of a day: the jobs planned against the jobs due
+    jobsText(startDate) {
+        const day = this.days?.[dayOf(startDate)];
+
+        return day ? `${day.planned} / ${day.due}` : '';
+    }
+
+    //endregion
+}
+
+WeekBoard.initClass();

@@ -22,7 +22,7 @@
         &::before {
             content       : '';
             position      : absolute;
-            inset         : 26px 0 22px;
+            inset         : 23px 0 19px;
             border        : 1.5px dashed var(--ow-c-transit);
             border-radius : var(--ow-c-radius);
         }

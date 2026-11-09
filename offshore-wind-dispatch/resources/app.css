@@ -16,6 +16,7 @@
 @import './schedule/transit.css';
 @import './schedule/dependencies.css';
 @import './schedule/tooltip.css';
+@import './week/board.css';
 @import './drag/chip.css';
 @import './drag/tooltip.css';
 @import './map/map.css';

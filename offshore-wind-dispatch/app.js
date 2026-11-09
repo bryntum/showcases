@@ -15,7 +15,7 @@ import DispatchApp from './lib/DispatchApp.js';
  * the wave height closes the window, and bring in the next forecast to watch the plan change with it.
  *
  * `?state=forecast` opens with the 08:00 forecast applied, `?state=drag` with Team F held over Northern Tern's trip,
- * `?tab=map` with the map tab at phone widths.
+ * `?tab=map` with the map tab at phone widths, `?view=week` with the Week view.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
@@ -39,7 +39,7 @@ try {
         tab      : params.get('tab') === 'map' ? 'map' : 'schedule'
     });
 
-    await app.start({ state : params.get('state') });
+    await app.start({ state : params.get('state'), view : params.get('view') });
 
     // For the screenshots and the tests: fonts loaded, chart drawn
     await document.fonts.ready;

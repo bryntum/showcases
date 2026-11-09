@@ -13,15 +13,24 @@ export default class Legend extends Widget {
     static type = 'legend';
 
     static configurable = {
-        cls : 'ow-legend'
+        cls : 'ow-legend',
+
+        /**
+         * The view it explains, `day` or `week`
+         * @prp {'day'|'week'}
+         */
+        view : 'day'
     };
 
-    afterConstruct() {
-        super.afterConstruct();
-
+    updateView(view) {
         const item = (kind, text) => ({ tag : 'span', class : `ow-l ow-l-${kind}`, children : [{ tag : 'i' }, text] });
 
-        this.html = [
+        this.html = view === 'week' ? [
+            item('cell', 'Trips: times, seats, turbines; bar = seats used'),
+            item('free', 'Workable, free'),
+            item('nogo', 'No-go'),
+            { tag : 'span', class : 'ow-legend-credit', text : 'Drag a crew onto a free cell to plan it' }
+        ] : [
             item('work', 'Work'),
             item('transit', 'Transit'),
             item('dependency', 'Must finish first'),

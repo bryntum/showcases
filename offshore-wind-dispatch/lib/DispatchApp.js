@@ -8,7 +8,7 @@ import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
 import { cardInfo, tipContent, tipInfo } from './map/TurbineCard.js';
-import { toMinutes } from './util/Time.js';
+import { showDay, toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
 import './TeamTray.js';
@@ -84,10 +84,12 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        const { scheduler, map, tray, schedulePane, side, notice } = me.widgetMap;
+        const { scheduler, board, map, tray, schedulePane, side, notice } = me.widgetMap;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
-        me.drag            = new TeamDrag({ source : tray.element, scheduler, handler : me });
+        me.drag            = new TeamDrag({ source : tray.element, scheduler, board, handler : me });
+
+        board.on({ dayClick : ({ index }) => me.openDay(index) });
 
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
@@ -170,9 +172,10 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
      * @param {Object} [options]
      * @param {String} [options.state] `forecast` brings in the next forecast, `drag` holds Team F over Northern Tern's
      * trip (for screenshots and tests)
+     * @param {String} [options.view] `week` opens the Week view
      * @returns {Promise}
      */
-    async start({ state } = {}) {
+    async start({ state, view } = {}) {
         const
             me            = this,
             { scheduler } = me,
@@ -203,6 +206,32 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
 
         await scheduler.forecastHeader.refresh();
+
+        if (view === 'week') {
+            me.widgetMap.schedulePane.showView('week');
+        }
+    }
+
+    /**
+     * Opens the Day view on a day of the week, a click on the Week view's day or cell
+     * @param {Number} index 0 is today
+     * @returns {Promise} Resolves once drawn
+     */
+    async openDay(index) {
+        const me = this;
+
+        me.widgetMap.schedulePane.showView('day');
+
+        if (index !== me.dispatch.dayIndex) {
+            me.clearPreview();
+            me.scheduler.clearEventSelection();
+            me.dispatch.showDay(index);
+            showDay(index);
+            me.scheduler.showDay();
+            me.fitKey = null;
+            await me.replan();
+            await me.scheduler.forecastHeader.refresh();
+        }
     }
 
     //region Plan state
@@ -293,18 +322,20 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const
             me                          = this,
             { dispatch }                = me,
-            { kpis, tray, scheduler }   = me.widgetMap;
+            { kpis, tray, scheduler, board } = me.widgetMap;
 
         kpis.draw({
             site   : dispatch.site.name,
             opens  : dispatch.day.dayStart * 60,
             now    : dispatch.now,
+            today  : dispatch.isToday,
             closes : dispatch.windows.ctv,
             was    : dispatch.previousWindows?.ctv,
             kpis   : dayKpis(me.trips, dispatch)
         });
         tray.draw(dispatch.waitingTeams, me.lifted);
         scheduler.refreshDispatch();
+        board.draw(scheduler.weekTrips);
         me.widgetMap.schedulePane.refreshBar();
         me.refreshSide();
     }
@@ -524,7 +555,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, column, side, main, tabs } = this.widgetMap ?? {};
+        const { scheduler, board, column, side, main, tabs } = this.widgetMap ?? {};
 
         // Applied again once the items exist, see construct
         if (!scheduler) {
@@ -533,8 +564,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         const home = phone ? tabs : main;
 
-        scheduler.phone = phone;
-        side.flex       = phone ? 1 : null;
+        scheduler.phone = board.phone = phone;
+        side.flex      = phone ? 1 : null;
         side.width      = phone ? null : 400;
 
         if (column.owner !== home) {
