@@ -9,12 +9,12 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { hhmm, toDate, toMinutes } from '../util/Time.js';
+import { hhmm, shownDay, toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
 const
-    // The trips' place in their 64px row, 6px above and below: the label, then the 28px work blocks on the line
-    margins     = { start : 6, end : 6 },
+    // The trips' place in their 58px row, 3px above and below: the label, then the 28px work blocks on the line
+    margins     = { start : 3, end : 3 },
     // The trip's label above its legs, the NestedEvents feature's header
     headHeight  = 20,
     // The hours of the day share the width, down to this many px per hour, then the timeline scrolls
@@ -72,14 +72,8 @@ export default class DispatchScheduler extends Scheduler {
          */
         phone : false,
 
-        /**
-         * `'day'`: the day's hours, scrolling where it does not fit, or `'week'`: one column a day, this week
-         * @prp {'day'|'week'}
-         */
-        view : 'day',
-
         cls                       : 'ow-scheduler',
-        rowHeight                 : 64,
+        rowHeight                 : 58,
         barMargin                 : 0,
         resourceMargin            : margins,
         // Fully custom bars
@@ -134,7 +128,7 @@ export default class DispatchScheduler extends Scheduler {
             me     = this,
             header = me.forecastHeader = new ForecastHeader(config.dispatch);
 
-        // The two view presets, both with the weather rows in the time axis
+        // The day's hours, with the weather rows in the time axis
         me.dayPreset = {
             base              : 'hourAndDay',
             tickWidth         : 70,
@@ -144,20 +138,10 @@ export default class DispatchScheduler extends Scheduler {
             timeResolution    : { unit : 'minute', increment : 5 },
             headers           : header.headers
         };
-        me.weekPreset = {
-            base              : 'weekAndDay',
-            tickWidth         : 100,
-            displayDateFormat : 'HH:mm',
-            shiftUnit         : 'week',
-            shiftIncrement    : 1,
-            timeResolution    : { unit : 'minute', increment : 5 },
-            headers           : header.weekHeaders
-        };
 
         super.construct({
             ...config,
             viewPreset : me.dayPreset,
-            // The Week view starts today, not at the start of the calendar week
             timeAxis   : { autoAdjust : false },
             columns    : [{
                 field          : 'name',
@@ -232,10 +216,21 @@ export default class DispatchScheduler extends Scheduler {
     }
 
     /**
-     * The trips, the root events of the tree event store, without their legs
+     * The trips of the day shown, root events of the tree event store, without their legs. The store holds the whole
+     * week's
      * @property {TripModel[]}
      */
     get trips() {
+        const day = shownDay();
+
+        return this.weekTrips.filter(trip => trip.day === day);
+    }
+
+    /**
+     * The trips of the whole week
+     * @property {TripModel[]}
+     */
+    get weekTrips() {
         return this.eventStore.rootNode?.children ?? [];
     }
 
@@ -292,14 +287,13 @@ export default class DispatchScheduler extends Scheduler {
 
     /**
      * The tick width: the Day view fits some hours of the day to the width and the rest scrolls into view (phones
-     * scroll at 44px an hour), the Week view fits its seven days
+     * scroll at 44px an hour)
      */
     fitTicks() {
         const
             me      = this,
             width   = me.timeAxisSubGridElement?.clientWidth,
-            week    = me.view === 'week',
-            minimum = week ? 0 : me.phone ? minTick.phone : minTick.wide;
+            minimum = me.phone ? minTick.phone : minTick.wide;
 
         if (!width || me.isDestroyed) {
             return;
@@ -309,36 +303,31 @@ export default class DispatchScheduler extends Scheduler {
         // scrolls
         const
             { day } = me.dispatch,
-            tick    = Math.max(minimum, Math.floor(width / (week ? 7 : day.dayEnd - day.dayStart)));
+            tick    = Math.max(minimum, Math.floor(width / (day.dayEnd - day.dayStart)));
 
         if (tick !== me.tickSize) {
             me.tickSize = tick;
         }
     }
 
-    updateView(view, old) {
+    /**
+     * Shows the day the dispatch state and the times are on (DispatchState#showDay, Time#showDay): its hours, from the
+     * start of the day
+     */
+    showDay() {
         const
             me      = this,
-            week    = view === 'week',
             { day } = me.dispatch;
 
-        if (!old) {
-            return;
-        }
-
-        me.viewPreset = week ? me.weekPreset : me.dayPreset;
-        me.element.classList.toggle('ow-week', week);
-        me.setTimeSpan(toDate(week ? 0 : day.dayStart * 60), toDate(week ? 7 * 24 * 60 : day.dayEnd * 60));
+        me.setTimeSpan(toDate(day.dayStart * 60), toDate(day.dayEnd * 60));
         me.fitTicks();
-        // Back at the start of the day or the week
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
-        me.forecastHeader.refresh();
     }
 
     updatePhone(phone) {
         const me = this;
 
-        me.rowHeight = phone ? 60 : 64;
+        me.rowHeight = phone ? 54 : 58;
 
         if (me.columns?.count) {
             me.columns.first.width = phone ? 118 : 214;

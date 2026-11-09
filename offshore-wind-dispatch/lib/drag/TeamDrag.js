@@ -30,13 +30,14 @@ export default class TeamDrag {
      * @param {Object} options
      * @param {HTMLElement} options.source The element holding the team chips (`.ow-team[data-team]`)
      * @param {Scheduler.view.Scheduler} options.scheduler
+     * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
      * @param {Object} options.handler `{ liftTeam(id), previewDrop(id, trip), dropTeam(id, trip), endDrag(),
      * dropTargets() }`
      */
-    constructor({ source, scheduler, handler }) {
+    constructor({ source, scheduler, board, handler }) {
         const me = this;
 
-        Object.assign(me, { source, scheduler, handler });
+        Object.assign(me, { source, scheduler, board, handler });
 
         me.keys = new KeyboardDrag({ drag : me });
 
@@ -44,8 +45,8 @@ export default class TeamDrag {
             callOnFunctions      : true,
             outerElement         : source,
             targetSelector       : chipSelector,
-            // The trips and the vessels' rows
-            dropTargetSelector   : '.ow-scheduler .b-time-axis-sub-grid',
+            // The trips and the vessels' rows, the cells of the Week view
+            dropTargetSelector   : '.ow-scheduler .b-time-axis-sub-grid, .ow-week-board .b-time-axis-sub-grid',
             // A small chip centred on the pointer, the team's place in the tray stays, dimmed
             cloneTarget          : true,
             autoSizeClonedTarget : false,
@@ -156,11 +157,18 @@ export default class TeamDrag {
 
     /**
      * What a team held at a point is over: a trip bar (a draft trip counts as its vessel's row), else a vessel's row in
-     * the time axis, else nothing
+     * the time axis, else nothing. In the Week view, a vessel's day without a trip (WeekBoard#cellAt)
      * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {TripModel|VesselModel|null}
+     * @returns {TripModel|VesselModel|Object|null}
      */
-    targetAt({ x, y }) {
+    targetAt(point) {
+        const { board } = this;
+
+        return board && !board.hidden ? board.cellAt(point) : this.rowTargetAt(point);
+    }
+
+    // What a team held at a point of the Day view is over, see targetAt
+    rowTargetAt({ x, y }) {
         const
             { scheduler } = this,
             axis          = scheduler.timeAxisSubGridElement,
@@ -204,7 +212,9 @@ export default class TeamDrag {
             me   = this,
             // Where on the time axis the team is held, the keyboard has no point
             at   = me.keys.keyboard ? null : toMinutes(me.scheduler.getDateFromCoordinate(point.x, null, false)),
-            drop = me.handler.previewDrop(me.team, target, at);
+            // A cell of the week is the whole day
+            drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
+                me.handler.previewDrop(me.team, target, at);
 
         showOnChip(me.keys.held ?? me.proxy, drop);
 

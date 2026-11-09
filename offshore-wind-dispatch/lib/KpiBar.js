@@ -19,7 +19,7 @@ export function dayKpis(trips, dispatch) {
         atRisk   = trips.filter(trip => trip.status === 'at-risk').length;
 
     return [
-        { label : 'Due today', value : dispatch.dueTurbines.length },
+        { label : dispatch.isToday ? 'Due today' : 'Due', value : dispatch.dueTurbines.length },
         { label : 'Assigned', value : assigned.size },
         // One slot: trips past their window need acting on now, so they win over what a forecast already moved
         atRisk || !moved.size ?
@@ -63,14 +63,15 @@ export default class KpiBar extends Container {
      * @param {String} values.site
      * @param {Number} values.opens When the day starts, the start of the window's countdown
      * @param {Number} values.now
+     * @param {Boolean} [values.today] The day shown is today, a later day has no clock
      * @param {Number} values.closes When the CTV window closes
      * @param {Number} [values.was] When it closed before the latest forecast
      * @param {Object[]} values.kpis `{ label, value, tone }`, tone `warn`, `alert` or `stop` when it needs attention
      */
-    draw({ site, opens, now, closes, was, kpis }) {
+    draw({ site, opens, now, today = true, closes, was, kpis }) {
         const { clock, window, first, second, third, fourth } = this.widgetMap;
 
-        clock.draw({ site, now });
+        clock.draw({ site, now : today ? now : null });
         window.draw({ opens, now, closes, was });
         [first, second, third, fourth].forEach((kpi, index) => kpi.draw(kpis[index]));
     }

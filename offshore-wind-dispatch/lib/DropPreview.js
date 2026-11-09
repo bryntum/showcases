@@ -2,11 +2,17 @@ import { StringHelper, Toast } from '@bryntum/core-enterprise';
 import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
 import { addTrip } from './model/TripData.js';
-import { hhmm } from './util/Time.js';
+import { dayDate, hhmm, shownDay } from './util/Time.js';
 
-// The stop a team's job adds to a trip
-const stopOf = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
-    preview });
+const
+    // The stop a team's job adds to a trip
+    stopOf       = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
+        preview }),
+    // A later day's first trip leaves port half an hour after the day starts
+    firstSailing = 30,
+    // "Thu 12"
+    dayName      = index => dayDate(index).toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' })
+        .replace(',', '');
 
 /**
  * The app's side of dragging a team onto a vessel (TeamDrag calls it): lifting the team from the tray, previewing its
@@ -78,6 +84,88 @@ export default Target => class DropPreview extends Target {
     }
 
     /**
+     * Previews a team on a vessel's day without a trip in the Week view, see cellDrop. The map and the card stay on the
+     * day the Day view shows
+     * @param {String} teamId
+     * @param {Object} cell See WeekBoard#cellAt
+     * @returns {Object|null} See cellDrop
+     */
+    previewCell(teamId, cell) {
+        const me = this;
+
+        if (me.drop?.target !== cell || me.drop.team.id !== teamId) {
+            me.clearPreview();
+            me.drop = me.cellDrop(teamId, cell);
+        }
+
+        return me.drop;
+    }
+
+    /**
+     * A team held over a vessel's day without a trip in the Week view (WeekBoard#cellAt): a new trip from port that
+     * day, at the next sailing today, at the first sailing on a later day, checked against that day's window
+     * @param {String} teamId
+     * @param {Object} cell `{ vesselId, day }`
+     * @returns {Object|null} See previewDrop, with the new trip's `plan`, its `vessel` and `day`
+     */
+    cellDrop(teamId, cell) {
+        const
+            me    = this,
+            entry = me.waitingTeam(teamId);
+
+        if (!entry) {
+            return null;
+        }
+
+        const
+            { dispatch }  = me,
+            { team, job } = entry,
+            { day }       = cell,
+            vessel        = me.scheduler.resourceStore.getById(cell.vesselId),
+            close         = dispatch.windowsOf(day)[vessel.window],
+            now           = day ? dispatch.day.dayStart * 60 : dispatch.days[0].now,
+            start         = day ? dispatch.day.dayStart * 60 + firstSailing : nextSailing([], now),
+            plan          = {
+                id     : me.newTripId(vessel),
+                start,
+                stops  : [],
+                mode   : vessel.mode,
+                wait   : 0,
+                change : null,
+                pax    : 0,
+                seats  : vessel.seats
+            },
+            limit         = dispatch.limits[vessel.window],
+            result        = previewDrop({ trip : plan, team, job, close, limit, now, vessel : vessel.name });
+
+        return {
+            target : cell,
+            at     : null,
+            trip   : { id : plan.id, draft : true, departs : start, resource : vessel },
+            team,
+            job,
+            result,
+            close,
+            reach  : reachable(plan, job.minutes, close),
+            plan,
+            vessel,
+            day
+        };
+    }
+
+    /**
+     * The ID of a vessel's next trip: its trips are numbered through the week, "SR-7"
+     * @param {VesselModel} vessel
+     * @returns {String}
+     */
+    newTripId(vessel) {
+        const numbers = this.scheduler.weekTrips.filter(trip => trip.resource === vessel && !trip.draft)
+            .map(trip => Number(String(trip.id).split('-').at(-1)) || 0);
+
+        return `${String(vessel.id).toUpperCase()}-${Math.max(0, ...numbers) + 1}`;
+    }
+
+    /**
      * Previews a team's stop on the trip it goes on, checked against the plan and the forecast as they are now
      * @param {String} teamId
      * @param {TripModel|VesselModel} target
@@ -93,6 +181,10 @@ export default Target => class DropPreview extends Target {
             return null;
         }
 
+        if (target.isWeekCell) {
+            return me.drop = me.cellDrop(teamId, target);
+        }
+
         const
             { team, job }          = entry,
             { plan, trip, vessel } = me.tripFor(target, team, job),
@@ -103,7 +195,7 @@ export default Target => class DropPreview extends Target {
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
         const held = trip ?? addTrip(me.scheduler.eventStore, vessel,
-            { id : plan.id, departs : plan.start, draft : true }, [stop]);
+            { id : plan.id, departs : plan.start, draft : true, day : shownDay() }, [stop]);
 
         if (trip && vessel.mode !== 'heli') {
             trip.layout({ stops : [...trip.stops, stop] });
@@ -147,15 +239,13 @@ export default Target => class DropPreview extends Target {
         }
 
         // None to join: a new trip from port, once the vessel is back from its last one
-        const
-            backs  = trips.filter(trip => trip.status !== 'moved').map(trip => trip.endMinute),
-            prefix = trips[0]?.id.replace(/-\d+$/, '') ?? String(vessel.id).toUpperCase();
+        const backs = trips.filter(trip => trip.status !== 'moved').map(trip => trip.endMinute);
 
         return {
             trip : null,
             vessel,
             plan : {
-                id     : `${prefix}-${trips.length + 1}`,
+                id     : me.newTripId(vessel),
                 start  : nextSailing(backs, now),
                 stops  : [],
                 mode   : vessel.mode,
@@ -254,7 +344,8 @@ export default Target => class DropPreview extends Target {
     clearPreview() {
         const trip = this.drop?.trip;
 
-        if (trip && !trip.isDestroyed) {
+        // A cell of the week previews nothing in the store
+        if (trip && !trip.isDestroyed && !this.drop.target.isWeekCell) {
             if (trip.draft) {
                 this.scheduler.eventStore.remove(trip);
             }
@@ -290,6 +381,12 @@ export default Target => class DropPreview extends Target {
             return;
         }
 
+        if (target.isWeekCell) {
+            me.bookCell(drop);
+
+            return;
+        }
+
         const { trip, team, job, result } = drop;
 
         // Booked: the previewed stop becomes the trip's, a draft trip a trip of the plan
@@ -303,6 +400,26 @@ export default Target => class DropPreview extends Target {
 
         Toast.show({
             html : StringHelper.xss`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`,
+            cls  : 'ow-toast-message'
+        });
+    }
+
+    /**
+     * Books a team on a new trip on a vessel's free day of the week: the trip goes in the plan of that day
+     * @param {Object} drop See cellDrop
+     */
+    bookCell({ team, job, result, plan, vessel, day }) {
+        const me = this;
+
+        me.drop = null;
+        // Its departure in minutes of the day shown, which the times count from
+        addTrip(me.scheduler.eventStore, vessel, { id : plan.id, departs : plan.start + (day - shownDay()) * 24 * 60,
+            day }, [stopOf(team, job)]);
+        me.dispatch.waiting = me.dispatch.waiting.filter(turbine => turbine !== job.turbine);
+        me.onPlanChange();
+
+        Toast.show({
+            html : StringHelper.xss`${team.name} booked on ${plan.id}, ${dayName(day)}, back in port by ${hhmm(result.back)}`,
             cls  : 'ow-toast-message'
         });
     }

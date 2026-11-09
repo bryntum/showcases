@@ -1,7 +1,8 @@
 # Offshore Wind Dispatch
 
-The marine coordinator's day at Skarv Bank, an offshore wind farm of 60 turbines: four vessels (three crew transfer
-vessels and a SWATH) and two helicopters take maintenance teams out to the turbines and back, in a Bryntum Scheduler.
+The marine coordinator's day at Skarv Bank, an offshore wind farm of 60 turbines: five vessels (four crew transfer
+vessels, one of them on standby, and a SWATH) and two helicopters take maintenance teams out to the turbines and back,
+in a Bryntum Scheduler. The Week view shows the week as a day board: one cell per vessel per day.
 The plan does not run against fixed sites but against the weather. Each vessel may only transfer people while the
 significant wave height (Hs) stays under its limit, and a trip has to be back at port before that window closes.
 
@@ -97,8 +98,10 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
     that follows the pointer)
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
-    the trips (`Planner`), the state apart from the trips (`DispatchState`) and the re-planning on a new forecast
-    (`ForecastPlanner`)
+    the trips (`Planner`), the state apart from the trips (`DispatchState`), the re-planning on a new forecast
+    (`ForecastPlanner`) and the seeded generator of the week's forecasts and trips (`WeekPlan`)
+  * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
+    ResourceTimeRanges and Summary features) and `WeekCells` (one derived cell per vessel per day)
   * `schedule/` the `DispatchScheduler`, `DispatchSync` (the no-go ranges, the now line and the dependencies in the
     project's stores), its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
     (`TripTip`), and the rendering of the trips and their legs, the vessels, groups, ranges and the dependency

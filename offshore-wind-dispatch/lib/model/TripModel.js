@@ -49,6 +49,8 @@ export default class TripModel extends EventModelEnterprise {
         { name : 'draft', type : 'boolean', persist : false },
         // Drop-off, Pickup
         'note',
+        // The day of the week the trip is on, 0 is today (lib/plan/WeekPlan.js)
+        { name : 'day', type : 'number', defaultValue : 0 },
 
         // The legs (child events): `transit` or `stop`
         'kind',

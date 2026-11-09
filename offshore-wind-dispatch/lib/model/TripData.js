@@ -125,15 +125,16 @@ export function dependencyData({ id, from, to, toStop, lag = 0, sides = [] }) {
 /**
  * The Scheduler project's data from data/farm.json: the vessels, the trips with their legs as children, each trip
  * and leg assigned to the trip's vessel (a nested event shows where both it and its parent are assigned), the links
- * between the legs and the dependencies of the plan
+ * between the legs and the dependencies of the plan. The trips of the whole week, each on its `day` (0 is today), today
+ * being the day shown
  * @param {Object} data `{ vessels, trips, dependencies }`
  * @returns {Object} `{ resources, events, assignments, dependencies }`
  */
 export function projectData({ vessels, trips, dependencies }) {
     const
         modeOf      = id => vessels.find(vessel => vessel.id === id)?.mode ?? 'vessel',
-        events      = trips.map(({ start, resourceId, stops, ...trip }) =>
-            tripData({ ...trip, departs : parseTime(start) }, stops, modeOf(resourceId))),
+        events      = trips.map(({ start, resourceId, stops, day = 0, ...trip }) =>
+            tripData({ ...trip, day, departs : parseTime(start) + day * 24 * 60 }, stops, modeOf(resourceId))),
         assignments = events.flatMap((trip, index) => [trip, ...trip.children].map(event => ({
             id       : `a-${event.id}`,
             event    : event.id,

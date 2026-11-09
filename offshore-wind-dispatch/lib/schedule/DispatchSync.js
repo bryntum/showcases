@@ -95,7 +95,7 @@ export default class DispatchSync {
     }
 
     /**
-     * The now line, no shaded past
+     * The now line, no shaded past, today only: a later day is all ahead
      */
     syncNow() {
         const
@@ -103,7 +103,7 @@ export default class DispatchSync {
             state         = scheduler.dispatch,
             now           = toDate(state.now);
 
-        DispatchSync.syncStore(scheduler.project.timeRangeStore, [
+        DispatchSync.syncStore(scheduler.project.timeRangeStore, !state.isToday ? [] : [
             { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
         ]);
     }

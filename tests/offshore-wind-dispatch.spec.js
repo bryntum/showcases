@@ -42,11 +42,13 @@ test.describe('Offshore Wind Dispatch', () => {
         await open(page);
 
         await expect(scheduler(page)).toHaveClass(/\bb-scheduler\b/);
-        // Four vessels and two helicopters
-        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(6);
+        // Five vessels, the standby Kittiwake among them, and two helicopters
+        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(7);
+        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('5 CTV · 2 heli');
+        await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 2']);
         await expect(trip(page, 'NT-1')).toBeVisible();
         // The weather no-go of every vessel is a resource time range
-        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(6);
+        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(7);
         await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 14:00');
         await expect(page.locator('.ow-side .ow-turbine')).toBeVisible();
         await expect(page.locator('.ow-side [data-turbine]')).not.toHaveCount(0);
@@ -448,30 +450,182 @@ test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
             .toBeGreaterThan(1);
     });
 
-    test('the Week view has a column per day for this week only, and keeps the weather rows', async({ page }) => {
-        await open(page);
-        await bar(page).getByRole('button', { name : 'Week' }).click();
+});
 
-        await expect(bar(page).getByRole('button', { name : 'Week' })).toHaveClass(/b-pressed/);
-        await expect(bar(page).getByRole('button', { name : 'Day' })).not.toHaveClass(/b-pressed/);
-        await expect(scheduler(page).locator('.ow-hour-cell')).toHaveCount(7);
-        await expect(scheduler(page).locator('.ow-sea-today .ow-wave-chart')).toHaveCount(1);
-        await expect(scheduler(page).locator('.ow-wind[data-peak]')).toHaveCount(1);
+test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
+    test.use({ viewport : { width : 1600, height : 960 } });
 
-        // Monday 9 to Sunday 15: seven days from today
-        const { start, end } = await page.evaluate(() => {
-            const { scheduler : s } = globalThis.bryntum.query('dispatchapp');
+    const
+        board = page => page.locator('.ow-week-board'),
+        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        // The cell of a vessel's day: its event, or its resource time range when it has no trip
+        cell  = (page, vessel, day) => board(page)
+            .locator(`[data-event-id="${vessel}:${day}"], [data-event-id="resourcetimerange-${vessel}:${day}"]`),
+        // What the board holds, by vessel and day: the cell's kind and text
+        cells = page => page.evaluate(() => {
+            const { board : b } = globalThis.bryntum.query('dispatchapp').widgetMap;
 
-            return { start : s.startDate.getTime(), end : s.endDate.getTime() };
+            return Object.fromEntries([
+                ...b.eventStore.records.map(event => [event.id, { kind     : 'trip', name     : event.name,
+                    turbines : event.turbines, late     : event.late, pax      : event.pax, seats    : event.seats }]),
+                ...b.resourceTimeRangeStore.records.map(range => [range.id, { kind : range.kind, name : range.name }])
+            ]);
         });
 
-        expect(end - start).toBe(7 * 24 * 3600_000);
+    test('seven days by seven vessels, one cell each, of the kind the weather gives', async({ page }) => {
+        await open(page, '?view=week');
 
-        // Back to the day, which is where the data is
-        await bar(page).getByRole('button', { name : 'Day' }).click();
+        await expect(bar(page).getByRole('button', { name : 'Week' })).toHaveClass(/b-pressed/);
+        await expect(board(page)).toBeVisible();
+        await expect(scheduler(page)).toBeHidden();
+
+        // A header per day: the date, the crew transfer vessels' sea state, the wave height and the wind
+        const days = board(page).locator('.b-sch-header-time-axis-cell.ow-week-day');
+
+        await expect(days).toHaveCount(7);
+        await expect(days.first()).toContainText('· today');
+        await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'No CTV', 'Go until 15', 'Go · all day',
+            'Go · all day', 'Go until 11', 'No CTV']);
+        await expect(days.first().locator('small')).toHaveText('Hs 0.9–2.2 m · wind 24');
+
+        // Every vessel's day is one cell: a trip, free or no-go, never two
+        const all = await cells(page);
+
+        expect(Object.keys(all)).toHaveLength(49);
+
+        const
+            vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'],
+            kinds   = day => vessels.map(vessel => all[`${vessel}:${day}`].kind);
+
+        // Tuesday: no crew transfer vessel, no helicopter, the SWATH until 13
+        expect(kinds(1)).toEqual(['nogo', 'nogo', 'nogo', 'nogo', 'trip', 'nogo', 'nogo']);
+        // Sunday: no-go for all
+        expect(kinds(6)).toEqual(vessels.map(() => 'nogo'));
+        // Thursday and Friday, the best days: no no-go, the standby vessel free all day
+        for (const day of [3, 4]) {
+            expect(kinds(day)).not.toContain('nogo');
+            expect(all[`kw:${day}`]).toEqual({ kind : 'free', name : 'Free · all day' });
+        }
+
+        // Saturday the crew transfer vessels go until 11: a free one says so
+        expect(all['kw:5']).toEqual({ kind : 'free', name : 'Free · until 11' });
+
+        // Each trip back before its day's window closes, its seats within the vessel's
+        for (const [id, each] of Object.entries(all).filter(([id, each]) => each.kind === 'trip' && !id.endsWith(':0'))) {
+            expect(each.late, id).toBe(0);
+            expect(each.pax, id).toBeLessThanOrEqual(each.seats);
+        }
+
+        // Drawn: the trips as cells with their seats bar, the free and no-go days as ranges
+        const count = kind => Object.values(all).filter(each => each.kind === kind).length;
+
+        await expect(board(page).locator('.b-sch-event.ow-cell')).toHaveCount(count('trip'));
+        await expect(board(page).locator('.b-sch-event.ow-cell .b-task-percent-bar')).toHaveCount(count('trip'));
+        await expect(board(page).locator('.ow-week-free')).toHaveCount(count('free'));
+        await expect(board(page).locator('.ow-week-nogo')).toHaveCount(count('nogo'));
+
+        // The Summary feature's row: the jobs planned against the jobs due, per day
+        await expect(board(page).locator('.b-time-axis-summary-value')).toHaveCount(7);
+        await expect(board(page).locator('.b-time-axis-summary-value').first()).toHaveText('11 / 14');
+    });
+
+    test('Monday is today: the same trips, Sea Puffin late', async({ page }) => {
+        await open(page, '?view=week');
+
+        const all = await cells(page);
+
+        expect(['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'].map(vessel => all[`${vessel}:0`])).toEqual([
+            { kind : 'trip', name : '06:30–13:04', turbines : 'T-07 T-08 T-17', late : 0, pax : 3, seats : 12 },
+            { kind : 'trip', name : '07:45–12:11', turbines : 'T-22 T-23', late : 0, pax : 3, seats : 12 },
+            { kind : 'trip', name : '08:15–14:17', turbines : 'T-31 T-41', late : 17, pax : 4, seats : 12 },
+            { kind : 'free', name : 'Free · until 14' },
+            { kind : 'trip', name : '06:45–16:40', turbines : 'T-46 T-45 T-55', late : 0, pax : 7, seats : 24 },
+            { kind : 'trip', name : '09:00–15:40', turbines : 'T-58', late : 0, pax : 2, seats : 6 },
+            { kind : 'trip', name : '08:30–09:50', turbines : 'OSS', late : 0, pax : 1, seats : 6 }
+        ]);
+
+        // Sea Puffin's day in orange, how late first
+        await expect(cell(page, 'sp', 0).locator('.ow-cell-late')).toContainText('+17 min · T-31 T-41');
+        await expect(cell(page, 'sp', 0)).toContainText('4/12');
+    });
+
+    test('a crew dropped on a free cell plans a new trip there, checked against that day\'s window', async({ page }) => {
+        await open(page, '?view=week');
+
+        const centre = async locator => {
+            const box = await locator.boundingBox();
+
+            return { x : box.x + box.width / 2, y : box.y + box.height / 2 };
+        };
+
+        // Team H's 6 h annual service does not fit today on the standby vessel
+        await holdAt(page, 'H', await centre(cell(page, 'kw', 0)));
+        await expect(page.locator('.ow-drop-tip')).toContainText('T-02 does not fit on a new trip, KW-1 from port at 08:00');
+        await expect(page.locator('.ow-drop-tip')).toContainText('Back in port 16:28, the CTV window closes 14:00');
+        await expect(page.locator('.ow-drag-chip')).toHaveAttribute('data-state', 'invalid');
+
+        // On Thursday, a free day, it does: back before the window, all day
+        const thursday = await centre(cell(page, 'kw', 3));
+
+        for (let step = 1; step <= 4; step++) {
+            await page.mouse.move(thursday.x - 40 + step * 10, thursday.y);
+        }
+
+        await expect(page.locator('.ow-drop-tip')).toContainText('T-02 fits on a new trip, KW-1 from port at 06:30');
+        await expect(page.locator('.ow-drop-tip dd b')).toHaveText('14:58');
+        await expect(page.locator('.ow-drop-tip')).toContainText('window closes 18:00');
+        await expect(page.locator('.ow-drag-chip')).toHaveAttribute('data-state', 'valid');
+        await page.mouse.up();
+
+        await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
+        await expect(tray(page).locator('.ow-team[data-team="H"]')).toHaveCount(0);
+        await expect(board(page).locator('[data-event-id="kw:3"] .ow-cell-jobs')).toHaveText('T-02');
+        await expect(board(page).locator('[data-event-id="kw:3"] .ow-cell-head')).toContainText('06:30–14:58');
+        expect(await page.evaluate(() => {
+            const trip = globalThis.bryntum.query('dispatchapp').scheduler.eventStore.getById('KW-1');
+
+            return [trip.day, trip.turbines];
+        })).toEqual([3, ['T-02']]);
+    });
+
+    test('a click on a day\'s header or cell opens the Day view on that date', async({ page }) => {
+        await open(page, '?view=week');
+
+        // Thursday's header: its trips on its hours, its forecast, no Today
+        await board(page).locator('.b-sch-header-time-axis-cell[data-tick-index="3"]').click();
+
+        await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
+        await expect(board(page)).toBeHidden();
+        await expect(scheduler(page)).toBeVisible();
+        await expect(scheduler(page).locator('.ow-day')).not.toContainText('Today');
+        await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 18:00');
+
+        const thursday = await page.evaluate(() => {
+            const
+                app   = globalThis.bryntum.query('dispatchapp'),
+                start = app.scheduler.startDate,
+                week  = app.widgetMap.board.eventStore.records.filter(each => each.day === 3);
+
+            return {
+                hour  : start.getHours(),
+                day   : Math.round((start - app.widgetMap.board.startDate) / 864e5 - 0.25),
+                trips : app.trips.map(each => each.id).sort(),
+                cells : week.flatMap(each => each.trips.split(' ')).sort()
+            };
+        });
+
+        expect(thursday.hour).toBe(6);
+        expect(thursday.day).toBe(3);
+        expect(thursday.trips).toEqual(thursday.cells);
+        await expect(trip(page, thursday.trips[0])).toBeVisible();
+
+        // Back to the week, a click on Sea Puffin's Monday opens today again
+        await bar(page).getByRole('button', { name : 'Week' }).click();
+        await cell(page, 'sp', 0).click();
+
+        await expect(scheduler(page).locator('.ow-day')).toContainText('Today');
         await expect(trip(page, 'SP-1')).toBeVisible();
-        await expect.poll(async() => (await axis(page)).x).toBe(0);
-        await expect(scheduler(page).locator('.ow-hour-cell', { hasText : '06:00' })).toBeVisible();
+        await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 14:00');
     });
 });
 
@@ -748,8 +902,8 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
     test.use({ viewport : { width : 1440, height : 1100 } });
 
     test('each waiting team dragged onto each vessel row: which fit, and why the others do not', async({ page }) => {
-        // Eighteen drags
-        test.setTimeout(120_000);
+        // Twenty-one drags
+        test.setTimeout(150_000);
         await open(page);
 
         const
@@ -760,7 +914,7 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
             results = [];
 
         expect(teams).toEqual(['F', 'G', 'H']);
-        expect(vessels).toHaveLength(6);
+        expect(vessels).toHaveLength(7);
 
         // Half past twelve: inside every weather window, on a stretch of each row that holds no trip
         const noon = await page.evaluate(() => {
@@ -819,23 +973,25 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
             .join('\n'));
 
         // F, the converter fault, 48 min, fits on the trip of Northern Tern that has not left yet, wherever on its row
-        // it is dropped (the other vessels' trips are under way, or back after their windows). Nothing else fits
-        expect(fits).toEqual(['F on NT-1']);
+        // it is dropped, or on the standby Kittiwake. G, the blade repair, 3 h, fits only on Kittiwake: a new trip from
+        // port at the next sailing, back before the window closes. The other vessels' trips are under way, or back
+        // after their windows
+        expect(fits).toEqual(['F on NT-1', 'F on KW-1', 'G on KW-1']);
+        expect(results.filter(each => each.valid).map(each => each.short))
+            .toEqual(['Fits NT-1, back 13:19', 'Fits KW-1, back 11:08', 'Fits KW-1, back 13:52']);
 
-        // G (4 h) and H (6 h) fit on no trip and no new trip of any vessel today, and are refused saying so
-        for (const [team, hours] of [['G', '4 h'], ['H', '6 h']]) {
-            for (const each of results.filter(result => result.team === team && result.vessel !== 'Heli 1' &&
-                result.vessel !== 'Heli 2')) {
-                expect(each.reason).toBe(`${hours} on site does not fit before any window closes today`);
-            }
+        // H (6 h) fits on no trip and no new trip of any vessel today, and is refused saying so. It waits for a free
+        // day of the week (the Week view)
+        for (const each of results.filter(result => result.team === 'H' && !result.vessel.startsWith('Heli'))) {
+            expect(each.reason).toBe('6 h on site does not fit before any window closes today');
         }
 
         // F on a trip that is back after its window: in plain words, when and which window
         expect(results.find(each => each.team === 'F' && each.vessel === 'Sea Puffin').reason)
             .toBe('Back in port 16:01, the CTV window closes 14:00 (waves over 1.5 m)');
 
-        // A vessel with no trip left to join gets a new trip from port
-        expect(results.find(each => each.team === 'F' && each.vessel === 'Skarv Runner').trip).toBe('SR-2');
+        // A vessel with no trip left to join gets a new trip from port, numbered after its trips of the week
+        expect(results.find(each => each.team === 'F' && each.vessel === 'Skarv Runner').trip).toMatch(/^SR-([2-9]|\d\d)$/);
         expect(results.find(each => each.team === 'F' && each.vessel === 'Heli 1').short).toBe('Vessels only');
     });
 

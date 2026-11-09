@@ -31,6 +31,7 @@
         { "id": "sr", "group": "ctv", "name": "Skarv Runner", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
         { "id": "nt", "group": "ctv", "name": "Northern Tern", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
         { "id": "sp", "group": "ctv", "name": "Sea Puffin", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
+        { "id": "kw", "group": "ctv", "name": "Kittiwake", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12, "standby": true },
         { "id": "bp", "group": "ctv", "name": "Brine Petrel", "kind": "SWATH", "window": "swath", "mode": "vessel", "seats": 24 },
         { "id": "h1", "group": "heli", "name": "Heli 1", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 },
         { "id": "h2", "group": "heli", "name": "Heli 2", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 }
@@ -61,7 +62,7 @@
         "T-58": { "job": "Blade inspection from the hoist", "type": "Inspect", "team": "J" },
         "OSS": { "job": "HV isolation of string 4", "type": "Isolate", "team": "AP", "certs": ["HV"] },
         "T-34": { "job": "Converter fault, reset and test", "short": "Converter fault", "type": "Repair", "team": "F", "certs": ["HV"], "minutes": 48 },
-        "T-49": { "job": "Blade leading edge repair", "short": "Blade leading edge", "type": "Repair", "team": "G", "certs": ["Rope"], "minutes": 240 },
+        "T-49": { "job": "Blade leading edge repair", "short": "Blade leading edge", "type": "Repair", "team": "G", "certs": ["Rope"], "minutes": 180 },
         "T-02": { "job": "Annual service", "type": "Service", "team": "H", "minutes": 360 }
     },
     "faults": ["T-34"],

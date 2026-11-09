@@ -20,14 +20,15 @@ export default class KpiClock extends Widget {
      * Shows the clock
      * @param {Object} values
      * @param {String} values.site
-     * @param {Number} values.now Minutes of the day
+     * @param {Number|null} values.now Minutes of the day, none on a later day than today
      */
     draw({ site, now }) {
         this.html = [
             { tag : 'b', text : site },
             {
                 tag      : 'small',
-                children : [`${dayShort} · `, { tag : 'span', class : 'ow-clock-time', text : hhmm(now) }]
+                children : now == null ? [dayShort] :
+                    [`${dayShort} · `, { tag : 'span', class : 'ow-clock-time', text : hhmm(now) }]
             }
         ];
     }
