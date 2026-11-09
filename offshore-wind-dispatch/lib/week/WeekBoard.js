@@ -21,7 +21,8 @@ const
  *   top right, its turbines, and the seats used as the PercentBar feature's thin bar. A day back after its window is
  *   orange with how late
  * - Whole-day resource time ranges for the days without trips: `No-go`, hatched, or `Free` until the window closes,
- *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropPreview)
+ *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropPreview). The cell the crew is held
+ *   over is tinted blue like the Day view's target trip (`dropCell`)
  * - A header row renderer per day: the date, the crew transfer vessels' sea state, the wave height and the wind
  * - The Summary feature: the jobs planned against the jobs due, per day
  *
@@ -51,6 +52,12 @@ export default class WeekBoard extends Scheduler {
          * @prp {Boolean}
          */
         phone : false,
+
+        /**
+         * The cell a crew from the tray is held over (see cellAt), tinted as the drop target, or `null`
+         * @prp {Object}
+         */
+        dropCell : null,
 
         cls                       : 'ow-week-board',
         rowHeight                 : 64,
@@ -172,6 +179,19 @@ export default class WeekBoard extends Scheduler {
         }
     }
 
+    // The cell held over and the one left are drawn again, with or without the drop target's tint (renderFree)
+    updateDropCell(cell, was) {
+        const me = this;
+
+        if (me.isPainted) {
+            new Set([was?.vesselId, cell?.vesselId]).forEach(id => {
+                const vessel = id != null && me.resourceStore.getById(id);
+
+                vessel && me.repaintEventsForResource(vessel);
+            });
+        }
+    }
+
     /**
      * Fired when a day's header or cell is clicked, to open the Day view on that date
      * @event dayClick
@@ -205,7 +225,7 @@ export default class WeekBoard extends Scheduler {
      * The cell a crew is dragged over: a vessel's day without a trip, by a point in the viewport. The same object for
      * the same cell, so the drag sees it is still over it
      * @param {{x: Number, y: Number}} point
-     * @returns {Object|null} `{ isWeekCell, vesselId, day, kind }`
+     * @returns {Object|null} `{ isWeekCell, id, vesselId, day, kind }`, `id` the day's resource time range
      */
     cellAt({ x, y }) {
         const
@@ -226,7 +246,7 @@ export default class WeekBoard extends Scheduler {
         const key = `${range.id}:${range.kind}`;
 
         if (!me.cells.has(key)) {
-            me.cells.set(key, { isWeekCell : true, vesselId : row.dataset.id, day, kind : range.kind });
+            me.cells.set(key, { isWeekCell : true, id : range.id, vesselId : row.dataset.id, day, kind : range.kind });
         }
 
         return me.cells.get(key);
@@ -274,9 +294,10 @@ export default class WeekBoard extends Scheduler {
         ];
     }
 
-    // A vessel's day without trips: free until its window closes, or no-go
+    // A vessel's day without trips: free until its window closes, or no-go. Tinted while a crew is held over it
     renderFree({ resourceTimeRangeRecord : range, renderData }) {
         renderData.cls[`ow-week-${range.kind}`] = 1;
+        renderData.cls['ow-week-drop']          = this.dropCell?.id === range.id;
 
         return range.name;
     }

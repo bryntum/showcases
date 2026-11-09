@@ -210,13 +210,19 @@ export default class TeamDrag {
     hover(target, point) {
         const
             me   = this,
-            // Where on the time axis the team is held, the keyboard has no point
-            at   = me.keys.keyboard ? null : toMinutes(me.scheduler.getDateFromCoordinate(point.x, null, false)),
-            // A cell of the week is the whole day
+            // Where on the Day view's time axis the team is held: the keyboard has no point, and a cell of the week is
+            // the whole day (the Day view is hidden then, it has no date at the point)
+            date = target?.isWeekCell || me.keys.keyboard ? null :
+                me.scheduler.getDateFromCoordinate(point.x, null, false),
             drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
-                me.handler.previewDrop(me.team, target, at);
+                me.handler.previewDrop(me.team, target, date ? toMinutes(date) : null);
 
         showOnChip(me.keys.held ?? me.proxy, drop);
+
+        // The Week view tints the cell held over, as the Day view does the trip (TripRendering, `hasPreview`)
+        if (me.board) {
+            me.board.dropCell = target?.isWeekCell ? target : null;
+        }
 
         if (drop) {
             me.tip.showDrop(drop, point, Boolean(me.keys.keyboard));
@@ -234,6 +240,11 @@ export default class TeamDrag {
 
         if (me.team) {
             me.tip.destroy();
+
+            if (me.board) {
+                me.board.dropCell = null;
+            }
+
             me.tip = me.team = me.point = me.proxy = null;
             me.scheduler.features.eventTooltip.disabled = false;
             me.handler.endDrag();

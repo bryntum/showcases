@@ -207,12 +207,19 @@
             margin          : 0;
         }
 
-        &:has(> .ow-week-free)::before {
+        &:has(> .ow-week-free, > .ow-week-drop)::before {
             content       : '';
             position      : absolute;
             inset         : 5px;
             border        : 1px dashed var(--ow-c-transit);
             border-radius : var(--ow-c-radius);
+        }
+
+        /* A crew held over the day, the drop target: the Day view's subtle blue tint with a thin blue outline
+           (schedule/trips.css, .ow-trip-drop) */
+        &:has(> .ow-week-drop)::before {
+            border           : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+            background-color : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
         }
 
         &:has(> .ow-week-nogo) {
