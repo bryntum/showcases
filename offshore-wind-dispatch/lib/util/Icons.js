@@ -1,7 +1,8 @@
 /**
  * The showcase's icons, one set drawn in one weight: Phosphor Light (MIT, `@phosphor-icons/core`, the set Logistics
- * Control Tower uses) for the generic ones, Tabler Icons (MIT, below) for the vessels and the helicopter, and two drawn
- * here in Phosphor's 256 grid and 12 unit line for what neither has: the offshore substation and the turbine.
+ * Control Tower uses) for the generic ones, Tabler Icons (MIT, below) for the vessels and the helicopter, and one drawn
+ * here in Phosphor's 256 grid and 12 unit line for what neither has: the turbine. The map's substation is Phosphor's
+ * lightning in a square the map draws (MapDrawing).
  *
  * Every icon is inline SVG in `currentColor`, so it takes the colour of its text in light and dark. `?raw` imports
  * the few SVGs used as strings, the bundle holds these and no others.
@@ -56,10 +57,6 @@ const tabler = {
 
 // The drawn icons: stroked paths in Phosphor Light's grid (256) and line (12), round caps and joins
 const drawn = {
-    // A square platform with a lightning bolt
-    substation : `
-        <rect x="28" y="28" width="200" height="200" rx="16"/>
-        <path d="M142 56 L88 140 H128 L114 200 L168 116 H128 Z"/>`,
     // Wind turbine: tower, three blades from the hub
     turbine : `
         <path d="M120 112 L114 228 H142 L136 112"/>
@@ -96,7 +93,7 @@ export function iconPath(name) {
 
 /**
  * An icon as inline SVG
- * @param {String} name A Phosphor name above, or `ctv`, `swath`, `heli`, `substation`, `turbine`
+ * @param {String} name A Phosphor name above, or `ctv`, `swath`, `heli`, `turbine`
  * @param {String} [cls] Extra classes
  * @returns {String}
  */

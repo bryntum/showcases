@@ -270,6 +270,8 @@ export default class WeekBoard extends Scheduler {
     // A vessel's day with trips: its times top left, its seats top right, its turbines, and the seats bar
     renderCell({ eventRecord : cell, renderData }) {
         renderData.cls['ow-cell']      = 1;
+        // Its wrapper inset into the day, as a free day's placeholder (week/board.css)
+        renderData.wrapperCls['ow-cell-wrap'] = 1;
         renderData.cls['ow-cell-late'] = cell.late > 0;
         renderData.cls['ow-cell-heli'] = cell.resource?.mode === 'heli';
 

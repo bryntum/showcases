@@ -78,7 +78,11 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        const { scheduler, board, map, tray, schedulePane, notice } = me.widgetMap;
+        // The app's parts by ref, kept from here on: on a phone the two halves move into the tab panel and back
+        // (updatePhone), which takes their widgets out of the container's own widgetMap
+        me.parts = { ...me.widgetMap };
+
+        const { scheduler, board, map, tray, schedulePane, notice } = me.parts;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
         me.drag            = new TeamDrag({ tray, scheduler, board, handler : me });
@@ -116,7 +120,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             tabs : {
                 type : 'phonetabs',
                 onTabChange({ activeItem }) {
-                    me.tab = activeItem && activeItem === me.widgetMap.side ? 'map' : 'schedule';
+                    me.tab = activeItem && activeItem === me.parts.side ? 'map' : 'schedule';
                 }
             },
             main : {
@@ -154,7 +158,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     }
 
     get scheduler() {
-        return this.widgetMap.scheduler;
+        return this.parts.scheduler;
     }
 
     get trips() {
@@ -200,7 +204,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         await scheduler.forecastHeader.refresh();
 
         if (view === 'week') {
-            me.widgetMap.schedulePane.showView('week');
+            me.parts.schedulePane.showView('week');
         }
     }
 
@@ -212,7 +216,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     async openDay(index) {
         const me = this;
 
-        me.widgetMap.schedulePane.showView('day');
+        me.parts.schedulePane.showView('day');
 
         if (index !== me.dispatch.dayIndex) {
             me.clearPreview();
@@ -319,13 +323,13 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const
             me                               = this,
             { dispatch }                     = me,
-            { kpis, tray, scheduler, board } = me.widgetMap;
+            { kpis, tray, scheduler, board } = me.parts;
 
         kpis.draw({ site : dispatch.site.name, kpis : dayKpis(me.trips, dispatch) });
         tray.draw(dispatch.waitingTeams, me.lifted);
         scheduler.refreshDispatch();
         board.draw(scheduler.weekTrips);
-        me.widgetMap.schedulePane.refreshBar();
+        me.parts.schedulePane.refreshBar();
         me.refreshSide();
     }
 
@@ -336,7 +340,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const
             me                                           = this,
             { dispatch, trips, drop, selectedTurbine }   = me,
-            { map, card }                                = me.widgetMap,
+            { map, card }                                = me.parts,
             selectedTrip                                 = me.scheduler.selectedEvents[0] ?? null,
             turbine                                      = drop?.job.turbine ?? selectedTurbine;
 
@@ -386,7 +390,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.reviewIndex = -1;
 
         if (changes.length) {
-            me.widgetMap.notice.draw({ ...me.forecastPlanner.summary(changes), changes : changes.length });
+            me.parts.notice.draw({ ...me.forecastPlanner.summary(changes), changes : changes.length });
             me.reviewNext();
         }
     }
@@ -395,7 +399,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     undoForecast() {
         const me = this;
 
-        me.widgetMap.notice.hidden = true;
+        me.parts.notice.hidden = true;
 
         return me.replan(() => {
             me.dispatch.waiting = me.forecastPlanner.undo();
@@ -499,7 +503,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             me.fitKey = key;
 
             if (!me.keepMapView) {
-                me.widgetMap.map.fitTo(follow ? fit : null);
+                me.parts.map.fitTo(follow ? fit : null);
             }
         }
     }
@@ -524,7 +528,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, board, column, schedulePane, side, main, tabs } = this.widgetMap ?? {};
+        const { scheduler, board, column, schedulePane, side, main, tabs } = this.parts ?? {};
 
         // Applied again once the items exist, see construct
         if (!scheduler) {
@@ -537,20 +541,29 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         side.flex       = phone ? 1 : null;
         side.width      = phone ? null : 400;
 
-        if (column.owner !== home) {
+        // The halves' new home shown first: added to a hidden container, they would stay rendered where they were
+        tabs.hidden = !phone;
+        main.hidden = phone;
+
+        if (phone ? !tabs.includes(column) : column.element.parentElement !== main.contentElement) {
+            // Back side by side: the TabPanel that took them left them in this container's items, so they are removed
+            // and added again for the elements to move back
+            if (!phone) {
+                tabs.remove(column, side);
+                main.remove(column, side);
+            }
+
             home.add([column, side]);
             // A tab panel shows one of them, side by side both
             column.hidden = side.hidden = false;
         }
 
-        tabs.hidden = !phone;
-        main.hidden = phone;
         this.element?.classList.toggle('ow-phone', phone);
         this.updateTab(this.tab);
     }
 
     updateTab(tab) {
-        const { tabs } = this.widgetMap ?? {};
+        const { tabs } = this.parts ?? {};
 
         if (tabs && this.phone) {
             tabs.activeTab = tab === 'map' ? 1 : 0;

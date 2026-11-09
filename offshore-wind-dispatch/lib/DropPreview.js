@@ -47,7 +47,7 @@ export default Target => class DropPreview extends Target {
 
     // The team's chip stays in the tray, dimmed. Not drawn anew, DragHelper holds on to the chip it drags from
     liftTeam(teamId) {
-        const chip = this.widgetMap.tray.chipOf(teamId);
+        const chip = this.parts.tray.chipOf(teamId);
 
         this.lifted = teamId;
         this.markFitting(teamId);
@@ -417,7 +417,7 @@ export default Target => class DropPreview extends Target {
         this.clearFitting();
         this.clearPreview();
         this.lifted = null;
-        this.widgetMap.tray.draw(this.dispatch.waitingTeams);
+        this.parts.tray.draw(this.dispatch.waitingTeams);
         this.refreshSide();
     }
 };

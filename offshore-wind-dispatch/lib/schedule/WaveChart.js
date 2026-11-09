@@ -293,6 +293,8 @@ export default class WaveChart {
             xKey          : 't',
             yKey          : key,
             yName         : 'Wave height',
+            // One line in two colours, not two legend items (the legend is off; AG Charts warns of the two fills)
+            showInLegend  : false,
             interpolation : { type : 'linear' },
             highlight,
             fill,

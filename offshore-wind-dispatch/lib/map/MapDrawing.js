@@ -38,7 +38,7 @@ export function mapSvg(site) {
     </g>
     <g class="ow-oss" transform="translate(${oss.x.toFixed(1)} ${oss.y.toFixed(1)})">
         <title>Offshore substation</title>
-        <rect x="-9" y="-9" width="18" height="18" rx="2.5"/>${placed('substation', 12)}
+        <rect x="-9" y="-9" width="18" height="18" rx="2.5"/>${placed('lightning', 15)}
     </g>
     <g class="ow-markers" role="listbox" aria-label="The ${turbineIds.length} turbines, arrow keys move, Enter selects">
         ${turbineIds.map(id => {

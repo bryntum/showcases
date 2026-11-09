@@ -40,8 +40,10 @@
    top as from its side: the buttons 12px from the top and the end, a little less than the cards' content inset to keep
    the schedule's rows in view at 1600 x 960; the title on the content's 16px inset, lined up with what is under it */
 .ow-panel-bar.b-toolbar {
-    --b-toolbar-gap     : 12px;
-    --b-toolbar-padding : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
+    --b-toolbar-gap        : 12px;
+    --b-toolbar-padding    : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
+    /* On the card's own surface, in dark as in light (the theme's is the panel's, a shade off the card's) */
+    --b-toolbar-background : transparent;
 
     flex             : none;
     box-sizing       : border-box;

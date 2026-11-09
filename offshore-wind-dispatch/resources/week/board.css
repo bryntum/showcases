@@ -115,12 +115,16 @@
 
     /* A vessel's day with trips, Bryntum's event element as the card: the work tint with a hairline border, its text
        inset 6px 8px 10px from the card's edge (the 1px border included), room for the seats bar at its foot */
+    /* A day's trips: a tinted card without a border, inset into the day as a free day's placeholder (5px, below) */
+    .b-sch-event-wrap.ow-cell-wrap {
+        box-sizing     : border-box;
+        padding-inline : 5px;
+    }
+
     .b-sch-event-wrap .b-sch-event.ow-cell {
         --b-sch-event-background     : var(--ow-c-work-tint);
         --b-sch-event-color          : var(--ow-ink);
-        --b-sch-event-border-width   : 1px;
-        --b-sch-event-border-style   : solid;
-        --b-sch-event-border-color   : var(--ow-c-work-line);
+        --b-sch-event-border-width   : 0;
         --b-sch-event-border-radius  : var(--ow-c-radius);
         --b-sch-event-font-size      : 12px;
         --b-sch-event-padding-inline : 7px;
@@ -167,8 +171,7 @@
 
     /* Back after its window: orange, how late */
     .b-sch-event-wrap .b-sch-event.ow-cell-late {
-        --b-sch-event-background   : var(--ow-c-risk-tint);
-        --b-sch-event-border-color : var(--ow-c-risk-line);
+        --b-sch-event-background : var(--ow-c-risk-tint);
 
         .ow-cell-head, .ow-cell-jobs {
             color : var(--ow-c-risk-ink);
@@ -179,8 +182,11 @@
         }
     }
 
-    /* The seats bar: a thin line inside the cell's foot, on a faint track. Positioned inside the cell's border */
+    /* The seats bar: a thin line in the cell's foot, on a faint track. Not multiplied with the card (the feature's
+       blend), which darkens it on the dark card */
     .ow-cell {
+        --b-percent-bar-blend-mode : normal;
+
         .b-task-percent-bar-outer {
             position      : absolute;
             inset         : auto 7px 4px;
@@ -190,9 +196,9 @@
             background    : color-mix(in srgb, var(--ow-c-transit) 35%, transparent);
         }
 
-        /* The feature declares its colour on the bar itself, so it is set here */
+        /* The feature declares its colour on the bar itself, so it is set here: the bright blue of the now line */
         .b-task-percent-bar {
-            --b-percent-bar-background : var(--ow-c-work);
+            --b-percent-bar-background : var(--ow-now);
 
             height        : 100%;
             border-radius : 2px;
