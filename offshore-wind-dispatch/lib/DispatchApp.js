@@ -206,17 +206,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     //region Plan state
 
     /**
-     * Sets each trip's status against its window: what the forecast changed, else past the window or on plan
+     * Sets each trip's status: moved to tomorrow, else past its window (even if the forecast changed it), else as is
      */
     evaluate() {
         const { dispatch } = this;
 
         this.trips.forEach(trip => {
-            const status = trip.change ?? (trip.endMinute > dispatch.closeOf(trip.resource) ? 'at-risk' : 'on-plan');
+            const late = trip.endMinute > dispatch.closeOf(trip.resource);
 
-            if (trip.status !== status) {
-                trip.status = status;
-            }
+            // A field set to its own value is no change, the trip is not redrawn
+            trip.status = trip.change === 'moved' ? 'moved' : late ? 'at-risk' : trip.change ?? 'on-plan';
         });
     }
 

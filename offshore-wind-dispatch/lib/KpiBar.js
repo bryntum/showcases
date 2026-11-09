@@ -3,8 +3,8 @@ import { icon } from './util/Icons.js';
 import { dayShort, duration, hhmm, nextDay } from './util/Time.js';
 
 /**
- * The day's counts: turbines due, turbines on a trip, and either the turbines a forecast moved to the next day or the
- * trips past their window
+ * The day's counts: turbines due, turbines on a trip, and either the trips past their window (when any) or the turbines
+ * a forecast moved to the next day
  * @param {TripModel[]} trips
  * @param {DispatchState} dispatch
  * @returns {Object[]} `{ label, value, tone }`
@@ -18,9 +18,10 @@ export function dayKpis(trips, dispatch) {
     return [
         { label : 'Due today', value : dispatch.dueTurbines.length },
         { label : 'Assigned', value : assigned.size },
-        moved.size ?
-            { label : `Moved to ${nextDay}`, value : moved.size, tone : 'alert' } :
-            { label : 'At risk', value : atRisk, tone : 'warn' }
+        // One slot: trips past their window need acting on now, so they win over what a forecast already moved
+        atRisk || !moved.size ?
+            { label : 'At risk', value : atRisk, tone : 'warn' } :
+            { label : `Moved to ${nextDay}`, value : moved.size, tone : 'alert' }
     ];
 }
 

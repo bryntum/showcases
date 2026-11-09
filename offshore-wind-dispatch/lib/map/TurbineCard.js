@@ -27,7 +27,8 @@ export function cardInfo({ state, trips, turbine, drop }) {
     const
         held    = drop?.job.turbine === turbine,
         trip    = held ? drop.trip : trips.find(each => each.turbines.includes(turbine)),
-        trimmed = trips.find(each => each.status === 'trimmed' && each.removed?.includes(turbine)),
+        // Its trip's status may be `at-risk` since, the turbine still waits for tomorrow
+        trimmed = trips.find(each => each.change === 'trimmed' && each.removed?.includes(turbine)),
         // Where it stands: held over a trip, moved to tomorrow, on a trip, or neither
         stand   = standOf(held, trip, trimmed),
         stop    = trip?.legs.find(leg => leg.turbine === turbine),

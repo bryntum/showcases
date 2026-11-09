@@ -184,6 +184,43 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)')).toHaveCount(1);
     });
 
+    test('a trip the forecast brought forward, dragged past its window, is at risk', async({ page }) => {
+        await open(page, '?state=forecast');
+
+        const third = page.locator('.ow-kpis .ow-kpi').nth(2);
+
+        // Right after the forecast nothing is past its window, the third count is what it moved to tomorrow
+        await expect(third).toContainText('Moved to');
+        await expect(third).toHaveClass(/\bow-kpi-alert\b/);
+
+        const id = await page.evaluate(() => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.change === 'pulled'),
+                // Leave half an hour before the window closes, so it is back after it
+                by   = app.dispatch.closeOf(trip.resource) - 30 - trip.departs;
+
+            trip.startDate = new Date(trip.startDate.getTime() + by * 60000);
+            app.onTripDrop({ eventRecords : [trip], valid : true });
+
+            return trip.id;
+        });
+
+        expect(await page.evaluate(id => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.id === id);
+
+            return [trip.change, trip.status, trip.endMinute > app.dispatch.closeOf(trip.resource)];
+        }, id)).toEqual(['pulled', 'at-risk', true]);
+        await expect(trip(page, id).locator(':scope > .b-sch-event')).toHaveClass(/\bow-trip-at-risk\b/);
+        await expect(page.locator('.ow-map-label-risk')).not.toHaveCount(0);
+        // One slot for the third count: a trip past its window wins over the turbines moved to tomorrow
+        await expect(third).toContainText('At risk');
+        await expect(third.locator('b')).toHaveText('1');
+        await expect(third).toHaveClass(/\bow-kpi-warn\b/);
+    });
+
 });
 
 test.describe('Offshore Wind Dispatch trips', () => {
