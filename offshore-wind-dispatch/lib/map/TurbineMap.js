@@ -29,7 +29,7 @@ const directions = {
  *   fires `selectionChange`. Each marker carries `aria-selected`
  * - Hovering a turbine fires `turbineHover`, `ring()` rings the turbines of a trip
  * - The map is one tab stop: the arrow keys move the focus to the nearest turbine in that direction
- * - The tooltip is a TurbineTooltip on the markers, its content from the `tipHtml` function, shown on hover and on
+ * - The tooltip is a TurbineTooltip on the markers, its content from the `tipContent` function, shown on hover and on
  *   keyboard focus
  * - It zooms like a map (MapViewport): the wheel and a trackpad or finger pinch zoom around the pointer, a drag or a
  *   two finger scroll pans. `fitTo()` fits it to a trip, the Show all button (ShowAllButton) goes back to the whole
@@ -56,12 +56,12 @@ export default class TurbineMap extends Widget {
         site : null,
 
         /**
-         * Returns the HTML of a turbine's tooltip
+         * Returns the content of a turbine's tooltip
          * @config {Function}
          * @param {String} turbine The turbine's ID
-         * @returns {String}
+         * @returns {Object} DomConfig
          */
-        tipHtml : null,
+        tipContent : null,
 
         cls : 'ow-map'
     };
@@ -118,7 +118,7 @@ export default class TurbineMap extends Widget {
         me.markerTip = Widget.create({
             type       : 'turbinetooltip',
             forElement : me.element,
-            getHtml    : ({ activeTarget }) => me.tipHtml?.(activeTarget.dataset.turbine) ?? ''
+            getHtml    : ({ activeTarget }) => me.tipContent?.(activeTarget.dataset.turbine) ?? ''
         });
 
         me.svgElement = me.element.querySelector('.ow-map-svg');

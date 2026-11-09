@@ -74,15 +74,15 @@
     }
 
     .ow-legend, .ow-tray-title, .ow-team-job, .ow-certs, .ow-util-text, .ow-axis-label small,
-    .ow-side .ow-panel-bar, .ow-schedule .ow-panel-bar:not(:has(.ow-forecast-button)),
-    .ow-schedule .ow-panel-bar :is(.ow-panel-title, .ow-seg-buttons) {
+    .ow-side .ow-panel-bar, .ow-schedule .ow-panel-bar:not(:has(.ow-forecast-button:not(.b-hidden))),
+    .ow-schedule .ow-panel-bar :is(.ow-panel-title, .ow-panel-count, .b-button-group, .b-toolbar-fill) {
         display : none;
     }
 
     /* Only the next forecast's button stays, across the width */
-    .ow-schedule .ow-panel-bar {
-        height  : 40px;
-        padding : 0 12px;
+    .ow-schedule .ow-panel-bar.b-toolbar {
+        min-height : 40px;
+        padding    : 0 12px;
 
         .ow-forecast-button {
             flex            : 1;
@@ -132,7 +132,7 @@
         flex-wrap : wrap;
         padding   : 8px 12px 8px 10px;
 
-        > span {
+        > .ow-toast-text {
             flex : 1 1 80%;
         }
     }

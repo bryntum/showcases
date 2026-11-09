@@ -1,55 +1,42 @@
 /* The notice of the forecast (ForecastNotice.js) and the messages after a drop (DropPreview.js) */
 
-/* The forecast's notice */
+/* The forecast's notice, a Container with an hbox layout, its Undo and Review buttons Bryntum Buttons */
 .ow-toast.b-widget {
-    flex             : none;
-    display          : flex;
-    align-items      : center;
-    gap              : 10px;
-    padding          : 8px 16px 8px 13px;
-    border-block-end : 1px solid var(--ow-border);
+    flex                : none;
+    gap                 : 10px;
+    padding             : 8px 16px 8px 13px;
+    border-block-end    : 1px solid var(--ow-border);
     border-inline-start : 3px solid var(--ow-cancel);
-    background-color : color-mix(in srgb, var(--ow-cancel) 7%, var(--ow-surface));
+    background-color    : color-mix(in srgb, var(--ow-cancel) 7%, var(--ow-surface));
 
     &.b-hidden {
         display : none;
     }
 
-    > .ow-icon {
-        width  : 22px;
-        height : 22px;
-        color  : var(--ow-cancel);
-    }
-
-    > span {
+    .ow-toast-text {
         flex        : 1;
+        display     : flex;
+        align-items : center;
+        gap         : 10px;
         line-height : 1.4;
         font-size   : 12.5px;
+
+        > .ow-icon-host > .ow-icon {
+            width  : 22px;
+            height : 22px;
+            color  : var(--ow-cancel);
+        }
 
         b {
             display : block;
         }
     }
+}
 
-    button {
-        flex          : none;
-        display       : flex;
-        align-items   : center;
-        gap           : 5px;
-        height        : 30px;
-        padding       : 0 12px;
-        border        : 1px solid var(--ow-border);
-        border-radius : 6px;
-        background    : none;
-        font-weight   : 600;
-        font-size     : 12px;
-    }
-
-    .ow-toast-primary {
-        border-color     : transparent;
-        color            : var(--b-color-white);
-        background-color : var(--ow-plan);
-    }
+.ow-toast-primary.b-button {
+    --b-button-color            : var(--b-color-white);
+    --b-button-background       : var(--ow-plan);
+    --b-button-hover-background : color-mix(in srgb, var(--ow-plan) 88%, var(--b-color-black));
 }
 
 /* Messages after a drop */

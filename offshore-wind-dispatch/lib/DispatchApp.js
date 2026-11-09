@@ -2,14 +2,12 @@ import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import { reachable } from './plan/Planner.js';
-import { turbineIds } from './plan/Farm.js';
 import TripModel from './model/TripModel.js';
 import DropPreview from './DropPreview.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
-import { cardHtml, cardInfo, tipInfo } from './map/TurbineCard.js';
-import { scheduleBarHtml, sideBarHtml } from './TitleBars.js';
+import { cardInfo, tipContent, tipInfo } from './map/TurbineCard.js';
 import { toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
@@ -82,7 +80,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        const { scheduler, map, tray } = me.widgetMap;
+        const { scheduler, map, tray, schedulePane, side, notice } = me.widgetMap;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
         me.drag            = new TeamDrag({ source : tray.element, scheduler, handler : me });
@@ -96,7 +94,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
         me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
-        me.element.addEventListener('click', event => me.onAction(event));
+        schedulePane.on({ forecast : 'applyForecast', thisObj : me });
+        notice.on({ undo : 'undoForecast', review : 'reviewNext', thisObj : me });
+        side.on({ mapViewChange : 'onMapViewChange', thisObj : me });
 
         // The responsive state may have been set before the items existed
         me.updatePhone(Boolean(me.phone));
@@ -124,7 +124,12 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                 layout : 'hbox',
                 items  : {
                     schedulePane : { type : 'schedulepanel', dispatch : me.dispatch, data },
-                    side         : { type : 'mappanel', site, tipHtml : turbine => me.turbineTipHtml(turbine) }
+                    side         : {
+                        type       : 'mappanel',
+                        site,
+                        mapView    : me.mapView,
+                        tipContent : turbine => me.turbineTip(turbine)
+                    }
                 }
             }
         };
@@ -273,7 +278,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         });
         tray.draw(dispatch.waitingTeams, me.lifted);
         scheduler.refreshDispatch();
-        me.refreshBars();
+        me.widgetMap.schedulePane.refreshBar();
         me.refreshSide();
     }
 
@@ -307,13 +312,13 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // The map's tooltip on a turbine: the card's turbine at the forecast wave height, its job, team and when a trip
     // reaches it, and its rotor
-    turbineTipHtml(turbine) {
+    turbineTip(turbine) {
         const
             { dispatch, trips, drop } = this,
             selectedTrip              = this.scheduler.selectedEvents[0] ?? null,
             info                      = tipInfo({ state : dispatch, trips, turbine, drop, selectedTrip });
 
-        return `<div class="ow-card ow-card-tip" data-tone="${info.tone}">${cardHtml(info, 'ow-tip')}</div>`;
+        return tipContent(info);
     }
 
     // The Access view: the turbines the selected trip could still add an hour's stop at
@@ -476,51 +481,16 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     //region Toolbar buttons, tabs and the responsive layout
 
-    onAction(event) {
-        const
-            me     = this,
-            button = event.target.closest?.('[data-action]'),
-            action = button?.dataset.action,
-            { scheduler } = me;
-
-        const actions = {
-            forecast   : () => me.applyForecast(),
-            undo       : () => me.undoForecast(),
-            review     : () => me.reviewNext(),
-            'zoom-out' : () => scheduler.zoomStep = Math.max(scheduler.zoomStep - 1, 0),
-            'zoom-in'  : () => scheduler.zoomStep = Math.min(scheduler.zoomStep + 1, scheduler.lastZoomStep),
-            'zoom-day' : () => scheduler.zoomStep = 0,
-            view       : () => me.mapView = button.dataset.view
-        };
-
-        if (actions[action]) {
-            actions[action]();
-            me.refreshBars();
-        }
+    // The Status / Access switch of the map's header
+    onMapViewChange({ mapView }) {
+        this.mapView = mapView;
     }
 
-    // The schedule's and the map's title bars
-    refreshBars() {
-        const
-            { dispatch, scheduler, mapView } = this,
-            { scheduleBar, sideBar }         = this.widgetMap;
+    updateMapView(mapView) {
+        const { map, side } = this.widgetMap ?? {};
 
-        scheduleBar.html = scheduleBarHtml({
-            vessels      : dispatch.vessels,
-            next         : dispatch.nextForecast,
-            zoomStep     : scheduler.zoomStep,
-            lastZoomStep : scheduler.lastZoomStep
-        });
-        sideBar.html = sideBarHtml({
-            site     : dispatch.site.name,
-            turbines : turbineIds.length,
-            due      : dispatch.dueTurbines.length,
-            mapView
-        });
-    }
-
-    updateMapView() {
-        if (this.widgetMap?.map) {
+        if (map) {
+            side.mapView = mapView;
             this.refreshSide();
         }
     }

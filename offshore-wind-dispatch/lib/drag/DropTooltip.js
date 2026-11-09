@@ -1,36 +1,47 @@
-import { Rectangle, StringHelper, Tooltip } from '@bryntum/core-enterprise';
-import { icon } from '../util/Icons.js';
+import { Rectangle, Tooltip } from '@bryntum/core-enterprise';
+import { iconConfig } from '../util/Icons.js';
 import { hhmm } from '../util/Time.js';
 
 /**
- * The tooltip of a team held over a trip
+ * The content of the tooltip of a team held over a trip, as DomConfigs
  * @param {Object} drop See DispatchApp#previewDrop
  * @param {Boolean} [keyboard] Held from the keyboard, the tooltip lists the keys
- * @returns {String} HTML
+ * @returns {Object[]} DomConfig
  */
-export function dropTipHtml({ trip, team, job, result, reach, close }, keyboard = false) {
+export function dropTipContent({ trip, team, job, result, reach, close }, keyboard = false) {
     const
-        text  = StringHelper.encodeHtml,
         // A vessel with no trip left to join gets a new one
-        name  = trip.draft ? `a new trip, ${text(trip.id)} from port at ${hhmm(trip.departs)}` : text(trip.id),
-        head  = result.valid ? `${icon('check-circle')} ${text(job.turbine)} fits on ${name}` :
-            `${icon('warning')} ${text(job.turbine)} does not fit on ${name}`,
-        certs = result.certs.map(cert => `${text(cert)} ${team.certs.includes(cert) ? '✓' : '✗'}`).join(' '),
-        keys  = keyboard ?
-            '<div class="ow-drop-tip-keys"><kbd>←</kbd> <kbd>→</kbd> another trip · <kbd>Enter</kbd> book · <kbd>Esc</kbd> cancel</div>' :
-            '';
+        name  = trip.draft ? `a new trip, ${trip.id} from port at ${hhmm(trip.departs)}` : trip.id,
+        head  = result.valid ? [iconConfig('check-circle'), { tag : 'span', text : `${job.turbine} fits on ${name}` }] :
+            [iconConfig('warning'), { tag : 'span', text : `${job.turbine} does not fit on ${name}` }],
+        certs = result.certs.map(cert => `${cert} ${team.certs.includes(cert) ? '✓' : '✗'}`).join(' '),
+        rows  = [
+            ['On station', `${hhmm(result.stop.from)} – ${hhmm(result.stop.to)}`],
+            ['Back in port by', [{ tag : 'b', text : hhmm(result.back) }, `, window closes ${hhmm(close)}`]],
+            ['Seats', `${result.seats} / ${trip.resource?.seats} PAX`],
+            ['Certificates', certs]
+        ].flatMap(([term, value]) => [
+            { tag : 'dt', text : term },
+            Array.isArray(value) ? { tag : 'dd', children : value } : { tag : 'dd', text : value }
+        ]);
 
-    return `
-        <div class="ow-drop-tip-head">${head}</div>
-        <dl>
-            <dt>On station</dt><dd>${hhmm(result.stop.from)} – ${hhmm(result.stop.to)}</dd>
-            <dt>Back in port by</dt><dd><b>${hhmm(result.back)}</b>, window closes ${hhmm(close)}</dd>
-            <dt>Seats</dt><dd>${result.seats} / ${trip.resource?.seats} PAX</dd>
-            <dt>Certificates</dt><dd>${certs}</dd>
-        </dl>
-        <div class="ow-drop-tip-foot">${result.valid ?
-        `${text(trip.id)} can still reach ${reach.size} turbines before ${hhmm(close)}, see the map` :
-        text(result.reason)}</div>${keys}`;
+    return [
+        { class : 'ow-drop-tip-head', children : head },
+        { tag : 'dl', children : rows },
+        {
+            class : 'ow-drop-tip-foot',
+            text  : result.valid ?
+                `${trip.id} can still reach ${reach.size} turbines before ${hhmm(close)}, see the map` :
+                result.reason
+        },
+        keyboard && {
+            class    : 'ow-drop-tip-keys',
+            children : [
+                { tag : 'kbd', text : '←' }, ' ', { tag : 'kbd', text : '→' }, ' another trip · ',
+                { tag : 'kbd', text : 'Enter' }, ' book · ', { tag : 'kbd', text : 'Esc' }, ' cancel'
+            ]
+        }
+    ];
 }
 
 /**
@@ -70,7 +81,7 @@ export default class DropTooltip extends Tooltip {
      * @param {Boolean} keyboard Held from the keyboard
      */
     showDrop(drop, point, keyboard) {
-        this.html = dropTipHtml(drop, keyboard);
+        this.html = dropTipContent(drop, keyboard);
         this.element.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
         this.showBy({
             target : new Rectangle(point.x, point.y, 1, 1),

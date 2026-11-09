@@ -80,14 +80,15 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
   dependency
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`), the schedule
-    panel and the map panel (`panel/`), and the phone tabs. It holds the selection and wires the parts together.
-    `TitleBars.js` draws the panel bars and the legend, `DropPreview.js` (a mixin of the app) previews and books a
-    dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray and
-    `ForecastNotice.js` the forecast notice
-  * `panel/` the panels of the app, each a Container: `SchedulePanel` (the title bar, the tray, the notice, the
-    scheduler and the legend), `MapPanel` (the title bar, the map and the turbine card) and `PhoneTabs` (a `TabPanel`
-    with the arrow keys)
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`, a Container of
+    `KpiClock`, `KpiWindow` and three `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
+    tabs. It holds the selection and wires the parts together. `DropPreview.js` (a mixin of the app) previews and
+    books a dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray
+    (a Container of `TeamChip` widgets, the drag sources), `ForecastNotice.js` the forecast notice (a Container with
+    two Buttons), `IconButton.js` a Button with an inline SVG icon and `Legend.js` the legend
+  * `panel/` the panels of the app, each a Panel whose `tbar` is the title bar, with `ButtonGroup`s for the zoom and
+    the Status / Access switch: `SchedulePanel` (the tray, the notice, the scheduler and the legend), `MapPanel` (the
+    map and the turbine card) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
     over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
     that follows the pointer)

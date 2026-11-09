@@ -8,7 +8,7 @@ import { isChain } from '../model/TripData.js';
 import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
-import { tripTipHtml } from './TripTip.js';
+import { tripTipContent } from './TripTip.js';
 import { toDate } from '../util/Time.js';
 
 const
@@ -169,7 +169,7 @@ export default class DispatchScheduler extends Scheduler {
                     validatorFn             : context => me.validateTripDrag(context)
                 },
                 eventTooltip : {
-                    template : ({ eventRecord }) => tripTipHtml(eventRecord.trip, me.dispatch)
+                    template : ({ eventRecord }) => tripTipContent(eventRecord.trip, me.dispatch)
                 },
                 // Drawn from the data, not created or removed by hand. Red when the plan breaks it
                 dependencies : {

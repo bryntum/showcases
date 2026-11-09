@@ -1,6 +1,6 @@
 import { DomHelper } from '@bryntum/core-enterprise';
-import { teamChipHtml } from '../TeamTray.js';
-import { icon } from '../util/Icons.js';
+import { teamChipContent } from '../TeamChip.js';
+import { iconConfig } from '../util/Icons.js';
 
 /**
  * The chip that follows the pointer while a team is dragged, or sits on the trip when the team is held from the
@@ -15,10 +15,13 @@ import { icon } from '../util/Icons.js';
  */
 export function createChip(team, job) {
     return DomHelper.createElement({
-        class   : 'ow-drag-chip',
-        dataset : { state : 'neutral' },
-        html    : `<span class="ow-drag-team">${teamChipHtml(team, job, true)}</span>` +
-            `<span class="ow-drag-status" aria-hidden="true" hidden></span>${icon('hand-grabbing', 'ow-drag-hand')}`
+        class    : 'ow-drag-chip',
+        dataset  : { state : 'neutral' },
+        children : [
+            { tag : 'span', class : 'ow-drag-team', children : teamChipContent(team, job, true) },
+            { tag : 'span', class : 'ow-drag-status', hidden : true, 'aria-hidden' : 'true' },
+            iconConfig('hand-grabbing', 'ow-drag-hand')
+        ]
     });
 }
 

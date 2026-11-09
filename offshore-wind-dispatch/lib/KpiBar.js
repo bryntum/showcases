@@ -1,6 +1,9 @@
-import { StringHelper, Widget } from '@bryntum/core-enterprise';
-import { icon } from './util/Icons.js';
-import { dayShort, duration, hhmm, nextDay } from './util/Time.js';
+import { Container } from '@bryntum/core-enterprise';
+import { nextDay } from './util/Time.js';
+// Also registers the widget types used below
+import './Kpi.js';
+import './KpiClock.js';
+import './KpiWindow.js';
 
 /**
  * The day's counts: turbines due, turbines on a trip, and either the trips past their window (when any) or the turbines
@@ -26,20 +29,28 @@ export function dayKpis(trips, dispatch) {
 }
 
 /**
- * The header: the site, today and the time, then the headline, when the crew transfer vessels' weather window closes
- * and how long is left, then the day's counts. Everything else on screen explains the window. When a forecast closes
- * it earlier the headline turns red and keeps the old time struck through.
+ * The header: the site, today and the time (KpiClock), then the headline, when the crew transfer vessels' weather
+ * window closes and how long is left (KpiWindow), then the day's counts (Kpi). Everything else on screen explains the
+ * window.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
  */
-export default class KpiBar extends Widget {
+export default class KpiBar extends Container {
     static $name = 'KpiBar';
 
     static type = 'kpibar';
 
     static configurable = {
-        cls : 'ow-kpis'
+        cls    : 'ow-kpis',
+        layout : { type : 'hbox', align : 'center' },
+        items  : {
+            clock  : { type : 'kpiclock' },
+            window : { type : 'kpiwindow' },
+            first  : { type : 'kpi' },
+            second : { type : 'kpi' },
+            third  : { type : 'kpi' }
+        }
     };
 
     /**
@@ -52,19 +63,11 @@ export default class KpiBar extends Widget {
      * @param {Object[]} values.kpis `{ label, value, tone }`, tone `warn` or `alert` when it needs attention
      */
     draw({ site, now, closes, was, kpis }) {
-        const
-            text  = StringHelper.encodeHtml,
-            moved = was != null && was !== closes;
+        const { clock, window, first, second, third } = this.widgetMap;
 
-        this.html = `
-            <div class="ow-clock"><small>${text(site)} · today</small><b>${dayShort}<span class="ow-clock-time">${hhmm(now)}</span></b></div>
-            <div class="ow-window${moved ? ' ow-window-short' : ''}">
-                ${icon('waves')}
-                <span><small>CTV weather window</small><b>Closes ${hhmm(closes)}</b></span>
-                <span class="ow-window-left">${closes > now ? `${duration(closes - now)} left` : 'Closed'}${moved ? `<em>was ${hhmm(was)}</em>` : ''}</span>
-            </div>
-            ${kpis.map(({ label, value, tone }) => `
-            <div class="ow-kpi${tone && value ? ` ow-kpi-${tone}` : ''}"><small>${text(label)}</small><b>${value}</b></div>`).join('')}`;
+        clock.draw({ site, now });
+        window.draw({ now, closes, was });
+        [first, second, third].forEach((kpi, index) => kpi.draw(kpis[index]));
     }
 }
 

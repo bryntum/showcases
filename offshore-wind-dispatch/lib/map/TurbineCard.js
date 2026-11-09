@@ -1,7 +1,7 @@
-import { StringHelper, Widget } from '@bryntum/core-enterprise';
+import { Widget } from '@bryntum/core-enterprise';
 import { rowName, substation } from '../plan/Farm.js';
 import { appendStop } from '../plan/Planner.js';
-import { icon } from '../util/Icons.js';
+import { iconConfig } from '../util/Icons.js';
 import { duration, hhmm, nextDay } from '../util/Time.js';
 import { stoppedOf } from './MapModel.js';
 import { rotorText, turbineSvg } from './Turbine.js';
@@ -9,7 +9,7 @@ import { rotorText, turbineSvg } from './Turbine.js';
 /**
  * The selected turbine under the map: the illustration with the sea at the forecast wave height against the vessel's
  * limit, then the job, the team, the trip, when, and one line on how it stands against the weather window. The map's
- * tooltip on a turbine shows the same card (cardHtml, tipInfo).
+ * tooltip on a turbine shows the same card (cardContent, tipInfo).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
@@ -26,7 +26,8 @@ const firstSailing = 6 * 60 + 30;
  * @param {Object} [options.drop] A team held over a trip, see DispatchApp#previewDrop
  * @param {TripModel} [options.selectedTrip] The trip selected in the schedule: of the trips serving the turbine (a
  * drop-off and a pickup), its visit is the one shown
- * @returns {Object} `{ name, sub, stand, job, team, trip, when, hs, limit, note, tone, stopped }`
+ * @returns {Object} `{ name, sub, rating, stand, job, team, trip, when, hs, limit, note, tone, stopped }`, the
+ * substation has no `rating`
  */
 export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     const
@@ -98,10 +99,11 @@ function describe(state, turbine) {
     }
 
     return {
-        name : turbine,
-        sub  : `${rowName(turbine)} · ${state.site.turbineMw.toFixed(1)} MW${state.faults.has(turbine) ? ' · stopped' : ''}`,
-        job  : job?.job ?? 'No work due today',
-        team : team ? `${team.name} · ${team.certs.join(', ')}` : '–'
+        name   : turbine,
+        sub    : `${rowName(turbine)}${state.faults.has(turbine) ? ' · stopped' : ''}`,
+        rating : `${state.site.turbineMw.toFixed(1)} MW`,
+        job    : job?.job ?? 'No work due today',
+        team   : team ? `${team.name} · ${team.certs.join(', ')}` : '–'
     };
 }
 
@@ -186,30 +188,54 @@ export function tipInfo({ state, trips, turbine, drop, selectedTrip }) {
 }
 
 /**
- * The card's content: the turbine at the wave height, the job, the team, the trip, when, and the weather note
+ * The card's content as DomConfigs: the turbine at the wave height, the job, the team, the trip, when, and the weather
+ * note
  * @param {Object} info See cardInfo
  * @param {String} [id] Prefix of the IDs in the drawing, unique per card on the page
- * @returns {String} HTML
+ * @returns {Object[]} DomConfig
  */
-export function cardHtml(info, id = 'ow') {
+export function cardContent(info, id = 'ow') {
+    // A stopped turbine's rotor stands still, the wrench marks one under repair
     const
-        text = StringHelper.encodeHtml,
-        // A stopped turbine's rotor stands still, the wrench marks one under repair
-        art  = turbineSvg({ hs : info.hs, limit : info.limit, id, spin : !info.stopped, repair : info.stopped === 'repair' });
+        art  = turbineSvg({ hs : info.hs, limit : info.limit, id, spin : !info.stopped, repair : info.stopped === 'repair' }),
+        rows = [['Team', info.team], ['Trip', info.trip], ['When', info.when], info.rotor && ['Rotor', info.rotor]]
+            .filter(Boolean).flatMap(([term, text]) => [{ tag : 'dt', text : term }, { tag : 'dd', text }]);
 
-    return `
-        <div class="ow-card-art">${art}</div>
-        <div class="ow-card-body">
-            <div class="ow-card-title"><b>${text(info.name)}</b><small>${text(info.sub)}</small></div>
-            <div class="ow-card-job">${text(info.job)}</div>
-            <dl>
-                <dt>Team</dt><dd>${text(info.team)}</dd>
-                <dt>Trip</dt><dd>${text(info.trip)}</dd>
-                <dt>When</dt><dd>${text(info.when)}</dd>
-                ${info.rotor ? `<dt>Rotor</dt><dd>${text(info.rotor)}</dd>` : ''}
-            </dl>
-            <div class="ow-card-note">${icon('waves')}<span>${text(info.note)}</span></div>
-        </div>`;
+    return [
+        // The drawing is SVG markup
+        { class : 'ow-card-art', html : art },
+        {
+            class    : 'ow-card-body',
+            children : [
+                {
+                    class    : 'ow-card-title',
+                    children : [
+                        { tag : 'b', text : info.name },
+                        { tag : 'small', text : info.sub },
+                        // The rating, a small pill with a lightning bolt
+                        info.rating && {
+                            tag      : 'span',
+                            class    : 'ow-card-rating',
+                            children : [iconConfig('lightning'), info.rating]
+                        }
+                    ]
+                },
+                { class : 'ow-card-job', text : info.job },
+                { tag : 'dl', children : rows },
+                { class : 'ow-card-note', children : [iconConfig('waves'), { tag : 'span', text : info.note }] }
+            ]
+        }
+    ];
+}
+
+/**
+ * The map's tooltip on a turbine as DomConfigs: the card's content in a smaller card
+ * @param {Object} info See tipInfo
+ * @returns {Object[]} DomConfig
+ */
+export function tipContent(info) {
+    // In a list, or the config would be the tooltip's own element
+    return [{ class : 'ow-card ow-card-tip', dataset : { tone : info.tone }, children : cardContent(info, 'ow-tip') }];
 }
 
 export default class TurbineCard extends Widget {
@@ -227,7 +253,7 @@ export default class TurbineCard extends Widget {
      */
     draw(info) {
         this.element.dataset.tone = info.tone;
-        this.html = cardHtml(info);
+        this.html = cardContent(info);
     }
 }
 

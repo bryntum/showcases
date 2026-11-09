@@ -13,6 +13,7 @@ import caretDown from '@phosphor-icons/core/assets/light/caret-down-light.svg?ra
 import checkCircle from '@phosphor-icons/core/assets/light/check-circle-light.svg?raw';
 import handGrabbing from '@phosphor-icons/core/assets/light/hand-grabbing-light.svg?raw';
 import hardHat from '@phosphor-icons/core/assets/light/hard-hat-light.svg?raw';
+import lightning from '@phosphor-icons/core/assets/light/lightning-light.svg?raw';
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
 import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
@@ -65,6 +66,7 @@ const phosphor = {
     'check-circle'  : checkCircle,
     'hand-grabbing' : handGrabbing,
     'hard-hat'      : hardHat,
+    lightning,
     warning,
     waves,
     wind,
@@ -101,4 +103,14 @@ export function icon(name, cls = '') {
     }
 
     return phosphor[name].replace('<svg ', `<svg class="${classes}" aria-hidden="true" `);
+}
+
+/**
+ * An icon as a DomConfig, for a widget's `html` or `icon`, or a `children` list (DomSync keeps the SVG it has drawn)
+ * @param {String} name See icon()
+ * @param {String} [cls] Extra classes
+ * @returns {Object} DomConfig
+ */
+export function iconConfig(name, cls = '') {
+    return { tag : 'span', class : 'ow-icon-host', html : icon(name, cls) };
 }

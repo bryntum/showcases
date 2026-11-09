@@ -37,9 +37,13 @@ export default Target => class DropPreview extends Target {
 
     // The team's chip stays in the tray, dimmed. Not drawn anew, DragHelper holds on to the chip it drags from
     liftTeam(teamId) {
+        const chip = this.widgetMap.tray.chipOf(teamId);
+
         this.lifted = teamId;
-        this.widgetMap.tray.element.querySelector(`.ow-team[data-team="${CSS.escape(teamId)}"]`)
-            ?.classList.add('ow-team-lifted');
+
+        if (chip) {
+            chip.lifted = true;
+        }
     }
 
     /**

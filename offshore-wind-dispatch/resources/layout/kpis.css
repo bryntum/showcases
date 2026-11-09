@@ -1,10 +1,8 @@
 /* The KPI header (KpiBar.js): the clock, the weather window and the numbers of the day */
 
-/* KPI header */
+/* KPI header, a Container with an hbox layout */
 .ow-kpis {
     flex             : none;
-    display          : flex;
-    align-items      : center;
     gap              : 22px;
     padding          : 10px 16px;
     background-color : var(--ow-raised);
@@ -25,6 +23,11 @@
         white-space          : nowrap;
         font-variant-numeric : tabular-nums;
     }
+}
+
+/* The clock and each count stack their label over the figure */
+:is(.ow-clock, .ow-kpi).b-widget {
+    display : block;
 }
 
 .ow-clock {

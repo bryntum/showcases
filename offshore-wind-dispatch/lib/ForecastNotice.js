@@ -1,22 +1,47 @@
-import { StringHelper, Widget } from '@bryntum/core-enterprise';
-import { icon } from './util/Icons.js';
+import { Container } from '@bryntum/core-enterprise';
+import { iconConfig } from './util/Icons.js';
+// Also registers the widget types used below
+import './IconButton.js';
 
 /**
  * The notice of a new forecast above the schedule: what it says, what the planner changed because of it, an Undo and
- * a button to go through the changes. Hidden until a forecast changes the plan.
+ * a button to go through the changes. Hidden until a forecast changes the plan. The buttons trigger `undo` and
+ * `review`.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Button
  */
-export default class ForecastNotice extends Widget {
+export default class ForecastNotice extends Container {
     static $name = 'ForecastNotice';
 
     static type = 'forecastnotice';
 
     static configurable = {
         cls    : 'ow-toast',
-        hidden : true
+        hidden : true,
+        layout : { type : 'hbox', align : 'center' },
+        items  : {
+            text : { type : 'widget', cls : 'ow-toast-text' },
+            undo : {
+                type    : 'iconbutton',
+                text    : 'Undo',
+                svg     : 'arrow-undo',
+                onClick : 'up.clickUndo'
+            },
+            review : {
+                type    : 'button',
+                cls     : 'ow-toast-primary',
+                onClick : 'up.clickReview'
+            }
+        }
     };
+
+    afterConstruct() {
+        super.afterConstruct();
+
+        this.element.setAttribute('role', 'status');
+    }
 
     /**
      * Draws the notice and shows it
@@ -26,15 +51,23 @@ export default class ForecastNotice extends Widget {
      * @param {Number} options.changes How many trips changed
      */
     draw({ headline, detail, changes }) {
-        const text = StringHelper.encodeHtml;
+        const { text, review } = this.widgetMap;
 
-        this.html = `
-            ${icon('warning')}
-            <span><b>${text(headline)}</b> ${text(detail)}</span>
-            <button type="button" data-action="undo">${icon('arrow-undo')} Undo</button>
-            <button type="button" class="ow-toast-primary" data-action="review">Review ${changes} ${changes === 1 ? 'change' : 'changes'}</button>`;
-        this.element.setAttribute('role', 'status');
+        text.html = [
+            iconConfig('warning'),
+            { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }
+        ];
+        review.text = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
         this.hidden = false;
+    }
+
+    // Not named onUndo and onReview: trigger() calls such a method for the event
+    clickUndo() {
+        this.trigger('undo');
+    }
+
+    clickReview() {
+        this.trigger('review');
     }
 }
 

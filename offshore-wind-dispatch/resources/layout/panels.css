@@ -1,4 +1,4 @@
-/* The two halves and their title bars (TitleBars.js) */
+/* The two halves and their headers (panel/SchedulePanel.js, panel/MapPanel.js) */
 
 /* The two halves */
 .ow-main {
@@ -18,74 +18,87 @@
     flex : none;
 }
 
-.ow-panel-bar {
-    flex            : none;
-    display         : flex;
-    align-items     : center;
-    justify-content : space-between;
-    gap             : 12px;
-    height          : 44px;
-    padding         : 0 16px;
+/* The Panel's tbar as the title bar: one row 44px high, the title, a note, then the buttons at the end */
+.ow-panel-bar.b-toolbar {
+    --b-toolbar-padding : 0 16px;
+    --b-toolbar-gap     : 12px;
+
+    flex             : none;
+    box-sizing       : border-box;
+    height           : 44px;
+    min-height       : 0;
+    padding          : 0;
     border-block-end : 1px solid var(--ow-border);
+
+    > .b-toolbar-content {
+        padding : 0 16px;
+        gap     : 12px;
+    }
 }
 
 .ow-panel-title {
-    margin-inline-end : auto;
-    font-weight       : 600;
-    font-size         : 14px;
-    white-space       : nowrap;
+    font-size   : 14px;
+    font-weight : 600;
+    white-space : nowrap;
+}
 
-    small {
-        margin-inline-start : 6px;
-        font-weight : 400;
-        color       : var(--ow-ink-sub);
-    }
+.ow-panel-count {
+    display     : flex;
+    align-items : center;
+    gap         : 4px;
+    font-size   : 14px;
+    font-weight : 400;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
 }
 
 /* The next forecast, in: the one action that changes the plan */
-.ow-forecast-button {
-    display          : flex;
-    align-items      : center;
-    gap              : 6px;
-    height           : 28px;
-    padding          : 0 10px;
-    border           : 1px solid color-mix(in srgb, var(--ow-cancel) 40%, transparent);
-    border-radius    : 7px;
-    font-size        : 12px;
-    font-weight      : 600;
-    white-space      : nowrap;
-    color            : var(--ow-cancel);
-    background-color : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
+.ow-forecast-button.b-button {
+    --b-button-color            : var(--ow-cancel);
+    --b-button-border-width     : 1px;
+    --b-button-border-color     : color-mix(in srgb, var(--ow-cancel) 40%, transparent);
+    --b-button-background       : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
+    --b-button-hover-background : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
 
-    &:hover {
-        background-color : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
-    }
+    height      : 28px;
+    min-height  : 0;
+    font-size   : 12px;
+    font-weight : 600;
 }
 
-.ow-seg-buttons {
-    display          : flex;
+/* The button groups as a segmented control: the pressed button is the raised one */
+.ow-panel-bar .b-button-group {
+    --b-button-group-border-width  : 0;
+    --b-button-group-border-radius : 7px;
+    --b-button-group-box-shadow    : none;
+
+    height           : auto;
     padding          : 2px;
-    border-radius    : 7px;
     background-color : var(--b-neutral-95);
 
-    button {
-        min-width     : 30px;
-        height        : 26px;
-        padding       : 0 10px;
-        border        : 0;
-        border-radius : 5px;
-        background    : none;
-        font-size     : 12px;
-        font-weight   : 500;
+    .b-button {
+        --b-button-background         : transparent;
+        --b-button-hover-background   : transparent;
+        --b-button-color              : var(--ow-ink);
+        --b-button-pressed-background : var(--ow-surface);
+        --b-button-pressed-hover-background : var(--ow-surface);
+        --b-button-pressed-color      : var(--ow-ink);
+        --b-button-border-width       : 0;
+        --b-button-border-radius      : 5px;
 
-        &:disabled {
-            cursor  : default;
+        min-width   : 30px;
+        height      : 26px;
+        min-height  : 0;
+        font-size   : 12px;
+        font-weight : 500;
+
+        &.b-pressed {
+            background-color : var(--ow-surface);
+            box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+        }
+
+        &.b-disabled {
             opacity : 0.4;
         }
-    }
-
-    .ow-pressed {
-        background-color : var(--ow-surface);
-        box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
     }
 }
