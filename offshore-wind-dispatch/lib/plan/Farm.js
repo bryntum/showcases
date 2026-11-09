@@ -19,6 +19,9 @@ export const
     portBase    = { vessel : 50, heli : 18 },
     portStep    = { vessel : 4, heli : 1 },
     hopStep     = { vessel : 10, heli : 4 },
+    // The first sailing of a day, minutes after the working day starts (`site.dayStart`, DispatchState#firstSailing):
+    // where a day's planned trips start and where work moved to the next day goes
+    firstSailing = 30,
     // The map: the farm's rows turn a little against north, as real layouts follow the prevailing wind
     mapAngle    = -9 * Math.PI / 180,
     mapCentre   = { x : 232, y : 160 },

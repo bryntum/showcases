@@ -1,7 +1,7 @@
 import { EventModelEnterprise } from '@bryntum/scheduler-enterprise';
 import { buildLegs, timeLegs, tripEnd, turbinesOf } from '../plan/Planner.js';
 import { toDate, toMinutes } from '../util/Time.js';
-import { bufferData, chainData, isChain, legsData, transitsOf } from './TripData.js';
+import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
 
 /**
  * A trip, one run of a vessel or a helicopter from the port and back, and its legs, all in one tree event store. The
@@ -14,8 +14,9 @@ import { bufferData, chainData, isChain, legsData, transitsOf } from './TripData
  *
  * - The trip reaches its first stop no earlier than its departure plus the sail out, a `startnoearlierthan`
  *   constraint. A trip dragged moves it
- * - Each leg follows the one before it, a finish-to-start dependency (`chain:<leg>`), so the legs run in order from
- *   the departure and a leg pushed later pushes the rest of the trip. These links are not drawn (TripRendering)
+ * - Each leg follows the one before it, a finish-to-start dependency of the kind `chain` (PlanDependencyModel), so the
+ *   legs run in order from the departure and a leg pushed later pushes the rest of the trip. These links are not
+ *   drawn (TripRendering)
  * - A stop that waits for another trip, the HV isolation before T-45, has a dependency from that trip: the engine
  *   starts the stop once that trip's work is done (its end, before its sail back). The vessel waits on station, and
  *   the legs after the stop move on with it
@@ -136,7 +137,8 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The departure, minutes since midnight
+     * The departure, minutes since midnight. The same as `departs`, which this showcase reads; kept for the map
+     * (MapModel) until it reads `departs` too
      * @property {Number}
      */
     get startMinute() {
@@ -226,7 +228,7 @@ export default class TripModel extends EventModelEnterprise {
             const
                 minutes = i && record.startDate && records[i - 1].endDate ?
                     toMinutes(record.startDate) - toMinutes(records[i - 1].endDate) : 0,
-                after   = record.predecessors?.find(dependency => !isChain(dependency))?.fromEvent;
+                after   = record.predecessors?.find(dependency => !dependency.isChain)?.fromEvent;
 
             return minutes > 0 ? [{ turbine : record.turbine, minutes, after : after?.id ?? '' }] : [];
         });
@@ -243,7 +245,7 @@ export default class TripModel extends EventModelEnterprise {
             records = me.legRecords;
 
         return Math.max(0, ...records.map((record, i) => {
-            const dependency = record.predecessors?.find(each => !isChain(each));
+            const dependency = record.predecessors?.find(each => !each.isChain);
 
             if (!dependency?.fromEvent?.endDate || !record.startDate) {
                 return 0;
@@ -294,7 +296,7 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The teams on board, by ID, in order
+     * The teams on board, by ID, in order: the plan's, a team previewed on the trip left out (`shownTeamIds`)
      * @property {String[]}
      */
     get teamIds() {
@@ -302,13 +304,21 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * "Team B", "Teams D, E"
+     * The teams on board as the trip is shown: with the team of a previewed stop, while a team is dragged over it
+     * @property {String[]}
+     */
+    get shownTeamIds() {
+        return [...new Set(this.allStops.map(stop => stop.team))];
+    }
+
+    /**
+     * "Team B", "Teams D, E", the previewed team included (`shownTeamIds`)
      * @property {String}
      */
     get teamText() {
         const
             { teams } = TripModel,
-            ids       = this.teamIds;
+            ids       = this.shownTeamIds;
 
         if (ids.length === 1) {
             return teams.get(ids[0])?.name ?? ids[0];
@@ -318,11 +328,28 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * People on board
+     * People on board in the plan, a previewed team left out: what the planner counts the seats from
      * @property {Number}
      */
     get pax() {
-        return this.teamIds.reduce((sum, id) => sum + (TripModel.teams.get(id)?.techs ?? 0), 0);
+        return TripModel.techsOf(this.teamIds);
+    }
+
+    /**
+     * People on board as the trip is shown, with a previewed team: the seats the drop tooltip names
+     * @property {Number}
+     */
+    get shownPax() {
+        return TripModel.techsOf(this.shownTeamIds);
+    }
+
+    /**
+     * How many technicians the teams have
+     * @param {String[]} ids Team IDs
+     * @returns {Number}
+     */
+    static techsOf(ids) {
+        return ids.reduce((sum, id) => sum + (TripModel.teams.get(id)?.techs ?? 0), 0);
     }
 
     /**
@@ -362,10 +389,10 @@ export default class TripModel extends EventModelEnterprise {
             wanted              = legsData({ id : me.id, departs }, stops, me.mode),
             ids                 = new Set(wanted.map(leg => leg.id)),
             gone                = me.legRecords.filter(leg => !ids.has(leg.id)),
-            prefix              = `chain:${me.id}:`;
+            // The links between the legs, laid again below in the new order
+            chains              = me.legRecords.flatMap(leg => (leg.predecessors ?? []).filter(link => link.isChain));
 
-        // The links between the legs are laid again below, in the new order
-        dependencyStore.remove(dependencyStore.records.filter(dependency => String(dependency.id).startsWith(prefix)));
+        dependencyStore.remove(chains);
 
         if (gone.length) {
             me.removeChild(gone);

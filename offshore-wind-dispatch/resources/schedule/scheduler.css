@@ -1,66 +1,67 @@
-/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows and the now line */
+/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column, the group rows and the now
+ * line */
+
+/* Shared by the Day and the Week view (week/board.css): the weather no-go hatch, a helicopter's purple tinted, and the
+ * drop target of a crew held over a trip or a free day, a subtle blue tint with a thin blue outline */
+.ow-scheduler, .ow-week-board {
+    --ow-hatch        : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
+    --ow-hatch-heli   : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
+    --ow-drop-outline : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+    --ow-drop-tint    : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
+}
 
 .ow-scheduler {
-    --b-grid-row-border-color   : var(--ow-tick);
-    --b-grid-cell-border-color  : var(--ow-tick);
-    /* The group rows, Vessels and Helicopters, a slim band. The Group feature sizes them from this */
-    --b-group-row-height        : 28px;
-    --b-group-header-background : var(--ow-c-footer);
+    /* The vessel column's inner inset, lined up with the card's title bar, narrower on a phone (phone.css) */
+    --ow-column-inset                       : var(--ow-inset);
+    --b-grid-row-border-color               : var(--ow-tick);
+    --b-grid-cell-border-color              : var(--ow-tick);
+    /* A selected row: a quiet tint in the work blue across the whole row, the vessel cell included, hovered or not */
+    --b-grid-cell-selected-background       : var(--ow-c-row-selected);
+    --b-grid-cell-hover-selected-background : var(--ow-c-row-selected);
+    /* The group rows, Vessels and Helicopters, a slim band in muted semibold. The Group feature sizes them from this */
+    --b-group-row-height                    : 28px;
+    --b-group-header-background             : var(--ow-c-footer);
+    --b-group-header-color                  : var(--ow-c-muted);
+    --b-group-header-font-weight            : 600;
+    /* The collapse caret no stronger than its label */
+    --b-group-header-icon-color             : var(--ow-c-muted);
     /* Hour lines, faint */
-    --b-column-lines-tick-color  : var(--ow-tick);
-    --b-column-lines-major-color : var(--ow-tick);
+    --b-column-lines-tick-color             : var(--ow-tick);
+    --b-column-lines-major-color            : var(--ow-tick);
     /* The now line, 1px, under the trips */
-    --b-time-range-line-width  : 1px;
-    --b-time-range-line-zindex : 4;
+    --b-time-range-line-width               : 1px;
+    --b-time-range-line-zindex              : 4;
 
-    /* The vessel column */
+    /* The vessel column, on the card's surface also when hovered */
     .ow-resource-cell.b-grid-cell {
-        padding          : 0 8px 0 var(--ow-inset);
-        background-color : var(--ow-surface);
-    }
-
-    /* A selected row: a quiet tint in the work blue across the whole row, the vessel cell included */
-    .b-grid-row.b-selected {
-        background-color : var(--ow-c-row-selected);
-
-        /* Every cell paints its own background, the vessel cell and the timeline alike */
-        > .b-grid-cell {
-            background-color : var(--ow-c-row-selected);
-        }
+        --b-grid-cell-background       : var(--ow-surface);
+        --b-grid-cell-hover-background : var(--ow-surface);
+        --b-grid-cell-padding-inline   : var(--ow-column-inset) 8px;
     }
 
     /* Group rows: Vessels, Helicopters */
     .b-grid-row.b-group-row {
         .b-grid-cell {
-            font-size      : 11px;
-            font-weight    : 600;
+            --b-grid-cell-font-size : 11px;
+
             letter-spacing : 0.06em;
             text-transform : uppercase;
-            color          : var(--ow-c-muted);
         }
 
         /* The same light shade as the row's timeline part, not the vessel column's surface */
         .ow-resource-cell.b-grid-cell {
-            background-color : var(--b-group-header-background);
-        }
-
-        .ow-resource-cell.b-grid-cell.b-group-title {
-            padding-inline : var(--ow-inset) 8px;
-        }
-
-        /* The collapse caret no stronger than its label: the same muted ink */
-        .b-group-state-icon {
-            color : inherit;
+            --b-grid-cell-background       : var(--b-group-header-background);
+            --b-grid-cell-hover-background : var(--b-group-header-background);
         }
     }
 
-    /* The now line, in the rows */
     /* The hours already gone, lightly shaded in the rows */
     .b-sch-range.ow-past {
         --b-time-range-opacity    : 1;
         --b-time-range-background : var(--ow-c-past);
     }
 
+    /* The now line, in the rows */
     .b-sch-line.ow-now {
         --b-time-range-background : none;
         --b-time-range-line-color : var(--ow-now);

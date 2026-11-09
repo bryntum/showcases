@@ -1,5 +1,5 @@
 import { closingTimes } from './Weather.js';
-import { hopMinutes, substation, turbineIds } from './Farm.js';
+import { firstSailing, hopMinutes, substation, turbineIds } from './Farm.js';
 import { tripEnd } from './Planner.js';
 import { hhmm } from '../util/Time.js';
 
@@ -19,7 +19,7 @@ import { hhmm } from '../util/Time.js';
 const
     // Week 46
     seed      = 46,
-    minutes   = { day : 24 * 60, margin : 15, firstSailing : 30 },
+    minutes   = { day : 24 * 60, margin : 15 },
     // The weather story of Tuesday to Sunday: points [hour, value] the hourly values are drawn through
     weather   = [
         // Tuesday: no CTV, the SWATH until 13, wind over the helicopters' limit
@@ -175,7 +175,7 @@ function dayTrips({ index, windows, vessels, open, teams, queue, counts, random 
         const
             close = windows[vessel.window],
             skip  = random() < freeShare,
-            start = open + minutes.firstSailing + 15 * Math.floor(random() * 3),
+            start = open + firstSailing + 15 * Math.floor(random() * 3),
             crew  = teams.filter(team => !used.has(team.id)).slice(0, vessel.seats >= 24 ? 2 : 1),
             stops = close <= open || vessel.standby || skip || !crew.length ? [] :
                 packStops({ queue, vessel, start, close });

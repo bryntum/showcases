@@ -276,21 +276,3 @@ export function reachable(trip, minutes, close) {
 export function nextSailing(backs, now) {
     return Math.ceil((Math.max(now, ...backs) + quarter) / quarter) * quarter;
 }
-
-/**
- * The share of the time from now until the window closes a resource is out on trips, 0 to 1
- * @param {Object[]} trips `{ start, end }` in minutes
- * @param {Number} now
- * @param {Number} close
- * @returns {Number}
- */
-export function windowShare(trips, now, close) {
-    if (close <= now) {
-        return 1;
-    }
-
-    const used = trips.reduce((sum, { start, end }) =>
-        sum + Math.max(0, Math.min(end, close) - Math.max(start, now)), 0);
-
-    return Math.min(1, used / (close - now));
-}

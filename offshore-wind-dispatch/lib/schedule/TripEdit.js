@@ -32,10 +32,10 @@ export const tripEdit = {
                     label     : 'On station',
                     dateField : { hidden : true },
                     timeField : {
-                        format    : 'HH:mm',
-                        // A time refused on save (DispatchScheduler#onBeforeTripSave) is fixed by changing it. Not by
-                        // the editor's own reload of the trip after the engine has calculated it
-                        listeners : { change : ({ source, userAction }) => userAction && source.clearError() }
+                        format        : 'HH:mm',
+                        // Checked as a drag to it is, the reason shown on the field: the editor does not save an
+                        // invalid time. `up.` finds the method on the Scheduler that owns the editor
+                        checkValidity : 'up.checkTripTime'
                     }
                 },
                 // How long the sail out and back take follows from the distance to the turbines (Planner#buildLegs)
@@ -65,17 +65,15 @@ const lockedBecause = trip => trip.status === 'moved' ? 'moved to tomorrow' : (t
  */
 export function beforeTripEditShow({ taskRecord : trip, editor }) {
     const
-        { preambleField, postambleField, tabs } = editor.widgetMap,
-        by                                      = trip.mode === 'heli' ? 'Fly' : 'Sail',
-        locked                                  = lockedBecause(trip);
+        { preambleField, postambleField, tabBar } = editor.widgetMap,
+        by                                        = trip.mode === 'heli' ? 'Fly' : 'Sail',
+        locked                                    = lockedBecause(trip);
 
-    // The editor is reused: no error left from the trip before
-    editor.widgetMap.startDateField.timeField.clearError();
-    // One tab left: no tab bar
-    tabs.tabBar.hidden   = true;
+    // One tab left: no tab bar. The feature's `items` configure the tabs, not the tab panel, so it is hidden here
+    tabBar.hidden        = true;
     // A trip under way or moved to tomorrow is shown, read-only (no Save, Delete or Cancel, the close tool stays)
     editor.readOnly      = Boolean(locked);
-    editor.title         = [trip.id, trip.teamText, `${trip.pax} pax`, locked].filter(Boolean).join(' · ');
+    editor.title         = [trip.id, trip.teamText, `${trip.shownPax} pax`, locked].filter(Boolean).join(' · ');
     preambleField.label  = `${by} out`;
     postambleField.label = `${by} back`;
 }

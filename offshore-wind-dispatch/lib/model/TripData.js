@@ -85,34 +85,33 @@ export function tripData({ departs, ...trip }, stops, mode) {
 }
 
 /**
- * The links that keep a trip's legs in order: each leg starts when the one before it ends
+ * The links that keep a trip's legs in order: each leg starts when the one before it ends (PlanDependencyModel, kind
+ * `chain`)
  * @param {Object[]} legs The legs' data or records, in order, `{ id }`
  * @returns {Object[]} Dependency data, `chain:<leg>`
  */
 export function chainData(legs) {
-    return legs.slice(1).map((leg, i) => ({ id : `chain:${leg.id}`, fromEvent : legs[i].id, toEvent : leg.id }));
+    return legs.slice(1).map((leg, i) => ({
+        id        : `chain:${leg.id}`,
+        kind      : 'chain',
+        fromEvent : legs[i].id,
+        toEvent   : leg.id
+    }));
 }
 
 /**
- * Whether a dependency is one of the links between a trip's legs, not one of the plan
- * @param {Scheduler.model.DependencyModel|Object} dependency
- * @returns {Boolean}
- */
-export function isChain(dependency) {
-    return String(dependency.id).startsWith('chain:');
-}
-
-/**
- * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip, finish-to-start, with
- * the lag (minutes) the stop waits after the trip. The engine starts the stop once the trip is done and the lag has
- * passed
- * @param {Object} dependency `{ id, from, to, toStop, lag, sides }`, `sides` the sides of the two ends the line
+ * A dependency of data/farm.json as Scheduler data (PlanDependencyModel, kind `plan`): from a trip into one stop of
+ * another trip, finish-to-start, with the lag (minutes) the stop waits after the trip. The engine starts the stop once
+ * the trip is done and the lag has passed
+ * @param {Object} dependency `{ id, from, to, toStop, lag, sides, text }`, `sides` the sides of the two ends the line
  * leaves and enters by, when the default way round would run along the trips' own line
  * @returns {Object}
  */
-export function dependencyData({ id, from, to, toStop, lag = 0, sides = [] }) {
+export function dependencyData({ id, from, to, toStop, lag = 0, sides = [], text = '' }) {
     return {
         id,
+        kind      : 'plan',
+        text,
         fromEvent : from,
         toEvent   : `${to}:${toStop}`,
         lag,

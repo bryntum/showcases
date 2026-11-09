@@ -1,30 +1,25 @@
-/* The weather no-go ranges of the vessels and the old place of a trip brought forward (schedule/DispatchSync.js) */
+/* The weather no-go ranges of the vessels and the old place of a trip brought forward (schedule/DispatchSync.js),
+ * their classes on the range's element (TripRendering.js#renderRange) */
 
 .ow-scheduler .b-sch-resource-time-range {
     --b-resource-time-range-background : none;
 
-    /* Weather no-go: hatched from the time the vessel's own limit is crossed, nothing else. Hatching means only this.
-       The renderer's class lands on the range's inner element (TripRendering.js), so the range is matched by what it
-       holds */
-    &:has(> .ow-nogo) {
-        background-image : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
+    /* Weather no-go: hatched from the time the vessel's own limit is crossed, nothing else. Hatching means only this */
+    &.ow-nogo {
+        --b-resource-time-range-background : var(--ow-hatch);
     }
 
     /* A helicopter's: past its wind limit, purple tinted */
-    &:has(> .ow-nogo-heli) {
-        background-image : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
+    &.ow-nogo-heli {
+        --b-resource-time-range-background : var(--ow-hatch-heli);
     }
 
-    /* The old place of a trip brought forward */
-    &:has(> .ow-ghost) {
-        background : none;
-
-        &::before {
-            content       : '';
-            position      : absolute;
-            inset         : 23px 0 19px;
-            border        : 1.5px dashed var(--ow-c-transit);
-            border-radius : var(--ow-c-radius);
-        }
+    /* The old place of a trip brought forward: a dashed outline where its work blocks were */
+    &.ow-ghost::before {
+        content       : '';
+        position      : absolute;
+        inset         : 23px 0 19px;
+        border        : 1.5px dashed var(--ow-c-transit);
+        border-radius : var(--ow-c-radius);
     }
 }

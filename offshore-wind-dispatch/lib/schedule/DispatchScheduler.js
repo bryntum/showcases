@@ -2,9 +2,10 @@
 import '@bryntum/grid-enterprise';
 import { ProjectModelEnterprise, Scheduler } from '@bryntum/scheduler-enterprise';
 import { StringHelper } from '@bryntum/core-enterprise';
+import PlanDependencyModel from '../model/PlanDependencyModel.js';
 import TripModel from '../model/TripModel.js';
 import VesselModel from '../model/VesselModel.js';
-import { isChain } from '../model/TripData.js';
+import VesselRangeModel from '../model/VesselRangeModel.js';
 import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
@@ -14,11 +15,13 @@ import { hhmm, shownDay, toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
 const
-    // The trips' place in their 58px row, 3px above and below: the label, then the 28px work blocks on the line
+    // The trips' place in their 56px row (54px on a phone), 3px above and below: the label, then the 28px work blocks
+    // on the line
     margins     = { start : 3, end : 3 },
     // The trip's label above its legs, the NestedEvents feature's header
     headHeight  = 20,
-    // The hours of the day share the width, down to this many px per hour, then the timeline scrolls
+    // The hours of the day share the width, down to this many px per hour, then the timeline scrolls: the view
+    // preset's tick width is the least, Scheduler stretches the ticks to fill a wider view
     minTick     = { wide : 50, phone : 44 };
 
 /**
@@ -37,7 +40,7 @@ const
  *   the trip back after its weather window. A trip drag that would do that is refused with the reason
  * - The weather no-go of each vessel is a resource time range, from the hour the forecast crosses its limit
  * - The time axis carries the forecast: the wave height chart and the wind (ForecastHeader)
- * - The vessel column shows how much of the window left is booked, and the seats taken
+ * - The vessel column shows the seats taken, as a ring round the vessel's icon
  * - The now line is a time range, the past one lightly shaded
  * - Trips are dragged along their own row only, not into the past and not once gone, their legs move with them
  *
@@ -106,7 +109,7 @@ export default class DispatchScheduler extends Scheduler {
             nestedEvents       : {
                 eventLayout             : 'none',
                 headerHeight            : headHeight,
-                // The legs fill the 32px under the label less 2px above and below: 28px work blocks
+                // The legs fill the trip under its label, less these margins: the work blocks on the trip's line
                 resourceMargin          : 2,
                 barMargin               : 2,
                 constrainDragToParent   : true,
@@ -132,7 +135,7 @@ export default class DispatchScheduler extends Scheduler {
         // The day's hours, with the weather rows in the time axis
         me.dayPreset = {
             base              : 'hourAndDay',
-            tickWidth         : 70,
+            tickWidth         : config.phone ? minTick.phone : minTick.wide,
             displayDateFormat : 'HH:mm',
             shiftUnit         : 'hour',
             shiftIncrement    : 1,
@@ -157,8 +160,10 @@ export default class DispatchScheduler extends Scheduler {
             }],
             project : {
                 ...config.project,
-                eventModelClass    : TripModel,
-                resourceModelClass : VesselModel
+                eventModelClass             : TripModel,
+                resourceModelClass          : VesselModel,
+                dependencyModelClass        : PlanDependencyModel,
+                resourceTimeRangeModelClass : VesselRangeModel
             },
             eventRenderer             : args => me.renderEvent(args),
             resourceTimeRangeRenderer : renderRange,
@@ -181,19 +186,18 @@ export default class DispatchScheduler extends Scheduler {
                     // The line turns in the narrow gap before the stop it waits for
                     clearance       : 6,
                     showTooltip     : true,
-                    tooltipTemplate : dependency => StringHelper.encodeHtml(me.dependencyText(dependency)),
-                    renderer        : args => renderDependency(args, isChain)
+                    tooltipTemplate : dependency => StringHelper.encodeHtml(dependency.text),
+                    renderer        : renderDependency
                 }
             }
         });
 
         me.on({
-            beforeTaskEdit         : 'onBeforeTripEdit',
-            beforeTaskSave         : 'onBeforeTripSave',
-            beforeTaskEditShow     : beforeTripEditShow,
-            paint                  : 'onSchedulerPaint',
-            timelineViewportResize : 'fitTicks',
-            thisObj                : me
+            beforeTaskEdit     : 'onBeforeTripEdit',
+            beforeTaskSave     : 'onBeforeTripSave',
+            beforeTaskEditShow : beforeTripEditShow,
+            paint              : 'onSchedulerPaint',
+            thisObj            : me
         });
         me.project.on({ dataReady : 'onPlanCalculated', thisObj : me });
     }
@@ -214,12 +218,9 @@ export default class DispatchScheduler extends Scheduler {
         }
     }
 
-    // A leg opens its trip's editor. The draft trip shown while a team is dragged has none
+    // Trips are edited, not their legs: a double click on a leg reaches its trip, the legs let the pointer through
+    // (resources/schedule/legs.css). The draft trip shown while a team is dragged has no editor
     onBeforeTripEdit({ taskRecord }) {
-        if (taskRecord.isLeg && !taskRecord.trip.draft) {
-            queueMicrotask(() => this.editEvent(taskRecord.trip));
-        }
-
         return !taskRecord.isLeg && !taskRecord.draft;
     }
 
@@ -231,31 +232,62 @@ export default class DispatchScheduler extends Scheduler {
      * @param {Date} startDate The trip's new start, its arrival at the first stop
      */
 
-    // The editor's time is checked as a drag to it is. A trip's times follow from its departure and its legs, so the
-    // editor does not save it: it is closed, and the trip laid out again from the new departure
+    /**
+     * The trip editor's time field's validity check (its `checkValidity`, TripEdit): the time is checked as a drag to
+     * it is, and a time refused shows the drag's reason on the field. The editor does not save while a field is invalid
+     * @param {Core.widget.TimeField} timeField
+     */
+    checkTripTime(timeField) {
+        const
+            me    = this,
+            // The editor's tab holds the trip edited
+            trip  = me.features.taskEdit.editor?.widgetMap.generalTab.record,
+            time  = timeField.value,
+            start = trip?.startDate && time && new Date(trip.startDate);
+
+        let reason = null;
+
+        if (start) {
+            // The trip's day at the time typed
+            start.setHours(time.getHours(), time.getMinutes(), 0, 0);
+
+            const check = me.validateTripDrag({ eventRecords : [trip], startDate : start });
+
+            reason = check === true ? null : check.message;
+        }
+
+        // Only a change of the reason touches the field's errors: setting or clearing one checks the field again. The
+        // field may have errors of its own too, only this one is cleared
+        if (reason !== me.tripTimeError) {
+            const was = me.tripTimeError;
+
+            me.tripTimeError = reason;
+
+            if (was) {
+                timeField.clearError(was, Boolean(reason));
+            }
+
+            if (reason) {
+                timeField.setError(reason);
+            }
+        }
+    }
+
+    // A trip's times follow from its departure and its legs, so the editor does not save it: it is closed, and the
+    // trip laid out again from the new departure, as when it is dragged. A time refused never gets here
+    // (checkTripTime)
     onBeforeTripSave({ taskRecord : trip, editor }) {
         const
-            me                 = this,
-            { startDateField } = editor.widgetMap,
-            { timeField }      = startDateField,
-            startDate          = startDateField.value,
-            check              = me.validateTripDrag({ eventRecords : [trip], startDate });
+            me        = this,
+            startDate = editor.widgetMap.startDateField.value;
 
-        // On the time, the part shown (the date-time field would put it on its hidden date too), until it changes. Once
-        // the engine has calculated the time typed: the editor reloads the trip then, which clears its fields' errors
-        if (check !== true) {
-            me.project.commitAsync().then(() => timeField.setError(check.message));
-        }
-        else {
-            me.features.taskEdit.cancel().then(() => me.trigger('tripTimeChange', { trip, startDate }));
-        }
+        me.features.taskEdit.cancel().then(() => me.trigger('tripTimeChange', { trip, startDate }));
 
         return false;
     }
 
     doDestroy() {
         this.forecastHeader.destroy();
-        this.tickObserver?.disconnect();
         super.doDestroy();
     }
 
@@ -278,29 +310,23 @@ export default class DispatchScheduler extends Scheduler {
         return this.eventStore.rootNode?.children ?? [];
     }
 
-    // The text of a dependency in the data, by its ID
-    dependencyText(dependency) {
-        return this.dispatch.dependencies.find(({ id }) => id === dependency.id)?.text ?? '';
-    }
-
     onSchedulerPaint() {
-        const me = this;
-
-        me.forecastHeader.attach(me);
-        me.forecastHeader.refresh();
-
-        // The hours share the width, also when the window or a panel changes size
-        me.tickObserver ??= new ResizeObserver(() => me.fitTicks());
-        me.tickObserver.observe(me.timeAxisSubGridElement);
-        me.fitTicks();
+        this.forecastHeader.attach(this);
+        this.forecastHeader.refresh();
     }
 
     // A trip or one of its legs, against its vessel's window; a work block names its job's short type
     renderEvent(args) {
-        const { dispatch } = this;
+        const
+            { dispatch, timeAxisViewModel } = this,
+            { trip }                        = args.eventRecord;
 
-        return renderTrip(args, dispatch.closeOf(args.eventRecord.trip.resource),
-            turbine => dispatch.jobAt(turbine)?.type ?? '');
+        return renderTrip(args, {
+            close        : dispatch.closeOf(trip.resource),
+            sailOut      : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
+            firstSailing : dispatch.firstSailing,
+            typeOf       : turbine => dispatch.jobAt(turbine)?.type ?? ''
+        });
     }
 
     // The EventBuffer feature's renderer: a trip's sail out and back against its window and the start of the day, the
@@ -316,7 +342,7 @@ export default class DispatchScheduler extends Scheduler {
     renderVesselCell(vessel) {
         const state = this.dispatch;
 
-        if (vessel.isSpecialRow || vessel.isGroupHeader || !state.limits[vessel.window]) {
+        if (vessel.isGroupHeader || !state.limits[vessel.window]) {
             return '';
         }
 
@@ -330,31 +356,6 @@ export default class DispatchScheduler extends Scheduler {
     //region Views
 
     /**
-     * The tick width: the Day view fits some hours of the day to the width and the rest scrolls into view (phones
-     * scroll at 44px an hour)
-     */
-    fitTicks() {
-        const
-            me      = this,
-            width   = me.timeAxisSubGridElement?.clientWidth,
-            minimum = me.phone ? minTick.phone : minTick.wide;
-
-        if (!width || me.isDestroyed) {
-            return;
-        }
-
-        // The whole working day when it fits; on a narrower screen the hours keep their minimum width and the timeline
-        // scrolls
-        const
-            { day } = me.dispatch,
-            tick    = Math.max(minimum, Math.floor(width / (day.dayEnd - day.dayStart)));
-
-        if (tick !== me.tickSize) {
-            me.tickSize = tick;
-        }
-    }
-
-    /**
      * Shows the day the dispatch state and the times are on (DispatchState#showDay, Time#showDay): its hours, from the
      * start of the day
      */
@@ -364,10 +365,10 @@ export default class DispatchScheduler extends Scheduler {
             { day } = me.dispatch;
 
         me.setTimeSpan(toDate(day.dayStart * 60), toDate(day.dayEnd * 60));
-        me.fitTicks();
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
     }
 
+    // A narrow vessel column and a little less room an hour. The tick width set is the least, as the preset's is
     updatePhone(phone) {
         const me = this;
 
@@ -377,8 +378,8 @@ export default class DispatchScheduler extends Scheduler {
             me.columns.first.width = phone ? 118 : 214;
         }
 
-        if (me.isPainted) {
-            me.fitTicks();
+        if (!me.isConfiguring) {
+            me.tickSize = phone ? minTick.phone : minTick.wide;
         }
     }
 
@@ -454,7 +455,7 @@ export default class DispatchScheduler extends Scheduler {
     dependencyBreak(trip, departs) {
         const delta = departs - trip.departs;
 
-        for (const dependency of this.dependencyStore.records.filter(each => !isChain(each))) {
+        for (const dependency of this.dependencyStore.records.filter(each => !each.isChain)) {
             const
                 { fromEvent, toEvent } = dependency,
                 dependent              = toEvent?.trip;
@@ -470,7 +471,7 @@ export default class DispatchScheduler extends Scheduler {
                     close = this.dispatch.closeOf(dependent.resource);
 
                 if (wait > 0 && back > close) {
-                    return `${this.dependencyText(dependency)}: ${dependent.id} would be back ${hhmm(back)}, ` +
+                    return `${dependency.text}: ${dependent.id} would be back ${hhmm(back)}, ` +
                         `after its window closes ${hhmm(close)}`;
                 }
             }

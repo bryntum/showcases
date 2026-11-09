@@ -3,20 +3,7 @@ import { hhmm } from '../util/Time.js';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-/**
- * The wave height row of the time axis, an AG Charts Community area chart: the hourly significant wave height against
- * the CTV and SWATH limits, and the time the CTV window closes. Its x axis is the schedule's own day with no padding,
- * so each hour of the chart sits over the same hour of the trips. Points are coloured by limit, hovering one tells
- * which vessels can still transfer.
- *
- * Colours are read from the showcase's CSS custom properties, so the chart takes the Svalbard palette, and it is drawn
- * again when the page switches between light and dark.
- *
- * Learn more:
- * https://www.ag-grid.com/charts/javascript/area-series/
- * https://www.ag-grid.com/charts/javascript/axes-cross-lines/
- */
-
+// The showcase's font, for every label of the chart (its theme's `fontFamily`)
 const fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif';
 
 // Room the wave height axis keeps, px: above the roughest hour for its point and value label, under the calmest one for
@@ -74,6 +61,21 @@ function toRgba(color) {
 
 // How strongly the dashed limit lines are drawn, their names keep full ink
 const limitFade = 0.45;
+
+/**
+ * The wave height row of the time axis (ForecastHeader), an AG Charts Community area chart: the hourly significant
+ * wave height against the CTV and SWATH limits, and the time the CTV window closes. Its x axis is the schedule's own
+ * day with no padding, so each hour of the chart sits over the same hour of the trips. The line turns orange where it
+ * crosses the CTV limit, hovering a point tells which vessels can still transfer.
+ *
+ * Not a widget: it draws into the element it is given. Colours are read from the showcase's CSS custom properties, so
+ * the chart takes the Svalbard palette, and it is drawn again when the page switches between light and dark.
+ *
+ * Learn more:
+ * https://www.ag-grid.com/charts/javascript/area-series/
+ * https://www.ag-grid.com/charts/javascript/axes-cross-lines/
+ * https://www.ag-grid.com/charts/javascript/themes-api/
+ */
 export default class WaveChart {
     /**
      * @param {Object} options
@@ -86,10 +88,10 @@ export default class WaveChart {
 
         Object.assign(me, { element, limits, day, forecast : null });
 
-        // The shell's light / dark switch sets `data-theme` and `color-scheme` on the root, the system setting can
-        // change too
+        // The shell's light / dark switch sets `data-theme` on the root (after its `color-scheme`), the system
+        // setting can change too
         me.observer = new MutationObserver(() => me.redraw());
-        me.observer.observe(document.documentElement, { attributes : true, attributeFilter : ['data-theme', 'style'] });
+        me.observer.observe(document.documentElement, { attributes : true, attributeFilter : ['data-theme'] });
         me.media = matchMedia('(prefers-color-scheme: dark)');
         me.onMedia = () => me.redraw();
         me.media.addEventListener('change', me.onMedia);
@@ -207,7 +209,8 @@ export default class WaveChart {
         const
             { hs }         = this.forecast,
             { ctv, swath } = this.limits,
-            height         = this.element.clientHeight || 67,
+            // Drawn only once the container has a size (redraw)
+            height         = this.element.clientHeight,
             above          = [[Math.max(...hs), room.label], [swath, room.limit], [ctv, room.limit]],
             below          = [[Math.min(...hs), room.point], [ctv, 0]];
 
@@ -249,7 +252,7 @@ export default class WaveChart {
         return {
             container  : me.element,
             data       : me.data(),
-            theme      : { baseTheme : 'ag-default' },
+            theme      : { baseTheme : 'ag-default', params : { fontFamily } },
             background : { visible : false },
             padding    : { top : 0, right : 0, bottom : 0, left : 0 },
             seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
@@ -341,7 +344,6 @@ export default class WaveChart {
             label        : {
                 enabled    : true,
                 placement,
-                fontFamily,
                 fontSize   : 10,
                 fontWeight : 500,
                 formatter  : ({ datum }) => (datum[which] ? datum.hs.toFixed(1) : ''),
@@ -358,7 +360,7 @@ export default class WaveChart {
     guide({ time, stroke, dash, width, text, color, weight = 500, placement }) {
         const
             { bottom, top } = this.heightRange,
-            labelAt         = bottom + room.guide * (top - bottom) / (this.element.clientHeight || 67);
+            labelAt         = bottom + room.guide * (top - bottom) / this.element.clientHeight;
 
         return {
             type : 'line',
@@ -380,7 +382,6 @@ export default class WaveChart {
                 enabled    : true,
                 placement,
                 padding    : 4,
-                fontFamily,
                 fontSize   : 10,
                 fontWeight : weight,
                 color,
@@ -475,7 +476,7 @@ export default class WaveChart {
             strokeOpacity : limitFade,
             lineDash      : [3, 3],
             strokeWidth   : 1,
-            label         : { text, color : ink, placement : 'top-left', padding : 6, fontSize : 9, fontWeight : 500, fontFamily }
+            label         : { text, color : ink, placement : 'top-left', padding : 6, fontSize : 9, fontWeight : 500 }
         };
     }
 
