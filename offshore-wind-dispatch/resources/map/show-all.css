@@ -5,6 +5,7 @@
     --b-button-elevated-background : var(--ow-surface);
     --b-button-elevated-color      : var(--ow-ink);
     --b-button-idle-border-width   : 1px;
+    --b-button-font-weight         : 600;
     --b-button-idle-border-color   : var(--ow-border);
     --b-button-border-radius       : 6px;
     --b-button-height              : 26px;

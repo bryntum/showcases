@@ -74,10 +74,11 @@ export default class SchedulePanel extends Panel {
                     spacer   : '->',
                     // The next forecast, in: the one action that changes the plan, quiet and blue
                     forecast : {
-                        type    : 'button',
-                        cls     : 'ow-forecast-button',
-                        hidden  : true,
-                        onClick : () => me.trigger('forecast')
+                        type      : 'button',
+                        rendition : 'tonal',
+                        cls       : 'ow-forecast-button',
+                        hidden    : true,
+                        onClick   : () => me.trigger('forecast')
                     },
                     // A segmented control: the pressed button is the raised one
                     view : {

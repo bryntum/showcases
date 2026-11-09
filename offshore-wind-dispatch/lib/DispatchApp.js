@@ -1,7 +1,6 @@
 import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
-import { reachable } from './plan/Planner.js';
 import { dayKpis } from './plan/Kpis.js';
 import TripModel from './model/TripModel.js';
 import DropPreview from './DropPreview.js';
@@ -58,12 +57,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
          */
         tab : 'schedule',
 
-        /**
-         * The map's view: `status` of every turbine, or `access`, where the selected trip can still go
-         * @prp {String}
-         */
-        mapView : 'status',
-
         responsive : {
             small : { when : 760, phone : true },
             '*'   : { phone : false }
@@ -85,7 +78,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        const { scheduler, board, map, tray, schedulePane, side, notice } = me.widgetMap;
+        const { scheduler, board, map, tray, schedulePane, notice } = me.widgetMap;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, trips : () => me.trips });
         me.drag            = new TeamDrag({ tray, scheduler, board, handler : me });
@@ -104,7 +97,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
         schedulePane.on({ forecast : 'applyForecast', thisObj : me });
         notice.on({ undo : 'undoForecast', review : 'reviewNext', thisObj : me });
-        side.on({ mapViewChange : 'onMapViewChange', thisObj : me });
 
         // The responsive state may have been set before the items existed
         me.updatePhone(Boolean(me.phone));
@@ -147,7 +139,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                     side : {
                         type       : 'mappanel',
                         site,
-                        mapView    : me.mapView,
                         tipContent : turbine => me.turbineTip(turbine)
                     }
                 }
@@ -352,8 +343,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             trips,
             selectedTrip,
             selectedTurbine : turbine,
-            drop,
-            access          : me.access(selectedTrip)
+            drop
         }));
         // The plan under the pointer may have changed
         me.mapLink?.refresh();
@@ -373,17 +363,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             info                      = tipInfo({ state : dispatch, trips, turbine, drop, selectedTrip });
 
         return tipContent(info);
-    }
-
-    // The Access view: the turbines the selected trip could still add an hour's stop at
-    access(trip) {
-        if (this.mapView !== 'access') {
-            return null;
-        }
-
-        const close = trip ? this.dispatch.closeOf(trip.resource) : 0;
-
-        return { trip, minutes : 60, close, reach : trip ? reachable(trip.plan, 60, close) : new Set() };
     }
 
     //endregion
@@ -541,20 +520,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     //region Toolbar buttons, tabs and the responsive layout
 
-    // The Status / Access switch of the map's header
-    onMapViewChange({ mapView }) {
-        this.mapView = mapView;
-    }
-
-    updateMapView(mapView) {
-        const { map, side } = this.widgetMap ?? {};
-
-        if (map) {
-            side.mapView = mapView;
-            this.refreshSide();
-        }
-    }
-
     // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
         const { scheduler, board, column, schedulePane, side, main, tabs } = this.widgetMap ?? {};
@@ -578,7 +543,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         tabs.hidden = !phone;
         main.hidden = phone;
-        this.toggleCls('ow-phone', phone);
+        this.element?.classList.toggle('ow-phone', phone);
         this.updateTab(this.tab);
     }
 

@@ -48,6 +48,14 @@ export const tripEdit = {
         successorsTab   : false,
         advancedTab     : false,
         notesTab        : false
+    },
+    // Planning against the weather moves trips, it does not remove them
+    editorConfig : {
+        bbar : {
+            items : {
+                deleteButton : false
+            }
+        }
     }
 };
 

@@ -37,11 +37,11 @@
         --b-tab-bar-padding             : 2px;
         --b-tab-bar-border-bottom-width : 0;
         --b-tab-border-radius           : 5px;
-        --b-tab-font-weight             : 400;
+        --b-tab-font-weight             : 600;
         --b-tab-color                   : var(--ow-ink);
         --b-tab-hover-color             : var(--ow-ink);
         --b-tab-active-tab-color        : var(--ow-ink);
-        --b-tab-hover-background        : transparent;
+        --b-tab-hover-background        : color-mix(in srgb, var(--ow-ink) 5%, transparent);
         --b-tab-active-background       : var(--ow-surface);
         --b-tab-indicator-display       : none;
 

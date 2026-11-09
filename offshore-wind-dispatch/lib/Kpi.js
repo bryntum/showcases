@@ -26,7 +26,7 @@ export default class Kpi extends Widget {
     draw({ label, value, tone }) {
         const me = this;
 
-        ['warn', 'alert', 'stop'].forEach(each => me.toggleCls(`ow-kpi-${each}`, Boolean(tone === each && value)));
+        ['warn', 'alert', 'stop'].forEach(each => me.element.classList.toggle(`ow-kpi-${each}`, Boolean(tone === each && value)));
         me.html = [
             { tag : 'b', text : String(value) },
             { tag : 'small', text : label }

@@ -67,6 +67,8 @@ test.describe('Offshore Wind Dispatch', () => {
     test('at 1600 x 960 the page and the schedule do not scroll, the frame is aligned to its corner, the status line is one line', async({ page }) => {
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
+        // The rows settle once the time axis and the forecast rows have their final heights
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.scrollable.maxY)).toBe(0);
 
         const m = await page.evaluate(() => {
             const

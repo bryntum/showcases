@@ -21,7 +21,7 @@
         --b-grid-cell-hover-background          : var(--ow-surface);
         --b-grid-cell-selected-background       : var(--ow-surface);
         --b-grid-cell-hover-selected-background : var(--ow-surface);
-        --b-grid-cell-padding-inline            : 24px 8px;
+        --b-grid-cell-padding-inline            : var(--ow-inset) 8px;
     }
 
 

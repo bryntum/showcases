@@ -112,11 +112,11 @@ export default class TeamChip extends Widget {
         me.tooltip              = `${team.techs} technicians, ${team.certs.join(', ')} · ${job.turbine} ${job.job}`;
         me.ariaLabel            = `${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`;
         me.html                 = teamChipContent(team, job, false, me.fault);
-        me.toggleCls('ow-team-fault', Boolean(me.fault));
+        me.element.classList.toggle('ow-team-fault', Boolean(me.fault));
     }
 
     updateLifted(lifted) {
-        this.toggleCls('ow-team-lifted', lifted);
+        this.element?.classList.toggle('ow-team-lifted', lifted);
     }
 }
 

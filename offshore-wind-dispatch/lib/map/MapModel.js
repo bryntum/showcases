@@ -3,7 +3,7 @@ import { duration, hhmm, nextDay } from '../util/Time.js';
 
 /**
  * What the turbine map shows, worked out from the trips and the dispatcher's state: a status per turbine, the labels,
- * the vessel routes and, while a team is dragged or with the Access view on, the turbines a trip can still reach.
+ * the vessel routes and, while a team is dragged, the turbines the trip can still reach.
  * TurbineMap draws it.
  */
 
@@ -114,29 +114,27 @@ const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
  * @param {TripModel} [options.selectedTrip]
  * @param {String} [options.selectedTurbine]
  * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see DispatchApp#previewDrop
- * @param {Object} [options.access] The Access view: `{ trip, reach, minutes }`
  * @returns {Object} `{ markers, labels, routes, callout, selected }`: `markers` maps each turbine to
  * `{ status, dimmed }`, a label is `{ id, text, tone }`, a route `{ stops, kind }` (`selected`, `preview` or
  * none) and the callout the DomConfig children of its line, or `null`
  */
-export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, access }) {
+export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) {
     const
         byTurbine = tripsByTurbine(trips),
         removed   = new Set(trips.flatMap(trip => trip.removed ?? [])),
-        focus     = drop ?? access,
         context   = {
             state,
             trips,
             byTurbine,
             removed,
-            reach     : focus?.reach ?? null,
+            reach     : drop?.reach ?? null,
             target    : drop?.job.turbine,
-            focusTrip : focus?.trip ?? null
+            focusTrip : drop?.trip ?? null
         },
         markers   = new Map(turbineIds.map(id => [id, markerOf(id, context)])),
         routes    = trips.filter(trip => trip.mode === 'vessel' && trip.status !== 'moved').map(trip => ({
             stops : trip.turbines,
-            kind  : trip === (focus?.trip ?? selectedTrip) ? 'selected' : null
+            kind  : trip === (drop?.trip ?? selectedTrip) ? 'selected' : null
         }));
 
     let labels, callout = null;
@@ -154,12 +152,6 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
     }
     else {
         labels = planLabels({ state, trips, selectedTurbine, byTurbine });
-
-        if (access) {
-            callout = access.trip ?
-                [turbineCount(access.reach), ` where ${access.trip.id} could still add a ${duration(access.minutes)} stop before ${hhmm(access.close)}`] :
-                ['Select a trip to see where it can still go before its window closes'];
-        }
     }
 
     return { markers, labels, routes, callout, selected : selectedTurbine };

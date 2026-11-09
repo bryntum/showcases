@@ -6,8 +6,8 @@ import '../map/TurbineMap.js';
 import '../map/TurbineCard.js';
 
 /**
- * The map half of the app: a column of two cards. The site's card has a title bar with the site's name and the
- * Status / Access switch, the map of the farm (TurbineMap) inset, and its legend. The selected turbine's card
+ * The map half of the app: a column of two cards. The site's card has a title bar with the site's name and its
+ * turbine count, the map of the farm (TurbineMap) inset, and its legend. The selected turbine's card
  * (TurbineCard) is under it. On a phone it is the Map tab.
  *
  * Learn more:
@@ -33,12 +33,6 @@ export default class MapPanel extends Panel {
         tipContent : null,
 
         /**
-         * The map's view, `status` or `access`. The switch changes it, the `mapViewChange` event tells
-         * @prp {String}
-         */
-        mapView : 'status',
-
-        /**
          * At phone widths the map is its own tab, the site's title bar goes. Set by DispatchApp#updatePhone
          * @prp {Boolean}
          */
@@ -50,14 +44,7 @@ export default class MapPanel extends Panel {
     };
 
     construct(config) {
-        const
-            me                         = this,
-            { site, tipContent, mapView } = config,
-            show                          = name => ({
-                text     : name[0].toUpperCase() + name.slice(1),
-                pressed  : mapView === name,
-                onToggle : ({ pressed }) => pressed && me.trigger('mapViewChange', { mapView : name })
-            });
+        const { site, tipContent } = config;
 
         super.construct({
             ...config,
@@ -81,14 +68,6 @@ export default class MapPanel extends Panel {
                                     type    : 'widget',
                                     cls     : 'ow-panel-count',
                                     tooltip : `${turbineIds.length} turbines`
-                                },
-                                spacer : '->',
-                                // A segmented control, as the schedule's Day | Week
-                                view   : {
-                                    type        : 'buttongroup',
-                                    rendition   : 'padded',
-                                    toggleGroup : true,
-                                    items       : { status : show('status'), access : show('access') }
                                 }
                             }
                         },
@@ -115,14 +94,6 @@ export default class MapPanel extends Panel {
 
         if (bar) {
             bar.hidden = phone;
-        }
-    }
-
-    updateMapView(mapView) {
-        const { status, access } = this.widgetMap?.bar?.widgetMap ?? {};
-
-        if (status) {
-            (mapView === 'access' ? access : status).pressed = true;
         }
     }
 }

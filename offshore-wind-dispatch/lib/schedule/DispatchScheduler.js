@@ -117,7 +117,8 @@ export default class DispatchScheduler extends Scheduler {
                 allowDeNestingOnDrop    : false,
                 showCreateGroupMenuItem : false
             },
-            group              : { field : 'group', renderer : renderGroup },
+            // Vessels and Helicopters, the rows under them not indented: the vessel column keeps its own inset
+            group              : { field : 'group', renderer : renderGroup, indent : false },
             resourceTimeRanges : true,
             timeRanges         : {
                 showHeaderElements  : true,

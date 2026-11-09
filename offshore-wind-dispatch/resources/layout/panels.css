@@ -37,11 +37,11 @@
 }
 
 /* The Panel's tbar as the title bar: one row, the title, a note, then the buttons at the end. As far from the card's
-   top as from its side: 12px all round, a little less than the cards' content inset to keep the schedule's rows in view
-   at 1600 x 960 */
+   top as from its side: the buttons 12px from the top and the end, a little less than the cards' content inset to keep
+   the schedule's rows in view at 1600 x 960; the title on the content's 16px inset, lined up with what is under it */
 .ow-panel-bar.b-toolbar {
     --b-toolbar-gap     : 12px;
-    --b-toolbar-padding : var(--ow-bar-inset);
+    --b-toolbar-padding : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
 
     flex             : none;
     box-sizing       : border-box;
@@ -83,15 +83,17 @@
     white-space : nowrap;
 }
 
-/* The next forecast, in: the one action that changes the plan, a quiet button on the work blue's tint */
+/* The next forecast, in: the one action that changes the plan, a quiet `tonal` button in the work blue. Its
+   rendition's own variables, never `--b-button-background` itself: Bryntum's hover, focus and active states set that */
 .ow-forecast-button.b-button {
-    --b-button-color             : var(--ow-ink);
-    --b-button-idle-border-width : 0;
-    --b-button-background        : var(--ow-c-button-tint);
-    --b-button-hover-background  : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
-    --b-button-border-radius     : 6px;
-    --b-button-height            : var(--ow-bar-control);
-    --b-button-padding-inline    : 12px;
+    --b-button-tonal-color             : var(--ow-c-work);
+    --b-button-tonal-border-width      : 0;
+    --b-button-tonal-background        : var(--ow-c-button-tint);
+    --b-button-tonal-hover-background  : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
+    --b-button-tonal-active-background : color-mix(in srgb, var(--ow-c-work) 22%, var(--ow-c-button-tint));
+    --b-button-border-radius           : 6px;
+    --b-button-height                  : var(--ow-bar-control);
+    --b-button-padding-inline          : 12px;
 
     /* The action in the same weight as the title bar's other text, its name semibold */
     b {
@@ -105,7 +107,6 @@
     --b-button-height                                : var(--ow-bar-control);
     --b-button-group-border-radius                   : 7px;
     --b-button-group-padded-padding                  : 2px;
-    --b-button-group-padded-button-opacity           : 1;
     --b-button-group-padded-pressed-background       : var(--ow-surface);
     --b-button-group-padded-pressed-hover-background : var(--ow-surface);
     --b-button-group-padded-pressed-box-shadow       : var(--ow-shadow-raised);
