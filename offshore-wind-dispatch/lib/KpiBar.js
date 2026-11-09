@@ -3,7 +3,6 @@ import { nextDay } from './util/Time.js';
 // Also registers the widget types used below
 import './Kpi.js';
 import './KpiClock.js';
-import './KpiWindow.js';
 
 /**
  * The day's counts: turbines due, turbines on a trip, either the trips past their window (when any) or the turbines a
@@ -30,9 +29,9 @@ export function dayKpis(trips, dispatch) {
 }
 
 /**
- * The header: the site, today and the time (KpiClock), then the one big thing, when the crew transfer vessels' weather
- * window closes and how much of it is left (KpiWindow), then the day's counts (Kpi), quiet, the plan's first and what
- * needs acting on after a divider. Everything else on screen explains the window.
+ * The header, clean: the site, today and the time (KpiClock) on the left, the day's counts (Kpi) on the right, the
+ * plan's first and what needs acting on after a divider. The weather window is told by the schedule itself: the wave
+ * chart's crossing, the no-go hatch and the late trip's tag.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
@@ -47,7 +46,8 @@ export default class KpiBar extends Container {
         layout : { type : 'hbox', align : 'center' },
         items  : {
             clock  : { type : 'kpiclock' },
-            window : { type : 'kpiwindow' },
+            // Pushes the counts to the right end
+            fill   : { type : 'widget', cls : 'ow-kpi-fill', flex : '1 1 0' },
             first  : { type : 'kpi' },
             second : { type : 'kpi' },
             // Between the plan and what needs acting on
@@ -61,18 +61,14 @@ export default class KpiBar extends Container {
      * Shows the state
      * @param {Object} values
      * @param {String} values.site
-     * @param {Number} values.opens When the day starts, the start of the window's countdown
      * @param {Number} values.now
      * @param {Boolean} [values.today] The day shown is today, a later day has no clock
-     * @param {Number} values.closes When the CTV window closes
-     * @param {Number} [values.was] When it closed before the latest forecast
      * @param {Object[]} values.kpis `{ label, value, tone }`, tone `warn`, `alert` or `stop` when it needs attention
      */
-    draw({ site, opens, now, today = true, closes, was, kpis }) {
-        const { clock, window, first, second, third, fourth } = this.widgetMap;
+    draw({ site, now, today = true, kpis }) {
+        const { clock, first, second, third, fourth } = this.widgetMap;
 
         clock.draw({ site, now : today ? now : null });
-        window.draw({ opens, now, closes, was });
         [first, second, third, fourth].forEach((kpi, index) => kpi.draw(kpis[index]));
     }
 }

@@ -20,23 +20,6 @@
         }
     }
 
-    /* The window on a line of its own, the countdown under its name */
-    .ow-window {
-        order     : 3;
-        flex      : 1 1 100%;
-        flex-wrap : wrap;
-        gap       : 6px;
-
-        .ow-window-heading b {
-            font-size : calc(var(--ow-size-hero) - 2px);
-        }
-
-        .ow-window-countdown {
-            flex      : 1 1 100%;
-            max-width : none;
-        }
-    }
-
     /* The schedule and the map as the tabs of a Bryntum TabPanel (DispatchApp#updatePhone), its tab bar styled as a
        segmented control */
     .ow-tab-bar.b-tab-bar {

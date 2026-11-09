@@ -1,4 +1,13 @@
 import { expect, test } from '@playwright/test';
+
+// When the CTV window closes, and closed before the latest forecast: the dispatch state (the header no longer shows it)
+const ctvClose = page => page.evaluate(() => {
+    const
+        { dispatch } = globalThis.bryntum.query('dispatchapp'),
+        hhmm         = minutes => minutes == null ? null : `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+    return { closes : hhmm(dispatch.windows.ctv), was : hhmm(dispatch.previousWindows?.ctv) };
+});
 import { collectErrors } from './errors.js';
 
 const
@@ -49,7 +58,7 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(trip(page, 'NT-1')).toBeVisible();
         // The weather no-go of every vessel is a resource time range
         await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(7);
-        await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 14:00');
+        expect((await ctvClose(page)).closes).toBe('14:00');
         await expect(page.locator('.ow-side .ow-turbine')).toBeVisible();
         await expect(page.locator('.ow-side [data-turbine]')).not.toHaveCount(0);
         await expect(tray(page).locator('.ow-team')).toHaveCount(3);
@@ -598,7 +607,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         await expect(board(page)).toBeHidden();
         await expect(scheduler(page)).toBeVisible();
         await expect(scheduler(page).locator('.ow-day')).not.toContainText('Today');
-        await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 18:00');
+        await expect.poll(async() => (await ctvClose(page)).closes).toBe('18:00');
 
         const thursday = await page.evaluate(() => {
             const
@@ -625,7 +634,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
 
         await expect(scheduler(page).locator('.ow-day')).toContainText('Today');
         await expect(trip(page, 'SP-1')).toBeVisible();
-        await expect(page.locator('.ow-kpis .ow-window')).toContainText('Closes 14:00');
+        await expect.poll(async() => (await ctvClose(page)).closes).toBe('14:00');
     });
 });
 
@@ -675,8 +684,9 @@ test.describe('Offshore Wind Dispatch forecast', () => {
 
         await expect(notice).toBeVisible();
         await expect(notice).toContainText('Forecast 08:00');
-        await expect(page.locator('.ow-kpis .ow-window')).toHaveClass(/\bow-window-short\b/);
-        await expect(page.locator('.ow-kpis .ow-window')).toContainText('was 14:00');
+        // The window closes earlier than it did before the forecast
+        await expect.poll(async() => (await ctvClose(page)).was).toBe('14:00');
+        expect((await ctvClose(page)).closes < '14:00').toBe(true);
 
         const changed = await page.evaluate(() => globalThis.bryntum.query('dispatchapp').forecastPlanner.changes.length);
 

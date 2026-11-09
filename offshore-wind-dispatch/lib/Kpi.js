@@ -1,7 +1,7 @@
 import { Widget } from '@bryntum/core-enterprise';
 
 /**
- * One of the day's counts: a label over a number, no box. A tone tints it when the number is above zero: `warn` (past
+ * One of the day's counts: a number over its label, no box. A tone tints it when the number is above zero: `warn` (past
  * the window) and `alert` (moved to tomorrow) in the at risk orange, `stop` (turbines stopped) in red.
  *
  * Learn more:
@@ -28,8 +28,8 @@ export default class Kpi extends Widget {
 
         ['warn', 'alert', 'stop'].forEach(each => me.toggleCls(`ow-kpi-${each}`, Boolean(tone === each && value)));
         me.html = [
-            { tag : 'small', text : label },
-            { tag : 'b', text : String(value) }
+            { tag : 'b', text : String(value) },
+            { tag : 'small', text : label }
         ];
     }
 }

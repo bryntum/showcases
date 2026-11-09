@@ -25,7 +25,7 @@
 }
 
 /* The clock, the window's name and each count stack their label over the figure */
-:is(.ow-clock, .ow-kpi, .ow-window-heading).b-widget {
+:is(.ow-clock, .ow-kpi).b-widget {
     display : block;
 }
 
@@ -47,83 +47,16 @@
     }
 }
 
-/* The weather window: its name over "Closes 14:00", then the countdown from the start of the day to the close */
-.ow-window {
-    --b-container-gap : 32px;
-
-    flex      : 1 1 auto;
-    min-width : 0;
-}
-
-.ow-window-heading {
-    flex : none;
-
+/* The counts: the number over its label, 22px, no boxes */
+.ow-kpi {
     b {
-        font-size      : var(--ow-size-hero);
-        /* Large but light: the size makes it the one big thing, not the weight */
-        font-weight    : 400;
-        line-height    : 1.15;
-        letter-spacing : -0.01em;
-        color          : var(--ow-ink);
+        font-size   : var(--ow-size-kpi);
+        font-weight : 600;
     }
 
-    /* The close before the latest forecast */
-    em {
-        font-size       : 12px;
-        font-style      : normal;
-        color           : var(--ow-c-muted);
-        text-decoration : line-through;
+    small {
+        margin-block-start : 2px;
     }
-}
-
-/* The countdown, a Bryntum ProgressBar: the time gone in grey, what is left of the window in blue, the start and the
-   close under it with how long is left between them */
-.ow-window-countdown {
-    position  : relative;
-    flex      : 1 1 0;
-    min-width : 160px;
-    max-width : 520px;
-}
-
-.ow-window-bar.b-progress-bar {
-    --b-primary                 : var(--ow-c-transit);
-    --b-progress-bar-background : var(--ow-c-work);
-
-    flex-direction : column-reverse;
-    margin         : 0;
-
-    .b-progress-bar-header {
-        margin-block : 6px 0;
-    }
-
-    .b-label {
-        font-size : 12px;
-        color     : var(--ow-c-muted);
-    }
-
-    .b-progress-bar-label {
-        margin : 0;
-    }
-}
-
-/* How long is left, centred under the bar */
-.ow-window-left.b-widget {
-    position          : absolute;
-    inset-block-end   : 0;
-    inset-inline      : 0;
-    margin-inline     : auto;
-    width             : max-content;
-    font-size         : 12px;
-    font-weight       : 500;
-    line-height       : 1.5;
-    white-space       : nowrap;
-    pointer-events    : none;
-}
-
-/* The counts: 22px, no boxes */
-.ow-kpi b {
-    font-size   : var(--ow-size-kpi);
-    font-weight : 600;
 }
 
 /* What needs acting on, after a divider */
