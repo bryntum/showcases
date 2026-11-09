@@ -86,7 +86,7 @@ function renderLeg(leg, renderData) {
  * @param {Number} close When the trip's window closes
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, close) {
+export function renderTrip({ eventRecord, renderData }, close, now) {
     if (eventRecord.isLeg) {
         return renderLeg(eventRecord, renderData);
     }
@@ -98,7 +98,15 @@ export function renderTrip({ eventRecord, renderData }, close) {
     renderData.cls['ow-trip-heli']            = trip.mode === 'heli';
     renderData.cls['ow-trip-drop']            = trip.hasPreview;
 
+    const
+        underway = trip.startMinute <= now && trip.status !== 'moved',
+        done     = Math.min(100, (now - trip.startMinute) / Math.max(1, trip.endMinute - trip.startMinute) * 100);
+
+    renderData.cls['ow-trip-underway'] = underway;
+
     return [
+        // The part behind the Now line
+        underway ? { class : 'ow-underway', style : `width:${done}%` } : null,
         {
             class    : 'ow-trip-head',
             children : [

@@ -232,6 +232,8 @@
 
         /* The head line, the height of the feature's `headerHeight` */
         > .b-sch-event-content {
+            /* Not a containing block: the shade of a trip under way covers the whole trip */
+            position       : static;
             display        : block;
             flex           : 0 0 var(--b-nested-events-header-height);
             width          : 100%;
@@ -287,6 +289,20 @@
         border-color : var(--ow-tone);
         box-shadow   : 0 0 0 1.5px var(--ow-tone), 0 4px 12px color-mix(in srgb, var(--ow-tone) 25%, transparent);
     }
+}
+
+/* A trip under way: shaded up to the Now line */
+.ow-underway {
+    position         : absolute;
+    inset-block      : 0;
+    inset-inline-start : 0;
+    background-color : color-mix(in srgb, var(--ow-ink) 14%, transparent);
+    pointer-events   : none;
+    z-index          : 1;
+}
+
+.ow-scheduler .b-sch-event.ow-trip-underway {
+    cursor : default;
 }
 
 .ow-trip-head {
@@ -345,19 +361,21 @@
 
     > .b-sch-event.ow-seg {
         box-sizing       : border-box;
-        width            : calc(100% - 2px);
-        height           : var(--ow-seg-height);
-        margin-block     : 0 2px;
-        margin-inline    : 1px;
+        width            : 100%;
+        height           : 100%;
+        margin           : 0;
+        /* 1px of the feature's resourceMargin and 1px of this clear border on each side: 2px between neighbouring
+           legs, 2px between the legs and the trip's edge, all round */
+        border           : 1px solid transparent;
+        background-clip  : padding-box;
         translate        : none;
         display          : flex;
         align-items      : center;
         justify-content  : center;
         gap              : 4px;
         padding          : 0;
-        border           : 0;
         border-radius    : 3px;
-        background       : none;
+        background-color : transparent;
         font-size        : 11px;
         font-weight      : 400;
         line-height      : 1;

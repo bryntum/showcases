@@ -176,7 +176,7 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back })
     }
 
     if (trip.start <= now) {
-        return [`${vessel} left port with ${trip.id} already`, 'Left port'];
+        return [`${trip.id} left port at ${hhmm(trip.start)}; ${team.name} is ashore`, 'Left port'];
     }
 
     if (seats > trip.seats) {
