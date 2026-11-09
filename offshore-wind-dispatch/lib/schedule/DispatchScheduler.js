@@ -9,6 +9,7 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
+import { beforeTripEditShow, canEditTrip, tripEdit } from './TripEdit.js';
 import { hhmm, shownDay, toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
@@ -168,6 +169,7 @@ export default class DispatchScheduler extends Scheduler {
                     constrainDragToResource : true,
                     validatorFn             : context => me.validateTripDrag(context)
                 },
+                taskEdit     : tripEdit,
                 eventTooltip : { template : ({ eventRecord }) => tripTipContent(eventRecord.trip, me.dispatch) },
                 // The sail out and back of a trip, its preamble and postamble: a line with the clock times at its ends
                 eventBuffer  : { renderer : args => me.renderTransits(args) },
@@ -186,6 +188,9 @@ export default class DispatchScheduler extends Scheduler {
         });
 
         me.on({
+            beforeTaskEdit         : 'onBeforeTripEdit',
+            beforeTaskSave         : 'onBeforeTripSave',
+            beforeTaskEditShow     : beforeTripEditShow,
             paint                  : 'onSchedulerPaint',
             timelineViewportResize : 'fitTicks',
             thisObj                : me
@@ -207,6 +212,45 @@ export default class DispatchScheduler extends Scheduler {
         if (changed.length) {
             this.trigger('waitChange', { trips : changed });
         }
+    }
+
+    // A leg opens its trip's editor, a trip under way or moved to tomorrow none
+    onBeforeTripEdit({ taskRecord }) {
+        if (taskRecord.isLeg && canEditTrip(taskRecord.trip)) {
+            queueMicrotask(() => this.editEvent(taskRecord.trip));
+        }
+
+        return !taskRecord.isLeg && canEditTrip(taskRecord);
+    }
+
+    /**
+     * Fired when the trip editor is saved with a new time on station: the trip is laid out again from its new
+     * departure, as when it is dragged (DispatchApp#onTripTimeChange)
+     * @event tripTimeChange
+     * @param {TripModel} trip
+     * @param {Date} startDate The trip's new start, its arrival at the first stop
+     */
+
+    // The editor's time is checked as a drag to it is. A trip's times follow from its departure and its legs, so the
+    // editor does not save it: it is closed, and the trip laid out again from the new departure
+    onBeforeTripSave({ taskRecord : trip, editor }) {
+        const
+            me                 = this,
+            { startDateField } = editor.widgetMap,
+            { timeField }      = startDateField,
+            startDate          = startDateField.value,
+            check              = me.validateTripDrag({ eventRecords : [trip], startDate });
+
+        // On the time, the part shown (the date-time field would put it on its hidden date too), until it changes. Once
+        // the engine has calculated the time typed: the editor reloads the trip then, which clears its fields' errors
+        if (check !== true) {
+            me.project.commitAsync().then(() => timeField.setError(check.message));
+        }
+        else {
+            me.features.taskEdit.cancel().then(() => me.trigger('tripTimeChange', { trip, startDate }));
+        }
+
+        return false;
     }
 
     doDestroy() {

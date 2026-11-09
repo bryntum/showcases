@@ -95,6 +95,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
             afterEventDrop       : 'onTripDrop',
+            tripTimeChange       : 'onTripTimeChange',
             waitChange           : 'onWaitChange',
             thisObj              : me
         });
@@ -313,6 +314,11 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             trip          = eventRecords?.[0];
 
         return valid ? this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) })) : null;
+    }
+
+    // The trip editor saved a new time on station
+    onTripTimeChange({ trip, startDate }) {
+        return this.replan(() => trip.layout({ departs : this.scheduler.departsAt(trip, startDate) }));
     }
 
     /**
