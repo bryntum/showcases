@@ -1,6 +1,7 @@
 /* The vessel column and the group rows (schedule/TripRendering.js) */
 
-/* The type's icon, muted, left of the name over one muted line: type, limit and seats */
+/* The type's icon, muted, in a circle on a discreet tint, left of the name over one muted line: type, limit and
+   seats */
 .ow-resource {
     display     : flex;
     align-items : center;
@@ -9,8 +10,14 @@
     line-height : 1.3;
 
     .ow-icon-host {
-        flex  : none;
-        color : var(--ow-c-muted);
+        flex             : none;
+        display          : grid;
+        place-items      : center;
+        width            : 36px;
+        height           : 36px;
+        border-radius    : 50%;
+        color            : var(--ow-c-muted);
+        background-color : color-mix(in srgb, var(--ow-c-muted) 9%, transparent);
     }
 
     .ow-resource-icon {
