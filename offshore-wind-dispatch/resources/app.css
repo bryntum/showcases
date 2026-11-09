@@ -1,11 +1,31 @@
 /* Offshore Wind Dispatch styles, one file per part of the app, in cascade order. The theme comes first, see app.js */
 
 @import './tokens.css';
-@import './layout.css';
+@import './layout/app.css';
+@import './layout/kpis.css';
+@import './layout/panels.css';
+@import './layout/tray.css';
+@import './layout/notice.css';
+@import './layout/legend.css';
 @import './header.css';
-@import './schedule.css';
-@import './drag.css';
-@import './map.css';
+@import './schedule/scheduler.css';
+@import './schedule/vessels.css';
+@import './schedule/ranges.css';
+@import './schedule/trips.css';
+@import './schedule/legs.css';
+@import './schedule/dependencies.css';
+@import './schedule/tooltip.css';
+@import './drag/chip.css';
+@import './drag/tooltip.css';
+@import './map/map.css';
+@import './map/farm.css';
+@import './map/show-all.css';
+@import './map/turbines.css';
+@import './map/labels.css';
+@import './map/callout.css';
+@import './map/legend.css';
+@import './map/card.css';
+@import './map/tooltip.css';
 @import './phone.css';
 
 /* Shown in place of the app when it fails to load, see app.js */

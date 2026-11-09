@@ -1,0 +1,21 @@
+/* The dependency lines (schedule/TripRendering.js) */
+
+/* The dependency lines, drawn by the Dependencies feature from a trip into a stop, solid, 1px */
+.ow-scheduler .b-sch-dependency {
+    &.ow-dep {
+        --b-dependency-color : var(--ow-ink-sub);
+
+        stroke-dasharray : none;
+        stroke-linejoin  : round;
+
+        &.ow-dep-broken {
+            --b-dependency-color : var(--ow-cancel);
+        }
+    }
+
+    /* A stop waits for tomorrow with its trip, and the links that keep a trip's legs in order, for the scheduling
+       engine (TripData#chainData), are not drawn */
+    &.ow-dep-moved, &.ow-dep-chain {
+        display : none;
+    }
+}

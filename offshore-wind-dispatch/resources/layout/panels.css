@@ -1,0 +1,91 @@
+/* The two halves and their title bars (TitleBars.js) */
+
+/* The two halves */
+.ow-main {
+    min-height : 0;
+}
+
+.ow-schedule, .ow-side {
+    min-width  : 0;
+    min-height : 0;
+}
+
+.ow-schedule {
+    border-inline-end : 1px solid var(--ow-border);
+}
+
+.ow-side {
+    flex : none;
+}
+
+.ow-panel-bar {
+    flex            : none;
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    gap             : 12px;
+    height          : 44px;
+    padding         : 0 16px;
+    border-block-end : 1px solid var(--ow-border);
+}
+
+.ow-panel-title {
+    margin-inline-end : auto;
+    font-weight       : 600;
+    font-size         : 14px;
+    white-space       : nowrap;
+
+    small {
+        margin-inline-start : 6px;
+        font-weight : 400;
+        color       : var(--ow-ink-sub);
+    }
+}
+
+/* The next forecast, in: the one action that changes the plan */
+.ow-forecast-button {
+    display          : flex;
+    align-items      : center;
+    gap              : 6px;
+    height           : 28px;
+    padding          : 0 10px;
+    border           : 1px solid color-mix(in srgb, var(--ow-cancel) 40%, transparent);
+    border-radius    : 7px;
+    font-size        : 12px;
+    font-weight      : 600;
+    white-space      : nowrap;
+    color            : var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
+
+    &:hover {
+        background-color : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
+    }
+}
+
+.ow-seg-buttons {
+    display          : flex;
+    padding          : 2px;
+    border-radius    : 7px;
+    background-color : var(--b-neutral-95);
+
+    button {
+        min-width     : 30px;
+        height        : 26px;
+        padding       : 0 10px;
+        border        : 0;
+        border-radius : 5px;
+        background    : none;
+        font-size     : 12px;
+        font-weight   : 500;
+
+        &:disabled {
+            cursor  : default;
+            opacity : 0.4;
+        }
+    }
+
+    .ow-pressed {
+        background-color : var(--ow-surface);
+        box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+    }
+}

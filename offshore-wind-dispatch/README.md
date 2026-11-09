@@ -66,7 +66,7 @@ again from that.
 | Transit times, the layout of the farm and the map | `lib/plan/Farm.js` |
 | When a window closes | `lib/plan/Weather.js` |
 | Whether a team fits on a trip, what a new forecast does to a trip, what a trip can still reach | `lib/plan/Planner.js` |
-| How a trip bar, the vessel column and the no-go areas look | `lib/schedule/TripRendering.js`, `resources/schedule.css` |
+| How a trip bar, the vessel column and the no-go areas look | `lib/schedule/TripRendering.js`, `resources/schedule/` |
 | The rows of the time axis, the wave height chart | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | The turbine illustration and the map markers | `lib/map/Turbine.js` |
 | Colours, light and dark | `resources/tokens.css` |
@@ -80,25 +80,37 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
   dependency
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`), the team tray
-    (`TeamTray.js`), the forecast notice (`ForecastNotice.js`), the schedule and the map. `TitleBars.js` draws the
-    panel bars, the phone tabs and the legend, `TeamDrag.js` drags a team onto a trip, `DropPreview.js` (a mixin of
-    the app) previews and books it, `MapLink.js` links the hover of the map and the schedule
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`), the schedule
+    panel and the map panel (`panel/`), and the phone tabs. It holds the selection and wires the parts together.
+    `TitleBars.js` draws the panel bars and the legend, `DropPreview.js` (a mixin of the app) previews and books a
+    dropped team, `MapLink.js` links the hover of the map and the schedule, `TeamTray.js` is the team tray and
+    `ForecastNotice.js` the forecast notice
+  * `panel/` the panels of the app, each a Container: `SchedulePanel` (the title bar, the tray, the notice, the
+    scheduler and the legend), `MapPanel` (the title bar, the map and the turbine card) and `PhoneTabs` (a `TabPanel`
+    with the arrow keys)
+  * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
+    over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
+    that follows the pointer)
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
     the trips (`Planner`), the state apart from the trips (`DispatchState`) and the re-planning on a new forecast
     (`ForecastPlanner`)
-  * `schedule/` the `DispatchScheduler`, its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`),
-    and the rendering of the trips and their legs, the vessels, groups, ranges and the dependency (`TripRendering`)
-  * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs) and `VesselModel`
-  * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, drawn from `MapModel`), the selected turbine
-    and the map's tooltip (`TurbineCard`) and the turbine drawing (`Turbine`)
+  * `schedule/` the `DispatchScheduler`, `DispatchSync` (the no-go ranges, the now line and the dependencies in the
+    project's stores), its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
+    (`TripTip`), and the rendering of the trips and their legs, the vessels, groups, ranges and the dependency
+    (`TripRendering`)
+  * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs), `TripData` (a trip, its legs and the
+    links between them as Scheduler data) and `VesselModel`
+  * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, `TurbineModel`, drawn from `MapModel` and
+    `MapDrawing`), its viewport (`MapViewport` and the view arithmetic in `MapView`: zoom, pan and pinch), the
+    `TurbineTooltip`, the `MapLegend`, the `ShowAllButton`, the selected turbine (`TurbineCard`) and the turbine
+    drawing (`Turbine`)
   * `util/` the times of the day and the icons
-* `resources/` the CSS: `app.css` imports the tokens and one file per part (the header, the layout, the schedule, the
-  map, the drag, the phone layout)
+* `resources/` the CSS: `app.css` imports the tokens and one file per component, in folders that mirror `lib/`
+  (`layout/`, `schedule/`, `drag/`, `map/`), then the header and the phone layout
 
 ## Code tour
 
-### Weather windows as resource time ranges: `lib/schedule/DispatchScheduler.js`
+### Weather windows as resource time ranges: `lib/schedule/DispatchSync.js`
 
 Each vessel's window closes at the start of the first hour its limit is crossed (`Weather#closingTimes`). `syncRanges()`
 turns that into one resource time range per vessel, from the close to the end of the day, drawn hatched by
@@ -106,12 +118,12 @@ turns that into one resource time range per vessel, from the close to the end of
 brought forward by the forecast leaves a faint ghost at its old place, a resource time range too. The shaded past and
 the now line are time ranges (the TimeRanges feature).
 
-### Trips with their legs nested inside: `lib/model/TripModel.js`, `lib/schedule/TripRendering.js`
+### Trips with their legs nested inside: `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js`
 
 The Scheduler runs on the Enterprise tier with the NestedEvents feature, and its event store is a tree. A trip is a
 parent event, its legs are its children: the transit out, the turbine stops (`kind : 'stop'`, `{ turbine, minutes,
 team }`) with the hops between them, and the transit back. Each trip and each leg is assigned to the vessel, a nested
-event shows only where it and its parent are both assigned (`TripModel.projectData`).
+event shows only where it and its parent are both assigned (`projectData` in `TripData.js`).
 
 The trip's stops are read from its stop children. Changing them, or the departure, goes through `TripModel#layout`:
 `Planner#buildLegs` puts the transits between the stops, and every leg gets its start and duration from the departure.
@@ -125,7 +137,7 @@ trip, so a trip is dragged, hovered and selected as one, and a click on a stop i
 along their own row only, and not into the past or once gone (the EventDrag feature's `validatorFn`). A dropped trip's
 legs are placed again from its new departure.
 
-### A dependency into a stop: `lib/model/TripModel.js`, `lib/schedule/DispatchScheduler.js`
+### A dependency into a stop: `lib/model/TripData.js`, `lib/schedule/DispatchSync.js`
 
 The Dependencies feature draws the line from the helicopter's trip into the T-45 stop, a nested event of the SWATH's
 trip (`toEvent : 'BP-1:T-45'`). It is active, as the feature has it by default: a trip drag that would start the stop
@@ -143,7 +155,7 @@ is the schedule's own day without padding, so each hour of the chart sits over t
 element is moved into the cell each time the header is drawn, not recreated. Its colours are read from the CSS custom
 properties, and it is drawn again when the page switches between light and dark.
 
-### The drag: `lib/TeamDrag.js`, `lib/plan/Planner.js`
+### The drag: `lib/drag/TeamDrag.js`, `lib/drag/KeyboardDrag.js`, `lib/plan/Planner.js`
 
 The team chips are dragged with Bryntum's `DragHelper` (the same helper as the Scheduler "drag from grid" demo), which
 handles the threshold, the proxy chip, mouse, pen and touch, Escape and the animated return of a refused drop. The
@@ -155,7 +167,7 @@ the window, shown in a Bryntum `Tooltip` aligned to the point the team is held a
 reach, which the map rings.
 
 A trip or turbine the user selects animates the map's viewBox to fit the trip's turbines and the port
-(`TurbineMap#fitTo`). Zoomed in, a drag on the map pans it within the farm (`TurbineMap#onPanStart`); a drag that starts
+(`TurbineMap#fitTo`, which `MapViewport` runs). Zoomed in, a drag on the map pans it within the farm (`MapViewport#onPanStart`); a drag that starts
 on a turbine still selects it. A "Show all" button, shown only while zoomed, goes back. While a team is held the map shows the whole farm, since what the trip can still reach is spread across it.
 
 ### A new forecast: `lib/plan/ForecastPlanner.js`

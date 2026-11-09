@@ -1,0 +1,73 @@
+/* The legs of a trip, its nested events (schedule/TripRendering.js) */
+
+/* The legs, nested events. They let the pointer through to their trip, which is dragged, hovered and clicked as one
+ * (a click on a stop finds it by time, DispatchApp#onTripClick). 1px each side leaves a gap between legs.
+ *
+ * Centred in the trip's body under its head line: the feature makes each leg's box the trip's height less the head
+ * (`headerHeight`), which counts the trip's 1px top and bottom border in, so the box reaches 2px below the body. The
+ * bar is centred in that box with 2px kept free under it, which centres it in the body itself */
+.ow-scheduler .b-nested-event {
+    pointer-events : none;
+
+    > .b-sch-event.ow-seg {
+        /* 1px of the feature's resourceMargin and 1px of this clear border on each side: 2px between neighbouring
+           legs, 2px between the legs and the trip's edge, all round */
+        --b-sch-event-border-width   : 1px;
+        --b-sch-event-border-style   : solid;
+        --b-sch-event-border-color   : transparent;
+        --b-sch-event-border-radius  : 3px;
+        --b-sch-event-background     : transparent;
+        --b-sch-event-padding-inline : 0;
+        --b-sch-event-font-size      : 11px;
+
+        justify-content : center;
+        margin          : 0;
+        padding         : 0;
+        background-clip : padding-box;
+        /* The feature shifts nested events by their border, the clear border here is part of the gap */
+        translate       : none;
+        line-height     : 1;
+
+        /* The turbine and its hours, or the vessel's icon, in the middle of the bar both ways */
+        > .b-sch-event-content {
+            flex            : 0 1 auto;
+            justify-content : center;
+            padding-block   : 0;
+            line-height     : 1;
+        }
+
+        small {
+            font-size : 10px;
+            opacity   : 0.8;
+        }
+    }
+
+    > .b-sch-event.ow-seg-transit {
+        --b-sch-event-color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink-sub));
+
+        background-image : repeating-linear-gradient(-45deg,
+            color-mix(in srgb, var(--ow-tone) 16%, transparent) 0 3px, transparent 3px 6px);
+
+        .ow-seg-icon {
+            display : flex;
+        }
+
+        .ow-icon {
+            width  : 14px;
+            height : 14px;
+        }
+    }
+
+    > .b-sch-event.ow-seg-stop {
+        --b-sch-event-color      : #fff;
+        --b-sch-event-background : var(--ow-tone);
+    }
+
+    > .b-sch-event.ow-seg-preview {
+        --b-sch-event-color      : var(--ow-reach);
+        --b-sch-event-background : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
+
+        outline        : 1.5px dashed var(--ow-reach);
+        outline-offset : -1.5px;
+    }
+}

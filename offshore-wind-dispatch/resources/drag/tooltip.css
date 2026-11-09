@@ -1,0 +1,64 @@
+/* The tooltip of a team held over a trip (drag/DropTooltip.js) */
+
+/* The Bryntum Tooltip of the trip under a held team, styled as a card */
+.b-tooltip.ow-drop-tip {
+    --ow-tone : var(--ow-reach);
+
+    --b-popup-background    : var(--ow-surface);
+    --b-popup-border        : 1px solid var(--ow-border);
+    --b-popup-border-radius : 9px;
+    --b-popup-padding       : 10px 12px;
+
+    width      : 248px;
+    box-shadow : 0 10px 30px rgb(0 0 0 / 20%);
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 3px 10px;
+        margin                : 8px 0;
+    }
+
+    dt {
+        color : var(--ow-ink-sub);
+    }
+
+    dd {
+        margin               : 0;
+        font-variant-numeric : tabular-nums;
+    }
+
+    &.ow-drop-tip-invalid {
+        --ow-tone : var(--ow-cancel);
+    }
+}
+
+.ow-drop-tip-head {
+    display     : flex;
+    align-items : center;
+    gap         : 6px;
+    font-weight : 700;
+    color       : var(--ow-tone);
+}
+
+.ow-drop-tip-foot {
+    padding-block-start : 7px;
+    border-block-start  : 1px solid var(--ow-border);
+    font-size           : 11.5px;
+    color               : var(--ow-ink-sub);
+}
+
+/* Held from the keyboard, the keys that move, book or cancel */
+.ow-drop-tip-keys {
+    margin-block-start : 6px;
+    font-size          : 11px;
+    color              : var(--ow-ink-sub);
+
+    kbd {
+        padding       : 0 4px;
+        border        : 1px solid var(--ow-border);
+        border-radius : 3px;
+        font          : inherit;
+        font-weight   : 600;
+    }
+}

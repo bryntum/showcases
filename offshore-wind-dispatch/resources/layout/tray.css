@@ -1,0 +1,100 @@
+/* The teams waiting at the port (TeamTray.js) */
+
+/* Teams waiting at the port */
+.ow-tray {
+    flex             : none;
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 8px 16px;
+    background-color : var(--ow-sunken);
+    border-block-end : 1px solid var(--ow-border);
+    overflow         : hidden;
+}
+
+.ow-tray-title {
+    /* The teams sit at the right end of the tray */
+    margin-inline-end : auto;
+    display     : flex;
+    align-items : center;
+    gap         : 5px;
+    font-size   : 12px;
+    font-weight : 600;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+}
+
+.ow-tray-empty {
+    font-size   : 11.5px;
+    color       : var(--ow-ink-faint);
+    white-space : nowrap;
+}
+
+.ow-team {
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 5px 10px;
+    border           : 1px solid var(--ow-border);
+    border-radius    : 8px;
+    background-color : var(--ow-surface);
+    box-shadow       : 0 1px 2px rgb(0 0 0 / 6%);
+    font-size        : 12px;
+    white-space      : nowrap;
+    cursor           : grab;
+    user-select      : none;
+    /* Pointer events drive the drag on touch too, see TeamDrag */
+    touch-action     : none;
+
+    &:hover {
+        border-color : color-mix(in srgb, var(--ow-reach) 50%, var(--ow-border));
+    }
+}
+
+.ow-team-lifted {
+    border-style : dashed;
+    box-shadow   : none;
+    opacity      : 0.45;
+}
+
+.ow-team-text {
+    display        : flex;
+    flex-direction : column;
+    line-height    : 1.25;
+}
+
+.ow-team-name {
+    display     : flex;
+    align-items : center;
+    gap         : 10px;
+
+    .ow-certs {
+        margin-inline-start : auto;
+    }
+}
+
+.ow-team-job {
+    font-size : 11px;
+    color     : var(--ow-ink-sub);
+}
+
+/* The certificates as quiet text, only HV, the one a job can need, is emphasised */
+.ow-certs {
+    display : flex;
+    gap     : 4px;
+}
+
+.ow-cert {
+    font-size : 10.5px;
+    color     : var(--ow-ink-faint);
+
+    & + &::before {
+        content      : '/';
+        margin-inline-end : 4px;
+    }
+}
+
+.ow-cert-hv {
+    font-weight : 700;
+    color       : var(--ow-weather);
+}

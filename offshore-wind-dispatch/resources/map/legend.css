@@ -1,0 +1,26 @@
+/* The legend of the map (map/MapLegend.js) */
+
+/* One row at the panel's width, the markers as the map draws them, In work with its wrench */
+.ow-map-legend {
+    position    : absolute;
+    inset       : auto 10px 8px;
+    display     : flex;
+    flex-wrap   : wrap;
+    gap         : 4px 10px;
+    font-size   : 11px;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+
+    span {
+        display     : flex;
+        align-items : center;
+        gap         : 4px;
+    }
+
+    .ow-legend-mark {
+        flex     : none;
+        width    : 16px;
+        height   : 16px;
+        overflow : visible;
+    }
+}

@@ -1,0 +1,53 @@
+/* The weather no-go ranges of the vessels and the old place of a trip brought forward (schedule/DispatchSync.js) */
+
+/* Weather no-go: from the hour the limit is crossed, hatched in the weather colour, the window line at its start */
+.ow-scheduler .b-sch-resource-time-range {
+    --b-resource-time-range-background     : none;
+    --b-resource-time-range-color          : var(--ow-weather);
+    /* The label sits in the bottom left corner, 3px up and 8px in */
+    --b-resource-time-range-padding-block  : 0 3px;
+    --b-resource-time-range-padding-inline : 8px 0;
+    --b-resource-time-range-font-size      : 1em;
+
+    /* Quiet: a faint hatch and a 1px line where the window closes; the trips over it carry the warning */
+    &.ow-nogo {
+        background-image    : repeating-linear-gradient(-45deg,
+            color-mix(in srgb, var(--ow-weather) 9%, transparent) 0 1.5px,
+            transparent 1.5px 8px);
+        border-inline-start : 1px solid color-mix(in srgb, var(--ow-weather) 70%, transparent);
+    }
+
+    /* The old place of a trip brought forward */
+    &.ow-ghost {
+        background : none;
+
+        &::before {
+            content       : '';
+            position      : absolute;
+            inset         : 7px 0 14px;
+            border        : 1.5px dashed color-mix(in srgb, var(--ow-heli) 50%, transparent);
+            border-radius : var(--ow-radius);
+        }
+    }
+}
+
+.ow-nogo-label {
+    display     : flex;
+    align-items : center;
+    gap         : 4px;
+    font-size   : 10px;
+    font-weight : 500;
+    color       : var(--ow-ink-faint);
+    white-space : nowrap;
+
+    .ow-nogo-icon {
+        display : flex;
+        color   : var(--ow-weather);
+    }
+
+    small {
+        font-weight     : 500;
+        color           : var(--ow-ink-faint);
+        text-decoration : line-through;
+    }
+}

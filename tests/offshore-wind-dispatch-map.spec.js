@@ -148,12 +148,12 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         // The point of the farm under a point of the screen
         farmPointAt = (page, { x, y }) => page.evaluate(({ x, y }) => {
             const
-                map    = globalThis.bryntum.query('turbinemap'),
-                screen = map.screenOf();
+                { viewport } = globalThis.bryntum.query('turbinemap'),
+                screen       = viewport.screenOf();
 
             return {
-                x : map.view.x + (x - screen.left) / screen.scale,
-                y : map.view.y + (y - screen.top) / screen.scale
+                x : viewport.view.x + (x - screen.left) / screen.scale,
+                y : viewport.view.y + (y - screen.top) / screen.scale
             };
         }, { x, y });
 

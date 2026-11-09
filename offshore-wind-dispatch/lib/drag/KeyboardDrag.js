@@ -1,0 +1,208 @@
+import { DomHelper } from '@bryntum/core-enterprise';
+import { createChip } from './DragChip.js';
+
+export const chipSelector = '.ow-team[data-team]';
+
+/**
+ * Dragging a team without a pointer. DragHelper has no keyboard drag, so the keyboard holds a team over a trip itself:
+ * Enter or Space on a focused chip holds the team over the selected trip (or the first one), the arrow keys move it to
+ * the previous or next trip, Enter or Space books it, and Escape or Tab puts it back. The tooltip is a live region
+ * (DropTooltip), so a screen reader reads what each trip would give.
+ *
+ * Also what `?state=drag` and the tests use to show a team held over a trip: `showHeld()`.
+ *
+ * It works through the TeamDrag it belongs to, which holds the team, the preview and the tooltip.
+ */
+export default class KeyboardDrag {
+    /**
+     * @param {Object} options
+     * @param {TeamDrag} options.drag
+     */
+    constructor({ drag }) {
+        const me = this;
+
+        me.drag    = drag;
+        me.onChipKey = event => me.onChipKeyDown(event);
+        me.onHeldKey = event => me.onHeldKeyDown(event);
+        drag.source.addEventListener('keydown', me.onChipKey);
+    }
+
+    destroy() {
+        this.endHeld();
+        this.drag.source.removeEventListener('keydown', this.onChipKey);
+    }
+
+    // Enter or Space on a team's chip holds it over a trip
+    onChipKeyDown(event) {
+        const chip = (event.key === 'Enter' || event.key === ' ') && !this.drag.isDragging &&
+            event.target.closest(chipSelector);
+
+        if (chip) {
+            event.preventDefault();
+            this.start(chip.dataset.team);
+        }
+    }
+
+    /**
+     * Holds a team over the selected trip, or the first one, for the keyboard to move and drop
+     * @param {String} teamId
+     */
+    start(teamId) {
+        const
+            me    = this,
+            { scheduler, handler } = me.drag,
+            trips = handler.dropTargets(),
+            index = Math.max(0, trips.indexOf(scheduler.selectedEvents[0]));
+
+        if (trips.length) {
+            me.keyboard = { trips, index };
+            me.showHeld(teamId, trips[index]);
+        }
+    }
+
+    /**
+     * The trips the arrows step through, read again after the forecast, which may have moved some to tomorrow
+     * @param {TripModel} trip The trip the team is held over
+     */
+    refreshTrips(trip) {
+        const { keyboard } = this;
+
+        if (keyboard) {
+            keyboard.trips = this.drag.handler.dropTargets();
+            keyboard.index = keyboard.trips.indexOf(trip);
+        }
+    }
+
+    // While held from the keyboard: the arrows move the team to another trip, Enter or Space books, Escape cancels,
+    // Tab puts it back and moves on
+    onHeldKeyDown(event) {
+        const
+            me   = this,
+            team = me.drag.team,
+            step = { ArrowRight : 1, ArrowDown : 1, ArrowLeft : -1, ArrowUp : -1 }[event.key];
+
+        if (!team || !me.held) {
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            me.endHeld();
+
+            return;
+        }
+
+        if (step && me.keyboard) {
+            me.step(step);
+        }
+        else if ((event.key === 'Enter' || event.key === ' ') && me.keyboard) {
+            me.book(team);
+        }
+        else if (event.key === 'Escape') {
+            me.endHeld();
+            me.focusChip(team);
+        }
+        else {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    // Holds the team over the previous or next trip
+    step(step) {
+        const
+            { keyboard } = this,
+            count        = keyboard.trips.length,
+            // Held over a trip no longer in the list (the forecast moved it), the arrows start from either end
+            from         = keyboard.index < 0 ? (step > 0 ? -1 : 0) : keyboard.index;
+
+        if (count) {
+            keyboard.index = (from + step + count) % count;
+            this.holdOver(keyboard.trips[keyboard.index]);
+        }
+    }
+
+    // Books the team on the trip it is held over
+    book(team) {
+        const
+            me     = this,
+            target = me.drag.handler.drop?.target ?? me.keyboard.trips[me.keyboard.index];
+
+        if (target) {
+            me.drag.handler.dropTeam(team, target);
+        }
+
+        me.endHeld();
+        me.focusChip(team);
+    }
+
+    // Focus back on the team's chip, or the first one once it is booked
+    focusChip(teamId) {
+        const { source } = this.drag;
+
+        (source.querySelector(`.ow-team[data-team="${teamId}"]`) ?? source.querySelector(chipSelector))?.focus();
+    }
+
+    /**
+     * Shows a team held over a trip without a pointer, the chip on the trip's previewed stop. For the URL state
+     * `?state=drag`, the screenshots and the tests, and for the keyboard. Escape puts the team back, as in a drag
+     * @param {String} teamId
+     * @param {TripModel} trip
+     */
+    showHeld(teamId, trip) {
+        const
+            me           = this,
+            { team, job } = me.drag.handler.waitingTeam(teamId);
+
+        me.drag.lift(teamId);
+        me.held = createChip(team, job);
+        document.body.appendChild(me.held);
+        document.addEventListener('keydown', me.onHeldKey, true);
+        me.holdOver(trip);
+    }
+
+    /**
+     * Moves a team held without a pointer over a trip, the chip and the tooltip on the trip's previewed stop
+     * @param {TripModel} trip
+     */
+    holdOver(trip) {
+        const
+            me                     = this,
+            { handler, scheduler } = me.drag;
+
+        handler.previewDrop(me.drag.team, trip);
+
+        if (me.keyboard) {
+            scheduler.scrollEventIntoView(trip, { block : 'nearest' });
+        }
+
+        // Placed once the trip shows the previewed stop, the engine places it first
+        scheduler.project.commitAsync().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+            const
+                drop     = handler.drop,
+                selector = `.b-sch-event-wrap[data-event-id="${CSS.escape(String(drop?.trip.id))}"] .ow-seg-preview`,
+                rect     = scheduler.element.querySelector(selector)?.getBoundingClientRect(),
+                point    = rect ?
+                    { x : rect.left + rect.width / 2, y : rect.top + 8 } :
+                    { x : innerWidth / 2, y : innerHeight / 2 };
+
+            // Still held over this trip, the keys may have moved on
+            if (me.held && drop?.target === trip) {
+                DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
+                me.drag.hover(trip, point);
+            }
+        })));
+    }
+
+    endHeld() {
+        const me = this;
+
+        if (me.held) {
+            document.removeEventListener('keydown', me.onHeldKey, true);
+            me.held.remove();
+            me.held = me.keyboard = null;
+            me.drag.end();
+        }
+    }
+}

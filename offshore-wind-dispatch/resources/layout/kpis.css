@@ -1,0 +1,113 @@
+/* The KPI header (KpiBar.js): the clock, the weather window and the numbers of the day */
+
+/* KPI header */
+.ow-kpis {
+    flex             : none;
+    display          : flex;
+    align-items      : center;
+    gap              : 22px;
+    padding          : 10px 16px;
+    background-color : var(--ow-raised);
+    border-block-end : 1px solid var(--ow-border);
+
+    small {
+        display     : block;
+        font-size   : 11px;
+        font-weight : 500;
+        color       : var(--ow-ink-sub);
+        white-space : nowrap;
+    }
+
+    b {
+        font-size            : 20px;
+        font-weight          : 700;
+        line-height          : 1.2;
+        white-space          : nowrap;
+        font-variant-numeric : tabular-nums;
+    }
+}
+
+.ow-clock {
+    small {
+        text-transform : uppercase;
+        letter-spacing : 0.04em;
+        font-weight    : 600;
+    }
+
+    b {
+        display     : flex;
+        align-items : baseline;
+        gap         : 10px;
+        font-size   : 22px;
+    }
+
+    /* The time beside the date, in the now line's blue */
+    .ow-clock-time {
+        font-size   : 15px;
+        font-weight : 600;
+        color       : var(--ow-now);
+    }
+}
+
+.ow-window {
+    --ow-tone : var(--ow-sea-ok);
+
+    display          : flex;
+    align-items      : center;
+    gap              : 10px;
+    padding          : 6px 14px 6px 12px;
+    border-radius    : 8px;
+    background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
+    border           : 1px solid color-mix(in srgb, var(--ow-tone) 35%, transparent);
+
+    > .ow-icon {
+        width  : 26px;
+        height : 26px;
+        color  : var(--ow-tone);
+    }
+
+    b {
+        color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink));
+    }
+
+    .ow-window-left {
+        display              : flex;
+        flex-direction       : column;
+        padding-inline-start : 10px;
+        margin-inline-start  : 2px;
+        border-inline-start  : 1px solid color-mix(in srgb, var(--ow-tone) 30%, transparent);
+        font-weight          : 600;
+        font-size            : 12px;
+        white-space          : nowrap;
+
+        em {
+            font-style      : normal;
+            font-weight     : 500;
+            color           : var(--ow-ink-sub);
+            text-decoration : line-through;
+        }
+    }
+}
+
+.ow-window-short {
+    --ow-tone : var(--ow-cancel);
+}
+
+.ow-kpi {
+    padding       : 4px 8px;
+    border-radius : 6px;
+}
+
+.ow-kpi-warn, .ow-kpi-alert {
+    --ow-tone : var(--ow-risk);
+
+    background-color : color-mix(in srgb, var(--ow-tone) 13%, transparent);
+
+    b {
+        color : var(--ow-tone);
+    }
+}
+
+.ow-kpi-alert {
+    --ow-tone : var(--ow-cancel);
+}

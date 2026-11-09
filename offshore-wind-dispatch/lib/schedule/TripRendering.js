@@ -3,7 +3,7 @@ import { icon } from '../util/Icons.js';
 import { duration, hhmm, nextDay } from '../util/Time.js';
 
 /**
- * The Scheduler's cells and bars, plain functions returning DomConfigs, styled in resources/schedule.css.
+ * The Scheduler's cells and bars, plain functions returning DomConfigs, styled in resources/schedule/.
  *
  * A trip is a parent event: its name, team and seats on top, then its legs, child events the NestedEvents feature
  * draws inside it, the transit legs hatched with the vessel's icon, the turbine stops solid with the turbine and hours.

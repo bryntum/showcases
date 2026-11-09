@@ -1,0 +1,28 @@
+/* The frame of the app (DispatchApp.js): its text and the containers that hold the parts */
+
+.ow-app {
+    color            : var(--ow-ink);
+    background-color : var(--ow-surface);
+    font-size        : 13px;
+
+    /* Plain buttons take the app's text, a class on one sets its own colour */
+    :where(button) {
+        font   : inherit;
+        color  : inherit;
+        cursor : pointer;
+    }
+
+    small {
+        font-size : 0.85em;
+    }
+}
+
+/* The app panel's body and its containers: no padding, no gaps, the parts meet at their borders */
+.ow-app-body, .ow-main, .ow-schedule, .ow-side, .ow-tabs {
+    border-radius : 0;
+
+    --b-panel-padding     : 0;
+    --b-panel-gap         : 0;
+    --b-container-padding : 0;
+    --b-container-gap     : 0;
+}

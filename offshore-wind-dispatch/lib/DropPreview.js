@@ -1,6 +1,7 @@
 import { StringHelper, Toast } from '@bryntum/core-enterprise';
 import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
+import { addTrip } from './model/TripData.js';
 import { hhmm } from './util/Time.js';
 
 // The stop a team's job adds to a trip
@@ -90,7 +91,7 @@ export default Target => class DropPreview extends Target {
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
-        const held = trip ?? TripModel.addTrip(me.scheduler.eventStore, vessel,
+        const held = trip ?? addTrip(me.scheduler.eventStore, vessel,
             { id : plan.id, departs : plan.start, draft : true }, [stop]);
 
         if (trip && vessel.mode !== 'heli') {

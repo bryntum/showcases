@@ -4,9 +4,12 @@ import { ProjectModelEnterprise, Scheduler } from '@bryntum/scheduler-enterprise
 import { StringHelper } from '@bryntum/core-enterprise';
 import TripModel from '../model/TripModel.js';
 import VesselModel from '../model/VesselModel.js';
+import { isChain } from '../model/TripData.js';
+import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
-import { hoursText, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
-import { duration, hhmm, toDate } from '../util/Time.js';
+import { renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
+import { tripTipHtml } from './TripTip.js';
+import { toDate } from '../util/Time.js';
 
 const
     // The trips' place in their 64px row: 7px above, 14px below, room for the dependency line to pass under a trip
@@ -126,9 +129,7 @@ export default class DispatchScheduler extends Scheduler {
     construct(config) {
         const
             me     = this,
-            header = new ForecastHeader(config.dispatch);
-
-        me.forecastHeader = header;
+            header = me.forecastHeader = new ForecastHeader(config.dispatch);
 
         super.construct({
             ...config,
@@ -168,7 +169,7 @@ export default class DispatchScheduler extends Scheduler {
                     validatorFn             : context => me.validateTripDrag(context)
                 },
                 eventTooltip : {
-                    template : ({ eventRecord }) => me.tripTip(eventRecord.trip)
+                    template : ({ eventRecord }) => tripTipHtml(eventRecord.trip, me.dispatch)
                 },
                 // Drawn from the data, not created or removed by hand. Red when the plan breaks it
                 dependencies : {
@@ -177,7 +178,7 @@ export default class DispatchScheduler extends Scheduler {
                     radius          : 4,
                     showTooltip     : true,
                     tooltipTemplate : dependency => StringHelper.encodeHtml(me.dependencyText(dependency)),
-                    renderer        : args => renderDependency(args, TripModel.isChain)
+                    renderer        : args => renderDependency(args, isChain)
                 }
             }
         });
@@ -301,88 +302,7 @@ export default class DispatchScheduler extends Scheduler {
 
     //endregion
 
-    //region Data
-
-    /**
-     * The weather no-go of each vessel and the old place of trips brought forward, as resource time ranges
-     */
-    syncRanges() {
-        const
-            me            = this,
-            state         = me.dispatch,
-            end           = toDate(state.day.dayEnd * 60),
-            nogo          = me.resourceStore.allRecords.filter(vessel => !vessel.isSpecialRow).map(vessel => ({
-                id         : `nogo-${vessel.id}`,
-                resourceId : vessel.id,
-                startDate  : toDate(state.closeOf(vessel)),
-                endDate    : end,
-                name       : state.limits[vessel.window].noGo
-            })),
-            ghosts        = me.trips.filter(trip => trip.status === 'pulled').map(trip => ({
-                id         : `ghost-${trip.id}`,
-                resourceId : trip.resource?.id,
-                startDate  : toDate(trip.was),
-                endDate    : toDate(trip.was + trip.endMinute - trip.departs)
-            })),
-            shown         = ghosts.filter(ghost => ghost.startDate < end);
-
-        DispatchScheduler.syncStore(me.resourceTimeRangeStore, [...nogo, ...shown]);
-    }
-
-    /**
-     * Brings a store's records in line with the passed data, by ID: updated in place, added or removed. The stores are
-     * the scheduling project's, replacing every record would leave the ones drawn before behind
-     * @param {Core.data.Store} store
-     * @param {Object[]} data
-     */
-    static syncStore(store, data) {
-        const ids = new Set(data.map(({ id }) => id));
-
-        store.remove(store.records.filter(record => !ids.has(record.id)));
-        data.forEach(values => {
-            const record = store.getById(values.id);
-
-            if (record) {
-                record.set(values);
-            }
-            else {
-                store.add(values);
-            }
-        });
-    }
-
-    /**
-     * The dependencies of the data whose ends are in the plan. A stop the forecast moves to tomorrow takes its
-     * dependency with it, Undo brings the stop back and this the dependency
-     */
-    syncDependencies() {
-        const
-            { dependencyStore, eventStore } = this,
-            missing                         = this.dispatch.dependencies
-                .map(dependency => TripModel.dependencyData(dependency))
-                .filter(({ id, fromEvent, toEvent }) => !dependencyStore.getById(id) &&
-                    eventStore.getById(fromEvent) && eventStore.getById(toEvent));
-
-        if (missing.length) {
-            dependencyStore.add(missing);
-        }
-    }
-
-    /**
-     * The shaded past and the now line
-     */
-    syncNow() {
-        const
-            me             = this,
-            state          = me.dispatch,
-            now            = toDate(state.now),
-            timeRangeStore = me.project.timeRangeStore;
-
-        DispatchScheduler.syncStore(timeRangeStore, [
-            { id : 'past', startDate : me.startDate, endDate : now, cls : 'ow-past' },
-            { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
-        ]);
-    }
+    //region Data and drag
 
     /**
      * Draws the state anew after the forecast or the plan changed: the vessel cells, the bars, the ranges, the header
@@ -390,16 +310,10 @@ export default class DispatchScheduler extends Scheduler {
     refreshDispatch() {
         const me = this;
 
-        me.syncRanges();
-        me.syncNow();
-        me.syncDependencies();
+        (me.dispatchSync ??= new DispatchSync({ scheduler : me })).refresh();
         me.refreshRows();
         me.forecastHeader.refresh();
     }
-
-    //endregion
-
-    //region Drag and tooltip
 
     validateTripDrag({ eventRecords, startDate }) {
         const
@@ -417,29 +331,6 @@ export default class DispatchScheduler extends Scheduler {
 
         // A stop that waits for another trip is not refused: the engine starts it once that trip is back
         return true;
-    }
-
-    tripTip(trip) {
-        const
-            close = this.dispatch.closeOf(trip.resource),
-            stops = trip.legs.filter(leg => leg.type === 'stop' && !leg.preview).map(leg =>
-                StringHelper.xss`<dt>${leg.turbine}</dt><dd>${hhmm(leg.from)} – ${hhmm(leg.to)} · ${hoursText(leg.minutes)}</dd>`),
-            // The engine's waits on station for another trip
-            waits = trip.waits.map(({ turbine, minutes, after }) =>
-                StringHelper.xss`<dt>Waits</dt><dd>${duration(minutes)} at ${turbine}${after ? ` for ${after}` : ''}</dd>`),
-            back  = trip.endMinute;
-
-        return `<div class="ow-tip">
-            <header><b>${StringHelper.encodeHtml(trip.id)}</b> ${StringHelper.encodeHtml(trip.resource?.name ?? '')}</header>
-            <dl>
-                ${trip.startMinute <= this.dispatch.now ?
-        `<dt>Under way</dt><dd>since ${hhmm(trip.startMinute)}</dd>` :
-        `<dt>Leaves</dt><dd>${hhmm(trip.startMinute)}</dd>`}
-                ${stops.join('')}
-                ${waits.join('')}
-                <dt>Back in port by</dt><dd>${hhmm(back)}, ${back > close ? `${duration(back - close)} after` : `${duration(close - back)} before`} the window closes at ${hhmm(close)}</dd>
-            </dl>
-        </div>`;
     }
 
     //endregion

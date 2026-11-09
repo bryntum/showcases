@@ -1,0 +1,160 @@
+/* The turbine markers of the map (map/Turbine.js), their statuses, and the legend marks that share them */
+
+/* A turbine's marker on the map, and the same marker in the legend */
+:is(.ow-marker, .ow-legend-mark) {
+    --ow-tone : var(--ow-marker-line);
+
+    .ow-marker-halo {
+        fill : transparent;
+    }
+
+    .ow-marker-disc {
+        fill         : var(--ow-marker);
+        stroke       : var(--ow-tone);
+        stroke-width : 1.2;
+    }
+
+    .ow-marker-glyph {
+        fill           : none;
+        stroke         : var(--ow-tone);
+        stroke-width   : 1.4;
+        stroke-linecap : round;
+    }
+
+    /* The wrench of a turbine under repair, bottom right, shown for the turbines in work only */
+    .ow-marker-badge {
+        display        : none;
+        pointer-events : none;
+    }
+}
+
+.ow-marker {
+    cursor : pointer;
+}
+
+/* Phosphor's light wrench, thickened by a stroke of its own colour so it reads at the size of a marker */
+:is(.ow-marker-badge, .ow-turbine-badge) {
+    color : var(--ow-plan);
+
+    .ow-badge-disc {
+        fill         : var(--ow-marker);
+        stroke       : currentColor;
+        stroke-width : 1;
+    }
+
+    .ow-badge-glyph {
+        fill            : currentColor;
+        stroke          : currentColor;
+        stroke-width    : 14px;
+        stroke-linejoin : round;
+    }
+}
+
+.ow-turbine-badge .ow-badge-disc {
+    stroke-width : 1.4;
+}
+
+.ow-m-work .ow-marker-badge {
+    display : inline;
+}
+
+/* A running turbine's rotor turns when hovered, at the speed of the wind now (--ow-rotor-period, see Turbine.js). A
+   stopped one, at fault or in work, stands still */
+@media (prefers-reduced-motion : no-preference) {
+    .ow-marker.ow-m-hover:not(.ow-m-stopped) .ow-marker-glyph {
+        animation : ow-spin var(--ow-rotor-period, 0s) linear infinite;
+    }
+}
+
+.ow-m-work, .ow-m-risk, .ow-m-fault, .ow-m-target {
+    .ow-marker-disc {
+        fill : var(--ow-tone);
+    }
+
+    .ow-marker-glyph {
+        stroke : var(--b-color-white);
+    }
+}
+
+.ow-m-work, .ow-m-planned {
+    --ow-tone : var(--ow-plan);
+}
+
+.ow-m-risk {
+    --ow-tone : var(--ow-risk);
+}
+
+.ow-m-fault {
+    --ow-tone : var(--ow-cancel);
+}
+
+.ow-m-reach, .ow-m-target {
+    --ow-tone : var(--ow-reach);
+}
+
+.ow-m-planned, .ow-m-reach {
+    .ow-marker-disc {
+        stroke-width : 2;
+    }
+}
+
+/* Waiting at risk, moved to tomorrow: dashed discs */
+.ow-m-waiting {
+    --ow-tone : var(--ow-risk);
+
+    .ow-marker-disc {
+        stroke-width     : 2;
+        stroke-dasharray : 2.5 1.6;
+    }
+}
+
+.ow-m-moved {
+    --ow-tone : var(--ow-cancel);
+
+    .ow-marker-disc {
+        stroke-width     : 1.6;
+        stroke-dasharray : 2.5 1.6;
+    }
+}
+
+.ow-m-target .ow-marker-halo {
+    fill         : color-mix(in srgb, var(--ow-reach) 22%, transparent);
+    stroke       : var(--ow-reach);
+    stroke-width : 1.2;
+}
+
+.ow-m-selected .ow-marker-halo {
+    stroke       : var(--ow-tone);
+    stroke-width : 1.4;
+}
+
+/* The stops of the trip selected or hovered in the schedule */
+.ow-m-ring:not(.ow-m-selected) .ow-marker-halo {
+    stroke           : color-mix(in srgb, var(--ow-plan) 70%, transparent);
+    stroke-width     : 1.2;
+    stroke-dasharray : 3 2;
+}
+
+.ow-m-hover .ow-marker-halo {
+    fill : color-mix(in srgb, var(--ow-tone) 18%, transparent);
+}
+
+/* One tab stop for the map, the arrow keys move between the turbines */
+.ow-marker:focus {
+    outline : none;
+}
+
+.ow-marker:focus-visible .ow-marker-halo {
+    stroke       : var(--b-primary, var(--ow-plan));
+    stroke-width : 2.4;
+}
+
+.ow-m-dim {
+    opacity : 0.4;
+}
+
+@keyframes ow-spin {
+    to {
+        rotate : 360deg;
+    }
+}

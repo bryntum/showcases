@@ -323,7 +323,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
             const app = globalThis.bryntum.query('dispatchapp');
 
             return {
-                stepped : app.drag.keyboard.trips.map(each => each.id),
+                stepped : app.drag.keys.keyboard.trips.map(each => each.id),
                 fresh   : app.dropTargets().map(each => each.id)
             };
         });

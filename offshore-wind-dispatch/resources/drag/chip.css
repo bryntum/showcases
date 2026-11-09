@@ -1,4 +1,4 @@
-/* A team being dragged (TeamDrag.js): the chip following the pointer and the tooltip of the trip under it. Both are
+/* A team being dragged (drag/TeamDrag.js): the chip following the pointer and the tooltip of the trip under it. Both are
  * in the page's body, the pointer passes through them. The chip is DragHelper's proxy, moved by translate */
 
 .ow-drag-chip, .ow-drop-tip {
@@ -8,7 +8,7 @@
     font-size      : 12px;
 }
 
-/* What the trip under the chip gives (TeamDrag showOnChip), from the same check as the tooltip: the chip turns green
+/* What the trip under the chip gives (DragChip showOnChip), from the same check as the tooltip: the chip turns green
    where the team fits, red where it does not, and stays neutral over empty space */
 .ow-drag-chip {
     --ow-shadow : 0 10px 24px rgb(0 0 0 / 22%);
@@ -80,69 +80,6 @@
     height           : 24px;
     color            : var(--ow-ink);
     filter           : drop-shadow(0 1px 0 var(--ow-surface));
-}
-
-/* The Bryntum Tooltip of the trip under a held team, styled as a card */
-.b-tooltip.ow-drop-tip {
-    --ow-tone : var(--ow-reach);
-
-    --b-popup-background    : var(--ow-surface);
-    --b-popup-border        : 1px solid var(--ow-border);
-    --b-popup-border-radius : 9px;
-    --b-popup-padding       : 10px 12px;
-
-    width      : 248px;
-    box-shadow : 0 10px 30px rgb(0 0 0 / 20%);
-
-    dl {
-        display               : grid;
-        grid-template-columns : auto 1fr;
-        gap                   : 3px 10px;
-        margin                : 8px 0;
-    }
-
-    dt {
-        color : var(--ow-ink-sub);
-    }
-
-    dd {
-        margin               : 0;
-        font-variant-numeric : tabular-nums;
-    }
-
-    &.ow-drop-tip-invalid {
-        --ow-tone : var(--ow-cancel);
-    }
-}
-
-.ow-drop-tip-head {
-    display     : flex;
-    align-items : center;
-    gap         : 6px;
-    font-weight : 700;
-    color       : var(--ow-tone);
-}
-
-.ow-drop-tip-foot {
-    padding-block-start : 7px;
-    border-block-start  : 1px solid var(--ow-border);
-    font-size           : 11.5px;
-    color               : var(--ow-ink-sub);
-}
-
-/* Held from the keyboard, the keys that move, book or cancel */
-.ow-drop-tip-keys {
-    margin-block-start : 6px;
-    font-size          : 11px;
-    color              : var(--ow-ink-sub);
-
-    kbd {
-        padding       : 0 4px;
-        border        : 1px solid var(--ow-border);
-        border-radius : 3px;
-        font          : inherit;
-        font-weight   : 600;
-    }
 }
 
 /* While dragging, the page does not select text */

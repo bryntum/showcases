@@ -1,0 +1,66 @@
+/* The legend under the schedule (TitleBars.js) */
+
+/* Legend */
+.ow-legend {
+    flex        : none;
+    /* The same surface as the turbine card under it, not the sea */
+    background-color : var(--ow-surface);
+    display     : flex;
+    align-items : center;
+    gap         : 16px;
+    height      : 34px;
+    padding     : 0 16px;
+    border-block-start : 1px solid var(--ow-border);
+    font-size   : 11.5px;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+    overflow    : hidden;
+
+    > span::before {
+        content        : '';
+        display        : inline-block;
+        width          : 10px;
+        height         : 10px;
+        margin-inline-end : 6px;
+        border-radius  : 2px;
+        vertical-align : -1px;
+    }
+
+    .ow-legend-credit {
+        margin-inline-start : auto;
+
+        &::before {
+            display : none;
+        }
+    }
+
+    .ow-l-plan::before {
+        background-color : var(--ow-plan);
+    }
+
+    .ow-l-risk::before {
+        background-color : var(--ow-risk);
+    }
+
+    .ow-l-trim::before {
+        background-color : var(--ow-plan);
+        box-shadow       : inset 0 0 0 2px var(--ow-cancel);
+    }
+
+    .ow-l-cancel::before {
+        border : 1.5px dashed var(--ow-cancel);
+    }
+
+    .ow-l-nogo::before {
+        background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px,
+            transparent 2px 4px);
+    }
+
+    .ow-l-dep::before {
+        width              : 14px;
+        height             : 0;
+        border-block-start : 1.5px solid var(--ow-ink-sub);
+        border-radius      : 0;
+        vertical-align     : 3px;
+    }
+}

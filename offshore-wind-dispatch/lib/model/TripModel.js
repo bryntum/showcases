@@ -1,6 +1,7 @@
 import { EventModelEnterprise } from '@bryntum/scheduler-enterprise';
 import { buildLegs, timeLegs, tripEnd, turbinesOf } from '../plan/Planner.js';
-import { parseTime, toDate, toMinutes } from '../util/Time.js';
+import { toDate, toMinutes } from '../util/Time.js';
+import { chainData, isChain, legsData } from './TripData.js';
 
 /**
  * A trip, one run of a vessel or a helicopter from the port and back, and its legs, all in one tree event store. The
@@ -62,129 +63,6 @@ export default class TripModel extends EventModelEnterprise {
      * @type {Map<String,Object>}
      */
     static teams = new Map();
-
-    /**
-     * The data of a trip and its legs
-     * @param {Object} trip `{ id, departs, ... }`, `departs` in minutes since midnight
-     * @param {Object[]} stops `{ turbine, minutes, team, preview }`
-     * @param {String} mode `vessel` or `heli`
-     * @returns {Object} The trip's data, its legs as `children`. The trip has no duration of its own, the engine rolls
-     * it up from its legs
-     */
-    static tripData({ departs, ...trip }, stops, mode) {
-        const start = toDate(departs);
-
-        return {
-            ...trip,
-            durationUnit   : 'minute',
-            startDate      : start,
-            constraintType : 'startnoearlierthan',
-            constraintDate : start,
-            children       : TripModel.legsData({ id : trip.id, departs }, stops, mode)
-        };
-    }
-
-    /**
-     * The data of a trip's legs. Their start is where the planner expects them, the engine then places each after the
-     * one before it
-     * @param {Object} trip `{ id, departs }`
-     * @param {Object[]} stops `{ turbine, minutes, team, preview }`
-     * @param {String} mode
-     * @returns {Object[]}
-     */
-    static legsData({ id, departs }, stops, mode) {
-        return timeLegs(departs, buildLegs(stops, mode)).map(({ type, from, to, ...leg }, index) => ({
-            id           : type === 'stop' ? `${id}:${leg.preview ? 'preview' : leg.turbine}` : `${id}:leg-${index}`,
-            name         : leg.turbine ?? '',
-            kind         : type,
-            turbine      : leg.turbine ?? null,
-            team         : leg.team ?? null,
-            minutes      : leg.minutes,
-            hop          : Boolean(leg.hop),
-            preview      : Boolean(leg.preview),
-            startDate    : toDate(from),
-            duration     : to - from,
-            durationUnit : 'minute',
-            // A leg moves with its trip, never on its own
-            draggable    : false,
-            resizable    : false
-        }));
-    }
-
-    /**
-     * The links that keep a trip's legs in order: each leg starts when the one before it ends
-     * @param {Object[]} legs The legs' data or records, in order, `{ id }`
-     * @returns {Object[]} Dependency data, `chain:<leg>`
-     */
-    static chainData(legs) {
-        return legs.slice(1).map((leg, i) => ({ id : `chain:${leg.id}`, fromEvent : legs[i].id, toEvent : leg.id }));
-    }
-
-    /**
-     * Whether a dependency is one of the links between a trip's legs, not one of the plan
-     * @param {Scheduler.model.DependencyModel|Object} dependency
-     * @returns {Boolean}
-     */
-    static isChain(dependency) {
-        return String(dependency.id).startsWith('chain:');
-    }
-
-    /**
-     * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip, finish-to-start. The
-     * engine starts the stop once the trip is back
-     * @param {Object} dependency `{ id, from, to, toStop }`
-     * @returns {Object}
-     */
-    static dependencyData({ id, from, to, toStop }) {
-        return { id, fromEvent : from, toEvent : `${to}:${toStop}` };
-    }
-
-    /**
-     * The Scheduler project's data from data/farm.json: the vessels, the trips with their legs as children, each trip
-     * and leg assigned to the trip's vessel (a nested event shows where both it and its parent are assigned), the links
-     * between the legs and the dependencies of the plan
-     * @param {Object} data `{ vessels, trips, dependencies }`
-     * @returns {Object} `{ resources, events, assignments, dependencies }`
-     */
-    static projectData({ vessels, trips, dependencies }) {
-        const
-            modeOf      = id => vessels.find(vessel => vessel.id === id)?.mode ?? 'vessel',
-            events      = trips.map(({ start, resourceId, stops, ...trip }) =>
-                TripModel.tripData({ ...trip, departs : parseTime(start) }, stops, modeOf(resourceId))),
-            assignments = events.flatMap((trip, index) => [trip, ...trip.children].map(event => ({
-                id       : `a-${event.id}`,
-                event    : event.id,
-                resource : trips[index].resourceId
-            })));
-
-        return {
-            resources    : vessels,
-            events,
-            assignments,
-            dependencies : [
-                ...events.flatMap(trip => TripModel.chainData(trip.children)),
-                ...dependencies.map(dependency => TripModel.dependencyData(dependency))
-            ]
-        };
-    }
-
-    /**
-     * Adds a trip and its legs to an event store, assigned to a vessel, its legs linked in order
-     * @param {Scheduler.data.EventStore} eventStore
-     * @param {VesselModel} vessel
-     * @param {Object} trip `{ id, departs, draft }`
-     * @param {Object[]} stops
-     * @returns {TripModel}
-     */
-    static addTrip(eventStore, vessel, trip, stops) {
-        const [added] = eventStore.rootNode.appendChild([TripModel.tripData(trip, stops, vessel.mode)]);
-
-        [added, ...added.children].forEach(event => event.assign(vessel));
-        added.project.dependencyStore.add(TripModel.chainData(added.children));
-        added.layoutPending = true;
-
-        return added;
-    }
 
     /**
      * Whether a dragged team's stop is previewed on the trip
@@ -307,7 +185,7 @@ export default class TripModel extends EventModelEnterprise {
             const
                 minutes = i ? leg.from - legs[i - 1].to : 0,
                 record  = this.legRecords[i],
-                after   = record?.predecessors?.find(dependency => !TripModel.isChain(dependency))?.fromEvent;
+                after   = record?.predecessors?.find(dependency => !isChain(dependency))?.fromEvent;
 
             return minutes > 0 ? [{ turbine : leg.turbine, minutes, after : after?.id ?? '' }] : [];
         });
@@ -414,7 +292,7 @@ export default class TripModel extends EventModelEnterprise {
             { resource }        = me,
             { dependencyStore } = me.project,
             existing            = new Map(me.legRecords.map(leg => [leg.id, leg])),
-            wanted              = TripModel.legsData({ id : me.id, departs }, stops, me.mode),
+            wanted              = legsData({ id : me.id, departs }, stops, me.mode),
             ids                 = new Set(wanted.map(leg => leg.id)),
             gone                = me.legRecords.filter(leg => !ids.has(leg.id)),
             prefix              = `chain:${me.id}:`;
@@ -453,7 +331,7 @@ export default class TripModel extends EventModelEnterprise {
             }
         });
 
-        dependencyStore.add(TripModel.chainData(me.legRecords));
+        dependencyStore.add(chainData(me.legRecords));
 
         if (departs !== me.departs) {
             const start = toDate(departs);

@@ -36,10 +36,10 @@ function tripsByTurbine(trips) {
     return map;
 }
 
-// The status class of one turbine, see map.css. While a trip's reach is shown, the turbines outside it are dimmed,
-// all but the stops of that trip itself
+// The status class of one turbine, see resources/map/turbines.css. While a trip's reach is shown, the turbines outside
+// it are dimmed, all but the stops of that trip itself
 function statusOf(id, context) {
-    // A stopped turbine's rotor stands still, map.css does not turn it on hover
+    // A stopped turbine's rotor stands still, resources/map/turbines.css does not turn it on hover
     const still = stoppedOf(context.state, context.trips, id) ? ' ow-m-stopped' : '';
 
     return `${shownStatusOf(id, context)}${still}`.trim();

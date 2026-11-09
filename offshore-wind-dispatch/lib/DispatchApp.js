@@ -5,18 +5,17 @@ import { reachable } from './plan/Planner.js';
 import { turbineIds } from './plan/Farm.js';
 import TripModel from './model/TripModel.js';
 import DropPreview from './DropPreview.js';
-import TeamDrag from './TeamDrag.js';
+import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
 import { cardHtml, cardInfo, tipInfo } from './map/TurbineCard.js';
-import { legendHtml, scheduleBarHtml, sideBarHtml } from './TitleBars.js';
-import { toDate, toMinutes } from './util/Time.js';
+import { scheduleBarHtml, sideBarHtml } from './TitleBars.js';
+import { toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
-import './TeamTray.js';
-import './ForecastNotice.js';
-import './map/TurbineMap.js';
-import './schedule/DispatchScheduler.js';
+import './panel/SchedulePanel.js';
+import './panel/MapPanel.js';
+import './panel/PhoneTabs.js';
 
 /**
  * Offshore Wind Dispatch: the header with the weather window, the vessels and helicopters on the day's timeline with
@@ -96,9 +95,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             thisObj              : me
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
-        // The TabPanel's tab list has the tab roles and switching but no arrow keys (Core/widget/TabBar), the ARIA
-        // tabs pattern moves between the tabs with them
-        me.widgetMap.tabs.tabBar.element.addEventListener('keydown', event => me.onTabKey(event));
         me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
         me.element.addEventListener('click', event => me.onAction(event));
 
@@ -114,14 +110,9 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         return {
             kpis : { type : 'kpibar' },
-            // On a phone the schedule and the map are its tabs (updatePhone), the TabPanel gives the tab list, its
-            // keyboard and the switching
+            // On a phone the schedule and the map are its tabs (updatePhone)
             tabs : {
-                type   : 'tabpanel',
-                cls    : 'ow-tabs',
-                flex   : 1,
-                hidden : true,
-                tabBar : { cls : 'ow-tab-bar' },
+                type : 'phonetabs',
                 onTabChange({ activeItem }) {
                     me.tab = activeItem && activeItem === me.widgetMap.side ? 'map' : 'schedule';
                 }
@@ -132,38 +123,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                 flex   : 1,
                 layout : 'hbox',
                 items  : {
-                    schedulePane : {
-                        type   : 'container',
-                        cls    : 'ow-schedule',
-                        // Its tab's text on a phone
-                        title  : 'Schedule',
-                        flex   : 1,
-                        layout : 'vbox',
-                        items  : {
-                            scheduleBar : { type : 'widget', cls : 'ow-panel-bar' },
-                            tray        : { type : 'teamtray', port : site.portShort ?? site.port },
-                            notice      : { type : 'forecastnotice' },
-                            scheduler   : me.schedulerConfig(data),
-                            legend      : { type : 'widget', cls : 'ow-legend', html : legendHtml }
-                        }
-                    },
-                    side : {
-                        type   : 'container',
-                        cls    : 'ow-side',
-                        title  : 'Map',
-                        width  : 400,
-                        layout : 'vbox',
-                        items  : {
-                            sideBar : { type : 'widget', cls : 'ow-panel-bar' },
-                            map     : {
-                                type    : 'turbinemap',
-                                flex    : 1,
-                                site,
-                                tipHtml : turbine => me.turbineTipHtml(turbine)
-                            },
-                            card : { type : 'turbinecard' }
-                        }
-                    }
+                    schedulePane : { type : 'schedulepanel', dispatch : me.dispatch, data },
+                    side         : { type : 'mappanel', site, tipHtml : turbine => me.turbineTipHtml(turbine) }
                 }
             }
         };
@@ -172,20 +133,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     doDestroy() {
         this.drag?.destroy();
         super.doDestroy();
-    }
-
-    // The scheduler: today 06:00 to 18:00, the vessels, the trips with their legs nested in them and the dependency
-    schedulerConfig(data) {
-        const { day } = this.dispatch;
-
-        return {
-            type      : 'dispatchscheduler',
-            flex      : 1,
-            dispatch  : this.dispatch,
-            startDate : toDate(day.dayStart * 60),
-            endDate   : toDate(day.dayEnd * 60),
-            project   : TripModel.projectData(data)
-        };
     }
 
     get scheduler() {
@@ -603,23 +550,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         main.hidden = phone;
         this.toggleCls('ow-phone', phone);
         this.updateTab(this.tab);
-    }
-
-    // Left and right move to the previous or next tab and show it, as in the ARIA tabs pattern
-    onTabKey(event) {
-        const
-            { tabs } = this.widgetMap,
-            step     = { ArrowLeft : -1, ArrowRight : 1 }[event.key],
-            count    = tabs.items.length;
-
-        if (step) {
-            const index = (tabs.activeIndex + step + count) % count;
-
-            event.preventDefault();
-            tabs.activeTab = index;
-            // The focus stays in the tab list, on the tab shown
-            requestAnimationFrame(() => tabs.tabBar.element.querySelectorAll('[role="tab"]')[index]?.focus());
-        }
     }
 
     updateTab(tab) {
