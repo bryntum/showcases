@@ -1,0 +1,451 @@
+/* The app's frame: the KPI header, the two halves and their title bars, the team tray, the forecast notice and the
+ * legend */
+
+.ow-app {
+    color            : var(--ow-ink);
+    background-color : var(--ow-surface);
+    font-size        : 13px;
+
+    button {
+        font   : inherit;
+        color  : inherit;
+        cursor : pointer;
+    }
+
+    small {
+        font-size : 0.85em;
+    }
+}
+
+/* The app panel's body and its containers: no padding, no gaps, the parts meet at their borders */
+.ow-app-body, .ow-main, .ow-schedule, .ow-side {
+    gap            : 0;
+    border-radius  : 0;
+
+    --b-panel-padding     : 0;
+    --b-panel-gap         : 0;
+    --b-container-padding : 0;
+    --b-container-gap     : 0;
+}
+
+/* KPI header */
+.ow-kpis {
+    flex             : none;
+    display          : flex;
+    align-items      : center;
+    gap              : 22px;
+    padding          : 10px 16px;
+    background-color : var(--ow-raised);
+    border-block-end : 1px solid var(--ow-border);
+
+    small {
+        display     : block;
+        font-size   : 11px;
+        font-weight : 500;
+        color       : var(--ow-ink-sub);
+        white-space : nowrap;
+    }
+
+    b {
+        font-size            : 20px;
+        font-weight          : 700;
+        line-height          : 1.2;
+        white-space          : nowrap;
+        font-variant-numeric : tabular-nums;
+    }
+}
+
+.ow-clock {
+    small {
+        text-transform : uppercase;
+        letter-spacing : 0.04em;
+        font-weight    : 600;
+    }
+
+    b {
+        display     : flex;
+        align-items : baseline;
+        gap         : 10px;
+        font-size   : 22px;
+    }
+
+    /* The time beside the date, in the now line's blue */
+    .ow-clock-time {
+        font-size   : 15px;
+        font-weight : 600;
+        color       : var(--ow-now);
+    }
+}
+
+.ow-window {
+    --ow-tone : var(--ow-sea-ok);
+
+    display          : flex;
+    align-items      : center;
+    gap              : 10px;
+    padding          : 6px 14px 6px 12px;
+    border-radius    : 8px;
+    background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
+    border           : 1px solid color-mix(in srgb, var(--ow-tone) 35%, transparent);
+
+    > .ow-icon {
+        width  : 26px;
+        height : 26px;
+        color  : var(--ow-tone);
+    }
+
+    b {
+        color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink));
+    }
+
+    .ow-window-left {
+        display              : flex;
+        flex-direction       : column;
+        padding-inline-start : 10px;
+        margin-inline-start  : 2px;
+        border-inline-start  : 1px solid color-mix(in srgb, var(--ow-tone) 30%, transparent);
+        font-weight          : 600;
+        font-size            : 12px;
+        white-space          : nowrap;
+
+        em {
+            font-style      : normal;
+            font-weight     : 500;
+            color           : var(--ow-ink-sub);
+            text-decoration : line-through;
+        }
+    }
+}
+
+.ow-window-short {
+    --ow-tone : var(--ow-cancel);
+}
+
+.ow-kpi {
+    padding       : 4px 8px;
+    border-radius : 6px;
+}
+
+.ow-kpi-warn, .ow-kpi-alert {
+    --ow-tone : var(--ow-risk);
+
+    background-color : color-mix(in srgb, var(--ow-tone) 13%, transparent);
+
+    b {
+        color : var(--ow-tone);
+    }
+}
+
+.ow-kpi-alert {
+    --ow-tone : var(--ow-cancel);
+}
+
+/* The two halves */
+.ow-main {
+    min-height : 0;
+}
+
+.ow-schedule, .ow-side {
+    min-width  : 0;
+    min-height : 0;
+}
+
+.ow-schedule {
+    border-inline-end : 1px solid var(--ow-border);
+}
+
+.ow-side {
+    flex : none;
+}
+
+.ow-panel-bar {
+    flex            : none;
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
+    gap             : 12px;
+    height          : 44px;
+    padding         : 0 16px;
+    box-sizing      : border-box;
+    border-block-end : 1px solid var(--ow-border);
+}
+
+.ow-panel-title {
+    margin-inline-end : auto;
+    font-weight       : 600;
+    font-size         : 14px;
+    white-space       : nowrap;
+
+    small {
+        margin-inline-start : 6px;
+        font-weight : 400;
+        color       : var(--ow-ink-sub);
+    }
+}
+
+/* The next forecast, in: the one action that changes the plan */
+.ow-forecast-button {
+    display          : flex;
+    align-items      : center;
+    gap              : 6px;
+    height           : 28px;
+    padding          : 0 10px;
+    border           : 1px solid color-mix(in srgb, var(--ow-cancel) 40%, transparent);
+    border-radius    : 7px;
+    font-size        : 12px;
+    font-weight      : 600;
+    white-space      : nowrap;
+    background-color : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
+
+    .ow-app & {
+        color : var(--ow-cancel);
+    }
+
+    &:hover {
+        background-color : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
+    }
+}
+
+.ow-seg-buttons, .ow-tabs {
+    display          : flex;
+    padding          : 2px;
+    border-radius    : 7px;
+    background-color : var(--b-neutral-95);
+
+    button {
+        min-width     : 30px;
+        height        : 26px;
+        padding       : 0 10px;
+        border        : 0;
+        border-radius : 5px;
+        background    : none;
+        font-size     : 12px;
+        font-weight   : 500;
+
+        &:disabled {
+            cursor  : default;
+            opacity : 0.4;
+        }
+    }
+
+    .ow-pressed {
+        background-color : var(--ow-surface);
+        box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+    }
+}
+
+.ow-tabs.b-widget {
+    display : none;
+}
+
+/* Teams waiting at the port */
+.ow-tray {
+    flex             : none;
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 8px 16px;
+    background-color : var(--ow-sunken);
+    border-block-end : 1px solid var(--ow-border);
+    overflow         : hidden;
+}
+
+.ow-tray-title {
+    display     : flex;
+    align-items : center;
+    gap         : 5px;
+    font-size   : 12px;
+    font-weight : 600;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+}
+
+.ow-tray-hint, .ow-tray-empty {
+    font-size   : 11.5px;
+    color       : var(--ow-ink-faint);
+    white-space : nowrap;
+}
+
+.ow-tray-hint {
+    margin-inline-start : auto;
+}
+
+.ow-team {
+    display          : flex;
+    align-items      : center;
+    gap              : 8px;
+    padding          : 4px 8px 4px 4px;
+    border           : 1px solid var(--ow-border);
+    border-radius    : 8px;
+    background-color : var(--ow-surface);
+    box-shadow       : 0 1px 2px rgb(0 0 0 / 6%);
+    font-size        : 12px;
+    white-space      : nowrap;
+    cursor           : grab;
+    user-select      : none;
+    /* Pointer events drive the drag on touch too, see TeamDrag */
+    touch-action     : none;
+
+    &:hover {
+        border-color : color-mix(in srgb, var(--ow-reach) 50%, var(--ow-border));
+    }
+}
+
+.ow-team-lifted {
+    border-style : dashed;
+    box-shadow   : none;
+    opacity      : 0.45;
+}
+
+.ow-team-text {
+    display        : flex;
+    flex-direction : column;
+    line-height    : 1.25;
+}
+
+.ow-team-job {
+    font-size : 11px;
+    color     : var(--ow-ink-sub);
+}
+
+.ow-team-avatar {
+    display          : grid;
+    place-items      : center;
+    flex             : none;
+    width            : 26px;
+    height           : 26px;
+    border-radius    : 50%;
+    font-weight      : 700;
+    font-size        : 12px;
+    color            : var(--ow-plan);
+    background-color : color-mix(in srgb, var(--ow-plan) 14%, transparent);
+}
+
+.ow-certs {
+    display : flex;
+    gap     : 3px;
+}
+
+.ow-cert {
+    padding          : 1px 5px;
+    border-radius    : 4px;
+    font-size        : 10px;
+    font-weight      : 700;
+    letter-spacing   : 0.02em;
+    color            : var(--ow-ink-sub);
+    background-color : var(--b-neutral-94);
+}
+
+.ow-cert-hv {
+    color            : light-dark(#8a5a00, #ffd166);
+    background-color : light-dark(#fff1c7, rgb(255 209 102 / 16%));
+}
+
+/* The forecast's notice */
+.ow-toast.b-widget {
+    flex             : none;
+    display          : flex;
+    align-items      : center;
+    gap              : 10px;
+    padding          : 8px 16px 8px 13px;
+    border-block-end : 1px solid var(--ow-border);
+    border-inline-start : 3px solid var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 7%, var(--ow-surface));
+
+    &.b-hidden {
+        display : none;
+    }
+
+    > .ow-icon {
+        width  : 22px;
+        height : 22px;
+        color  : var(--ow-cancel);
+    }
+
+    > span {
+        flex        : 1;
+        line-height : 1.4;
+        font-size   : 12.5px;
+
+        b {
+            display : block;
+        }
+    }
+
+    button {
+        flex          : none;
+        display       : flex;
+        align-items   : center;
+        gap           : 5px;
+        height        : 30px;
+        padding       : 0 12px;
+        border        : 1px solid var(--ow-border);
+        border-radius : 6px;
+        background    : none;
+        font-weight   : 600;
+        font-size     : 12px;
+    }
+
+    .ow-toast-primary {
+        border-color     : transparent;
+        color            : #fff;
+        background-color : var(--ow-plan);
+    }
+}
+
+/* Legend */
+.ow-legend {
+    flex        : none;
+    display     : flex;
+    align-items : center;
+    gap         : 16px;
+    height      : 34px;
+    padding     : 0 16px;
+    box-sizing  : border-box;
+    border-block-start : 1px solid var(--ow-border);
+    font-size   : 11.5px;
+    color       : var(--ow-ink-sub);
+    white-space : nowrap;
+    overflow    : hidden;
+
+    > span::before {
+        content        : '';
+        display        : inline-block;
+        width          : 10px;
+        height         : 10px;
+        margin-inline-end : 6px;
+        border-radius  : 2px;
+        vertical-align : -1px;
+    }
+
+    .ow-legend-credit {
+        margin-inline-start : auto;
+
+        &::before {
+            display : none;
+        }
+    }
+}
+
+.ow-l-plan::before { background-color : var(--ow-plan); }
+.ow-l-risk::before { background-color : var(--ow-risk); }
+.ow-l-trim::before { background-color : var(--ow-plan); box-shadow : inset 0 0 0 2px var(--ow-cancel); }
+.ow-l-cancel::before { border : 1.5px dashed var(--ow-cancel); box-sizing : border-box; }
+
+.ow-l-nogo::before {
+    background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px,
+        transparent 2px 4px);
+}
+
+.ow-legend > .ow-l-dep::before {
+    width              : 14px;
+    height             : 0;
+    border-block-start : 1.5px solid var(--ow-ink-sub);
+    border-radius      : 0;
+    vertical-align     : 3px;
+}
+
+/* Messages after a drop */
+.ow-toast-message {
+    font-size : 13px;
+}

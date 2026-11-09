@@ -1,0 +1,127 @@
+{
+    "site": {
+        "name": "Skarv Bank",
+        "port": "Havnes O&M base",
+        "portKm": 34,
+        "turbineMw": 8,
+        "now": "07:40",
+        "dayStart": 6,
+        "dayEnd": 18
+    },
+    "limits": {
+        "ctv": { "hs": 1.5, "label": "Hs ≤ 1.5 m", "noGo": "Hs > 1.5 m", "name": "CTV" },
+        "swath": { "hs": 2.0, "label": "Hs ≤ 2.0 m", "noGo": "Hs > 2.0 m", "name": "SWATH" },
+        "heli": { "wind": 20, "label": "Wind ≤ 20 m/s", "noGo": "Wind > 20 m/s", "name": "Helicopter" }
+    },
+    "forecasts": [
+        {
+            "issued": "06:00",
+            "hs": [0.9, 0.9, 1.0, 1.0, 1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 1.9, 2.1, 2.2],
+            "wind": [9, 10, 10, 11, 12, 13, 14, 15, 17, 19, 21, 23, 24]
+        },
+        {
+            "issued": "08:00",
+            "received": "08:02",
+            "hs": [0.9, 0.9, 1.0, 1.1, 1.25, 1.4, 1.6, 1.8, 2.1, 2.2, 2.3, 2.3, 2.4],
+            "wind": [9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 25, 25, 26]
+        }
+    ],
+    "vessels": [
+        { "id": "sr", "group": "ctv", "name": "Skarv Runner", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
+        { "id": "nt", "group": "ctv", "name": "Northern Tern", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
+        { "id": "sp", "group": "ctv", "name": "Sea Puffin", "kind": "CTV", "window": "ctv", "mode": "vessel", "seats": 12 },
+        { "id": "bp", "group": "ctv", "name": "Brine Petrel", "kind": "SWATH", "window": "swath", "mode": "vessel", "seats": 24 },
+        { "id": "h1", "group": "heli", "name": "Heli 1", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 },
+        { "id": "h2", "group": "heli", "name": "Heli 2", "kind": "AW169 · hoist", "window": "heli", "mode": "heli", "seats": 6 }
+    ],
+    "teams": [
+        { "id": "A", "name": "Team A", "techs": 3, "certs": ["GWO", "HV"] },
+        { "id": "B", "name": "Team B", "techs": 3, "certs": ["GWO", "HV"] },
+        { "id": "C", "name": "Team C", "techs": 4, "certs": ["GWO"] },
+        { "id": "D", "name": "Team D", "techs": 4, "certs": ["GWO", "HV"] },
+        { "id": "E", "name": "Team E", "techs": 3, "certs": ["GWO"] },
+        { "id": "F", "name": "Team F", "techs": 2, "certs": ["GWO", "HV"] },
+        { "id": "G", "name": "Team G", "techs": 3, "certs": ["GWO", "Rope"] },
+        { "id": "H", "name": "Team H", "techs": 2, "certs": ["GWO"] },
+        { "id": "J", "name": "Team J", "techs": 2, "certs": ["GWO", "HUET"] },
+        { "id": "AP", "name": "HV authorised person", "techs": 1, "certs": ["GWO", "HV"] }
+    ],
+    "jobs": {
+        "T-07": { "job": "Gearbox oil sampling", "team": "A" },
+        "T-08": { "job": "Yaw brake pads", "team": "A" },
+        "T-17": { "job": "Annual service close-out", "team": "A" },
+        "T-22": { "job": "Pitch bearing inspection", "team": "B" },
+        "T-23": { "job": "Service lift inspection", "team": "B" },
+        "T-31": { "job": "Yaw gear oil change", "team": "C" },
+        "T-41": { "job": "Tower bolt tensioning", "team": "C" },
+        "T-45": { "job": "Array cable termination", "team": "D", "certs": ["HV"] },
+        "T-46": { "job": "Cooling pump swap", "team": "E" },
+        "T-55": { "job": "Tower flange inspection", "team": "D" },
+        "T-58": { "job": "Blade inspection from the hoist", "team": "J" },
+        "OSS": { "job": "HV isolation of string 4", "team": "AP", "certs": ["HV"] },
+        "T-34": { "job": "Converter fault, reset and test", "team": "F", "certs": ["HV"], "minutes": 48 },
+        "T-49": { "job": "Blade leading edge repair", "team": "G", "certs": ["Rope"], "minutes": 240 },
+        "T-02": { "job": "Annual service", "team": "H", "minutes": 360 }
+    },
+    "faults": ["T-34"],
+    "waiting": ["T-34", "T-49", "T-02"],
+    "trips": [
+        {
+            "id": "SR-1", "resourceId": "sr", "start": "06:30",
+            "stops": [
+                { "turbine": "T-07", "minutes": 60, "team": "A" },
+                { "turbine": "T-08", "minutes": 60, "team": "A" },
+                { "turbine": "T-17", "minutes": 60, "team": "A" }
+            ]
+        },
+        {
+            "id": "NT-1", "resourceId": "nt", "start": "07:45",
+            "stops": [
+                { "turbine": "T-22", "minutes": 75, "team": "B" },
+                { "turbine": "T-23", "minutes": 75, "team": "B" }
+            ]
+        },
+        {
+            "id": "SP-1", "resourceId": "sp", "start": "08:15",
+            "stops": [
+                { "turbine": "T-31", "minutes": 150, "team": "C" },
+                { "turbine": "T-41", "minutes": 90, "team": "C" }
+            ]
+        },
+        {
+            "id": "BP-1", "resourceId": "bp", "start": "06:45",
+            "stops": [
+                { "turbine": "T-45", "minutes": 180, "team": "D" },
+                { "turbine": "T-46", "minutes": 150, "team": "E" },
+                { "turbine": "T-55", "minutes": 105, "team": "D" }
+            ]
+        },
+        {
+            "id": "H2-1", "resourceId": "h2", "start": "06:30",
+            "stops": [
+                { "turbine": "OSS", "minutes": 30, "team": "AP" }
+            ]
+        },
+        {
+            "id": "H1-1", "resourceId": "h1", "start": "09:00", "note": "Drop-off",
+            "stops": [
+                { "turbine": "T-58", "minutes": 20, "team": "J" }
+            ]
+        },
+        {
+            "id": "H1-2", "resourceId": "h1", "start": "14:30", "note": "Pickup",
+            "stops": [
+                { "turbine": "T-58", "minutes": 20, "team": "J" }
+            ]
+        }
+    ],
+    "dependencies": [
+        {
+            "id": "hv-t45",
+            "from": "H2-1",
+            "to": "BP-1",
+            "toStop": "T-45",
+            "text": "String 4 is isolated at the substation before work on T-45 starts"
+        }
+    ]
+}

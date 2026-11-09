@@ -56,6 +56,7 @@ npx playwright install chromium
 ```
 ├── ev-operations/            One folder per showcase, each with its own README that walks through how it works
 ├── logistics-control-tower/
+├── offshore-wind-dispatch/
 ├── shared/                   The page around every showcase: header, light / dark switch, fonts and logos
 ├── index.html, gallery.*     The gallery page
 └── tests/                    The smoke tests, one per page

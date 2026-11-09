@@ -1,0 +1,62 @@
+/* Design tokens of the showcase, mapped onto the Svalbard palette through light-dark(), so light and dark come from one
+ * set of rules. On the root, as the drag chip, its tooltip and the Scheduler's tooltips render outside the app */
+
+:root {
+    /* Trips on plan, helicopters, past the window, moved, and what a dragged team can reach */
+    --ow-plan    : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
+    --ow-heli    : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
+    --ow-risk    : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
+    --ow-cancel  : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
+    --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal, #14b8a6) 75%, var(--b-color-black)),
+        var(--b-color-teal, #2dd4bf));
+    /* The sea state: calm, past the CTV limit, past the SWATH limit */
+    --ow-sea-ok  : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
+    --ow-sea-amb : var(--ow-risk);
+    --ow-sea-red : var(--ow-cancel);
+    --ow-weather : light-dark(color-mix(in srgb, var(--b-color-orange) 70%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-orange) 75%, var(--b-color-white)));
+    --ow-now     : var(--b-color-blue);
+
+    /* Neutrals */
+    --ow-surface   : var(--b-neutral-100);
+    --ow-sunken    : var(--b-neutral-98);
+    --ow-raised    : light-dark(var(--b-neutral-99), var(--b-neutral-96));
+    --ow-border    : var(--b-border-7);
+    --ow-grid      : color-mix(in srgb, var(--b-border-7) 70%, transparent);
+    --ow-ink       : var(--b-text-1);
+    --ow-ink-sub   : var(--b-text-2);
+    --ow-ink-faint : var(--b-neutral-55);
+    --ow-past      : light-dark(color-mix(in srgb, var(--b-color-black) 3.5%, transparent),
+        color-mix(in srgb, var(--b-color-black) 22%, transparent));
+
+    /* The map */
+    --ow-sea-map     : light-dark(#eaf3f9, #0e1c29);
+    --ow-contour     : light-dark(rgb(42 127 176 / 18%), rgb(127 196 224 / 10%));
+    --ow-marker      : light-dark(#fff, #253141);
+    --ow-marker-line : light-dark(#9aa8b8, #607086);
+
+    /* The turbine illustration */
+    --ow-steel        : light-dark(#f7f9fb, #d6dce3);
+    --ow-steel-shade  : light-dark(#bcc5cf, #8793a1);
+    --ow-yellow       : #f2c12e;
+    --ow-yellow-shade : #c49412;
+    --ow-sea-top      : light-dark(#6fb9da, #2a7798);
+    --ow-sea-deep     : light-dark(#1f6f9e, #0b3149);
+    --ow-sea-foam     : light-dark(#fff, #a6dcef);
+    --ow-beacon       : #e5322d;
+    --ow-limit        : var(--ow-risk);
+
+    /* Sizes */
+    --ow-resource-width : 214px;
+    --ow-radius         : 5px;
+}
+
+/* The icons, inline SVG in the text colour (lib/util/Icons.js) */
+.ow-icon {
+    flex           : none;
+    width          : 1.2em;
+    height         : 1.2em;
+    vertical-align : -0.25em;
+}

@@ -1,0 +1,233 @@
+/* The Scheduler's header with the weather in it (schedule/ForecastHeader.js): the day, the hours, the wave height
+ * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 24,
+ * 26, 66 and 20px, each with a 1px line under it but the chart's */
+
+.ow-scheduler {
+    --ow-row-day   : 24px;
+    --ow-row-hours : 26px;
+    --ow-row-sea   : 66px;
+    --ow-row-wind  : 20px;
+
+    --b-grid-header-background                   : var(--ow-surface);
+    --b-grid-header-border-color                 : var(--ow-border);
+    --b-horizontal-time-axis-cell-padding-inline : 6px;
+
+    .b-grid-header-container {
+        border-block-end : 1px solid var(--ow-border);
+    }
+
+    .b-horizontal-time-axis {
+        .b-sch-header-row {
+            box-sizing       : border-box;
+            min-height       : 0;
+            height           : var(--ow-row-hours);
+            border-block-end : 1px solid var(--ow-grid);
+
+            &:has(.ow-day-cell) {
+                height : var(--ow-row-day);
+            }
+
+            &:has(.ow-sea-cell) {
+                height           : var(--ow-row-sea);
+                border-block-end : 0;
+            }
+
+            &:has(.ow-wind-cell) {
+                height             : var(--ow-row-wind);
+                border-block-start : 1px solid var(--ow-grid);
+                border-block-end   : 0;
+            }
+        }
+
+        .b-sch-header-time-axis-cell {
+            font-size            : 11.5px;
+            font-weight          : 600;
+            color                : var(--ow-ink-sub);
+            font-variant-numeric : tabular-nums;
+            border-inline-color  : var(--ow-grid);
+        }
+
+        /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
+        .ow-day-cell {
+            overflow : visible;
+            border   : 0;
+        }
+
+        /* The chart fills it, it spans the row */
+        .ow-sea-cell {
+            padding  : 0;
+            border   : 0;
+            overflow : visible;
+        }
+
+        .ow-wind-cell {
+            justify-content : center;
+            padding         : 0;
+            border-inline   : 0;
+        }
+    }
+}
+
+.ow-day {
+    position           : sticky;
+    inset-inline-start : 0;
+    display     : inline-flex;
+    align-items : center;
+    gap         : 8px;
+    height      : 100%;
+    font-size   : 12px;
+    font-weight : 700;
+    white-space : nowrap;
+    color       : var(--ow-ink);
+
+    em {
+        padding          : 0 6px;
+        border-radius    : 4px;
+        font-style       : normal;
+        font-size        : 10.5px;
+        font-weight      : 600;
+        color            : var(--ow-now);
+        background-color : color-mix(in srgb, var(--ow-now) 13%, transparent);
+    }
+}
+
+/* The AG Charts wave height chart, over the whole day (WaveChart.js) */
+.ow-wave-chart {
+    position : absolute;
+    inset    : 0;
+}
+
+.ow-wind {
+    font-size   : 10.5px;
+    font-weight : 400;
+    color       : var(--ow-ink-faint);
+}
+
+.ow-wind-over {
+    font-weight : 700;
+    color       : var(--ow-heli);
+}
+
+/* The vessel column's header: the names of the weather rows, at the height of each */
+.ow-axis-header.b-grid-header {
+    align-items : stretch;
+    padding     : 0;
+    min-height  : 0;
+
+    --b-grid-header-padding : 0;
+
+    .b-grid-header-text, .b-grid-header-text-content {
+        display : flex;
+        width   : 100%;
+        height  : 100%;
+        padding : 0;
+    }
+}
+
+.ow-axis-label {
+    display        : flex;
+    flex-direction : column;
+    justify-content : flex-end;
+    width          : 100%;
+    text-transform : none;
+    letter-spacing : normal;
+
+    .ow-axis-row {
+        display     : flex;
+        align-items : center;
+        gap         : 6px;
+        box-sizing  : border-box;
+        padding     : 0 16px;
+        font-size   : 11.5px;
+        font-weight : 600;
+        color       : var(--ow-ink-sub);
+
+        small {
+            font-weight : 400;
+            color       : var(--ow-ink-faint);
+        }
+
+        > span {
+            display        : flex;
+            flex-direction : column;
+            line-height    : 1.25;
+        }
+
+        > .ow-icon {
+            width  : 16px;
+            height : 16px;
+            color  : var(--ow-sea-ok);
+        }
+    }
+
+    /* Beside the day and the hours */
+    .ow-axis-row-head {
+        flex             : 1;
+        min-height       : calc(var(--ow-row-day) + var(--ow-row-hours));
+        border-block-end : 1px solid var(--ow-grid);
+
+        > .ow-icon {
+            color : var(--ow-ink-sub);
+        }
+    }
+
+    .ow-axis-row-sea {
+        height : var(--ow-row-sea);
+    }
+
+    .ow-axis-row-wind {
+        height             : calc(var(--ow-row-wind) + 1px);
+        border-block-start : 1px solid var(--ow-grid);
+
+        > .ow-icon {
+            color : var(--ow-heli);
+        }
+
+        > span {
+            flex-direction : row;
+            align-items    : baseline;
+            gap            : 6px;
+        }
+    }
+}
+
+.ow-chip-new {
+    padding          : 1px 6px;
+    border-radius    : 4px;
+    font-size        : 11px;
+    color            : var(--ow-cancel);
+    background-color : color-mix(in srgb, var(--ow-cancel) 13%, transparent);
+}
+
+/* The now line in the header: a pill in the hours row, the line runs from it down through the chart into the rows */
+.ow-scheduler .b-grid-header {
+    .ow-past {
+        display : none;
+    }
+
+    .ow-now {
+        z-index             : 4;
+        overflow            : visible;
+        opacity             : 1;
+        background          : none;
+        border              : 0;
+        border-inline-start : 2px solid var(--ow-now);
+        /* From the hours row down */
+        inset-block-start   : var(--ow-row-day);
+
+        label {
+            position           : absolute;
+            inset-block-start  : calc(var(--ow-row-hours) / 2);
+            inset-inline-start : -1px;
+            translate        : -50% -50%;
+            padding          : 1px 6px;
+            white-space      : nowrap;
+            border-radius    : 9px;
+            font-size        : 10.5px;
+            font-weight      : 700;
+            line-height      : 1.4;
+            color            : #fff;
+            background-color : var(--ow-now);
+        }
+    }
+}

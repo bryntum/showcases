@@ -38,6 +38,14 @@ const
             ogMode  : 'light',
             // The production line at its start, nothing to do
             prepare : async() => {}
+        },
+        {
+            name    : 'offshore-wind-dispatch',
+            ogMode  : 'light',
+            // The plan at 07:40, drawn once the wave height chart has rendered
+            prepare : async page => {
+                await page.locator('html[data-ready="true"]').waitFor({ timeout : 30000 });
+            }
         }
     ],
     // The trial badge out, the panel at the capture size

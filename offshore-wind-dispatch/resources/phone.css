@@ -1,0 +1,116 @@
+/* Phones (DispatchApp#phone, below 760px): the KPI header keeps the clock, the window and the alert, the schedule and
+ * the map become tabs, the schedule's hours scroll sideways at 44px an hour (DispatchScheduler#fitTicks) */
+
+.ow-app.ow-phone {
+    --ow-resource-width : 118px;
+
+    .ow-kpis {
+        flex-wrap : wrap;
+        gap       : 10px 14px;
+        padding   : 10px 12px;
+
+        .ow-kpi {
+            display : none;
+        }
+
+        :is(.ow-kpi-warn, .ow-kpi-alert) {
+            display             : block;
+            margin-inline-start : auto;
+        }
+    }
+
+    .ow-clock b {
+        font-size : 19px;
+    }
+
+    .ow-window {
+        order   : 3;
+        flex    : 1 1 100%;
+        padding : 6px 10px;
+
+        .ow-window-left {
+            margin-inline-start : auto;
+        }
+    }
+
+    .ow-tabs.b-widget {
+        display : flex;
+        margin  : 8px 12px;
+
+        button {
+            flex   : 1;
+            height : 30px;
+        }
+    }
+
+    .ow-main {
+        border-block-start : 1px solid var(--ow-border);
+    }
+
+    .ow-schedule {
+        border-inline-end : 0;
+    }
+
+    .ow-legend, .ow-tray-hint, .ow-tray-title, .ow-team-job, .ow-certs, .ow-util-text, .ow-axis-label small,
+    .ow-side .ow-panel-bar, .ow-schedule .ow-panel-bar:not(:has(.ow-forecast-button)),
+    .ow-schedule .ow-panel-bar :is(.ow-panel-title, .ow-seg-buttons) {
+        display : none;
+    }
+
+    /* Only the next forecast's button stays, across the width */
+    .ow-schedule .ow-panel-bar {
+        height  : 40px;
+        padding : 0 12px;
+
+        .ow-forecast-button {
+            flex            : 1;
+            justify-content : center;
+        }
+    }
+
+    .ow-tray {
+        padding    : 8px 12px;
+        overflow-x : auto;
+    }
+
+    .ow-axis-label .ow-axis-row, .ow-resource-cell.b-grid-cell {
+        padding-inline-start : 10px;
+    }
+
+    .ow-resource-icon {
+        display : none;
+    }
+
+    .ow-resource-text small {
+        font-size : 10px;
+    }
+
+    .ow-util-bar {
+        width : 70px;
+    }
+
+    .ow-trip-head span:not(.ow-badge) {
+        display : none;
+    }
+
+    .ow-nogo-label {
+        font-size : 10px;
+    }
+
+    .ow-toast.b-widget {
+        flex-wrap : wrap;
+        padding   : 8px 12px 8px 10px;
+
+        > span {
+            flex : 1 1 80%;
+        }
+    }
+
+    .ow-map.b-widget {
+        min-height : 300px;
+    }
+
+    .ow-side {
+        width : auto;
+    }
+}

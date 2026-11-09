@@ -1,0 +1,96 @@
+/* A team being dragged (TeamDrag.js): the chip following the pointer and the tooltip of the trip under it. Both are
+ * in the page's body, fixed to the viewport, the pointer passes through them */
+
+.ow-drag-chip, .ow-drop-tip {
+    position       : fixed;
+    pointer-events : none;
+    color          : var(--ow-ink);
+    font-family    : inherit;
+    font-size      : 12px;
+}
+
+.ow-drag-chip {
+    z-index          : 10001;
+    display          : flex;
+    align-items      : center;
+    gap              : 7px;
+    padding          : 4px 10px 4px 4px;
+    border-radius    : 8px;
+    background-color : var(--ow-surface);
+    border           : 1px solid var(--ow-reach);
+    box-shadow       : 0 10px 24px rgb(0 0 0 / 22%);
+    rotate           : -3deg;
+    white-space      : nowrap;
+
+    .ow-cert + .ow-cert {
+        margin-inline-start : -3px;
+    }
+}
+
+.ow-drag-hand {
+    position           : absolute;
+    inset-inline-end   : -12px;
+    inset-block-end    : -14px;
+    width    : 24px;
+    height   : 24px;
+    color    : var(--ow-ink);
+    filter   : drop-shadow(0 1px 0 var(--ow-surface));
+}
+
+.ow-drop-tip {
+    --ow-tone : var(--ow-reach);
+
+    z-index          : 10000;
+    width            : 248px;
+    padding          : 10px 12px;
+    box-sizing       : border-box;
+    border-radius    : 9px;
+    background-color : var(--ow-surface);
+    border           : 1px solid var(--ow-border);
+    box-shadow       : 0 10px 30px rgb(0 0 0 / 20%);
+
+    &[hidden] {
+        display : none;
+    }
+
+    dl {
+        display               : grid;
+        grid-template-columns : auto 1fr;
+        gap                   : 3px 10px;
+        margin                : 8px 0;
+    }
+
+    dt {
+        color : var(--ow-ink-sub);
+    }
+
+    dd {
+        margin               : 0;
+        font-variant-numeric : tabular-nums;
+    }
+}
+
+.ow-drop-tip-invalid {
+    --ow-tone : var(--ow-cancel);
+}
+
+.ow-drop-tip-head {
+    display     : flex;
+    align-items : center;
+    gap         : 6px;
+    font-weight : 700;
+    color       : var(--ow-tone);
+}
+
+.ow-drop-tip-foot {
+    padding-block-start : 7px;
+    border-block-start  : 1px solid var(--ow-border);
+    font-size   : 11.5px;
+    color       : var(--ow-ink-sub);
+}
+
+/* While dragging, the page does not select text */
+body:has(.ow-drag-chip) {
+    user-select : none;
+    cursor      : grabbing;
+}
