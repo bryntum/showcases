@@ -15,6 +15,9 @@
     --g-mono         : var(--sc-font-mono);
     --g-radius       : var(--sc-radius);
     --g-accent       : var(--sc-accent);
+    /* The product families, on the hero chips and the npm packages: Bryntum blue, AG teal */
+    --g-chip-bryntum : var(--g-accent);
+    --g-chip-ag      : light-dark(#0f8f84, #3fd0c0);
     --g-accent-fill  : var(--sc-accent-fill);
     --g-accent-hover : var(--sc-accent-hover);
     --g-text         : var(--sc-text);
@@ -311,8 +314,6 @@ a {
     --g-tile-radius  : 0.6rem;
     --g-tile-border  : light-dark(rgb(15 23 42 / 10%), rgb(255 255 255 / 9%));
     --g-tile-shadow  : light-dark(rgb(20 30 60 / 18%), rgb(0 0 0 / 55%));
-    --g-chip-bryntum : var(--g-accent);
-    --g-chip-ag      : light-dark(#0f8f84, #3fd0c0);
     /* The hover micro-interactions (gallery.js): the glow, how far it reaches past the element, the outlines of
      * `?hotspots` */
     --g-hot          : var(--g-accent);
@@ -1341,19 +1342,27 @@ a {
             }
         }
 
-        .npm {
+        /* The product family, as on the hero chips: Bryntum blue, AG teal */
+        .name {
             display     : flex;
             align-items : center;
-            gap         : 0.45em;
-            color       : var(--g-running);
+            gap         : 0.6em;
 
             &::before {
                 content       : '';
-                width         : 0.4rem;
-                height        : 0.4rem;
+                width         : 0.45em;
+                height        : 0.45em;
                 border-radius : 50%;
-                background    : currentColor;
+                background    : var(--g-chip-bryntum);
             }
+        }
+
+        [data-family="ag"] .name::before {
+            background : var(--g-chip-ag);
+        }
+
+        .npm {
+            color : var(--g-running);
         }
     }
 
