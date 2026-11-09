@@ -130,8 +130,9 @@
         stroke-width : 1.4;
     }
 
-    /* The stops of the trip selected or hovered in the schedule */
+    /* The stops of the trip selected or hovered in the schedule: the hover's tint, ringed */
     .ow-m-ring:not(.ow-m-selected) & {
+        fill             : color-mix(in srgb, var(--ow-tone) 18%, transparent);
         stroke           : color-mix(in srgb, var(--ow-plan) 70%, transparent);
         stroke-width     : 1.2;
         stroke-dasharray : 3 2;

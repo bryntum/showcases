@@ -32,9 +32,9 @@
     box-shadow       : var(--ow-card-shadow);
 }
 
-/* On a short screen the map needs the rail's height more than the turbine's card does: the map's tooltip still names
-   the turbine */
-@media (max-height: 820px) {
+/* On a short screen the map needs the rail's height more than the turbine's card does: the card stays while the map
+   keeps about 300px, under that it goes (the map's tooltip still names the turbine) */
+@media (max-height: 720px) {
     .ow-side .ow-card.b-widget {
         display : none;
     }

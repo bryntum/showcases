@@ -63,11 +63,6 @@
             line-height : 1;
         }
 
-        /* Hidden while the now pill covers it (ForecastHeader.js) */
-        .ow-hour-cell.ow-covered {
-            color : transparent;
-        }
-
         /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
         .ow-day-cell {
             overflow : visible;
@@ -246,7 +241,7 @@
             border-inline-start : var(--b-time-range-line-width) solid var(--ow-now);
         }
 
-        /* The time, a pill centred on the line and on the hours row's middle line, over the hour label it covers */
+        /* The time, a pill centred on the line and on the hours row's middle line */
         label {
             position           : absolute;
             inset-block-start  : calc((var(--ow-row-hours) - 14px) / 2);

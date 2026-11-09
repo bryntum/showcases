@@ -114,23 +114,23 @@ export default class ForecastHeader {
     }
 
     /**
-     * Keeps the chart in the wave height cell of a Scheduler's header, whenever the header is drawn
+     * Puts the chart in the wave height cell of a Scheduler's header, and again whenever the Scheduler draws its time
+     * axis anew (another view preset or time span). The chart's element is `retainElement`, so the header's own
+     * redraws (scroll, resize) leave it where it is
      * @param {Scheduler.view.Scheduler} scheduler
      */
     attach(scheduler) {
-        const
-            me     = this,
-            header = scheduler.element.querySelector('.b-grid-header-container') ?? scheduler.element;
+        const me = this;
 
-        me.scheduler = scheduler;
-        me.observer?.disconnect();
-        me.observer = new MutationObserver(() => me.mount());
-        me.observer.observe(header, {
-            childList       : true,
-            subtree         : true,
-            attributes      : true,
-            attributeFilter : ['style']
-        });
+        if (me.scheduler !== scheduler) {
+            me.scheduler = scheduler;
+            me.detach    = scheduler.ion({
+                presetChange   : 'mount',
+                timeAxisChange : 'mount',
+                thisObj        : me
+            });
+        }
+
         me.mount();
     }
 
@@ -139,35 +139,11 @@ export default class ForecastHeader {
             me   = this,
             cell = me.scheduler?.element.querySelector('.ow-sea-today');
 
-        // Drawn again when moved or empty only (the chart's own changes also reach this observer)
+        // Drawn again only when moved into a new cell
         if (cell && (me.chartHost.parentElement !== cell)) {
             cell.append(me.chartHost);
             me.chart.redraw();
         }
-
-        me.coverHours();
-    }
-
-    // The hour label the now pill covers is hidden while it does
-    coverHours() {
-        const
-            root = this.scheduler?.element,
-            pill = root?.querySelector('.b-grid-header .ow-now label');
-
-        root?.querySelectorAll('.ow-hour-cell').forEach(cell => {
-            const
-                text = cell.querySelector('.b-sch-header-text') ?? cell,
-                range = document.createRange();
-
-            range.selectNodeContents(text);
-
-            const
-                a       = range.getBoundingClientRect(),
-                b       = pill?.getBoundingClientRect(),
-                covered = Boolean(b?.width) && a.right > b.left - 2 && a.left < b.right + 2;
-
-            cell.classList.toggle('ow-covered', covered);
-        });
     }
 
     /**
@@ -200,7 +176,7 @@ export default class ForecastHeader {
     }
 
     destroy() {
-        this.observer?.disconnect();
+        this.detach?.();
         this.chart.destroy();
     }
 }

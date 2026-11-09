@@ -4,11 +4,15 @@ import { hhmm } from '../util/Time.js';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 // The showcase's font, for every label of the chart (its theme's `fontFamily`)
-const fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif';
+const
+    fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
+    // A limit's name, on its line at the left end: small, with air before it and before the dashes
+    limitFont  = { fontSize : 9, fontWeight : 500, padding : 6 },
+    limitText  = (name, value) => `${name} limit ${value.toFixed(1)}`;
 
 // Room the wave height axis keeps, px: above the roughest hour for its point and value label, under the calmest one for
-// its point, above a limit for its name. No label is cut at the chart's edges
-const room = { label : 20, point : 5, limit : 13, guide : 8 };
+// its point, under the start value for its label, about a limit for its name. No label is cut at the chart's edges
+const room = { label : 20, point : 5, limit : 13, guide : 8, under : 24 };
 
 // Hovering a point only shows its tooltip: no dimming of the series, no bigger marker, just a slightly heavier ring
 const highlight = {
@@ -201,7 +205,7 @@ export default class WaveChart {
 
     /**
      * The wave height axis, metres, computed from the forecast shown: from the calmest hour less room for its point to
-     * the roughest one plus room for its value label, both limits and the name above each inside. The room is in px, so
+     * the roughest one plus room for its value label, both limits and their names inside. The room is in px, so
      * metres to the chart's height: the range is solved with the room it has to leave
      * @returns {{ bottom : Number, top : Number }}
      */
@@ -212,7 +216,8 @@ export default class WaveChart {
             // Drawn only once the container has a size (redraw)
             height         = this.element.clientHeight,
             above          = [[Math.max(...hs), room.label], [swath, room.limit], [ctv, room.limit]],
-            below          = [[Math.min(...hs), room.point], [ctv, 0]];
+            // The start value is named under its point (valueLabels)
+            below          = [[Math.min(...hs), room.point], [hs[0], room.under], [ctv, 0]];
 
         let span = 3;
 
@@ -221,7 +226,8 @@ export default class WaveChart {
             const
                 perPx  = span / height,
                 top    = Math.max(...above.map(([value, px]) => value + px * perPx)),
-                bottom = Math.min(...below.map(([value, px]) => value - px * perPx));
+                // Not under 0: the fill under the line runs down to 0, it would stop short of the chart's bottom
+                bottom = Math.max(0, Math.min(...below.map(([value, px]) => value - px * perPx)));
 
             span = top - bottom;
         }
@@ -262,10 +268,12 @@ export default class WaveChart {
             // lines and the CTV limit are series listed before the wave line, and the ring of the crossing covers them
             series     : [
                 ...me.windowLines(colors),
-                me.limitLine(me.limits.ctv, colors.muted),
+                me.limitLine(me.limits.ctv, colors.muted, 'CTV'),
+                me.limitLine(me.limits.swath, colors.muted, 'SWATH'),
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
-                me.valueLabels(colors, 'first', 'top'),
+                // The start value under its point: the limits' names are at the left end, on their lines
+                me.valueLabels(colors, 'first', 'bottom'),
                 me.valueLabels(colors, 'last', 'top')
             ],
             axes : {
@@ -422,9 +430,9 @@ export default class WaveChart {
     }
 
     // The CTV limit, a thin dashed line over the whole day. A series for the same reason as the window's lines: it runs
-    // under the ring where the waves cross it. Its name is the label of an invisible cross line (heightAxis), which
-    // sits at the left end just above the line, as the SWATH limit's does
-    limitLine(value, ink) {
+    // under the ring where the waves cross it. Its name is the label of an invisible cross line (heightAxis), on the
+    // line at its left end: the dashes start after the name
+    limitLine(value, ink, name) {
         const { dayStart, dayEnd } = this.day;
 
         return {
@@ -432,7 +440,7 @@ export default class WaveChart {
             xKey : 't',
             yKey : 'v',
             data : [
-                { t : dayStart, v : value },
+                { t : dayStart + this.limitNameWidth(name), v : value },
                 { t : dayEnd, v : value }
             ],
             stroke        : ink,
@@ -466,22 +474,33 @@ export default class WaveChart {
         };
     }
 
-    // A limit's name at the left end of the day, just above its line: the label of a cross line, drawn with its own
-    // stroke or, for the CTV limit whose line is a series (limitLine), none
-    limitName(value, text, ink, stroke) {
+    // Where a limit's dashes start, in hours (the x axis' unit): after its name at the left end, with air on both
+    // sides
+    limitNameWidth(name) {
+        const
+            me      = this,
+            context = (me.measure ??= document.createElement('canvas').getContext('2d')),
+            perHour = (me.element.clientWidth || 1) / (me.day.dayEnd - me.day.dayStart);
+
+        context.font = `${limitFont.fontWeight} ${limitFont.fontSize}px ${fontFamily}`;
+
+        const text = context.measureText(limitText(name, me.limits[name.toLowerCase()])).width;
+
+        return (limitFont.padding * 2 + text) / perHour;
+    }
+
+    // A limit's name at the left end, on its line: the label of a cross line with no stroke of its own, the dashed line
+    // is a series that starts after the name (limitLine)
+    limitName(value, name, ink) {
         return {
-            type          : 'line',
+            type   : 'line',
             value,
-            stroke,
-            strokeOpacity : limitFade,
-            lineDash      : [3, 3],
-            strokeWidth   : 1,
-            label         : { text, color : ink, placement : 'top-left', padding : 6, fontSize : 9, fontWeight : 500 }
+            stroke : 'transparent',
+            label  : { text : limitText(name, value), color : ink, placement : 'inside-left', ...limitFont }
         };
     }
 
-    // Metres, with the SWATH limit as a thin dashed line in the same quiet tone as the CTV one (limitLine). Nothing
-    // crosses the waves there, so it stays a cross line. Both limits are named at the left end, each above its line
+    // Metres. Both limits are named at the left end, each on its own line (limitName, limitLine)
     heightAxis(ink) {
         const
             me              = this,
@@ -500,8 +519,8 @@ export default class WaveChart {
             tick       : { enabled : false },
             gridLine   : { enabled : false },
             crossLines : [
-                me.limitName(swath, `SWATH limit ${swath.toFixed(1)}`, ink, ink),
-                me.limitName(ctv, `CTV limit ${ctv.toFixed(1)}`, ink, 'transparent')
+                me.limitName(swath, 'SWATH', ink),
+                me.limitName(ctv, 'CTV', ink)
             ]
         };
     }
