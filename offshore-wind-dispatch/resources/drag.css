@@ -89,6 +89,21 @@
     color       : var(--ow-ink-sub);
 }
 
+/* Held from the keyboard, the keys that move, book or cancel */
+.ow-drop-tip-keys {
+    margin-block-start : 6px;
+    font-size          : 11px;
+    color              : var(--ow-ink-sub);
+
+    kbd {
+        padding       : 0 4px;
+        border        : 1px solid var(--ow-border);
+        border-radius : 3px;
+        font          : inherit;
+        font-weight   : 600;
+    }
+}
+
 /* While dragging, the page does not select text */
 body:has(.ow-drag-chip) {
     user-select : none;

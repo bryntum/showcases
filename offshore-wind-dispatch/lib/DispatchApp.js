@@ -486,6 +486,18 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         });
     }
 
+    /**
+     * The trips a team held from the keyboard steps through: those still on the day, by vessel row then departure
+     * @returns {TripModel[]}
+     */
+    dropTargets() {
+        const { resourceStore } = this.scheduler;
+
+        return this.trips.filter(trip => trip.status !== 'moved' && trip.resource)
+            .sort((a, b) => resourceStore.indexOf(a.resource) - resourceStore.indexOf(b.resource) ||
+                a.startDate - b.startDate);
+    }
+
     endDrag() {
         this.clearPreview();
         this.lifted = null;

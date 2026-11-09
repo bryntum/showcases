@@ -4,7 +4,7 @@ import { icon } from './util/Icons.js';
 
 /**
  * The teams waiting at the port with no trip yet: a chip per team with its turbine, its job, how long it takes and the
- * certificates it holds. Chips are dragged onto a trip, see TeamDrag.
+ * certificates it holds. Chips are dragged onto a trip, or held over one from the keyboard with Enter, see TeamDrag.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
@@ -58,7 +58,7 @@ export default class TeamTray extends Widget {
     draw(waiting, lifted) {
         const chips = waiting.map(({ team, job }) => `
             <div class="ow-team${team.id === lifted ? ' ow-team-lifted' : ''}" data-team="${StringHelper.encodeHtml(team.id)}"
-                role="button" tabindex="0" aria-label="${StringHelper.encodeHtml(`${team.name}, ${job.turbine}, drag onto a trip`)}">
+                role="button" tabindex="0" aria-label="${StringHelper.encodeHtml(`${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`)}">
                 ${teamChipHtml(team, job)}
             </div>`).join('');
 

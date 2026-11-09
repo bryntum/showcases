@@ -20,9 +20,10 @@ function tripsByTurbine(trips) {
     return map;
 }
 
-// The status class of one turbine, see map.css
-function statusOf(id, { state, byTurbine, removed, reach, target }) {
-    const trip = byTurbine.get(id);
+// The status class of one turbine, see map.css. While a trip's reach is shown, the turbines outside it are dimmed,
+// all but the stops of that trip itself
+function statusOf(id, context) {
+    const { reach, target, focusTrip, byTurbine } = context;
 
     if (id === target) {
         return 'ow-m-target';
@@ -32,6 +33,19 @@ function statusOf(id, { state, byTurbine, removed, reach, target }) {
         return 'ow-m-reach';
     }
 
+    const status = planStatusOf(id, context);
+
+    if (reach && !(focusTrip && byTurbine.get(id) === focusTrip)) {
+        return status ? `${status} ow-m-dim` : 'ow-m-dim';
+    }
+
+    return status;
+}
+
+// The status of a turbine in the plan: served by a trip, moved, stopped, waiting for its team, or none
+function planStatusOf(id, { state, byTurbine, removed }) {
+    const trip = byTurbine.get(id);
+
     if (trip?.status === 'moved' || removed.has(id)) {
         return 'ow-m-moved';
     }
@@ -40,20 +54,11 @@ function statusOf(id, { state, byTurbine, removed, reach, target }) {
         return trip.status === 'at-risk' ? 'ow-m-risk' : trip.startMinute <= state.now ? 'ow-m-work' : 'ow-m-planned';
     }
 
-    return idleStatusOf(id, state, reach);
-}
-
-// A turbine no trip serves: stopped, waiting for its team, dimmed while showing a trip's reach
-function idleStatusOf(id, state, reach) {
     if (state.faults.has(id)) {
         return 'ow-m-fault';
     }
 
-    if (state.waiting.includes(id)) {
-        return 'ow-m-waiting';
-    }
-
-    return reach ? 'ow-m-dim' : '';
+    return state.waiting.includes(id) ? 'ow-m-waiting' : '';
 }
 
 // The labels of the plan: the selected turbine, faults, trips past the window, and what the forecast moved
@@ -103,7 +108,14 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
         byTurbine = tripsByTurbine(trips),
         removed   = new Set(trips.flatMap(trip => trip.removed ?? [])),
         focus     = drop ?? access,
-        context   = { state, byTurbine, removed, reach : focus?.reach ?? null, target : drop?.job.turbine },
+        context   = {
+            state,
+            byTurbine,
+            removed,
+            reach     : focus?.reach ?? null,
+            target    : drop?.job.turbine,
+            focusTrip : focus?.trip ?? null
+        },
         markers   = new Map(turbineIds.map(id => [id, statusOf(id, context)])),
         routes    = trips.filter(trip => trip.mode === 'vessel' && trip.status !== 'moved').map(trip => ({
             stops : trip.turbines,

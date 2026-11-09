@@ -78,6 +78,80 @@ test.describe('Offshore Wind Dispatch', () => {
             .turbines)).toContain('T-34');
     });
 
+});
+
+test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
+    test('a team can be held over a trip and booked from the keyboard', async({ page }) => {
+        await open(page);
+
+        const tip = page.locator('.ow-drop-tip');
+
+        await tray(page).locator('.ow-team[data-team="F"]').focus();
+        await page.keyboard.press('Enter');
+
+        // Held over the selected trip, NT-1, with the stop it would get previewed
+        await expect(tip).toContainText('T-34 fits on NT-1');
+        await expect(tip).toHaveAttribute('aria-live', 'polite');
+        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toContainText('T-34');
+
+        // The arrows move it to another trip, and back
+        await page.keyboard.press('ArrowRight');
+        await expect(tip).not.toContainText('on NT-1');
+        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
+        await page.keyboard.press('ArrowLeft');
+        await expect(tip).toContainText('T-34 fits on NT-1');
+
+        // Escape puts it back, the chip keeps the focus
+        await page.keyboard.press('Escape');
+        await expect(tip).toHaveCount(0);
+        await expect(tray(page).locator('.ow-team[data-team="F"]')).toBeFocused();
+
+        // Space holds it again, Enter books it
+        await page.keyboard.press(' ');
+        await expect(tip).toContainText('T-34 fits on NT-1');
+        await page.keyboard.press('Enter');
+
+        await expect(tip).toHaveCount(0);
+        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(0);
+        await expect(trip(page, 'NT-1').locator('.b-nested-event[data-event-id="NT-1:T-34"]')).toBeVisible();
+    });
+
+    test('while a team is held over a trip, the map dims every turbine it cannot reach', async({ page }) => {
+        await open(page, '?state=drag');
+
+        const marker = id => page.locator(`.ow-side [data-turbine="${id}"]`);
+
+        await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
+
+        const statuses = await page.evaluate(() => {
+            const
+                app   = globalThis.bryntum.query('dispatchapp'),
+                own   = new Set(app.drop.trip.turbines),
+                reach = app.drop.reach;
+
+            // Turbines on other trips, outside the reach of the held trip
+            return app.trips.filter(each => each !== app.drop.trip).flatMap(each => each.turbines)
+                .filter(id => !reach.has(id) && !own.has(id));
+        });
+
+        expect(statuses.length).toBeGreaterThan(0);
+
+        for (const id of statuses) {
+            await expect(marker(id)).toHaveClass(/\bow-m-dim\b/);
+        }
+
+        // The held trip's own stops and the turbines it can reach are not dimmed
+        for (const id of await page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop.trip.turbines)) {
+            await expect(marker(id)).not.toHaveClass(/\bow-m-dim\b/);
+        }
+
+        await expect(page.locator('.ow-side .ow-m-reach')).not.toHaveCount(0);
+        await expect(page.locator('.ow-side .ow-m-reach.ow-m-dim')).toHaveCount(0);
+    });
+});
+
+test.describe('Offshore Wind Dispatch forecast', () => {
+
     test('the next forecast closes the window earlier and re-plans the trips, Undo puts them back', async({ page }) => {
         await open(page);
 
