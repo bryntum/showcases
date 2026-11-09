@@ -1,8 +1,8 @@
 import { Panel, StringHelper } from '@bryntum/core-enterprise';
 import { turbineIds } from '../plan/Farm.js';
-import { iconConfig } from '../util/Icons.js';
 // Also registers the widget types used below
 import '../map/TurbineMap.js';
+import { markerParts } from '../map/Turbine.js';
 import '../map/TurbineCard.js';
 
 /**
@@ -62,8 +62,10 @@ export default class MapPanel extends Panel {
                             type  : 'toolbar',
                             cls   : 'ow-panel-bar',
                             items : {
-                                title : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
-                                count : {
+                                title  : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
+                                // The count at the right end
+                                spacer : '->',
+                                count  : {
                                     type    : 'widget',
                                     cls     : 'ow-panel-count',
                                     tooltip : `${turbineIds.length} turbines`
@@ -83,8 +85,9 @@ export default class MapPanel extends Panel {
     afterConstruct() {
         super.afterConstruct();
 
-        // The turbine count, with the turbine's icon
-        this.widgetMap.bar.widgetMap.count.html = [iconConfig('turbine'), { tag : 'span', text : String(turbineIds.length) }];
+        // The turbine count, with the turbines' own mark on the map
+        this.widgetMap.bar.widgetMap.count.html = `<svg class="ow-legend-mark" viewBox="-8 -8 16 16" aria-hidden="true">${markerParts()}</svg>` +
+            `<span>${turbineIds.length}</span>`;
         this.updatePhone(this.phone);
     }
 

@@ -83,6 +83,13 @@
     font-weight : 400;
     color       : var(--ow-ink-sub);
     white-space : nowrap;
+
+    /* The turbines' own mark on the map (map/Turbine.js#markerParts) */
+    .ow-legend-mark {
+        flex   : none;
+        width  : 16px;
+        height : 16px;
+    }
 }
 
 /* The next forecast, in: the one action that changes the plan, a quiet `tonal` button in the work blue. Its
