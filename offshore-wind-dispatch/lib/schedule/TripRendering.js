@@ -246,12 +246,19 @@ export function renderVessel(vessel, { now, close, limit }) {
         trips = vessel.events.filter(trip => !trip.isLeg && trip.day === shownDay() && trip.status !== 'moved'),
         spans = trips.map(trip => ({ start : trip.startMinute, end : trip.endMinute })),
         share = Math.round(windowShare(spans, now, close) * 100),
-        pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0);
+        pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0),
+        // The seats taken, as a ring round the icon: orange when one of its trips is back after its window
+        used  = vessel.seats ? Math.round(pax / vessel.seats * 100) : 0,
+        risk  = trips.some(trip => trip.status === 'at-risk');
 
     return {
         class    : `ow-resource ow-resource-${vessel.mode}`,
         children : [
-            iconConfig(vessel.glyph, 'ow-resource-icon'),
+            {
+                class    : `ow-resource-ring${risk ? ' ow-resource-ring-risk' : ''}`,
+                style    : `--ow-use:${used}%`,
+                children : [iconConfig(vessel.glyph, 'ow-resource-icon')]
+            },
             {
                 class    : 'ow-resource-text',
                 children : [

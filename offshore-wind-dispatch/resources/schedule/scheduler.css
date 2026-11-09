@@ -29,6 +29,11 @@
             color          : var(--ow-c-muted);
         }
 
+        /* The same light shade as the row's timeline part, not the vessel column's surface */
+        .ow-resource-cell.b-grid-cell {
+            background-color : var(--b-group-header-background);
+        }
+
         .ow-resource-cell.b-grid-cell.b-group-title {
             padding-inline : 24px 8px;
         }
