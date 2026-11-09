@@ -261,7 +261,7 @@ export default class WeekBoard extends Scheduler {
             date = startDate.toLocaleDateString('en-GB', { weekday : 'short', day : 'numeric' }).replace(',', ''),
             [lo, hi] = day.hs;
 
-        return `<span class="ow-week-date">${date}${today ? ' · today' : ''}</span>` +
+        return `<span class="ow-week-date">${date}</span>` +
             `<span class="ow-sea ow-sea-${day.sea.tone}">${day.sea.text}</span>` +
             // Where the column is too narrow for one line, it wraps before the wind
             `<small><span>Hs ${lo.toFixed(1)}–${hi.toFixed(1)} m</span> · <span>wind ${day.wind}</span></small>`;

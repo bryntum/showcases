@@ -151,6 +151,9 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstS
         change = changeText(trip, firstSailing);
 
     renderData.cls['ow-trip']                = 1;
+    // On the wrapper, which also holds the sail out and back (EventBuffer): the hover's outline goes round all of it
+    renderData.wrapperCls['ow-trip-wrap']    = 1;
+    renderData.wrapperCls['ow-trip-held']    = trip.hasPreview;
     renderData.cls[`ow-trip-${trip.status}`] = 1;
     renderData.cls['ow-trip-heli']           = trip.mode === 'heli';
     renderData.cls['ow-trip-drop']           = trip.hasPreview;

@@ -494,7 +494,9 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         const days = board(page).locator('.b-sch-header-time-axis-cell.ow-week-day');
 
         await expect(days).toHaveCount(7);
-        await expect(days.first()).toContainText('· today');
+        // Today first, its date in the pill
+        await expect(days.first()).toHaveClass(/ow-week-today/);
+        await expect(board(page).locator('.ow-week-today')).toHaveCount(1);
         await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'No CTV', 'Go until 15', 'Go · all day',
             'Go · all day', 'Go until 11', 'No CTV']);
         await expect(days.first().locator('small')).toHaveText('Hs 0.9–2.2 m · wind 24');

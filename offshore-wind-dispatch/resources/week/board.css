@@ -89,12 +89,12 @@
         }
     }
 
-    .b-sch-header-time-axis-cell.ow-week-today {
-        background-color : var(--ow-c-button-tint);
-
-        .ow-week-date {
-            color : var(--ow-c-work);
-        }
+    /* Today: its date in a pill, the bright blue of the now line with white text (as the Day view's now pill) */
+    .b-sch-header-time-axis-cell.ow-week-today .ow-week-date {
+        padding          : 1px 8px;
+        border-radius    : 999px;
+        color            : var(--b-color-white);
+        background-color : var(--ow-now);
     }
 
     /* The sea state pill: blue where the crew transfer vessels go, grey where they do not */

@@ -84,11 +84,12 @@
         }
     }
 
-    /* A trip under the pointer (Bryntum's hover state of the NestedEvents parent): a dotted outline round the trip's
-       own element, its label and its time on station, as the drop target's but quieter */
-    .b-sch-event-wrap:is(:hover, .b-hover) > .b-sch-event.ow-trip:not(.ow-trip-drop) {
+    /* A trip under the pointer (Bryntum's hover state of the NestedEvents parent): a dotted outline round all of it,
+       its wrapper, the label, the sail out, the time on station and the sail back, as the drop target's but quieter */
+    .b-sch-event-wrap.ow-trip-wrap:is(:hover, .b-hover):not(.ow-trip-held) {
         outline        : 1px dotted var(--ow-c-work-line);
-        outline-offset : 3px;
+        /* Clear of the end dots, which sit on the wrapper's edges */
+        outline-offset : 5px;
         border-radius  : var(--ow-c-radius);
     }
 
