@@ -308,12 +308,11 @@ test.describe('Offshore Wind Dispatch turbines', () => {
                 await marker(page, id).hover({ force : true });
             };
 
-        // 10 m/s at 07:40: 8.75 rpm, a revolution every 6.86 s
-        expect(await page.evaluate(() => getComputedStyle(document.documentElement)
-            .getPropertyValue('--ow-rotor-period').trim())).toBe('6.86s');
-
-        // A running turbine's marker stays still when hovered, the drawing in its tooltip turns and says how fast
+        // A running turbine's marker stays still when hovered, the drawing in its tooltip turns and says how fast:
+        // 10 m/s at 07:40 is 8.75 rpm, a revolution every 6.86 s
         await hover('T-60');
+        expect(await tooltip(page).locator('.ow-turbine-rotor').evaluate(el => getComputedStyle(el)
+            .getPropertyValue('--ow-rotor-period').trim())).toBe('6.86s');
         await expect(tooltip(page)).toContainText('8.8 rpm · wind 10 m/s');
         await expect(tooltip(page).locator('.ow-turbine-rotor')).toHaveCount(1);
         expect(await animation('T-60')).toBe('none');

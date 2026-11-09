@@ -295,7 +295,7 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         });
         await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
-        await page.locator('.ow-toast').getByRole('button', { name : 'Undo' }).click();
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
 
         const state = await heldState(page);
 
@@ -680,7 +680,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
 
         await page.locator('.ow-forecast-button').click();
 
-        const notice = page.locator('.ow-toast');
+        const notice = page.locator('.ow-notice');
 
         await expect(notice).toBeVisible();
         await expect(notice).toContainText('Forecast 08:00');
