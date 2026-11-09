@@ -19,11 +19,16 @@ significant wave height (Hs) stays under its limit, and a trip has to be back at
   trip, red if the plan breaks it
 * **Map**: the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
   turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
-  limit on the boat landing
+  limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
+  select a trip and its turbines are ringed; hover a turbine and its trips light up (the Scheduler's event
+  highlighting), hover a trip and its turbines are ringed. A Bryntum Tooltip on each turbine shows it at the forecast
+  wave height with its job, its team and when a trip reaches it. The map is one tab stop: the arrow keys move to the
+  nearest turbine in that direction, Enter or Space selects it
 
 **Drag a team waiting at the port onto a trip.** The trip shows the stop it would get, a tooltip says when the trip
 would be back against the window, and checks the seats and the certificates (GWO, HV, rope access). The map rings
-every turbine the trip could still reach before the window closes and dims the rest. Drop it to book it. Then press
+every turbine the trip could still reach before the window closes and dims the rest. Drop it to book it. Should the
+plan or the forecast change while a team is held, the team is checked again against it. Then press
 **Forecast 08:00 is in**: the new forecast brings the CTV window forward from 14:00 to 12:00, and the plan follows. Trips
 not yet gone are brought forward, trimmed (their last stops go to tomorrow) or moved to tomorrow. A notice offers Undo
 and a review of each change.
@@ -45,7 +50,8 @@ data/farm.json ──► DispatchState (site, forecasts, windows, teams, clock)
  (TripRendering) (resource time   (KpiBar)      (MapModel, TurbineMap,
                   ranges)                        TurbineCard)
 
-TeamTray ──► TeamDrag (pointer events) ──► DispatchApp#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
+TeamTray ──► TeamDrag (pointer events) ──► DropPreview#previewDrop / dropTeam ──► Planner#previewDrop, #reachable
+TurbineMap (turbines Store, selected Collection) ◄──► MapLink, DispatchApp ◄──► Scheduler selection and highlighting
 ```
 
 The trips are the source of truth, in the Scheduler's event store, a tree: each trip is a parent event and its legs
@@ -76,15 +82,16 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the KPI bar (`KpiBar.js`), the team tray
     (`TeamTray.js`), the forecast notice (`ForecastNotice.js`), the schedule and the map. `TitleBars.js` draws the
-    panel bars, the phone tabs and the legend, `TeamDrag.js` drags a team onto a trip
+    panel bars, the phone tabs and the legend, `TeamDrag.js` drags a team onto a trip, `DropPreview.js` (a mixin of
+    the app) previews and books it, `MapLink.js` links the hover of the map and the schedule
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
     the trips (`Planner`), the state apart from the trips (`DispatchState`) and the re-planning on a new forecast
     (`ForecastPlanner`)
   * `schedule/` the `DispatchScheduler`, its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`),
     and the rendering of the trips and their legs, the vessels, groups, ranges and the dependency (`TripRendering`)
   * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs) and `VesselModel`
-  * `map/` the map (`TurbineMap`, from `MapModel`), the selected turbine (`TurbineCard`) and the turbine drawing
-    (`Turbine`)
+  * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, drawn from `MapModel`), the selected turbine
+    and the map's tooltip (`TurbineCard`) and the turbine drawing (`Turbine`)
   * `util/` the times of the day and the icons
 * `resources/` the CSS: `app.css` imports the tokens and one file per part (the header, the layout, the schedule, the
   map, the drag, the phone layout)

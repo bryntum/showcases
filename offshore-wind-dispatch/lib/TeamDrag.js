@@ -131,15 +131,10 @@ export default class TeamDrag {
         }
 
         if (step) {
-            keyboard.index = (keyboard.index + step + keyboard.trips.length) % keyboard.trips.length;
-            me.holdOver(keyboard.trips[keyboard.index]);
+            me.step(step);
         }
         else if (event.key === 'Enter' || event.key === ' ') {
-            const trip = keyboard.trips[keyboard.index];
-
-            me.end();
-            me.handler.dropTeam(team, trip);
-            me.focusChip(team);
+            me.book(team);
         }
         else if (event.key === 'Escape') {
             me.cancel();
@@ -151,6 +146,35 @@ export default class TeamDrag {
 
         event.preventDefault();
         event.stopPropagation();
+    }
+
+    // Holds the team over the previous or next trip
+    step(step) {
+        const
+            { keyboard } = this,
+            count        = keyboard.trips.length,
+            // Held over a trip no longer in the list (the forecast moved it), the arrows start from either end
+            from         = keyboard.index < 0 ? (step > 0 ? -1 : 0) : keyboard.index;
+
+        if (count) {
+            keyboard.index = (from + step + count) % count;
+            this.holdOver(keyboard.trips[keyboard.index]);
+        }
+    }
+
+    // Books the team on the trip it is held over
+    book(team) {
+        const
+            me   = this,
+            trip = me.handler.drop?.trip ?? me.keyboard.trips[me.keyboard.index];
+
+        me.end();
+
+        if (trip) {
+            me.handler.dropTeam(team, trip);
+        }
+
+        me.focusChip(team);
     }
 
     // Focus back on the team's chip, or the first one once it is booked
@@ -196,8 +220,43 @@ export default class TeamDrag {
             me.begin(press.team);
         }
 
-        me.moveTo(event.clientX, event.clientY);
-        me.hover(me.tripAt(event.clientX, event.clientY), { x : event.clientX, y : event.clientY });
+        // Kept for refresh(), the plan may change under a still pointer
+        press.point = { x : event.clientX, y : event.clientY };
+        me.moveTo(press.point.x, press.point.y);
+        me.hover(me.tripAt(press.point.x, press.point.y), press.point);
+    }
+
+    /**
+     * Checks the team again where it is held, after the plan or the forecast changed (DispatchApp#replan): the trip
+     * under the pointer, or the trip held over without one, previewed and its tooltip redrawn against the plan as it is
+     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have moved some to
+     * tomorrow
+     */
+    refresh() {
+        const
+            me            = this,
+            { press }     = me,
+            trip          = me.handler.drop?.trip;
+
+        if (!me.isDragging) {
+            return;
+        }
+
+        if (me.keyboard) {
+            me.keyboard.trips = me.handler.dropTargets();
+            me.keyboard.index = me.keyboard.trips.indexOf(trip);
+        }
+
+        if (press.point) {
+            me.hover(me.tripAt(press.point.x, press.point.y), press.point);
+        }
+        else if (trip) {
+            me.holdOver(trip);
+        }
+        // Held without a pointer, the team no longer waits: put it back
+        else {
+            me.cancel();
+        }
     }
 
     onPointerUp(event) {

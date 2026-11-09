@@ -404,6 +404,12 @@
     }
 }
 
+/* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by default
+   so the plan stays readable */
+.ow-scheduler .b-time-axis-sub-grid.b-is-highlighting .b-sch-canvas > .b-sch-event-wrap:not(.b-highlighted) {
+    opacity : 0.4;
+}
+
 /* The trip tooltip */
 .ow-tip {
     min-width : 14em;

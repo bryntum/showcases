@@ -1,14 +1,16 @@
-import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise';
+import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
-import { previewDrop, reachable } from './plan/Planner.js';
+import { reachable } from './plan/Planner.js';
 import { turbineIds } from './plan/Farm.js';
 import TripModel from './model/TripModel.js';
+import DropPreview from './DropPreview.js';
 import TeamDrag from './TeamDrag.js';
+import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
-import { cardInfo } from './map/TurbineCard.js';
+import { cardHtml, cardInfo, tipInfo } from './map/TurbineCard.js';
 import { legendHtml, scheduleBarHtml, sideBarHtml, tabsHtml } from './TitleBars.js';
-import { hhmm, toDate, toMinutes } from './util/Time.js';
+import { toDate, toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
 import './TeamTray.js';
@@ -16,25 +18,21 @@ import './ForecastNotice.js';
 import './map/TurbineMap.js';
 import './schedule/DispatchScheduler.js';
 
-// The stop a team's job adds to a trip
-const stopOf = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
-    preview });
-
 /**
  * Offshore Wind Dispatch: the header with the weather window, the vessels and helicopters on the day's timeline with
  * the teams waiting at the port above it, and the map of the farm with the selected turbine beside it.
  *
- * The app holds the selection and the team being dragged, and refreshes the views when the plan changes: a team
- * dropped on a trip, a trip dragged, or a new forecast re-planning the day (ForecastPlanner).
+ * The app holds the selection and the team being dragged (DropPreview), and refreshes the views when the plan changes:
+ * a team dropped on a trip, a trip dragged, or a new forecast re-planning the day (ForecastPlanner). The map and the
+ * schedule share the selection both ways, and the hover through MapLink.
  *
  * Below 760px wide it is a `phone` (the Responsive mixin): the schedule and the map are tabs.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Toast
  */
-export default class DispatchApp extends Panel.mixin(Responsive) {
+export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     static $name = 'DispatchApp';
 
     static type = 'dispatchapp';
@@ -96,7 +94,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             afterEventDrop       : 'onTripDrop',
             thisObj              : me
         });
-        map.on({ turbineClick : 'onTurbineClick', thisObj : me });
+        map.on({ selectionChange : 'onTurbineSelectionChange', thisObj : me });
+        me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
         me.element.addEventListener('click', event => me.onAction(event));
 
         // The responsive state may have been set before the items existed
@@ -138,8 +137,13 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
                         layout : 'vbox',
                         items  : {
                             sideBar : { type : 'widget', cls : 'ow-panel-bar' },
-                            map     : { type : 'turbinemap', flex : 1, site },
-                            card    : { type : 'turbinecard' }
+                            map     : {
+                                type    : 'turbinemap',
+                                flex    : 1,
+                                site,
+                                tipHtml : turbine => me.turbineTipHtml(turbine)
+                            },
+                            card : { type : 'turbinecard' }
                         }
                     }
                 }
@@ -220,15 +224,39 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     }
 
     onPlanChange() {
-        this.evaluate();
-        this.refreshAll();
+        this.replan();
+    }
+
+    /**
+     * Changes the plan and draws it. A team held over a trip has its previewed stop taken off first, so the change and
+     * the trips' status see the plan only, then previewed again and checked against the plan and forecast as they are
+     * now: the trip, the map, the card and the drag's tooltip never show a check made against the old ones
+     * @param {Function} [change] Changes the plan
+     */
+    replan(change) {
+        const
+            me   = this,
+            held = me.drop && { teamId : me.drop.team.id, trip : me.drop.trip };
+
+        me.clearPreview();
+        change?.();
+        me.evaluate();
+
+        if (held) {
+            me.holdPreview(held.teamId, held.trip);
+        }
+
+        me.refreshAll();
+        me.drag?.refresh();
     }
 
     // A trip dragged to a new departure: its legs are placed again from it
     onTripDrop({ eventRecords, valid }) {
         if (valid) {
-            eventRecords.forEach(trip => trip.layout({ departs : toMinutes(trip.startDate) }));
-            this.onPlanChange();
+            // Read before the preview comes off, which lays the trip out again
+            const departures = eventRecords.map(trip => [trip, toMinutes(trip.startDate)]);
+
+            this.replan(() => departures.forEach(([trip, departs]) => trip.layout({ departs })));
         }
     }
 
@@ -273,10 +301,22 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             drop,
             access          : me.access(selectedTrip)
         }));
+        // The plan under the pointer may have changed
+        me.mapLink?.refresh();
 
         if (turbine) {
             card.draw(cardInfo({ state : dispatch, trips, turbine, drop }));
         }
+    }
+
+    // The map's tooltip on a turbine: the card's turbine at the forecast wave height, its job, team and when a trip
+    // reaches it
+    turbineTipHtml(turbine) {
+        const
+            { dispatch, trips, drop } = this,
+            info                      = tipInfo({ state : dispatch, trips, turbine, drop });
+
+        return `<div class="ow-card ow-card-tip" data-tone="${info.tone}">${cardHtml(info, 'ow-tip')}</div>`;
     }
 
     // The Access view: the turbines the selected trip could still add an hour's stop at
@@ -298,28 +338,29 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
      * Brings in the next forecast and re-plans the day against it
      */
     applyForecast() {
-        const
-            me      = this,
-            changes = me.forecastPlanner.apply(me.dispatch.waiting);
+        const me = this;
 
-        me.evaluate();
+        let changes = [];
+
+        me.replan(() => {
+            changes = me.forecastPlanner.apply(me.dispatch.waiting);
+        });
         me.reviewIndex = -1;
 
         if (changes.length) {
             me.widgetMap.notice.draw({ ...me.forecastPlanner.summary(changes), changes : changes.length });
             me.reviewNext();
         }
-
-        me.refreshAll();
     }
 
     // Puts back the trips as they were before the forecast. The forecast stays, the trips past it are flagged
     undoForecast() {
         const me = this;
 
-        me.dispatch.waiting = me.forecastPlanner.undo();
         me.widgetMap.notice.hidden = true;
-        me.onPlanChange();
+        me.replan(() => {
+            me.dispatch.waiting = me.forecastPlanner.undo();
+        });
     }
 
     // Selects the next trip the forecast changed
@@ -369,10 +410,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
     }
 
-    onTurbineClick({ turbine }) {
+    // A turbine selected on the map, by a click or the keyboard, selects its trip
+    onTurbineSelectionChange({ selection, user }) {
         const
-            me   = this,
-            trip = me.trips.find(each => each.turbines.includes(turbine) || each.removed?.includes(turbine));
+            me      = this,
+            turbine = selection[0]?.id,
+            trip    = tripsOf(me.trips, turbine)[0];
+
+        if (!user || !turbine) {
+            return;
+        }
 
         me.selectedTurbine = turbine;
 
@@ -382,126 +429,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
 
         me.refreshSide();
-    }
-
-    //endregion
-
-    //region Dragging a team, see TeamDrag
-
-    liftTeam(teamId) {
-        const entry = this.dispatch.waitingTeams.find(({ team }) => team.id === teamId);
-
-        this.lifted = teamId;
-        this.widgetMap.tray.draw(this.dispatch.waitingTeams, teamId);
-
-        return entry;
-    }
-
-    /**
-     * Previews a team on a trip: the trip shows the stop, the map what the trip can still reach, the card the turbine
-     * @param {String} teamId
-     * @param {TripModel|null} trip
-     * @returns {Object|null} `{ trip, team, job, result, reach, close }`
-     */
-    previewDrop(teamId, trip) {
-        const me = this;
-
-        if (me.drop?.trip === trip && me.drop?.team.id === teamId) {
-            return me.drop;
-        }
-
-        me.clearPreview();
-
-        if (!trip) {
-            me.refreshSide();
-
-            return null;
-        }
-
-        const
-            { team, job } = me.dispatch.waitingTeams.find(entry => entry.team.id === teamId),
-            close         = me.dispatch.closeOf(trip.resource),
-            result        = me.checkDrop(trip, team, job);
-
-        // The previewed stop is a leg of the trip too, after the last one
-        trip.layout({ stops : [...trip.stops, stopOf(team, job, true)] });
-
-        me.drop = { trip, team, job, result, close, reach : reachable(trip.plan, job.minutes, close) };
-        me.refreshSide();
-
-        return me.drop;
-    }
-
-    // Whether a team's job fits on a trip, see Planner#previewDrop
-    checkDrop(trip, team, job) {
-        const { dispatch } = this;
-
-        return previewDrop({
-            trip   : trip.plan,
-            team,
-            job,
-            close  : dispatch.closeOf(trip.resource),
-            now    : dispatch.now,
-            vessel : trip.resource.name
-        });
-    }
-
-    clearPreview() {
-        const trip = this.drop?.trip;
-
-        if (trip && !trip.isDestroyed) {
-            trip.layout({ stops : trip.stops });
-        }
-
-        this.drop = null;
-    }
-
-    // Released over a trip: booked when it fits
-    dropTeam(teamId, trip) {
-        const
-            me            = this,
-            { dispatch }  = me,
-            { team, job } = dispatch.waitingTeams.find(entry => entry.team.id === teamId) ?? {},
-            result        = team && me.checkDrop(trip, team, job);
-
-        if (!result?.valid) {
-            Toast.show({
-                html : StringHelper.encodeHtml(result?.reason ?? 'The team is not waiting'),
-                cls  : 'ow-toast-message'
-            });
-
-            return;
-        }
-
-        trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
-        dispatch.waiting = dispatch.waiting.filter(turbine => turbine !== job.turbine);
-        me.selectedTurbine = job.turbine;
-        me.scheduler.selectEvent(trip);
-        me.onPlanChange();
-
-        Toast.show({
-            html : StringHelper.xss`${team.name} booked on ${trip.id}, back at port ${hhmm(result.back)}`,
-            cls  : 'ow-toast-message'
-        });
-    }
-
-    /**
-     * The trips a team held from the keyboard steps through: those still on the day, by vessel row then departure
-     * @returns {TripModel[]}
-     */
-    dropTargets() {
-        const { resourceStore } = this.scheduler;
-
-        return this.trips.filter(trip => trip.status !== 'moved' && trip.resource)
-            .sort((a, b) => resourceStore.indexOf(a.resource) - resourceStore.indexOf(b.resource) ||
-                a.startDate - b.startDate);
-    }
-
-    endDrag() {
-        this.clearPreview();
-        this.lifted = null;
-        this.widgetMap.tray.draw(this.dispatch.waitingTeams);
-        this.refreshSide();
     }
 
     //endregion

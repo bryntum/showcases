@@ -137,6 +137,27 @@
     stroke-width : 1.4;
 }
 
+/* The stops of the trip selected or hovered in the schedule */
+.ow-m-ring:not(.ow-m-selected) .ow-marker-halo {
+    stroke           : color-mix(in srgb, var(--ow-plan) 70%, transparent);
+    stroke-width     : 1.2;
+    stroke-dasharray : 3 2;
+}
+
+.ow-m-hover .ow-marker-halo {
+    fill : color-mix(in srgb, var(--ow-tone) 18%, transparent);
+}
+
+/* One tab stop for the map, the arrow keys move between the turbines */
+.ow-marker:focus {
+    outline : none;
+}
+
+.ow-marker:focus-visible .ow-marker-halo {
+    stroke       : var(--b-primary, var(--ow-plan));
+    stroke-width : 2.4;
+}
+
 .ow-m-dim {
     opacity : 0.4;
 }
@@ -204,20 +225,43 @@
     }
 }
 
-/* The selected turbine */
-.ow-card.b-widget {
+/* The selected turbine, and the map's tooltip on a turbine (ow-card-tip) */
+:is(.ow-card.b-widget, .ow-card-tip) {
     --ow-tone : var(--ow-sea-ok);
 
-    flex                  : none;
     display               : grid;
     grid-template-columns : 124px minmax(0, 1fr);
     gap                   : 14px;
-    padding               : 10px 16px 12px 8px;
-    border-block-start    : 1px solid var(--ow-border);
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
     &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
     &[data-tone='cancel'] { --ow-tone : var(--ow-cancel); }
+}
+
+.ow-card.b-widget {
+    flex               : none;
+    padding            : 10px 16px 12px 8px;
+    border-block-start : 1px solid var(--ow-border);
+}
+
+.ow-card.ow-card-tip {
+    grid-template-columns : 92px minmax(0, 1fr);
+    gap                   : 10px;
+    width                 : 22rem;
+    max-width             : calc(100vw - 32px);
+    color                 : var(--ow-ink);
+
+    .ow-turbine {
+        width : 92px;
+    }
+
+    .ow-card-body {
+        padding-block-start : 0;
+    }
+
+    .ow-card-title b {
+        font-size : 15px;
+    }
 }
 
 .ow-card-art {
