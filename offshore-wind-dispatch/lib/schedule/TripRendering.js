@@ -72,6 +72,33 @@ export function hoursText(minutes) {
 }
 
 /**
+ * The teams on board as the trip is shown: "Team B", "Teams D, E", with the team of a stop previewed on it while a
+ * team is dragged over it, "New trip" for a draft without teams
+ * @param {TripModel} trip
+ * @returns {String}
+ */
+export function teamText(trip) {
+    const ids = [...new Set(trip.allStops.map(stop => stop.team))];
+
+    if (ids.length === 1) {
+        return trip.project?.teams?.get(ids[0])?.name ?? ids[0];
+    }
+
+    return ids.length ? `Teams ${ids.join(', ')}` : 'New trip';
+}
+
+/**
+ * People on board as the trip is shown, with a previewed team: "5 pax"
+ * @param {TripModel} trip
+ * @returns {String}
+ */
+export function paxText(trip) {
+    const ids = [...new Set(trip.allStops.map(stop => stop.team))];
+
+    return `${ids.reduce((sum, id) => sum + (trip.project?.teams?.get(id)?.techs ?? 0), 0)} pax`;
+}
+
+/**
  * What changed, after the trip's label: set by a forecast. Past its window needs no word here, the sail back says it
  * @param {TripModel} trip
  * @param {Number} firstSailing When the next day's first trips sail, minutes since midnight
@@ -170,7 +197,7 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstS
         children : [
             {
                 tag  : 'span',
-                text : [trip.id, trip.teamText, `${trip.shownPax} pax`, trip.note?.toLowerCase()]
+                text : [trip.id, teamText(trip), paxText(trip), trip.note?.toLowerCase()]
                     .filter(Boolean).join(' · ')
             },
             change ? { tag : 'span', class : 'ow-trip-change', text : change } : null

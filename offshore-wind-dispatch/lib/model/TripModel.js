@@ -274,7 +274,7 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The teams on board, by ID, in order: the plan's, a team previewed on the trip left out (`shownTeamIds`)
+     * The teams on board, by ID, in order: the plan's, a team previewed on the trip left out
      * @property {String[]}
      */
     get teamIds() {
@@ -282,59 +282,12 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * The teams on board as the trip is shown: with the team of a previewed stop, while a team is dragged over it
-     * @property {String[]}
-     */
-    get shownTeamIds() {
-        return [...new Set(this.allStops.map(stop => stop.team))];
-    }
-
-    /**
-     * "Team B", "Teams D, E", the previewed team included (`shownTeamIds`)
-     * @property {String}
-     */
-    get teamText() {
-        const ids = this.shownTeamIds;
-
-        if (ids.length === 1) {
-            return this.teamOf(ids[0])?.name ?? ids[0];
-        }
-
-        return ids.length ? `Teams ${ids.join(', ')}` : 'New trip';
-    }
-
-    /**
-     * People on board in the plan, a previewed team left out: what the planner counts the seats from
+     * People on board in the plan, a previewed team left out: what the planner counts the seats from. The teams are
+     * the project's (DispatchProject#teams)
      * @property {Number}
      */
     get pax() {
-        return this.techsOf(this.teamIds);
-    }
-
-    /**
-     * People on board as the trip is shown, with a previewed team: the seats the drop tooltip names
-     * @property {Number}
-     */
-    get shownPax() {
-        return this.techsOf(this.shownTeamIds);
-    }
-
-    /**
-     * A team, from the teams the project holds (DispatchProject#teams)
-     * @param {String} id
-     * @returns {Object|undefined} `{ id, name, techs, certs }`
-     */
-    teamOf(id) {
-        return this.project?.teams?.get(id);
-    }
-
-    /**
-     * How many technicians the teams have
-     * @param {String[]} ids Team IDs
-     * @returns {Number}
-     */
-    techsOf(ids) {
-        return ids.reduce((sum, id) => sum + (this.teamOf(id)?.techs ?? 0), 0);
+        return this.teamIds.reduce((sum, id) => sum + (this.project?.teams?.get(id)?.techs ?? 0), 0);
     }
 
     /**

@@ -12,8 +12,8 @@ import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
 import { beforeTripEditShow, tripEdit } from './TripEdit.js';
-import { hhmm, shownDay, toDate, toMinutes } from '../util/Time.js';
-import { noGoText } from '../plan/Planner.js';
+import { tripTimeError, validateTripDrag } from './TripValidator.js';
+import { shownDay, toDate, toMinutes } from '../util/Time.js';
 
 const
     // The trips' place in their 56px row (54px on a phone), 3px above and below: the label, then the 28px work blocks
@@ -267,22 +267,9 @@ export default class DispatchScheduler extends Scheduler {
      */
     checkTripTime(timeField) {
         const
-            me    = this,
+            me     = this,
             // The editor's tab holds the trip edited
-            trip  = me.features.taskEdit.editor?.widgetMap.generalTab.record,
-            time  = timeField.value,
-            start = trip?.startDate && time && new Date(trip.startDate);
-
-        let reason = null;
-
-        if (start) {
-            // The trip's day at the time typed
-            start.setHours(time.getHours(), time.getMinutes(), 0, 0);
-
-            const check = me.validateTripDrag({ eventRecords : [trip], startDate : start });
-
-            reason = check === true ? null : check.message;
-        }
+            reason = tripTimeError(me, me.features.taskEdit.editor?.widgetMap.generalTab.record, timeField.value);
 
         // Only a change of the reason touches the field's errors: setting or clearing one checks the field again. The
         // field may have errors of its own too, only this one is cleared
@@ -440,73 +427,13 @@ export default class DispatchScheduler extends Scheduler {
         return Math.round((toMinutes(startDate) - trip.transits.out) / step) * step;
     }
 
-    validateTripDrag(context) {
-        const { eventRecords, startDate } = context;
-
-        const
-            trip    = eventRecords[0],
-            departs = this.departsAt(trip, startDate);
-
-        if (trip.status === 'moved') {
-            return { valid : false, message : `${trip.id} is moved to tomorrow` };
-        }
-
-        // Trips under way are not draggable at all (their `draggable` field, DispatchApp#evaluate)
-        if (departs < this.dispatch.now) {
-            return { valid : false, message : 'Cannot leave port in the past' };
-        }
-
-        // Out at sea while the vessel's weather is over its limit
-        const
-            vessel = (context.newResource ?? trip.resource),
-            close  = this.dispatch.closeOf(vessel),
-            back   = departs + trip.endMinute - trip.departs;
-
-        if (back > close) {
-            return { valid : false, message : noGoText(back, close, this.dispatch.limits[vessel.window]) };
-        }
-
-        // A stop that waits for another trip is not refused: the engine starts it once that trip is done. Unless that
-        // leaves a trip back after its window
-        const broken = this.dependencyBreak(trip, departs);
-
-        return broken ? { valid : false, message : broken } : true;
-    }
-
     /**
-     * The reason a trip moved to a new departure breaks a dependency of the plan, if it does: the engine would move
-     * the dependent stop (its trip waits on station, or the trip's own stop moves later) and that trip would be back
-     * after its weather window
-     * @param {TripModel} trip
-     * @param {Number} departs The trip's new departure, minutes since midnight
-     * @returns {String|null}
+     * Whether a trip may be dragged to a new time, the EventDrag feature's `validatorFn` (TripValidator)
+     * @param {Object} context `{ eventRecords, startDate, newResource }`
+     * @returns {Boolean|Object} `true`, or `{ valid : false, message }`
      */
-    dependencyBreak(trip, departs) {
-        const delta = departs - trip.departs;
-
-        for (const dependency of this.dependencyStore.records.filter(each => !each.isChain)) {
-            const
-                { fromEvent, toEvent } = dependency,
-                dependent              = toEvent?.trip;
-
-            if (fromEvent?.endDate && dependent && (fromEvent.trip === trip || dependent === trip)) {
-                const
-                    shift = record => (record.trip === trip ? delta : 0),
-                    // Where the stop could start without waiting on station, and where the trip it follows is done
-                    free  = toMinutes(toEvent.startDate) - dependent.wait + shift(toEvent),
-                    done  = toMinutes(fromEvent.endDate) + shift(fromEvent) + (dependency.lag ?? 0),
-                    wait  = Math.max(0, done - free),
-                    back  = dependent.endMinute - dependent.wait + wait + shift(toEvent),
-                    close = this.dispatch.closeOf(dependent.resource);
-
-                if (wait > 0 && back > close) {
-                    return `${dependency.text}: ${dependent.id} would be back ${hhmm(back)}, ` +
-                        `after its window closes ${hhmm(close)}`;
-                }
-            }
-        }
-
-        return null;
+    validateTripDrag(context) {
+        return validateTripDrag(this, context);
     }
 
     //endregion

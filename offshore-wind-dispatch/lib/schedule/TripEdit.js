@@ -1,3 +1,5 @@
+import { paxText, teamText } from './TripRendering.js';
+
 /**
  * The trip editor: the TaskEdit feature tuned to what a dispatcher changes on a trip, its time on station (its start).
  * The sail out and back are shown, read-only: their length follows from the distance (its preamble and postamble). The
@@ -81,7 +83,7 @@ export function beforeTripEditShow({ taskRecord : trip, editor }) {
     tabBar.hidden        = true;
     // A trip under way or moved to tomorrow is shown, read-only (no Save, Delete or Cancel, the close tool stays)
     editor.readOnly      = Boolean(locked);
-    editor.title         = [trip.id, trip.teamText, `${trip.shownPax} pax`, locked].filter(Boolean).join(' · ');
+    editor.title         = [trip.id, teamText(trip), paxText(trip), locked].filter(Boolean).join(' · ');
     preambleField.label  = `${by} out`;
     postambleField.label = `${by} back`;
 }
