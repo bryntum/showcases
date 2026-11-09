@@ -57,6 +57,23 @@
     opacity      : 0.45;
 }
 
+/* The people cue spanning both lines: a hard hat in the muted ink on a soft round tint */
+.ow-team-crew {
+    display          : grid;
+    place-items      : center;
+    flex             : none;
+    width            : 34px;
+    height           : 34px;
+    border-radius    : 50%;
+    color            : var(--ow-ink-sub);
+    background-color : color-mix(in srgb, var(--ow-ink-sub) 12%, transparent);
+
+    .ow-icon {
+        width  : 26px;
+        height : 26px;
+    }
+}
+
 .ow-team-text {
     display        : flex;
     flex-direction : column;
@@ -66,11 +83,7 @@
 .ow-team-name {
     display     : flex;
     align-items : center;
-    gap         : 10px;
-
-    .ow-certs {
-        margin-inline-start : auto;
-    }
+    gap         : 6px;
 }
 
 .ow-team-job {

@@ -38,7 +38,7 @@ export function mapSvg(site) {
     </g>
     <g class="ow-oss" transform="translate(${oss.x.toFixed(1)} ${oss.y.toFixed(1)})">
         <title>Offshore substation</title>
-        <circle r="11"/>${placed('substation', 16)}
+        <rect x="-9" y="-9" width="18" height="18" rx="2.5"/>${placed('substation', 12)}
     </g>
     <g class="ow-markers" role="listbox" aria-label="The ${turbineIds.length} turbines, arrow keys move, Enter selects">
         ${turbineIds.map(id => {
@@ -68,13 +68,23 @@ export function routeSvg({ stops, cls }) {
 }
 
 /**
- * The label above a turbine
+ * The label above a turbine, below it where above would sit on the substation
  * @param {Object} label `{ id, text, cls }`
  * @returns {String} SVG
  */
 export function labelSvg({ id, text, cls = '' }) {
-    const { x, y } = mapXY(id);
+    // The substation is not a turbine, it carries no label
+    if (id === substation) {
+        return '';
+    }
 
-    return `<g class="ow-map-label ${cls}" transform="translate(${x.toFixed(1)} ${(y - 13).toFixed(1)})">
+    const
+        { x, y } = mapXY(id),
+        oss      = mapXY(substation),
+        // The label's box above the turbine, about 3.4 units a letter at the label's size
+        covers   = Math.abs(oss.x - x) < text.length * 1.7 + 10 && Math.abs(oss.y - (y - 13)) < 14,
+        labelY   = covers ? y + 20 : y - 13;
+
+    return `<g class="ow-map-label ${cls}" transform="translate(${x.toFixed(1)} ${labelY.toFixed(1)})">
             <text text-anchor="middle">${StringHelper.encodeHtml(text)}</text></g>`;
 }

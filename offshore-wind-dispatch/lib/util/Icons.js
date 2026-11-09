@@ -12,6 +12,7 @@ import broadcast from '@phosphor-icons/core/assets/light/broadcast-light.svg?raw
 import caretDown from '@phosphor-icons/core/assets/light/caret-down-light.svg?raw';
 import checkCircle from '@phosphor-icons/core/assets/light/check-circle-light.svg?raw';
 import handGrabbing from '@phosphor-icons/core/assets/light/hand-grabbing-light.svg?raw';
+import hardHat from '@phosphor-icons/core/assets/light/hard-hat-light.svg?raw';
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
 import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
@@ -45,10 +46,10 @@ const tabler = {
 
 // The drawn icons: stroked paths in Phosphor Light's grid (256) and line (12), round caps and joins
 const drawn = {
+    // A square platform with a lightning bolt
     substation : `
-        <rect x="64" y="40" width="128" height="88" rx="8"/>
-        <path d="M136 56 L112 88 H144 L120 116"/>
-        <path d="M88 128 L72 224 M168 128 L184 224 M82 164 L176 200 M174 164 L80 200"/>`,
+        <rect x="28" y="28" width="200" height="200" rx="16"/>
+        <path d="M142 56 L88 140 H128 L114 200 L168 116 H128 Z"/>`,
     // Wind turbine: tower, three blades from the hub
     turbine : `
         <path d="M120 112 L114 228 H142 L136 112"/>
@@ -63,6 +64,7 @@ const phosphor = {
     'caret-down'    : caretDown,
     'check-circle'  : checkCircle,
     'hand-grabbing' : handGrabbing,
+    'hard-hat'      : hardHat,
     warning,
     waves,
     wind,

@@ -176,7 +176,7 @@ export function renderVessel(vessel, { now, close, limit }) {
                         title    : `${share}% of the weather window left today is booked`,
                         children : [
                             { class : 'ow-util-bar', children : [{ tag : 'span', style : `width:${share}%` }] },
-                            { class : 'ow-util-text', text : `${pax}/${vessel.seats} PAX` }
+                            { class : `ow-util-text${pax >= vessel.seats ? ' ow-util-full' : ''}`, text : `${pax}/${vessel.seats} PAX` }
                         ]
                     }
                 ]

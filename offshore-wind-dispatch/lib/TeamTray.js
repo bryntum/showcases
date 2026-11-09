@@ -20,18 +20,30 @@ import { icon } from './util/Icons.js';
 export function teamChipHtml(team, job, compact = false) {
     const
         text  = StringHelper.encodeHtml,
-        certs = team.certs.map(cert => `<span class="ow-cert ow-cert-${cert.toLowerCase()}">${text(cert)}</span>`).join('');
+        // Every technician has the GWO basics, only a certificate that limits where a team can go is worth a word
+        certs = team.certs.filter(cert => cert !== 'GWO')
+            .map(cert => `<span class="ow-cert ow-cert-${cert.toLowerCase()}">${text(cert)}</span>`).join('');
 
     if (compact) {
         return `<b>${text(team.name)}</b><span class="ow-certs">${certs}</span>`;
     }
 
-    // The certificates on the name's line, so the chip is no wider than its job's line
     return `
+        <span class="ow-team-crew">${icon('hard-hat')}</span>
         <span class="ow-team-text">
-            <span class="ow-team-name"><span><b>${text(team.name)}</b> · ${team.techs} techs</span><span class="ow-certs">${certs}</span></span>
-            <span class="ow-team-job">${text(job.turbine)} · ${text(job.short ?? job.job)} · ${duration(job.minutes)}</span>
+            <span class="ow-team-name"><b>${text(team.name)}</b><span class="ow-certs">${certs}</span></span>
+            <span class="ow-team-job">${text(job.turbine)} · ${duration(job.minutes)}</span>
         </span>`;
+}
+
+/**
+ * What the chip leaves out, for its hover tooltip: the technicians and the job
+ * @param {Object} team `{ techs }`
+ * @param {Object} job `{ job }`
+ * @returns {String}
+ */
+function teamTitle(team, job) {
+    return `${team.techs} technicians · ${job.job}`;
 }
 
 export default class TeamTray extends Widget {
@@ -56,7 +68,7 @@ export default class TeamTray extends Widget {
      */
     draw(waiting, lifted) {
         const chips = waiting.map(({ team, job }) => `
-            <div class="ow-team${team.id === lifted ? ' ow-team-lifted' : ''}" data-team="${StringHelper.encodeHtml(team.id)}"
+            <div class="ow-team${team.id === lifted ? ' ow-team-lifted' : ''}" data-team="${StringHelper.encodeHtml(team.id)}" data-btip="${StringHelper.encodeHtml(teamTitle(team, job))}"
                 role="button" tabindex="0" aria-label="${StringHelper.encodeHtml(`${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`)}">
                 ${teamChipHtml(team, job)}
             </div>`).join('');

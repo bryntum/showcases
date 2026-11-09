@@ -72,9 +72,14 @@
 }
 
 .ow-util-text {
-    font-size   : 10.5px;
-    font-weight : 600;
+    font-size   : 11px;
     color       : var(--ow-ink-sub);
+
+    /* Emphasis only when the vessel is full */
+    &.ow-util-full {
+        font-weight : 600;
+        color       : var(--ow-ink);
+    }
 }
 
 /* In the narrow phone column the name gives way (ellipsis), the count stays whole */
