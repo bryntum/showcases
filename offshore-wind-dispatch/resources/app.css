@@ -1,6 +1,7 @@
 /* Offshore Wind Dispatch styles, one file per part of the app, in cascade order. The theme comes first, see app.js */
 
 @import './tokens.css';
+@import './icons.css';
 @import './layout/app.css';
 @import './layout/kpis.css';
 @import './layout/panels.css';

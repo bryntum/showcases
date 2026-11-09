@@ -86,15 +86,15 @@ export default class TeamChip extends Widget {
          */
         lifted : false,
 
-        cls : 'ow-team'
+        cls               : 'ow-team',
+        // A focusable button: a chip is held with Enter (KeyboardDrag)
+        role              : 'button',
+        elementAttributes : { tabindex : '0' }
     };
 
     afterConstruct() {
         super.afterConstruct();
 
-        // A focusable button: a chip is held with Enter (KeyboardDrag)
-        this.element.setAttribute('role', 'button');
-        this.element.tabIndex = 0;
         this.draw();
     }
 

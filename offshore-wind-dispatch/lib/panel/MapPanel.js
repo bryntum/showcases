@@ -38,6 +38,12 @@ export default class MapPanel extends Panel {
          */
         mapView : 'status',
 
+        /**
+         * At phone widths the map is its own tab, the site's title bar goes. Set by DispatchApp#updatePhone
+         * @prp {Boolean}
+         */
+        phone : false,
+
         cls    : 'ow-side',
         width  : 400,
         layout : 'vbox'
@@ -77,8 +83,10 @@ export default class MapPanel extends Panel {
                                     tooltip : `${turbineIds.length} turbines`
                                 },
                                 spacer : '->',
+                                // A segmented control, as the schedule's Day | Week
                                 view   : {
                                     type        : 'buttongroup',
+                                    rendition   : 'padded',
                                     toggleGroup : true,
                                     items       : { status : show('status'), access : show('access') }
                                 }
@@ -99,6 +107,15 @@ export default class MapPanel extends Panel {
 
         // The turbine count, with the turbine's icon
         this.widgetMap.bar.widgetMap.count.html = [iconConfig('turbine'), { tag : 'span', text : String(turbineIds.length) }];
+        this.updatePhone(this.phone);
+    }
+
+    updatePhone(phone) {
+        const { bar } = this.widgetMap ?? {};
+
+        if (bar) {
+            bar.hidden = phone;
+        }
     }
 
     updateMapView(mapView) {

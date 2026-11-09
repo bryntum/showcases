@@ -1,0 +1,13 @@
+/* The icons, inline SVG in the text colour (lib/util/Icons.js) */
+.ow-icon {
+    flex           : none;
+    width          : 1.2em;
+    height         : 1.2em;
+    vertical-align : -0.25em;
+}
+
+/* An icon in a DomConfig or a button, in a box of its own (iconConfig in lib/util/Icons.js) */
+.ow-icon-host {
+    display     : inline-flex;
+    align-items : center;
+}

@@ -9,9 +9,8 @@
     --b-button-border-radius       : 6px;
     --b-button-height              : 26px;
     --b-button-padding-inline      : 10px;
-    --b-button-font-weight         : 600;
+    --b-widget-font-size           : 12px;
 
     flex                : none;
     margin-inline-start : auto;
-    font-size           : 12px;
 }

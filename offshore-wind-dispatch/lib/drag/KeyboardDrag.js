@@ -24,12 +24,12 @@ export default class KeyboardDrag {
         me.drag    = drag;
         me.onChipKey = event => me.onChipKeyDown(event);
         me.onHeldKey = event => me.onHeldKeyDown(event);
-        drag.source.addEventListener('keydown', me.onChipKey);
+        drag.tray.element.addEventListener('keydown', me.onChipKey);
     }
 
     destroy() {
         this.endHeld();
-        this.drag.source.removeEventListener('keydown', this.onChipKey);
+        this.drag.tray.element.removeEventListener('keydown', this.onChipKey);
     }
 
     // Enter or Space on a team's chip holds it over a trip
@@ -139,9 +139,9 @@ export default class KeyboardDrag {
 
     // Focus back on the team's chip, or the first one once it is booked
     focusChip(teamId) {
-        const { source } = this.drag;
+        const { tray } = this.drag;
 
-        (source.querySelector(`.ow-team[data-team="${teamId}"]`) ?? source.querySelector(chipSelector))?.focus();
+        (tray.chipOf(teamId) ?? tray.chips[0])?.focus();
     }
 
     /**
@@ -165,8 +165,9 @@ export default class KeyboardDrag {
     /**
      * Moves a team held without a pointer over a trip, the chip and the tooltip on the trip's previewed stop
      * @param {TripModel} trip
+     * @returns {Promise} Resolves once the chip is placed
      */
-    holdOver(trip) {
+    async holdOver(trip) {
         const
             me                     = this,
             { handler, scheduler } = me.drag;
@@ -177,22 +178,52 @@ export default class KeyboardDrag {
             scheduler.scrollEventIntoView(trip, { block : 'nearest' });
         }
 
-        // Placed once the trip shows the previewed stop, the engine places it first
-        scheduler.project.commitAsync().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-            const
-                drop     = handler.drop,
-                selector = `.b-sch-event-wrap[data-event-id="${CSS.escape(String(drop?.trip.id))}"] .ow-seg-preview`,
-                rect     = scheduler.element.querySelector(selector)?.getBoundingClientRect(),
-                point    = rect ?
-                    { x : rect.left + rect.width / 2, y : rect.top + 8 } :
-                    { x : innerWidth / 2, y : innerHeight / 2 };
+        // The engine places the previewed stop first
+        await scheduler.project.commitAsync();
 
-            // Still held over this trip, the keys may have moved on
-            if (me.held && drop?.target === trip) {
-                DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
-                me.drag.hover(trip, point);
-            }
-        })));
+        const
+            drop  = handler.drop,
+            rect  = (await me.previewElement(drop?.trip))?.getBoundingClientRect(),
+            point = rect ?
+                { x : rect.left + rect.width / 2, y : rect.top + 8 } :
+                { x : innerWidth / 2, y : innerHeight / 2 };
+
+        // Still held over this trip, the keys may have moved on
+        if (me.held && handler.drop === drop && drop?.target === trip) {
+            DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
+            me.drag.hover(trip, point);
+        }
+    }
+
+    /**
+     * The element of a trip's previewed stop. The NestedEvents feature draws a changed leg on the next frame, so a stop
+     * not drawn yet is waited for: the trip's next `renderEvent`, given up after half a second
+     * @param {TripModel} [trip]
+     * @returns {Promise<HTMLElement|null>} `null` when there is no previewed stop (a helicopter takes no team)
+     */
+    async previewElement(trip) {
+        const
+            { scheduler } = this.drag,
+            leg           = trip?.legRecords.find(each => each.preview),
+            element       = () => leg && !leg.isDestroyed ? scheduler.getElementFromEventRecord(leg) : null;
+
+        if (!leg || element()) {
+            return element();
+        }
+
+        await new Promise(resolve => {
+            const detach = scheduler.on({
+                renderEvent({ eventRecord }) {
+                    if (eventRecord === trip) {
+                        detach();
+                        resolve();
+                    }
+                },
+                expires : { delay : 500, alt : resolve }
+            });
+        });
+
+        return element();
     }
 
     endHeld() {

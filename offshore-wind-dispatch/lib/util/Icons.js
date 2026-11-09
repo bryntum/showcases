@@ -117,7 +117,8 @@ export function icon(name, cls = '') {
 }
 
 /**
- * An icon as a DomConfig, for a widget's `html` or `icon`, or a `children` list (DomSync keeps the SVG it has drawn)
+ * An icon as a DomConfig, for a widget's `html`, a Button's `text` or a `children` list (DomSync keeps the SVG it has
+ * drawn)
  * @param {String} name See icon()
  * @param {String} [cls] Extra classes
  * @returns {Object} DomConfig

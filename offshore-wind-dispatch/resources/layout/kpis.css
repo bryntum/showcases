@@ -1,14 +1,15 @@
-/* The KPI header (KpiBar.js): the clock, the weather window, the one big thing, and the numbers of the day, quiet */
+/* The KPI header (KpiBar.js): the site and the day, and the numbers of the day, quiet */
 
 /* KPI header, a Container with an hbox layout, floating free on the page background */
 .ow-kpis {
-    flex             : none;
-    box-sizing       : border-box;
-    height           : 58px;
-    gap              : 32px;
+    --b-container-gap     : 32px;
     /* Its text starts and ends where the cards' content does, past their rounded corners: the gutter plus the cards'
        own inner padding */
-    padding          : 0 calc(var(--ow-gutter) + var(--ow-inset));
+    --b-container-padding : 0 calc(var(--ow-gutter) + var(--ow-inset));
+
+    flex       : none;
+    box-sizing : border-box;
+    height     : 58px;
 
     small {
         display     : block;
@@ -19,18 +20,18 @@
     }
 
     b {
-        display              : block;
-        line-height          : 1.2;
-        white-space          : nowrap;
+        display     : block;
+        line-height : 1.2;
+        white-space : nowrap;
     }
 }
 
-/* The clock, the window's name and each count stack their label over the figure */
+/* The site and each count stack their label over the figure */
 :is(.ow-clock, .ow-kpi).b-widget {
     display : block;
 }
 
-/* "Skarv Bank" over "Mon 9 Nov · 07:40" */
+/* "Skarv Bank" over "Mon 9 Nov" */
 .ow-clock {
     b {
         font-size   : 16px;
@@ -41,10 +42,9 @@
         margin-block-start : 2px;
         font-size          : 13px;
     }
-
 }
 
-/* The counts: the number over its label, 22px, no boxes */
+/* The counts: the number over its label, no boxes */
 .ow-kpi {
     b {
         font-size   : var(--ow-size-kpi);
@@ -59,8 +59,8 @@
 /* What needs acting on, after a divider */
 .ow-kpi-split {
     align-self         : stretch;
-    width              : 0;
-    margin-block       : 18px;
+    width               : 0;
+    margin-block        : 18px;
     border-inline-start : 1px solid var(--ow-border);
 }
 

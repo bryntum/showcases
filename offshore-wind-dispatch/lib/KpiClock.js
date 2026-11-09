@@ -17,7 +17,7 @@ export default class KpiClock extends Widget {
     };
 
     /**
-     * Shows the clock
+     * Shows the site and the day shown
      * @param {Object} values
      * @param {String} values.site
      */
