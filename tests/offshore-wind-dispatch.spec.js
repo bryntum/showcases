@@ -606,13 +606,13 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
     test('a click on a day\'s header or cell opens the Day view on that date', async({ page }) => {
         await open(page, '?view=week');
 
-        // Thursday's header: its trips on its hours, its forecast, no Today
+        // Thursday's header: its trips on its hours, its forecast, its date in the page's header
         await board(page).locator('.b-sch-header-time-axis-cell[data-tick-index="3"]').click();
 
         await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
         await expect(board(page)).toBeHidden();
         await expect(scheduler(page)).toBeVisible();
-        await expect(scheduler(page).locator('.ow-day')).not.toContainText('Today');
+        await expect(page.locator('.ow-clock')).toContainText('Thu 12');
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('18:00');
 
         const thursday = await page.evaluate(() => {
@@ -638,7 +638,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         await bar(page).getByRole('button', { name : 'Week' }).click();
         await cell(page, 'sp', 0).click();
 
-        await expect(scheduler(page).locator('.ow-day')).toContainText('Today');
+        await expect(page.locator('.ow-clock')).toContainText('Mon 9');
         await expect(trip(page, 'SP-1')).toBeVisible();
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('14:00');
     });

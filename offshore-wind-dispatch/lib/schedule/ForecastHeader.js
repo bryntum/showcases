@@ -1,14 +1,13 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
-import { dayAxis } from '../util/Time.js';
 
 /**
- * The weather in the time axis. The Scheduler's header has four rows, defined by its view preset:
+ * The weather in the time axis. The Scheduler's header has three rows, defined by its view preset (the day shown is
+ * in the page's header, KpiClock):
  *
- * 1. The day, "Nov 9 · Today"
- * 2. The hours, the ticks of the schedule
- * 3. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
- * 4. The wind at hub height per hour, from 20 m/s in the helicopters' purple
+ * 1. The hours, the ticks of the schedule
+ * 2. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
+ * 3. The wind at hub height per hour, from 20 m/s in the helicopters' purple
  *
  * The vessel column's header beside them names the rows and the forecast they show. A header row is rendered by its
  * `renderer` whenever the time axis is drawn. The chart lives in one element of its own, moved into the wave height
@@ -44,16 +43,8 @@ export default class ForecastHeader {
     get headers() {
         const me = this;
 
+        // The day is in the page's header: the hours are the time axis' first row
         return [
-            {
-                unit     : 'day',
-                align    : 'start',
-                renderer : (startDate, endDate, config) => {
-                    config.headerCellCls = 'ow-day-cell';
-
-                    return `<span class="ow-day">${dayAxis}${me.state.isToday ? '<em>Today</em>' : ''}</span>`;
-                }
-            },
             { unit : 'hour', dateFormat : 'HH:mm', align : 'start', headerCellCls : 'ow-hour-cell' },
             {
                 unit     : 'day',

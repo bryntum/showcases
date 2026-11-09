@@ -26,11 +26,6 @@ let
 
 export let
     /**
-     * The day shown on the time axis, "Nov 9", beside its Today pill on today
-     */
-    dayAxis  = '',
-
-    /**
      * The day shown, short, "Mon 9 Nov", for the KPI bar
      */
     dayShort = '',
@@ -50,7 +45,6 @@ export function showDay(index) {
 
     shown    = index;
     midnight = dayDate(index);
-    dayAxis  = midnight.toLocaleDateString('en-US', { month : 'short', day : 'numeric' });
     dayShort = format(midnight, { weekday : 'short', day : 'numeric', month : 'short' });
     nextDay  = format(tomorrow, { weekday : 'short' });
     nextLong = format(tomorrow, { weekday : 'long' });

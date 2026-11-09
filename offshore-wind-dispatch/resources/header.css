@@ -1,12 +1,10 @@
 /* The Scheduler's header with the weather in it (schedule/ForecastHeader.js): the day, the hours, the wave height
- * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 26,
- * 26, 67 and 20px. Both sides share the same row lines: each line is drawn inside the row above it (border-box), in
- * the one divider colour, so the day and hours rows together are exactly the height of the "Forecast" cell beside
- * them. The 1px line under it all is the theme's own, on the time axis header and on the vessel column's header */
+ * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 32,
+ * 67 and 20px. Both sides share the same row lines: each line is drawn inside the row above it (border-box), in the
+ * one divider colour, so the hours row is exactly the height of the "Forecast" cell beside it. The 1px line under it all is the theme's own, on the time axis header and on the vessel column's header */
 
 .ow-scheduler {
-    --ow-row-day   : 26px;
-    --ow-row-hours : 26px;
+    --ow-row-hours : 32px;
     --ow-row-sea   : 67px;
     --ow-row-wind  : 20px;
     --ow-row-line  : var(--ow-grid);
@@ -32,10 +30,6 @@
             height           : var(--ow-row-hours);
             border-block-end : 1px solid var(--ow-row-line);
 
-            &:has(.ow-day-cell) {
-                height : var(--ow-row-day);
-            }
-
             &:has(.ow-sea-cell) {
                 height           : var(--ow-row-sea);
                 border-block-end : 0;
@@ -59,14 +53,8 @@
         }
 
         /* The hours are centred in their row, on the same middle line as the now pill (below) */
-        .ow-hour-cell, .ow-day-cell {
+        .ow-hour-cell {
             line-height : 1;
-        }
-
-        /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
-        .ow-day-cell {
-            overflow : visible;
-            border   : 0;
         }
 
         /* The chart fills it, it spans the row */
@@ -81,30 +69,6 @@
             padding       : 0;
             border-inline : 0;
         }
-    }
-}
-
-.ow-day {
-    position           : sticky;
-    inset-inline-start : 0;
-    display     : inline-flex;
-    align-items : center;
-    gap         : 8px;
-    height      : 100%;
-    font-size   : 12px;
-    font-weight : 700;
-    white-space : nowrap;
-    color       : var(--ow-ink);
-
-    em {
-        padding          : 2px 6px;
-        line-height      : 1.2;
-        border-radius    : 4px;
-        font-style       : normal;
-        font-size        : 10.5px;
-        font-weight      : 600;
-        color            : var(--ow-now);
-        background-color : color-mix(in srgb, var(--ow-now) 13%, transparent);
     }
 }
 
@@ -182,9 +146,9 @@
         }
     }
 
-    /* Beside the day and the hours, as tall as both, its line where the hours row has its own */
+    /* Beside the hours, as tall as their row, its line where the hours row has its own */
     .ow-axis-row-head {
-        height           : calc(var(--ow-row-day) + var(--ow-row-hours));
+        height           : var(--ow-row-hours);
         border-block-end : 1px solid var(--ow-row-line);
     }
 
@@ -227,8 +191,8 @@
         overflow            : visible;
         background          : none;
         border-inline-start : 0;
-        /* From the hours row down to the bottom of the header */
-        inset-block-start   : var(--ow-row-day);
+        /* From the hours row, the first, down to the bottom of the header */
+        inset-block-start   : 0;
         height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
 
         /* The line starts under the pill, it never runs through it */
