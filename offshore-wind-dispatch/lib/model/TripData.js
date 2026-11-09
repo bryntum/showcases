@@ -103,13 +103,23 @@ export function isChain(dependency) {
 }
 
 /**
- * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip, finish-to-start. The
- * engine starts the stop once the trip is back
- * @param {Object} dependency `{ id, from, to, toStop }`
+ * A dependency of data/farm.json as Scheduler data: from a trip into one stop of another trip, finish-to-start, with
+ * the lag (minutes) the stop waits after the trip. The engine starts the stop once the trip is done and the lag has
+ * passed
+ * @param {Object} dependency `{ id, from, to, toStop, lag, sides }`, `sides` the sides of the two ends the line
+ * leaves and enters by, when the default way round would run along the trips' own line
  * @returns {Object}
  */
-export function dependencyData({ id, from, to, toStop }) {
-    return { id, fromEvent : from, toEvent : `${to}:${toStop}` };
+export function dependencyData({ id, from, to, toStop, lag = 0, sides = [] }) {
+    return {
+        id,
+        fromEvent : from,
+        toEvent   : `${to}:${toStop}`,
+        lag,
+        lagUnit   : 'minute',
+        fromSide  : sides[0] ?? null,
+        toSide    : sides[1] ?? null
+    };
 }
 
 /**

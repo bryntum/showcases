@@ -179,15 +179,15 @@ export function renderBuffers({ eventRecord : trip, preambleConfig, postambleCon
 }
 
 /**
- * The dependency of the plan, drawn by the Dependencies feature from a trip into a stop of another trip. The line
- * stays in the stop's row: the renderer redraws it as a small chevron in the gap before the stop, its tooltip names
- * what it waits for. The links that keep a trip's legs in order are the engine's business and not drawn. It turns
- * orange where the engine cannot resolve it in the weather: the stop still starts before the trip is done, or the
- * wait brings the stop's trip back after its window. Hidden while the stop's trip is moved to tomorrow
+ * The dependency of the plan, drawn by the Dependencies feature from a trip into a stop of another trip: a thin line
+ * with an arrowhead, which may cross rows, its tooltip names what the stop waits for. The links that keep a trip's
+ * legs in order are the engine's business and not drawn. It turns orange where the engine cannot resolve it in the
+ * weather: the stop still starts before the trip is done (and its lag over), or the wait brings the stop's trip back
+ * after its window. Hidden while the stop's trip is moved to tomorrow
  * @param {Object} args The Dependencies feature's renderer arguments
  * @param {Function} isChain Tells the links between legs from the dependencies of the plan
  */
-export function renderDependency({ domConfig, dependencyRecord, toBox }, isChain) {
+export function renderDependency({ domConfig, dependencyRecord }, isChain) {
     const { fromEvent, toEvent } = dependencyRecord;
 
     if (isChain(dependencyRecord)) {
@@ -199,22 +199,13 @@ export function renderDependency({ domConfig, dependencyRecord, toBox }, isChain
     const
         before = toEvent?.previousSibling,
         waits  = Boolean(before && toEvent.startDate > before.endDate),
-        broken = Boolean(fromEvent && toEvent && fromEvent.endDate > toEvent.startDate) ||
+        broken = Boolean(fromEvent?.endDate && toEvent?.startDate &&
+            fromEvent.endDate.getTime() + (dependencyRecord.lag ?? 0) * 60_000 > toEvent.startDate.getTime()) ||
             (waits && toEvent.trip.status === 'at-risk');
 
     domConfig.class['ow-dep']        = 1;
     domConfig.class['ow-dep-broken'] = broken;
     domConfig.class['ow-dep-moved']  = toEvent?.trip.status === 'moved';
-
-    // A chevron pointing into the stop, 4px wide and 8px high, ending 3px before it
-    if (toBox) {
-        const
-            x = toBox.x - 3,
-            y = toBox.y + toBox.height / 2;
-
-        domConfig.d = `M ${x - 4} ${y - 4} L ${x} ${y} L ${x - 4} ${y + 4}`;
-        domConfig.class['b-sch-dependency-markerless'] = 1;
-    }
 }
 
 /**

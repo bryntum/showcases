@@ -9,7 +9,7 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { toDate, toMinutes } from '../util/Time.js';
+import { hhmm, toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
 const
@@ -34,9 +34,10 @@ const
  *   are child events drawn inside them by the NestedEvents feature (TripModel, TripRendering)
  * - The sail out and back are each trip's buffer time, its preamble and postamble, drawn by the EventBuffer feature
  *   as a thin line with the clock times at its ends
- * - A dependency runs from the HV isolation flown to the substation into the one stop that needs it, drawn by the
- *   Dependencies feature from a trip to a nested event, as a chevron in the gap before that stop. Orange only where
- *   the engine cannot resolve it: the wait it forces brings the trip back after its weather window
+ * - The dependencies run from the HV isolation flown to the substation into the one stop that needs it, and from a
+ *   helicopter's drop-off into its pick-up, a lag later: a thin line with an arrowhead drawn by the Dependencies
+ *   feature from a trip to a nested event. Orange only where the engine cannot resolve it: the wait it forces brings
+ *   the trip back after its weather window. A trip drag that would do that is refused with the reason
  * - The weather no-go of each vessel is a resource time range, from the hour the forecast crosses its limit
  * - The time axis carries the forecast: the wave height chart and the wind (ForecastHeader)
  * - The vessel column shows how much of the window left is booked, and the seats taken
@@ -194,7 +195,9 @@ export default class DispatchScheduler extends Scheduler {
                 dependencies : {
                     allowCreate     : false,
                     enableDelete    : false,
-                    radius          : 4,
+                    radius          : 3,
+                    // The line turns in the narrow gap before the stop it waits for
+                    clearance       : 6,
                     showTooltip     : true,
                     tooltipTemplate : dependency => StringHelper.encodeHtml(me.dependencyText(dependency)),
                     renderer        : args => renderDependency(args, isChain)
@@ -440,8 +443,47 @@ export default class DispatchScheduler extends Scheduler {
             return { valid : false, message : noGoText(back, close, this.dispatch.limits[vessel.window]) };
         }
 
-        // A stop that waits for another trip is not refused: the engine starts it once that trip is back
-        return true;
+        // A stop that waits for another trip is not refused: the engine starts it once that trip is done. Unless that
+        // leaves a trip back after its window
+        const broken = this.dependencyBreak(trip, departs);
+
+        return broken ? { valid : false, message : broken } : true;
+    }
+
+    /**
+     * The reason a trip moved to a new departure breaks a dependency of the plan, if it does: the engine would move
+     * the dependent stop (its trip waits on station, or the trip's own stop moves later) and that trip would be back
+     * after its weather window
+     * @param {TripModel} trip
+     * @param {Number} departs The trip's new departure, minutes since midnight
+     * @returns {String|null}
+     */
+    dependencyBreak(trip, departs) {
+        const delta = departs - trip.departs;
+
+        for (const dependency of this.dependencyStore.records.filter(each => !isChain(each))) {
+            const
+                { fromEvent, toEvent } = dependency,
+                dependent              = toEvent?.trip;
+
+            if (fromEvent?.endDate && dependent && (fromEvent.trip === trip || dependent === trip)) {
+                const
+                    shift = record => (record.trip === trip ? delta : 0),
+                    // Where the stop could start without waiting on station, and where the trip it follows is done
+                    free  = toMinutes(toEvent.startDate) - dependent.wait + shift(toEvent),
+                    done  = toMinutes(fromEvent.endDate) + shift(fromEvent) + (dependency.lag ?? 0),
+                    wait  = Math.max(0, done - free),
+                    back  = dependent.endMinute - dependent.wait + wait + shift(toEvent),
+                    close = this.dispatch.closeOf(dependent.resource);
+
+                if (wait > 0 && back > close) {
+                    return `${this.dependencyText(dependency)}: ${dependent.id} would be back ${hhmm(back)}, ` +
+                        `after its window closes ${hhmm(close)}`;
+                }
+            }
+        }
+
+        return null;
     }
 
     //endregion

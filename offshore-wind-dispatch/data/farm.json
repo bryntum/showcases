@@ -122,7 +122,17 @@
             "from": "H2-1",
             "to": "BP-1",
             "toStop": "T-45",
-            "text": "String 4 is isolated at the substation before work on T-45 starts"
+            "sides": ["bottom", "bottom"],
+            "text": "No work on T-45 until the HV circuit is isolated"
+        },
+        {
+            "id": "pickup-t58",
+            "from": "H1-1",
+            "to": "H1-2",
+            "toStop": "T-58",
+            "lag": 180,
+            "sides": ["bottom", "bottom"],
+            "text": "Pick-up after the job: T-58 takes 3 h"
         }
     ]
 }

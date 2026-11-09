@@ -216,6 +216,32 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
+     * The earliest the trip can leave port for the dependencies into its stops: each stop starts a trip's end (and
+     * its lag) after the trip it follows, the stop is its place in the trip after the sail out and the stops before it
+     * @property {Number} Minutes since midnight, 0 when no stop waits for another trip
+     */
+    get earliestDeparture() {
+        const
+            me      = this,
+            records = me.legRecords;
+
+        return Math.max(0, ...records.map((record, i) => {
+            const dependency = record.predecessors?.find(each => !isChain(each));
+
+            if (!dependency?.fromEvent?.endDate || !record.startDate) {
+                return 0;
+            }
+
+            // Where the stop is in the trip without any waiting on station: the engine's wait before it is taken off
+            const waited = records.slice(0, i + 1).reduce((sum, leg, j) => j ? sum + Math.max(0,
+                toMinutes(leg.startDate) - toMinutes(records[j - 1].endDate)) : sum, 0);
+
+            return toMinutes(dependency.fromEvent.endDate) + (dependency.lag ?? 0) -
+                (toMinutes(record.startDate) - waited - me.departs);
+        }));
+    }
+
+    /**
      * Reads the minutes the trip waits on station from the engine's calculation: the gaps between its legs
      * @returns {Boolean} Whether it changed
      */

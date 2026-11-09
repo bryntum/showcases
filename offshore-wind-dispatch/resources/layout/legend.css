@@ -65,6 +65,27 @@
         }
     }
 
+    /* A line with an arrowhead, as the dependency drawn in the schedule */
+    .ow-l-dependency i {
+        width            : 24px;
+        height           : 1.25px;
+        border-radius    : 0;
+        background-color : var(--ow-c-dependency);
+
+        &::after {
+            content           : '';
+            position          : absolute;
+            inset-block-start : 50%;
+            inset-inline-end  : 0;
+            width             : 0;
+            height            : 0;
+            border            : 3.5px solid transparent;
+            border-inline-start-color : var(--ow-c-dependency);
+            border-inline-end-width   : 0;
+            translate         : 0 -50%;
+        }
+    }
+
     .ow-l-risk i {
         background-color : var(--ow-c-risk-tint);
         box-shadow       : inset 0 0 0 1.5px var(--ow-c-risk-line);

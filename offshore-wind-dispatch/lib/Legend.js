@@ -24,6 +24,7 @@ export default class Legend extends Widget {
         this.html = [
             item('work', 'Work'),
             item('transit', 'Transit'),
+            item('dependency', 'Must finish first'),
             item('risk', 'At risk'),
             item('nogo', 'Weather no-go'),
             { tag : 'span', class : 'ow-legend-credit', text : 'Schedule: Bryntum Scheduler · Wave height: AG Charts' }

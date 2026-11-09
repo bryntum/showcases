@@ -28,7 +28,7 @@
         gap       : 6px;
 
         .ow-window-heading b {
-            font-size : 24px;
+            font-size : calc(var(--ow-size-hero) - 2px);
         }
 
         .ow-window-countdown {
@@ -73,8 +73,14 @@
         border-block-start : 1px solid var(--ow-border);
     }
 
-    .ow-schedule {
-        border-inline-end : 0;
+    /* Not cards on a phone: the tab fills the width */
+    .ow-schedule, .ow-side {
+        border-radius : 0;
+        box-shadow    : none;
+    }
+
+    .ow-main, .ow-left {
+        --b-container-padding : 0;
     }
 
     .ow-legend, .ow-tray-title, .ow-team-job, .ow-axis-label small,
@@ -97,6 +103,10 @@
     .ow-tray {
         padding    : 8px 12px;
         overflow-x : auto;
+    }
+
+    .ow-tabs {
+        background-color : var(--ow-surface);
     }
 
     .ow-axis-label .ow-axis-row, .ow-resource-cell.b-grid-cell,

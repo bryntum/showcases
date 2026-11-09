@@ -11,6 +11,7 @@ import { cardInfo, tipContent, tipInfo } from './map/TurbineCard.js';
 import { toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
+import './TeamTray.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
 import './panel/PhoneTabs.js';
@@ -126,8 +127,20 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                 flex   : 1,
                 layout : 'hbox',
                 items  : {
-                    schedulePane : { type : 'schedulepanel', dispatch : me.dispatch, data },
-                    side         : {
+                    // The schedule's card, the crews waiting at the port under it on the page. On a phone this is
+                    // the Schedule tab
+                    column : {
+                        type   : 'container',
+                        cls    : 'ow-left',
+                        title  : 'Schedule',
+                        flex   : 1,
+                        layout : 'vbox',
+                        items  : {
+                            schedulePane : { type : 'schedulepanel', flex : 1, dispatch : me.dispatch, data },
+                            tray         : { type : 'teamtray', port : site.portShort ?? site.port }
+                        }
+                    },
+                    side : {
                         type       : 'mappanel',
                         site,
                         mapView    : me.mapView,
@@ -511,7 +524,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, schedulePane, side, main, tabs } = this.widgetMap ?? {};
+        const { scheduler, column, side, main, tabs } = this.widgetMap ?? {};
 
         // Applied again once the items exist, see construct
         if (!scheduler) {
@@ -524,10 +537,10 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         side.flex       = phone ? 1 : null;
         side.width      = phone ? null : 400;
 
-        if (schedulePane.owner !== home) {
-            home.add([schedulePane, side]);
+        if (column.owner !== home) {
+            home.add([column, side]);
             // A tab panel shows one of them, side by side both
-            schedulePane.hidden = side.hidden = false;
+            column.hidden = side.hidden = false;
         }
 
         tabs.hidden = !phone;

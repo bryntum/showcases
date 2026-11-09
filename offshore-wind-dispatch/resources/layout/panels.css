@@ -5,13 +5,14 @@
     min-height : 0;
 }
 
+/* Each half is a card on the page: a surface, 8px radius, one soft shadow. The inside is clipped to the corners */
 .ow-schedule, .ow-side {
-    min-width  : 0;
-    min-height : 0;
-}
-
-.ow-schedule {
-    border-inline-end : 1px solid var(--ow-border);
+    min-width        : 0;
+    min-height       : 0;
+    overflow         : hidden;
+    background-color : var(--ow-surface);
+    border-radius    : var(--ow-card-radius);
+    box-shadow       : var(--ow-card-shadow);
 }
 
 .ow-side {
@@ -48,6 +49,24 @@
     white-space : nowrap;
 }
 
+/* The schedule's card, a container of its own: its title bar gives up the note under 640px, and the title under 540px,
+   so the next forecast's button and the arrows still fit */
+.ow-schedule {
+    container : ow-schedule / inline-size;
+}
+
+@container ow-schedule (max-width: 640px) {
+    .ow-schedule .ow-panel-count {
+        display : none;
+    }
+}
+
+@container ow-schedule (max-width: 540px) {
+    .ow-schedule .ow-panel-title {
+        display : none;
+    }
+}
+
 .ow-panel-count {
     display     : flex;
     align-items : center;
@@ -66,11 +85,16 @@
     --b-button-background       : var(--ow-c-button-tint);
     --b-button-hover-background : color-mix(in srgb, var(--ow-c-work) 14%, var(--ow-c-button-tint));
     --b-button-border-radius    : 6px;
+    --b-button-height           : var(--ow-bar-control);
+    --b-button-padding-inline   : 12px;
 
-    height      : 32px;
-    min-height  : 0;
     font-size   : 13px;
-    font-weight : 500;
+    font-weight : 400;
+
+    /* The action in the same weight as the title bar's other buttons, its name semibold */
+    b {
+        font-weight : 600;
+    }
 }
 
 /* The schedule's arrows, quiet icon buttons */
@@ -80,10 +104,9 @@
     --b-button-hover-background : var(--b-neutral-95);
     --b-button-border-width     : 0;
     --b-button-border-radius    : 6px;
+    --b-button-height           : var(--ow-bar-control);
 
-    width      : 32px;
-    height     : 32px;
-    min-height : 0;
+    width : var(--ow-bar-control);
 
     &.b-disabled {
         opacity : 0.4;
@@ -96,7 +119,8 @@
     --b-button-group-border-radius : 7px;
     --b-button-group-box-shadow    : none;
 
-    height           : auto;
+    box-sizing       : border-box;
+    height           : var(--ow-bar-control);
     padding          : 2px;
     background-color : var(--b-neutral-95);
 
@@ -110,9 +134,9 @@
         --b-button-border-width       : 0;
         --b-button-border-radius      : 5px;
 
+        --b-button-height : calc(var(--ow-bar-control) - 4px);
+
         min-width   : 30px;
-        height      : 26px;
-        min-height  : 0;
         font-size   : 12px;
         font-weight : 500;
 

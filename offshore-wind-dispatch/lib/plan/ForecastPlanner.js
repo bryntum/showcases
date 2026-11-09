@@ -56,7 +56,8 @@ export default class ForecastPlanner {
                 result       = replanTrip(trip.plan, {
                     close    : dispatch.closeOf(resource),
                     now      : dispatch.now,
-                    earliest : ends.get(resource) ?? 0
+                    // Not before the trip before it on the vessel is back, nor before what its stops wait for is done
+                    earliest : Math.max(ends.get(resource) ?? 0, trip.earliestDeparture)
                 });
 
             if (result) {

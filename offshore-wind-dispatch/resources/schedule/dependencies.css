@@ -1,14 +1,22 @@
-/* The dependency of the plan (schedule/TripRendering.js): drawn by the Dependencies feature, its path redrawn by the
- * renderer as a small chevron in the gap before the stop that waits, in its own row */
+/* The dependencies of the plan (schedule/TripRendering.js): drawn by the Dependencies feature, a thin neutral line a
+ * shade darker than the transit line, a small arrowhead, no glow. It may cross rows. Blue, as the work, on hover */
+.ow-scheduler {
+    --b-dependency-stroke-width       : 1.25;
+    --b-dependency-hover-stroke-width : 1.75;
+}
+
 .ow-scheduler .b-sch-dependency {
     &.ow-dep {
-        --b-dependency-color : var(--ow-c-muted);
+        --b-dependency-color : var(--ow-c-dependency);
 
-        stroke-width     : 1.5px;
         stroke-dasharray : none;
         stroke-linejoin  : round;
         stroke-linecap   : round;
         fill             : none;
+
+        &.b-sch-dependency-over {
+            --b-dependency-color : var(--ow-c-work);
+        }
 
         &.ow-dep-broken {
             --b-dependency-color : var(--ow-c-risk-line);

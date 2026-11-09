@@ -21,6 +21,7 @@
 
     /* Neutrals */
     --ow-surface   : var(--b-neutral-100);
+    --ow-page      : light-dark(#f4f5f7, var(--b-neutral-97));
     --ow-sunken    : var(--b-neutral-98);
     --ow-raised    : light-dark(var(--b-neutral-99), var(--b-neutral-96));
     --ow-border    : var(--b-border-7);
@@ -58,6 +59,7 @@
     --ow-c-stop-ink    : light-dark(#b71c1c, #ff8f86);
     --ow-c-stop-tint   : light-dark(#fdecea, #3b1a1a);
     --ow-c-transit     : light-dark(#b8c0c8, #5e6975);
+    --ow-c-dependency  : color-mix(in srgb, var(--ow-c-transit) 70%, var(--ow-ink));
     --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
     --ow-c-nogo        : light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%));
@@ -71,6 +73,13 @@
     --ow-resource-width : 214px;
     --ow-radius         : 5px;
     --ow-c-block        : 28px;
+    --ow-size-hero      : 26px;
+    --ow-size-kpi       : 22px;
+    --ow-bar-control    : 30px;
+    --ow-gutter         : 24px;
+    --ow-card-radius    : 8px;
+    --ow-card-shadow    : 0 1px 3px light-dark(rgb(16 24 40 / 8%), rgb(0 0 0 / 45%)),
+        0 1px 2px light-dark(rgb(16 24 40 / 4%), rgb(0 0 0 / 30%));
     --ow-c-radius       : 4px;
 }
 

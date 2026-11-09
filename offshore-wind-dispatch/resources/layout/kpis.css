@@ -1,15 +1,12 @@
 /* The KPI header (KpiBar.js): the clock, the weather window, the one big thing, and the numbers of the day, quiet */
 
-/* KPI header, a Container with an hbox layout. Its height is the one the map and the turbine card beside the schedule
-   are laid out under: it does not change */
+/* KPI header, a Container with an hbox layout, floating free on the page background */
 .ow-kpis {
     flex             : none;
     box-sizing       : border-box;
-    height           : 73px;
+    height           : 80px;
     gap              : 32px;
-    padding          : 0 24px;
-    background-color : var(--ow-surface);
-    border-block-end : 1px solid var(--ow-border);
+    padding          : 0 var(--ow-gutter);
 
     small {
         display     : block;
@@ -62,7 +59,7 @@
     flex : none;
 
     b {
-        font-size      : 30px;
+        font-size      : var(--ow-size-hero);
         font-weight    : 600;
         line-height    : 1.15;
         letter-spacing : -0.01em;
@@ -124,7 +121,7 @@
 
 /* The counts: 22px, no boxes */
 .ow-kpi b {
-    font-size   : 22px;
+    font-size   : var(--ow-size-kpi);
     font-weight : 600;
 }
 

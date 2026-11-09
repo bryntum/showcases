@@ -19,6 +19,10 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 const fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif';
 
+// The wave height axis, metres: room under the calmest hour (0.9 m) for its value label, above the roughest one
+// (2.4 m) for its point, and between the two limits for the CTV limit's name: no label is cut at the chart's edges
+const heightRange = { bottom : 0.5, top : 2.7 };
+
 // Hovering a point only shows its tooltip: no dimming of the series, no bigger marker, just a slightly heavier ring
 const highlight = {
     highlightedSeries   : { opacity : 1 },
@@ -214,14 +218,18 @@ export default class WaveChart {
             seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
             animation  : { enabled : false },
             legend     : { enabled : false },
+            // The lines come first: AG Charts draws cross lines above the series, markers included, so the window's
+            // lines and the CTV limit are series listed before the wave line, and the ring of the crossing covers them
             series     : [
+                ...me.windowLines(colors),
+                me.limitLine(me.limits.ctv, `CTV limit ${me.limits.ctv.toFixed(1)}`, colors.muted),
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
                 me.valueLabels(colors, 'first', 'top'),
                 me.valueLabels(colors, 'last', 'top')
             ],
             axes : {
-                x : me.timeAxis(colors, color('--ow-grid')),
+                x : me.timeAxis(color('--ow-grid')),
                 y : me.heightAxis(colors.muted)
             }
         };
@@ -308,85 +316,131 @@ export default class WaveChart {
         };
     }
 
-    // The day of the schedule, the hour lines, and the window's close as a cross line where the waves cross the CTV
-    // limit, named "1.5 m at 14:00" beside it (with the old one dashed after a new forecast)
-    timeAxis(colors, grid) {
-        const
-            { closes, was }      = this.forecast,
-            { dayStart, dayEnd } = this.day,
-            { ctv }              = this.limits,
-            label                = { fontFamily, fontSize : 10 },
-            // The earlier of the two lines has its label on its left, the later one on its right, so they part
-            side                 = later => later ? 'right-bottom' : 'left-bottom';
+    // A vertical line series over the whole height at one time, with a label beside its lower end: the window's close
+    // where the waves cross the CTV limit, named "1.5 m at 14:00", and after a new forecast the old close, dashed
+    guide({ time, stroke, dash, width, text, color, weight = 500, placement }) {
+        const { bottom, top } = heightRange;
 
         return {
-            type       : 'number',
-            position   : 'bottom',
-            min        : dayStart,
-            max        : dayEnd,
-            nice       : false,
-            thickness  : 0,
-            interval   : { step : 1 },
-            label      : { enabled : false },
-            line       : { enabled : false },
-            tick       : { enabled : false },
-            gridLine   : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
-            crossLines : [
-                was == null ? null : {
-                    type        : 'line',
-                    value       : was / 60,
-                    stroke      : colors.muted,
-                    lineDash    : [2, 3],
-                    strokeWidth : 1,
-                    label       : {
-                        ...label,
-                        text      : `was ${hhmm(was)}`,
-                        placement : side(was > closes),
-                        color     : colors.muted
-                    }
-                },
-                {
-                    type        : 'line',
-                    value       : closes / 60,
-                    stroke      : colors.rough,
-                    strokeWidth : 1.5,
-                    label       : {
-                        ...label,
-                        text       : `${ctv.toFixed(1)} m at ${hhmm(closes)}`,
-                        placement  : side(was == null || closes > was),
-                        color      : colors.roughInk,
-                        fontWeight : 600
-                    }
-                }
-            ].filter(Boolean)
+            type : 'line',
+            xKey : 't',
+            yKey : 'v',
+            data : [
+                { t : time, v : bottom },
+                { t : time, v : bottom + 0.2, text },
+                { t : time, v : top }
+            ],
+            stroke,
+            strokeWidth  : width,
+            lineDash     : dash,
+            marker       : { enabled : false },
+            highlight,
+            showInLegend : false,
+            tooltip      : { enabled : false },
+            label        : {
+                enabled    : true,
+                placement,
+                padding    : 4,
+                fontFamily,
+                fontSize   : 10,
+                fontWeight : weight,
+                color,
+                formatter  : ({ datum }) => datum.text ?? ''
+            }
         };
     }
 
-    // Metres, with the CTV and SWATH limits as two thin dashed lines in one quiet tone, each named at its left end
+    // The close of the window and, after a new forecast, the one before. Series listed before the wave line, so the
+    // ring of the crossing is drawn over them (cross lines are always above the series). The earlier of the two has its
+    // label on its left, the later one on its right, so they part
+    windowLines(colors) {
+        const
+            { closes, was } = this.forecast,
+            { ctv }         = this.limits;
+
+        return [
+            was == null ? null : this.guide({
+                time      : was / 60,
+                stroke    : colors.muted,
+                dash      : [2, 3],
+                width     : 1,
+                text      : `was ${hhmm(was)}`,
+                color     : colors.muted,
+                placement : was > closes ? 'left' : 'right'
+            }),
+            this.guide({
+                time      : closes / 60,
+                stroke    : colors.rough,
+                dash      : [],
+                width     : 1.5,
+                text      : `${ctv.toFixed(1)} m at ${hhmm(closes)}`,
+                color     : colors.roughInk,
+                weight    : 600,
+                placement : was == null || closes > was ? 'right' : 'left'
+            })
+        ].filter(Boolean);
+    }
+
+    // The CTV limit, a thin dashed line over the whole day named above its left end. A series for the same reason as
+    // the window's lines: it runs under the ring where the waves cross it
+    limitLine(value, text, ink) {
+        const { dayStart, dayEnd } = this.day;
+
+        return {
+            type : 'line',
+            xKey : 't',
+            yKey : 'v',
+            data : [
+                { t : dayStart, v : value },
+                // Where the name sits, centred above it
+                { t : dayStart + 0.62, v : value, text },
+                { t : dayEnd, v : value }
+            ],
+            stroke       : ink,
+            strokeWidth  : 1,
+            lineDash     : [3, 3],
+            marker       : { enabled : false },
+            highlight,
+            showInLegend : false,
+            tooltip      : { enabled : false },
+            label        : {
+                enabled    : true,
+                placement  : 'top',
+                padding    : 3,
+                fontFamily,
+                fontSize   : 9,
+                fontWeight : 500,
+                color      : ink,
+                formatter  : ({ datum }) => datum.text ?? ''
+            }
+        };
+    }
+
+    // The day of the schedule and the hour lines
+    timeAxis(grid) {
+        const { dayStart, dayEnd } = this.day;
+
+        return {
+            type      : 'number',
+            position  : 'bottom',
+            min       : dayStart,
+            max       : dayEnd,
+            nice      : false,
+            thickness : 0,
+            interval  : { step : 1 },
+            label     : { enabled : false },
+            line      : { enabled : false },
+            tick      : { enabled : false },
+            gridLine  : { enabled : true, style : [{ stroke : grid, lineDash : [] }] }
+        };
+    }
+
+    // Metres, with the SWATH limit as a thin dashed line in the same quiet tone as the CTV one (limitLine), named above
+    // its left end. Nothing crosses the waves there, so it stays a cross line
     heightAxis(ink) {
         const
-            { ctv, swath } = this.limits,
-            // Room under the calmest hour (0.9 m) for its value label, above the roughest one (2.4 m) for its point,
-            // and between the two limits for the CTV limit's name: no label is cut at the chart's edges or overlaps
-            bottom         = 0.5,
-            top            = 2.7,
-            // Named above their line at its left end (about 15px apart in the 67px row, enough for a 9px name)
-            limit          = (value, text, placement) => ({
-                type        : 'line',
-                value,
-                stroke      : ink,
-                lineDash    : [3, 3],
-                strokeWidth : 1,
-                label       : {
-                    text,
-                    color      : ink,
-                    placement,
-                    padding    : 3,
-                    fontSize   : 9,
-                    fontWeight : 500,
-                    fontFamily
-                }
-            });
+            { swath }       = this.limits,
+            { bottom, top } = heightRange;
 
         return {
             type       : 'number',
@@ -399,10 +453,22 @@ export default class WaveChart {
             line       : { enabled : false },
             tick       : { enabled : false },
             gridLine   : { enabled : false },
-            crossLines : [
-                limit(ctv, `CTV limit ${ctv.toFixed(1)}`, 'top-left'),
-                limit(swath, `SWATH limit ${swath.toFixed(1)}`, 'top-left')
-            ]
+            crossLines : [{
+                type        : 'line',
+                value       : swath,
+                stroke      : ink,
+                lineDash    : [3, 3],
+                strokeWidth : 1,
+                label       : {
+                    text       : `SWATH limit ${swath.toFixed(1)}`,
+                    color      : ink,
+                    placement  : 'top-left',
+                    padding    : 3,
+                    fontSize   : 9,
+                    fontWeight : 500,
+                    fontFamily
+                }
+            }]
         };
     }
 }

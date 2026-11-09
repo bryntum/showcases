@@ -37,6 +37,8 @@ test.describe('Offshore Wind Dispatch', () => {
     });
 
     test('renders the vessels, their trips, the weather window and the map', async({ page }) => {
+        // Tall enough for every row: the cards, the header and the tray under the schedule take their space
+        await page.setViewportSize({ width : 1280, height : 860 });
         await open(page);
 
         await expect(scheduler(page)).toHaveClass(/\bb-scheduler\b/);
@@ -398,7 +400,8 @@ test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
         await expect(previous()).toBeDisabled();
         await expect(next()).toBeDisabled();
 
-        await page.setViewportSize({ width : 1000, height : 800 });
+        // Narrow enough for the hours to scroll, wide enough for the cards (with their gutters) to hold the title bar
+        await page.setViewportSize({ width : 1100, height : 800 });
         await open(page);
         await expect(previous()).toBeDisabled();
         await expect(next()).toBeEnabled();
@@ -510,7 +513,10 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips
             .filter(each => each.change).map(each => each.id))).toEqual([]);
         expect(await legsOf()).toEqual(before);
-        await expect(scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)')).toHaveCount(1);
+        // Undo brought the dependencies back with their stops
+        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.dependencyStore.records
+            .filter(each => !String(each.id).startsWith('chain:')).map(each => each.id).sort()))
+            .toEqual(['hv-t45', 'pickup-t58']);
     });
 
     test('a trip the forecast brought forward, dragged past its window, is at risk', async({ page }) => {
@@ -577,22 +583,27 @@ test.describe('Offshore Wind Dispatch trips', () => {
         // SP-1 is back after the CTV window: its sail back ends in the time and how late it is
         await expect(trip(page, 'SP-1').locator('.b-sch-event-buffer-after.ow-transit-late')).toHaveText('14:17 · +17 min');
 
-        // Drawn by the Dependencies feature, from the helicopter's trip into the T-45 stop of BP-1, as a chevron in the
-        // gap before the stop: it stays in BP-1's row
-        const
-            chevron = await scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)').boundingBox(),
-            t45     = await trip(page, 'BP-1').locator('.b-nested-event[data-event-id="BP-1:T-45"]').boundingBox();
-
-        await expect(scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)')).toHaveCount(1);
-        expect(chevron.x + chevron.width).toBeLessThanOrEqual(t45.x + 1);
-        expect(chevron.y).toBeGreaterThanOrEqual(t45.y - 1);
-        expect(chevron.y + chevron.height).toBeLessThanOrEqual(t45.y + t45.height + 1);
+        // Drawn by the Dependencies feature: two real lines with an arrowhead, each with its reason in the tooltip. The
+        // isolation at the substation before work on T-45, and the pick-up of Team J a lag after the drop-off
+        await expect(scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)')).toHaveCount(2);
+        // No chevron any more: the line is a path with the feature's own arrowhead
+        await expect(scheduler(page).locator('.b-sch-dependency-markerless')).toHaveCount(0);
         expect(await page.evaluate(() => {
-            const { fromEvent, toEvent } = globalThis.bryntum.query('dispatchapp').scheduler.dependencyStore
-                .getById('hv-t45');
+            const
+                { scheduler } = globalThis.bryntum.query('dispatchapp'),
+                read          = id => {
+                    const { fromEvent, toEvent, lag } = scheduler.dependencyStore.getById(id);
 
-            return [fromEvent.id, toEvent.id, toEvent.parent.id];
-        })).toEqual(['H2-1', 'BP-1:T-45', 'BP-1']);
+                    return [fromEvent.id, toEvent.id, toEvent.parent.id, lag, scheduler.dependencyText({ id })];
+                };
+
+            return [read('hv-t45'), read('pickup-t58')];
+        })).toEqual([
+            ['H2-1', 'BP-1:T-45', 'BP-1', 0, 'No work on T-45 until the HV circuit is isolated'],
+            ['H1-1', 'H1-2:T-58', 'H1-2', 180, 'Pick-up after the job: T-58 takes 3 h']
+        ]);
+        // The footer explains the line
+        await expect(page.locator('.ow-legend .ow-l-dependency')).toHaveText('Must finish first');
     });
 
 });
@@ -633,33 +644,50 @@ test.describe('Offshore Wind Dispatch, the scheduling engine', () => {
         };
     });
 
-    test('the helicopter dragged later pushes the stop that waits for it and the rest of its trip', async({ page }) => {
+    test('the helicopter dragged later pushes the stop that waits for it, until that is too late', async({ page }) => {
         await open(page);
 
         const
             before = await times(page),
             heli   = trip(page, 'H2-1').locator('.ow-trip-head'),
             box    = await heli.boundingBox(),
-            // H2-1 is 80 minutes long, port to port, its buffer included: the px of a minute, then two hours later
+            // H2-1 is 80 minutes long, port to port, its buffer included: the px of a minute
             perMin = (await trip(page, 'H2-1').boundingBox()).width / 80,
-            line   = scheduler(page).locator('.b-sch-dependency.ow-dep:not(.b-click-area)');
+            line   = scheduler(page).locator('.b-sch-dependency.ow-dep[data-dep-id="hv-t45"]:not(.b-click-area)');
 
         // On load the isolation is done in time: done at 09:25, BP-1 reaches T-45 at 10:39
         expect(before).toMatchObject({ heliDone : 9 * 60 + 25, t45 : 10 * 60 + 39, wait : 0, bpStatus : 'on-plan' });
         await expect(line).not.toHaveClass(/\bow-dep-broken\b/);
 
-        // The EventDrag feature drags H2-1 two hours later
+        // Two hours later would bring BP-1 back after the SWATH window closes at 17:00: the drag is refused, with the
+        // dependency's reason for the drag's tooltip
+        const refused = await page.evaluate(() => {
+            const
+                { scheduler } = globalThis.bryntum.query('dispatchapp'),
+                heli          = scheduler.eventStore.getById('H2-1');
+
+            return scheduler.validateTripDrag({
+                eventRecords : [heli],
+                startDate    : new Date(heli.startDate.getTime() + 120 * 60000)
+            });
+        });
+
+        expect(refused.valid).toBe(false);
+        expect(refused.message).toContain('No work on T-45 until the HV circuit is isolated');
+        expect(refused.message).toContain('BP-1 would be back');
+
+        // An hour and a half later is allowed: the EventDrag feature drags H2-1
         await page.mouse.move(box.x + 10, box.y + box.height / 2);
         await page.mouse.down();
 
         for (let step = 1; step <= 10; step++) {
-            await page.mouse.move(box.x + 10 + perMin * 120 * step / 10, box.y + box.height / 2);
+            await page.mouse.move(box.x + 10 + perMin * 90 * step / 10, box.y + box.height / 2);
         }
 
         await page.mouse.up();
 
         // The engine starts T-45 once the isolation is done, BP-1 waits on station, its legs after T-45 move on
-        await expect.poll(async() => (await times(page)).heliDone).toBe(before.heliDone + 120);
+        await expect.poll(async() => (await times(page)).heliDone).toBe(before.heliDone + 90);
 
         const after = await times(page);
 
@@ -667,13 +695,30 @@ test.describe('Offshore Wind Dispatch, the scheduling engine', () => {
         expect(after.wait).toBe(after.heliDone - before.t45);
         expect(after.t55 - before.t55).toBe(after.wait);
         expect(after.bpBack - before.bpBack).toBe(after.wait);
+        // Still back before the window closes
+        expect(after.bpBack).toBeLessThanOrEqual(17 * 60);
+        expect(after.bpStatus).toBe('on-plan');
+        await expect(line).not.toHaveClass(/\bow-dep-broken\b/);
+    });
 
-        // Now back after the SWATH window closes at 17:00: past its window, and the dependency marked broken, the
-        // engine could not resolve it within the weather
-        expect(after.bpBack).toBeGreaterThan(17 * 60);
-        expect(after.bpStatus).toBe('at-risk');
-        await expect(trip(page, 'BP-1').locator(':scope > .b-sch-event')).toHaveClass(/\bow-trip-at-risk\b/);
-        await expect(line).toHaveClass(/\bow-dep-broken\b/);
+    test('the drop-off dragged so late that the pick-up leaves the helicopters window is refused', async({ page }) => {
+        await open(page);
+
+        // H1-2 collects Team J 3 h after H1-1 dropped them: a drop-off three hours later pushes the pick-up, refused
+        // with the dependency's reason as that is past the window
+        const refused = await page.evaluate(() => {
+            const
+                { scheduler } = globalThis.bryntum.query('dispatchapp'),
+                drop          = scheduler.eventStore.getById('H1-1');
+
+            return scheduler.validateTripDrag({
+                eventRecords : [drop],
+                startDate    : new Date(drop.startDate.getTime() + 180 * 60000)
+            });
+        });
+
+        expect(refused.valid).toBe(false);
+        expect(refused.message).toContain('Pick-up after the job: T-58 takes 3 h');
     });
 });
 

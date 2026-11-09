@@ -18,8 +18,8 @@ significant wave height (Hs) stays under its limit, and a trip has to be back at
   are quiet, At risk in orange and Stopped in red
 * **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
 * **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
-  its cable work. The Dependencies feature draws it from the helicopter trip into that one nested stop of the SWATH's
-  trip, its renderer turning the line into a chevron in the gap before the stop, so it stays in its row
+  its cable work, and Team J is picked up from T-58 three hours after the drop-off. The Dependencies feature draws both
+  as thin lines with an arrowhead, each with its reason in the tooltip
 * **Crews waiting**: under the schedule, a card per team waiting at the port, its certificates and job in its tooltip
 * **Map**: the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
   turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
@@ -148,15 +148,16 @@ as one, and a click on a stop is found by time. Trips are dragged along their ow
 once gone (the EventDrag feature's `validatorFn`). A dropped trip's legs are placed again from its new departure,
 snapped to 5 minutes (`DispatchScheduler#departsAt`).
 
-### A dependency into a stop: `lib/model/TripData.js`, `lib/schedule/DispatchSync.js`
+### Dependencies into a stop: `lib/model/TripData.js`, `lib/schedule/DispatchSync.js`
 
-The Dependencies feature draws the line from the helicopter's trip into the T-45 stop, a nested event of the SWATH's
-trip (`toEvent : 'BP-1:T-45'`). It is active, as the feature has it by default: a trip drag that would start the stop
-before the helicopter is back, or bring the helicopter back after it, is refused (`validateDependencies()`, from the
-EventDrag feature's `validatorFn`). Its renderer (`renderDependency`) redraws the path as a chevron in the gap before
-the stop, so the line never leaves the stop's row, turns it orange when the plan breaks it, and hides it while the
-stop's trip is moved to tomorrow. `syncDependencies()` adds it again whenever both ends are in the plan,
-so it comes back when Undo brings back a stop a forecast had cut.
+The Dependencies feature draws the lines from a trip into a stop, a nested event, of another trip: the HV isolation
+(H2-1) into the T-45 stop of the SWATH's trip, and the helicopter's drop-off (H1-1) into the pick-up stop of H1-2 with a
+lag (`data/farm.json`, `dependencies`). The scheduling engine moves the dependent stop. A trip drag that would push a
+dependent stop so late that its trip is back after its window is refused, with the dependency's reason
+(`DispatchScheduler#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
+bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a
+line orange when the plan breaks it, and hides it while the stop's trip is moved to tomorrow. `syncDependencies()` adds
+it again whenever both ends are in the plan, so it comes back when Undo brings back a stop a forecast had cut.
 
 ### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
 

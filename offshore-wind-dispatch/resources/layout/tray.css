@@ -1,13 +1,11 @@
-/* The crews waiting at the port (TeamTray.js, TeamChip.js), a slim tray under the schedule */
+/* The crews waiting at the port (TeamTray.js, TeamChip.js), a slim tray under the schedule's card, on the page */
 
 /* A Container with an hbox layout: the title, then a small card per team */
 .ow-tray {
-    flex               : none;
-    gap                : 16px;
-    padding            : 12px 24px;
-    background-color   : var(--ow-sunken);
-    border-block-start : 1px solid var(--ow-border);
-    overflow           : hidden;
+    flex       : none;
+    gap        : 16px;
+    padding    : 16px 0 0;
+    overflow   : hidden;
 }
 
 .ow-tray-title {

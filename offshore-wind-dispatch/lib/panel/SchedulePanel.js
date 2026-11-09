@@ -2,7 +2,6 @@ import { Panel } from '@bryntum/core-enterprise';
 import { projectData } from '../model/TripData.js';
 import { toDate } from '../util/Time.js';
 // Also registers the widget types used below
-import '../TeamTray.js';
 import '../IconButton.js';
 import '../ForecastNotice.js';
 import '../Legend.js';
@@ -11,7 +10,8 @@ import '../schedule/DispatchScheduler.js';
 /**
  * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button, the Day and Week views
  * and their arrows, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler),
- * its footer with the legend, and the crews waiting at the port under it. On a phone it is the Schedule tab.
+ * and its footer with the legend. The crews waiting at the port sit under it, on the page (DispatchApp). On a phone
+ * it is the Schedule tab.
  *
  * The scheduler runs from today 06:00 to 18:00 over the vessels, the trips with their legs nested in them and the
  * dependency of the farm data.
@@ -46,7 +46,7 @@ export default class SchedulePanel extends Panel {
     construct(config) {
         const
             { dispatch, data } = config,
-            { site, day }      = dispatch,
+            { day }            = dispatch,
             me                 = this,
             boats              = dispatch.vessels.filter(vessel => vessel.mode === 'vessel').length;
 
@@ -119,9 +119,8 @@ export default class SchedulePanel extends Panel {
                     endDate   : toDate(day.dayEnd * 60),
                     project   : projectData(data)
                 },
-                // The schedule's footer, then the crews waiting under the schedule
-                legend : { type : 'legend' },
-                tray   : { type : 'teamtray', port : site.portShort ?? site.port }
+                // The schedule's footer
+                legend : { type : 'legend' }
             }
         });
     }
@@ -165,7 +164,16 @@ export default class SchedulePanel extends Panel {
         forecast.hidden = !next;
 
         if (next) {
-            forecast.text = `Forecast ${next.issued} is in · Re-plan`;
+            const text = `Forecast ${next.issued} is in · Re-plan`;
+
+            if (forecast.text !== text) {
+                forecast.text = text;
+                // The action in semibold, the button's label kept as it is (a Button has no markup in its text)
+                const label = forecast.element.querySelector('.b-button-label');
+
+                label?.replaceChildren(`Forecast ${next.issued} is in · `,
+                    Object.assign(document.createElement('b'), { textContent : 'Re-plan' }));
+            }
         }
 
         if (scheduler.isPainted) {
