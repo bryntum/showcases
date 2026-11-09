@@ -1,6 +1,6 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
-import { dayAxis } from '../util/Time.js';
+import { dayAxis, toDate } from '../util/Time.js';
 
 /**
  * The weather in the time axis. The Scheduler's header has four rows, defined by its view preset:
@@ -58,7 +58,7 @@ export default class ForecastHeader {
             {
                 unit     : 'day',
                 renderer : (startDate, endDate, config) => {
-                    config.headerCellCls = 'ow-sea-cell';
+                    config.headerCellCls = 'ow-sea-cell ow-sea-today';
 
                     return '';
                 }
@@ -73,6 +73,65 @@ export default class ForecastHeader {
                 }
             }
         ];
+    }
+
+    /**
+     * The header rows of the week view, one column per day: the month, the days, then the wave chart and the peak wind
+     * over today's column, the one day the forecast covers
+     * @returns {Object[]}
+     */
+    get weekHeaders() {
+        const
+            me      = this,
+            isToday = date => date.getTime() === toDate(0).getTime(),
+            format  = (date, options) => date.toLocaleDateString('en-US', options);
+
+        return [
+            {
+                unit     : 'month',
+                align    : 'start',
+                renderer : (startDate, endDate, config) => {
+                    config.headerCellCls = 'ow-day-cell';
+
+                    return `<span class="ow-day">${format(startDate, { month : 'long', year : 'numeric' })}</span>`;
+                }
+            },
+            {
+                unit     : 'day',
+                align    : 'start',
+                renderer : (startDate, endDate, config) => {
+                    config.headerCellCls = 'ow-hour-cell';
+
+                    return format(startDate, { weekday : 'short', day : 'numeric' });
+                }
+            },
+            {
+                unit     : 'day',
+                renderer : (startDate, endDate, config) => {
+                    config.headerCellCls = isToday(startDate) ? 'ow-sea-cell ow-sea-today' : 'ow-sea-cell';
+
+                    return '';
+                }
+            },
+            {
+                unit     : 'day',
+                align    : 'center',
+                renderer : (startDate, endDate, config) => {
+                    config.headerCellCls = 'ow-wind-cell';
+
+                    return isToday(startDate) ? me.peakHtml() : '';
+                }
+            }
+        ];
+    }
+
+    // The strongest wind of the day, the week view's one value for a day
+    peakHtml() {
+        const
+            { forecast, limits } = this.state,
+            peak                 = Math.max(...forecast.wind);
+
+        return `<span class="ow-wind${peak > limits.heli.wind ? ' ow-wind-over' : ''}" data-peak>max ${peak}</span>`;
     }
 
     // The wind of an hour, marked when it is over the helicopters' limit
@@ -137,7 +196,7 @@ export default class ForecastHeader {
     mount() {
         const
             me   = this,
-            cell = me.scheduler?.element.querySelector('.ow-sea-cell');
+            cell = me.scheduler?.element.querySelector('.ow-sea-today');
 
         // Drawn again when moved or empty only (the chart's own changes also reach this observer)
         if (cell && (me.chartHost.parentElement !== cell)) {
@@ -185,6 +244,12 @@ export default class ForecastHeader {
             element.textContent = wind ?? '';
             element.classList.toggle('ow-wind-over', over);
         });
+
+        const peak = scheduler?.element.querySelector('.ow-wind[data-peak]');
+
+        if (peak) {
+            peak.outerHTML = me.peakHtml();
+        }
 
         const label = scheduler?.element.querySelector('.ow-axis-row-head');
 

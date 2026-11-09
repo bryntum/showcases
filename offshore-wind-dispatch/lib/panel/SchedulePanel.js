@@ -9,9 +9,9 @@ import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
 
 /**
- * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the zoom, with the
- * forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler), its footer with the legend,
- * and the crews waiting at the port under it. On a phone it is the Schedule tab.
+ * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button, the Day and Week views
+ * and their arrows, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler),
+ * its footer with the legend, and the crews waiting at the port under it. On a phone it is the Schedule tab.
  *
  * The scheduler runs from today 06:00 to 18:00 over the vessels, the trips with their legs nested in them and the
  * dependency of the farm data.
@@ -72,13 +72,36 @@ export default class SchedulePanel extends Panel {
                         hidden  : true,
                         onClick : () => me.trigger('forecast')
                     },
-                    zoom : {
+                    // Earlier: two hours along the day, a week in the Week view
+                    previous : {
+                        type      : 'button',
+                        cls       : 'ow-nudge',
+                        icon      : 'b-icon b-icon-previous',
+                        ariaLabel : 'Earlier',
+                        onClick   : () => me.nudge(-1)
+                    },
+                    view : {
                         type  : 'buttongroup',
                         items : {
-                            zoomOut : { text : '−', ariaLabel : 'Zoom out', onClick : () => me.zoomTo(step => step - 1) },
-                            zoomDay : { text : 'Day', toggleable : true, onClick : () => me.zoomTo(() => 0) },
-                            zoomIn  : { text : '+', ariaLabel : 'Zoom in', onClick : () => me.zoomTo(step => step + 1) }
+                            day : {
+                                text        : 'Day',
+                                pressed     : true,
+                                toggleGroup : 'view',
+                                onToggle    : ({ pressed }) => pressed && me.showView('day')
+                            },
+                            week : {
+                                text        : 'Week',
+                                toggleGroup : 'view',
+                                onToggle    : ({ pressed }) => pressed && me.showView('week')
+                            }
                         }
+                    },
+                    next : {
+                        type      : 'button',
+                        cls       : 'ow-nudge',
+                        icon      : 'b-icon b-icon-next',
+                        ariaLabel : 'Later',
+                        onClick   : () => me.nudge(1)
                     }
                 }
             },
@@ -87,6 +110,10 @@ export default class SchedulePanel extends Panel {
                 scheduler : {
                     type      : 'dispatchscheduler',
                     flex      : 1,
+                    listeners : {
+                        paint                  : 'up.onSchedulerPaint',
+                        timelineViewportResize : 'up.refreshBar'
+                    },
                     dispatch,
                     startDate : toDate(day.dayStart * 60),
                     endDate   : toDate(day.dayEnd * 60),
@@ -99,26 +126,41 @@ export default class SchedulePanel extends Panel {
         });
     }
 
-    /**
-     * Zooms the schedule, never past either limit
-     * @param {Function} step Gets the current zoom step, returns the one to go to
-     */
-    zoomTo(step) {
+    // The scheduler paints after the panel: the arrows follow what it can show, its scrolling and its width
+    onSchedulerPaint() {
         const { scheduler } = this.widgetMap;
 
-        scheduler.zoomStep = Math.min(Math.max(step(scheduler.zoomStep), 0), scheduler.lastZoomStep);
+        scheduler.timeAxisSubGrid.scrollable.on({ scroll : 'refreshBar', thisObj : this });
         this.refreshBar();
     }
 
     /**
-     * Updates the tbar: the next forecast's button, and the zoom buttons, − and + off at the limits of the zoom
+     * Moves the schedule earlier or later, see DispatchScheduler#nudge
+     * @param {Number} direction -1 or 1
+     */
+    nudge(direction) {
+        this.widgetMap.scheduler.nudge(direction);
+        this.refreshBar();
+    }
+
+    /**
+     * Shows the Day or the Week view of the schedule
+     * @param {'day'|'week'} view
+     */
+    showView(view) {
+        this.widgetMap.scheduler.view = view;
+        this.refreshBar();
+    }
+
+    /**
+     * Updates the tbar: the next forecast's button, and the arrows, off at the ends of what can be shown
      */
     refreshBar() {
         const
-            { dispatch }                          = this,
-            { scheduler }                         = this.widgetMap,
-            { forecast, zoomOut, zoomDay, zoomIn } = this.tbar.widgetMap,
-            next                                  = dispatch.nextForecast;
+            { dispatch }                  = this,
+            { scheduler }                 = this.widgetMap,
+            { forecast, previous, next : later } = this.tbar.widgetMap,
+            next                          = dispatch.nextForecast;
 
         forecast.hidden = !next;
 
@@ -126,9 +168,12 @@ export default class SchedulePanel extends Panel {
             forecast.text = `Forecast ${next.issued} is in · Re-plan`;
         }
 
-        zoomOut.disabled = scheduler.zoomStep <= 0;
-        zoomIn.disabled  = scheduler.zoomStep >= scheduler.lastZoomStep;
-        zoomDay.pressed  = !scheduler.zoomStep;
+        if (scheduler.isPainted) {
+            const can = scheduler.canNudge;
+
+            previous.disabled = !can.previous;
+            later.disabled    = !can.next;
+        }
     }
 }
 

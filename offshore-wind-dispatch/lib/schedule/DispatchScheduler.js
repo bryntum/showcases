@@ -9,7 +9,7 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { toMinutes } from '../util/Time.js';
+import { toDate, toMinutes } from '../util/Time.js';
 import { noGoText } from '../plan/Planner.js';
 
 const
@@ -19,8 +19,10 @@ const
     headHeight  = 20,
     // The hours of the day share the width, down to this many px per hour, then the timeline scrolls
     minTick     = { wide : 50, phone : 44 },
-    // The zoom steps, times the width that fits the day
-    zoomSteps   = [1, 1.5, 2.25];
+    // How far the Day view's arrows move the day, hours
+    nudgeHours  = 2,
+    // The Week view, one column per day, shifts a week at a time, up to this many weeks after the one of today
+    weekReach   = 2;
 
 /**
  * The vessels and helicopters on the day's timeline, a Scheduler on the Enterprise tier:
@@ -74,10 +76,10 @@ export default class DispatchScheduler extends Scheduler {
         phone : false,
 
         /**
-         * Index into the zoom steps, 0 fits the day to the width
-         * @prp {Number}
+         * `'day'`: the day's hours, some of them in view at a time (nudge moves them), or `'week'`: one column a day
+         * @prp {'day'|'week'}
          */
-        zoomStep : 0,
+        view : 'day',
 
         cls                       : 'ow-scheduler',
         rowHeight                 : 64,
@@ -135,18 +137,32 @@ export default class DispatchScheduler extends Scheduler {
             me     = this,
             header = me.forecastHeader = new ForecastHeader(config.dispatch);
 
+        // The two view presets, both with the weather rows in the time axis
+        me.dayPreset = {
+            base              : 'hourAndDay',
+            tickWidth         : 70,
+            displayDateFormat : 'HH:mm',
+            shiftUnit         : 'hour',
+            shiftIncrement    : 1,
+            timeResolution    : { unit : 'minute', increment : 5 },
+            headers           : header.headers
+        };
+        me.weekPreset = {
+            base              : 'weekAndDay',
+            tickWidth         : 100,
+            displayDateFormat : 'HH:mm',
+            shiftUnit         : 'week',
+            shiftIncrement    : 1,
+            timeResolution    : { unit : 'minute', increment : 5 },
+            headers           : header.weekHeaders
+        };
+
         super.construct({
             ...config,
-            viewPreset : {
-                base              : 'hourAndDay',
-                tickWidth         : 70,
-                displayDateFormat : 'HH:mm',
-                shiftUnit         : 'hour',
-                shiftIncrement    : 1,
-                timeResolution    : { unit : 'minute', increment : 5 },
-                headers           : header.headers
-            },
-            columns : [{
+            viewPreset : me.dayPreset,
+            // The Week view starts today, not at the start of the calendar week
+            timeAxis   : { autoAdjust : false },
+            columns    : [{
                 field          : 'name',
                 text           : 'Vessel',
                 width          : 214,
@@ -244,10 +260,10 @@ export default class DispatchScheduler extends Scheduler {
     // The EventBuffer feature's renderer: a trip's sail out and back against its window and the start of the day, the
     // tick being an hour wide
     renderTransits(args) {
-        const { dispatch, tickSize } = this;
+        const { dispatch, timeAxisViewModel } = this;
 
         renderBuffers(args, dispatch.closeOf(args.eventRecord.resource),
-            { dayStart : dispatch.day.dayStart * 60, perMinute : tickSize / 60 });
+            { dayStart : dispatch.day.dayStart * 60, perMinute : timeAxisViewModel.getDistanceForDuration(60_000) });
     }
 
     // The Group feature runs the column renderer for its header rows too, they have no vessel to draw (renderGroup)
@@ -265,37 +281,95 @@ export default class DispatchScheduler extends Scheduler {
         });
     }
 
-    //region Width and zoom
+    //region Views
 
     /**
-     * The tick width: the day fits the width at zoom level 0, wider levels scroll, phones scroll at 44px an hour
+     * The tick width: the Day view fits some hours of the day to the width and the rest scrolls into view (phones
+     * scroll at 44px an hour), the Week view fits its seven days
      */
     fitTicks() {
         const
             me      = this,
             width   = me.timeAxisSubGridElement?.clientWidth,
-            hours   = me.dispatch.day.dayEnd - me.dispatch.day.dayStart,
-            minimum = me.phone ? minTick.phone : minTick.wide;
+            week    = me.view === 'week',
+            minimum = week ? 0 : me.phone ? minTick.phone : minTick.wide;
 
         if (!width || me.isDestroyed) {
             return;
         }
 
-        const tick = Math.max(minimum, Math.floor(width / hours * zoomSteps[me.zoomStep]));
+        // The whole working day when it fits (the arrows then have nothing to move); on a narrower screen the hours
+        // keep their minimum width and the arrows scroll the rest into view
+        const
+            { day } = me.dispatch,
+            tick    = Math.max(minimum, Math.floor(width / (week ? 7 : day.dayEnd - day.dayStart)));
 
         if (tick !== me.tickSize) {
             me.tickSize = tick;
         }
     }
 
-    updateZoomStep() {
-        if (this.isPainted) {
-            this.fitTicks();
+    updateView(view, old) {
+        const
+            me      = this,
+            week    = view === 'week',
+            { day } = me.dispatch;
+
+        if (!old) {
+            return;
         }
+
+        me.viewPreset = week ? me.weekPreset : me.dayPreset;
+        me.element.classList.toggle('ow-week', week);
+        me.setTimeSpan(toDate(week ? 0 : day.dayStart * 60), toDate(week ? 7 * 24 * 60 : day.dayEnd * 60));
+        me.fitTicks();
+        // Back at the start of the day or the week
+        me.scrollToDate(me.startDate, { block : 'start', animate : false });
+        me.forecastHeader.refresh();
     }
 
-    get lastZoomStep() {
-        return zoomSteps.length - 1;
+    /**
+     * Whether the arrows can go on. The Day view moves along the day, the Week view along the weeks from the one of
+     * today
+     * @returns {{ previous : Boolean, next : Boolean }}
+     */
+    get canNudge() {
+        const me = this;
+
+        if (me.view === 'week') {
+            const weeks = Math.round((me.startDate - toDate(0)) / (7 * 24 * 3600_000));
+
+            return { previous : weeks > 0, next : weeks < weekReach };
+        }
+
+        const { x, maxX } = me.timeAxisSubGrid.scrollable;
+
+        return { previous : x > 0.5, next : x < maxX - 0.5 };
+    }
+
+    /**
+     * The arrows: the Day view moves the visible hours of the day by two hours, never past its ends (the data is one
+     * day), the Week view shifts by a week, the Scheduler's own shiftPrevious() and shiftNext()
+     * @param {Number} direction -1 for earlier, 1 for later
+     */
+    nudge(direction) {
+        const me = this;
+
+        if (me.view === 'week') {
+            if (direction < 0) {
+                me.shiftPrevious();
+            }
+            else {
+                me.shiftNext();
+            }
+
+            me.forecastHeader.refresh();
+        }
+        else {
+            const { scrollable } = me.timeAxisSubGrid;
+
+            scrollable.x = Math.min(Math.max(scrollable.x + direction * nudgeHours * me.tickSize, 0), scrollable.maxX);
+        }
     }
 
     updatePhone(phone) {

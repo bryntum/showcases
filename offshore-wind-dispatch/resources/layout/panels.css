@@ -73,6 +73,23 @@
     font-weight : 500;
 }
 
+/* The schedule's arrows, quiet icon buttons */
+.ow-nudge.b-button {
+    --b-button-color            : var(--ow-ink-sub);
+    --b-button-background       : transparent;
+    --b-button-hover-background : var(--b-neutral-95);
+    --b-button-border-width     : 0;
+    --b-button-border-radius    : 6px;
+
+    width      : 32px;
+    height     : 32px;
+    min-height : 0;
+
+    &.b-disabled {
+        opacity : 0.4;
+    }
+}
+
 /* The button groups as a segmented control: the pressed button is the raised one */
 .ow-panel-bar .b-button-group {
     --b-button-group-border-width  : 0;

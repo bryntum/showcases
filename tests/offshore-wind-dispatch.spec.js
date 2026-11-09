@@ -374,6 +374,82 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
     });
 });
 
+test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
+    const
+        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        axis  = page => page.evaluate(() => {
+            const { scheduler } = globalThis.bryntum.query('dispatchapp');
+
+            return {
+                x     : scheduler.timeAxisSubGrid.scrollable.x,
+                start : scheduler.startDate.getTime(),
+                tick  : scheduler.tickSize
+            };
+        });
+
+    test('the Day view shows the whole day where it fits, its arrows off; narrower, they move the hours by two to the ends', async({ page }) => {
+        const
+            previous = () => bar(page).locator('.ow-nudge').first(),
+            next     = () => bar(page).locator('.ow-nudge').last();
+
+        await page.setViewportSize({ width : 1600, height : 960 });
+        await open(page);
+        await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
+        await expect(previous()).toBeDisabled();
+        await expect(next()).toBeDisabled();
+
+        await page.setViewportSize({ width : 1000, height : 800 });
+        await open(page);
+        await expect(previous()).toBeDisabled();
+        await expect(next()).toBeEnabled();
+
+        const first = await axis(page);
+
+        await next().click();
+        await expect.poll(async() => (await axis(page)).x).toBeCloseTo(2 * first.tick, 0);
+        await expect(previous()).toBeEnabled();
+
+        // On to the end of the day, where the arrow goes off, then back to its start
+        for (let i = 0; i < 12 && await next().isEnabled(); i++) {
+            await next().click();
+        }
+        await expect(next()).toBeDisabled();
+        for (let i = 0; i < 12 && await previous().isEnabled(); i++) {
+            await previous().click();
+        }
+        await expect(previous()).toBeDisabled();
+        await expect(next()).toBeEnabled();
+    });
+
+    test('the Week view has a column per day, keeps the weather rows and shifts a week with the arrows', async({ page }) => {
+        await open(page);
+        await bar(page).getByRole('button', { name : 'Week' }).click();
+
+        await expect(bar(page).getByRole('button', { name : 'Week' })).toHaveClass(/b-pressed/);
+        await expect(bar(page).getByRole('button', { name : 'Day' })).not.toHaveClass(/b-pressed/);
+        await expect(scheduler(page).locator('.ow-hour-cell')).toHaveCount(7);
+        await expect(scheduler(page).locator('.ow-sea-today .ow-wave-chart')).toHaveCount(1);
+        await expect(scheduler(page).locator('.ow-wind[data-peak]')).toHaveCount(1);
+
+        const
+            previous = bar(page).locator('.ow-nudge').first(),
+            next     = bar(page).locator('.ow-nudge').last(),
+            first    = await axis(page);
+
+        await expect(previous).toBeDisabled();
+        await next.click();
+        await expect.poll(async() => (await axis(page)).start - first.start).toBe(7 * 24 * 3600_000);
+        await next.click();
+        await expect(next).toBeDisabled();
+
+        // Back to the day, which is where the data is
+        await bar(page).getByRole('button', { name : 'Day' }).click();
+        await expect(trip(page, 'SP-1')).toBeVisible();
+        await expect.poll(async() => (await axis(page)).x).toBe(0);
+        await expect(scheduler(page).locator('.ow-hour-cell', { hasText : '06:00' })).toBeVisible();
+    });
+});
+
 test.describe('Offshore Wind Dispatch weather windows', () => {
     for (const [query, hour] of [['', 16], ['?state=forecast', 14]]) {
         const title = `the helicopter no-go starts at the first hour over 20 m/s${query ? ', 08:00 forecast' : ''}`;
@@ -619,6 +695,13 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         expect(teams).toEqual(['F', 'G', 'H']);
         expect(vessels).toHaveLength(6);
 
+        // The Day view shows ten of the day's twelve hours: scrolled to the end of the day, the point is near 18:00
+        await page.evaluate(() => {
+            const { scrollable } = globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid;
+
+            scrollable.x = scrollable.maxX;
+        });
+
         for (const teamId of teams) {
             for (const { id, name } of vessels) {
                 // A point on the vessel's row in the time axis, near its end, clear of its trips
@@ -668,7 +751,11 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         expect(results.find(each => each.team === 'F' && each.vessel === 'Northern Tern').reason)
             .toBe('Back in port 13:19, the CTV window closes 14:00 (waves over 1.5 m)');
 
-        // The same team dropped on the same row before the window closes fits
+        // The same team dropped on the same row before the window closes fits, the day scrolled back to its start
+        await page.evaluate(() => {
+            globalThis.bryntum.query('dispatchapp').scheduler.timeAxisSubGrid.scrollable.x = 0;
+        });
+
         const
             axisBox = await scheduler(page).locator('.b-time-axis-sub-grid').boundingBox(),
             rowBox  = await scheduler(page).locator('.b-grid-row[data-id="nt"]').first().boundingBox(),
