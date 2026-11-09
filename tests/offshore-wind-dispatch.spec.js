@@ -550,7 +550,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         const all = await cells(page);
 
         expect(['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'].map(vessel => all[`${vessel}:0`])).toEqual([
-            { kind : 'trip', name : '06:30–13:04', turbines : 'T-07 T-08 T-17', late : 0, pax : 3, seats : 12 },
+            { kind : 'trip', name : '06:50–13:24', turbines : 'T-07 T-08 T-17', late : 0, pax : 3, seats : 12 },
             { kind : 'trip', name : '07:45–12:11', turbines : 'T-22 T-23', late : 0, pax : 3, seats : 12 },
             { kind : 'trip', name : '08:15–14:17', turbines : 'T-31 T-41', late : 17, pax : 4, seats : 12 },
             { kind : 'free', name : 'Free · until 14' },
@@ -1041,7 +1041,7 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
     test('the trip tooltip: the vessel, a status pill, the trip drawn to scale and a grid of facts', async({ page }) => {
         await open(page);
 
-        for (const [id, pill] of [['SR-1', '56 min to spare'], ['SP-1', '+17 min late']]) {
+        for (const [id, pill] of [['SR-1', '36 min to spare'], ['SP-1', '+17 min late']]) {
             const box = await trip(page, id).boundingBox();
 
             await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.7, { steps : 3 });

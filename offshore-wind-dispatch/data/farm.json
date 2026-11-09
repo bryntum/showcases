@@ -69,7 +69,7 @@
     "waiting": ["T-34", "T-49", "T-02"],
     "trips": [
         {
-            "id": "SR-1", "resourceId": "sr", "start": "06:30",
+            "id": "SR-1", "resourceId": "sr", "start": "06:50",
             "stops": [
                 { "turbine": "T-07", "minutes": 60, "team": "A" },
                 { "turbine": "T-08", "minutes": 60, "team": "A" },
