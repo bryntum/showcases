@@ -4,7 +4,76 @@
  * wave height against the vessel limit, the reason a technician can or cannot step across.
  *
  * Colours come from CSS custom properties (see resources/tokens.css), so one drawing works in light and dark.
+ *
+ * The rotors turn at the speed the wind of the hour gives an 8 MW turbine (rotorRpm). One CSS custom property,
+ * `--ow-rotor-period` on the root, sets how long a revolution takes, so every turning rotor on the page follows the
+ * clock and the forecast. A stopped turbine (a fault, or a team working on it) does not turn.
  */
+import { iconPath } from '../util/Icons.js';
+
+const
+    // The 8 MW power curve's rotor: still below cut-in, the speed grows with the wind (constant tip speed ratio) up to
+    // its rated speed, held there to cut-out, then feathered and still
+    cutIn    = 3,
+    rated    = 12,
+    cutOut   = 25,
+    ratedRpm = 10.5;
+
+/**
+ * The rotor speed of a turbine at a wind speed at hub height
+ * @param {Number} wind m/s
+ * @returns {Number} Revolutions per minute, 0 when still
+ */
+export function rotorRpm(wind) {
+    if (!(wind >= cutIn) || wind > cutOut) {
+        return 0;
+    }
+
+    return ratedRpm * Math.min(wind, rated) / rated;
+}
+
+/**
+ * The rotor in words, for the map's tooltip
+ * @param {Number} wind m/s
+ * @param {String|null} stopped `repair`, `fault` or none
+ * @returns {String}
+ */
+export function rotorText(wind, stopped) {
+    if (stopped) {
+        return stopped === 'repair' ? 'Stopped, under repair' : 'Stopped, fault';
+    }
+
+    const rpm = rotorRpm(wind);
+
+    if (!rpm) {
+        return wind > cutOut ? `Feathered, wind ${wind} m/s` : `Still, wind ${wind} m/s below cut-in`;
+    }
+
+    return `${rpm.toFixed(1)} rpm · wind ${wind} m/s`;
+}
+
+/**
+ * Sets how long a revolution of every turning rotor takes, from the wind at hub height. On the root, as the map's
+ * tooltip renders outside the app
+ * @param {Number} wind m/s
+ */
+export function setRotorSpeed(wind) {
+    const rpm = rotorRpm(wind);
+
+    document.documentElement.style.setProperty('--ow-rotor-period', rpm ? `${(60 / rpm).toFixed(2)}s` : '0s');
+}
+
+/**
+ * The wrench badge of a turbine under repair: a disc with Phosphor's wrench, centred on 0 0
+ * @param {Number} r The disc's radius
+ * @returns {String} SVG markup
+ */
+export function wrenchBadge(r) {
+    const scale = (r * 1.45 / 256).toFixed(4);
+
+    return `<circle class="ow-badge-disc" r="${r}"/><path class="ow-badge-glyph" d="${iconPath('wrench')}"
+        transform="scale(${scale}) translate(-128 -128)"/>`;
+}
 
 // One blade pointing up from the hub: a slim root, the widest chord a third out, a fine tip. Leading edge on the left
 const blade = 'M -2.6 -4 C -4.6 -14 -4.2 -30 -1.4 -58 L 0.2 -59.5 C 1.6 -36 2.6 -16 2.6 -4 Z';
@@ -33,11 +102,12 @@ const defs = id => `
  * @param {Object} [options]
  * @param {Number} [options.hs] The wave height to draw, in metres (0.5 to 2.5)
  * @param {Number} [options.limit] The vessel limit, drawn as a dashed line on the transition piece
- * @param {Boolean} [options.spin] Turn the blades
+ * @param {Boolean} [options.spin] Turn the blades, at the speed of `--ow-rotor-period`
+ * @param {Boolean} [options.repair] Under repair, the wrench badge by the transition piece
  * @param {String} [options.id] Prefix of the IDs of its gradients, unique per drawing on the page
  * @returns {String} SVG markup
  */
-export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, id = 'ow' } = {}) {
+export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, repair = false, id = 'ow' } = {}) {
     const
         // The still water line, and 7 px per metre of wave height (exaggerated, it is a picture)
         sea    = 196,
@@ -94,12 +164,25 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, id = 'ow' } = {
     <path d="M -10 ${sea} ${waves}" fill="none" stroke="var(--ow-sea-foam)" stroke-width="1"/>
     <rect x="73" y="${sea}" width="14" height="34" fill="var(--ow-steel-shade)" opacity="0.35" clip-path="url(#${id}-below)"/>
     <text x="6" y="${crest - 4}" class="ow-turbine-label">Hs ${hs.toFixed(1)} m</text>
+    ${repair ? `<g class="ow-turbine-badge" transform="translate(112 146)"><title>Under repair</title>${wrenchBadge(10)}</g>` : ''}
 </svg>`;
 }
 
 /**
- * The small map marker: a disc in the status colour with a three blade glyph. An option of the map's listbox, which
- * moves the focus between them (TurbineMap); the map's tooltip describes it
+ * The parts of a map marker, centred on 0 0: a disc in the status colour with a three blade glyph (the rotor, it turns
+ * when hovered if the turbine runs), and the wrench badge, shown under repair (map.css)
+ * @returns {String} SVG markup
+ */
+export function markerParts() {
+    return `
+    <circle class="ow-marker-disc" r="6.5"/>
+    <path class="ow-marker-glyph" d="M0 0 L0 -5 M0 0 L4.3 2.5 M0 0 L-4.3 2.5"/>
+    <g class="ow-marker-badge" transform="translate(6 6)">${wrenchBadge(5.2)}</g>`;
+}
+
+/**
+ * The small map marker. An option of the map's listbox, which moves the focus between them (TurbineMap); the map's
+ * tooltip describes it
  * @param {Number} x
  * @param {Number} y
  * @param {String} cls Status class
@@ -110,8 +193,6 @@ export function turbineMarker(x, y, cls, id) {
     return `
 <g class="ow-marker ${cls}" transform="translate(${x} ${y})" data-turbine="${id}" role="option" tabindex="-1"
     aria-selected="false" aria-label="${id}">
-    <circle class="ow-marker-halo" r="11"/>
-    <circle class="ow-marker-disc" r="6.5"/>
-    <path class="ow-marker-glyph" d="M0 0 L0 -5 M0 0 L4.3 2.5 M0 0 L-4.3 2.5"/>
+    <circle class="ow-marker-halo" r="11"/>${markerParts()}
 </g>`;
 }

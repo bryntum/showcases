@@ -1,12 +1,15 @@
 /* The Scheduler's header with the weather in it (schedule/ForecastHeader.js): the day, the hours, the wave height
- * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 24,
- * 26, 66 and 20px, each with a 1px line under it but the chart's */
+ * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 26,
+ * 26, 67 and 20px. Both sides share the same row lines: each line is drawn inside the row above it (border-box), in
+ * the one divider colour, so the day and hours rows together are exactly the height of the "Forecast" cell beside
+ * them. The header's single 1px line under it all is the header container's, on both sides */
 
 .ow-scheduler {
-    --ow-row-day   : 24px;
+    --ow-row-day   : 26px;
     --ow-row-hours : 26px;
-    --ow-row-sea   : 66px;
+    --ow-row-sea   : 67px;
     --ow-row-wind  : 20px;
+    --ow-row-line  : var(--ow-grid);
 
     --b-grid-header-background                   : var(--ow-surface);
     --b-grid-header-border-color                 : var(--ow-border);
@@ -16,6 +19,12 @@
         border-block-end : 1px solid var(--ow-border);
     }
 
+    /* The vessel column's header cell draws no line of its own under it, the container's is the one line: otherwise
+       two 1px lines meet the first group row on the left and one on the right */
+    .b-grid-header.ow-axis-header {
+        border-block-end : 0;
+    }
+
     .b-horizontal-time-axis {
         /* Rows of a fixed height, not shared out, so they line up with the names in the vessel column's header */
         .b-sch-header-row {
@@ -23,7 +32,7 @@
             box-sizing       : border-box;
             min-height       : 0;
             height           : var(--ow-row-hours);
-            border-block-end : 1px solid var(--ow-grid);
+            border-block-end : 1px solid var(--ow-row-line);
 
             &:has(.ow-day-cell) {
                 height : var(--ow-row-day);
@@ -36,7 +45,7 @@
 
             &:has(.ow-wind-cell) {
                 height             : var(--ow-row-wind);
-                border-block-start : 1px solid var(--ow-grid);
+                border-block-start : 1px solid var(--ow-row-line);
                 border-block-end   : 0;
             }
         }
@@ -46,7 +55,14 @@
             font-weight          : 600;
             color                : var(--ow-ink-sub);
             font-variant-numeric : tabular-nums;
-            border-inline-color  : var(--ow-grid);
+            border-inline-color  : var(--ow-row-line);
+        }
+
+        /* The hours sit in the top of their row, the now line's time is docked at its bottom (below) */
+        .ow-hour-cell {
+            align-items         : flex-start;
+            padding-block-start : 1px;
+            line-height         : 14px;
         }
 
         /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
@@ -62,7 +78,9 @@
             overflow : visible;
         }
 
+        /* Each value centred in its hour, both ways */
         .ow-wind-cell {
+            align-items     : center;
             justify-content : center;
             padding         : 0;
             border-inline   : 0;
@@ -99,15 +117,18 @@
     inset    : 0;
 }
 
+/* The size of the wave height chart's value labels (WaveChart.js), one line high */
 .ow-wind {
-    font-size   : 10.5px;
-    font-weight : 400;
-    color       : var(--ow-ink-faint);
+    font-size            : 10px;
+    font-weight          : 600;
+    line-height          : 1;
+    font-variant-numeric : tabular-nums;
+    color                : var(--ow-ink-faint);
 }
 
+/* At or over the helicopters' limit */
 .ow-wind-over {
-    font-weight : 700;
-    color       : var(--ow-heli);
+    color : var(--ow-heli);
 }
 
 /* The vessel column's header: the names of the weather rows, at the height of each */
@@ -124,18 +145,26 @@
         height  : 100%;
         padding : 0;
     }
+
+    .b-grid-header-text-content > .ow-axis-label {
+        margin : 0;
+    }
 }
 
+/* Edge to edge in the header cell: the theme gives the header text's last child an inline-end margin, which left the
+   row lines short of the column's edge */
 .ow-axis-label {
-    display        : flex;
-    flex-direction : column;
+    display         : flex;
+    flex-direction  : column;
     justify-content : flex-end;
-    width          : 100%;
-    text-transform : none;
-    letter-spacing : normal;
+    width           : 100%;
+    margin          : 0;
+    text-transform  : none;
+    letter-spacing  : normal;
 
     .ow-axis-row {
         display     : flex;
+        flex        : none;
         align-items : center;
         gap         : 6px;
         box-sizing  : border-box;
@@ -162,11 +191,10 @@
         }
     }
 
-    /* Beside the day and the hours */
+    /* Beside the day and the hours, as tall as both, its line where the hours row has its own */
     .ow-axis-row-head {
-        flex             : 1;
-        min-height       : calc(var(--ow-row-day) + var(--ow-row-hours));
-        border-block-end : 1px solid var(--ow-grid);
+        height           : calc(var(--ow-row-day) + var(--ow-row-hours));
+        border-block-end : 1px solid var(--ow-row-line);
 
         > .ow-icon {
             color : var(--ow-ink-sub);
@@ -177,9 +205,11 @@
         height : var(--ow-row-sea);
     }
 
+    /* One line of small text, as compact as the wind row beside it */
     .ow-axis-row-wind {
-        height             : calc(var(--ow-row-wind) + 1px);
-        border-block-start : 1px solid var(--ow-grid);
+        height             : var(--ow-row-wind);
+        border-block-start : 1px solid var(--ow-row-line);
+        line-height        : 1;
 
         > .ow-icon {
             color : var(--ow-heli);
@@ -218,18 +248,22 @@
         inset-block-start   : var(--ow-row-day);
         height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
 
-        /* The time, docked at the bottom of the time header, clear of the hour labels. It starts at the line, so it
-           keeps clear of the wind of the hour the line is in */
+        /* The time, docked at the bottom of the hours row, above the wave chart and under the hour labels, which sit
+           in the top of their row. It starts at the line, so it keeps clear of the hour the line is in */
         label {
             position           : absolute;
-            inset-block        : auto 1px;
+            inset-block-start  : calc(var(--ow-row-hours) - 13px);
+            inset-block-end    : auto;
             inset-inline-start : -1px;
-            padding          : 0 4px;
+            box-sizing         : border-box;
+            height             : 12px;
+            padding          : 0 5px 0 4px;
             white-space      : nowrap;
-            border-radius    : 0 8px 8px 0;
-            font-size        : 10px;
+            border-radius    : 0 6px 6px 0;
+            font-size        : 9.5px;
             font-weight      : 700;
-            line-height      : 1.5;
+            line-height      : 12px;
+            font-variant-numeric : tabular-nums;
             color            : #fff;
             background-color : var(--ow-now);
         }

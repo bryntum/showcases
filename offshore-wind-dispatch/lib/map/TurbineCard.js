@@ -1,9 +1,10 @@
 import { StringHelper, Widget } from '@bryntum/core-enterprise';
 import { rowName, substation } from '../plan/Farm.js';
-import { buildLegs, timeLegs } from '../plan/Planner.js';
+import { appendStop } from '../plan/Planner.js';
 import { icon } from '../util/Icons.js';
 import { duration, hhmm, nextDay } from '../util/Time.js';
-import { turbineSvg } from './Turbine.js';
+import { stoppedOf } from './MapModel.js';
+import { rotorText, turbineSvg } from './Turbine.js';
 
 /**
  * The selected turbine under the map: the illustration with the sea at the forecast wave height against the vessel's
@@ -23,29 +24,46 @@ const firstSailing = 6 * 60 + 30;
  * @param {TripModel[]} options.trips
  * @param {String} options.turbine
  * @param {Object} [options.drop] A team held over a trip, see DispatchApp#previewDrop
- * @returns {Object} `{ name, sub, stand, job, team, trip, when, hs, limit, note, tone }`
+ * @param {TripModel} [options.selectedTrip] The trip selected in the schedule: of the trips serving the turbine (a
+ * drop-off and a pickup), its visit is the one shown
+ * @returns {Object} `{ name, sub, stand, job, team, trip, when, hs, limit, note, tone, stopped }`
  */
-export function cardInfo({ state, trips, turbine, drop }) {
+export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     const
         held    = drop?.job.turbine === turbine,
-        trip    = held ? drop.trip : trips.find(each => each.turbines.includes(turbine)),
+        { trip, stop } = visitOf({ trips, turbine, drop, selectedTrip, held }),
         // Its trip's status may be `at-risk` since, the turbine still waits for tomorrow
         trimmed = trips.find(each => each.change === 'trimmed' && each.removed?.includes(turbine)),
         // Where it stands: held over a trip, moved to tomorrow, on a trip, or neither
         stand   = standOf(held, trip, trimmed),
-        stop    = trip?.legs.find(leg => leg.turbine === turbine),
         planned = trip ?? trimmed,
         vessel  = planned?.resource;
 
     return {
         ...describe(state, turbine),
+        stopped : stoppedOf(state, trips, turbine),
         stand,
-        trip  : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
-        when  : whenOf(stand, stop),
-        hs    : state.hsAt(stop?.from ?? state.now),
-        limit : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
+        trip    : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
+        when    : whenOf(stand, stop),
+        hs      : state.hsAt(stop?.from ?? state.now),
+        limit   : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
         ...noteOf({ state, turbine, trip : planned, drop, stand })
     };
+}
+
+// The trip that visits a turbine and its stop there: the trip of a team held over it, else the selected trip if it
+// serves the turbine (a pickup after a drop-off), else the first one that does
+function visitOf({ trips, turbine, drop, selectedTrip, held }) {
+    if (held) {
+        // From the team's check: the scheduling engine may not have placed the previewed leg yet
+        return { trip : drop.trip, stop : drop.result.stop };
+    }
+
+    const
+        serves = each => each.turbines.includes(turbine),
+        trip   = selectedTrip && serves(selectedTrip) ? selectedTrip : trips.find(serves);
+
+    return { trip, stop : trip?.legs.find(leg => leg.type === 'stop' && leg.turbine === turbine) };
 }
 
 // Held over a trip, moved to tomorrow, the status of its trip, or none
@@ -94,7 +112,7 @@ function noteOf({ state, turbine, trip, drop, stand }) {
         notes = {
             held : () => drop.result.valid ?
                 {
-                    note : `Back at port ${hhmm(drop.result.back)}, ${duration(drop.result.margin)} before ` +
+                    note : `Back in port by ${hhmm(drop.result.back)}, ${duration(drop.result.margin)} before ` +
                         state.limits[trip.resource.window].noGo,
                     tone : 'reach'
                 } :
@@ -104,7 +122,7 @@ function noteOf({ state, turbine, trip, drop, stand }) {
                 tone : 'cancel'
             }),
             'at-risk' : () => ({
-                note : `Back at port ${hhmm(trip.endMinute)}, ${duration(trip.endMinute - close)} after the window closes`,
+                note : `Back in port by ${hhmm(trip.endMinute)}, ${duration(trip.endMinute - close)} after the window closes`,
                 tone : 'risk'
             }),
             none : () => state.waiting.includes(turbine) ?
@@ -131,9 +149,9 @@ export function reachOf({ state, trips, turbine }) {
             .filter(trip => trip.mode === 'vessel' && trip.status !== 'moved' && trip.departs > state.now &&
                 trip.stops.length && !trip.turbines.includes(turbine))
             .map(trip => {
-                const legs = timeLegs(trip.departs, buildLegs([...trip.stops, { turbine, minutes }], trip.mode));
+                const { stop, back } = appendStop(trip.plan, { turbine, minutes });
 
-                return { trip, from : legs.at(-2).from, back : legs.at(-1).to, close : state.closeOf(trip.resource) };
+                return { trip, from : stop.from, back, close : state.closeOf(trip.resource) };
             })
             .filter(option => option.back <= option.close)
             .sort((a, b) => a.from - b.from);
@@ -147,8 +165,11 @@ export function reachOf({ state, trips, turbine }) {
  * @param {Object} options See cardInfo
  * @returns {Object} See cardInfo
  */
-export function tipInfo({ state, trips, turbine, drop }) {
-    const info = cardInfo({ state, trips, turbine, drop });
+export function tipInfo({ state, trips, turbine, drop, selectedTrip }) {
+    const
+        card = cardInfo({ state, trips, turbine, drop, selectedTrip }),
+        // The tooltip alone says how fast the rotor turns
+        info = turbine === substation ? card : { ...card, rotor : rotorText(state.windAt(), card.stopped) };
 
     if (info.stand !== 'none' || turbine === substation) {
         return info;
@@ -171,10 +192,13 @@ export function tipInfo({ state, trips, turbine, drop }) {
  * @returns {String} HTML
  */
 export function cardHtml(info, id = 'ow') {
-    const text = StringHelper.encodeHtml;
+    const
+        text = StringHelper.encodeHtml,
+        // A stopped turbine's rotor stands still, the wrench marks one under repair
+        art  = turbineSvg({ hs : info.hs, limit : info.limit, id, spin : !info.stopped, repair : info.stopped === 'repair' });
 
     return `
-        <div class="ow-card-art">${turbineSvg({ hs : info.hs, limit : info.limit, id })}</div>
+        <div class="ow-card-art">${art}</div>
         <div class="ow-card-body">
             <div class="ow-card-title"><b>${text(info.name)}</b><small>${text(info.sub)}</small></div>
             <div class="ow-card-job">${text(info.job)}</div>
@@ -182,6 +206,7 @@ export function cardHtml(info, id = 'ow') {
                 <dt>Team</dt><dd>${text(info.team)}</dd>
                 <dt>Trip</dt><dd>${text(info.trip)}</dd>
                 <dt>When</dt><dd>${text(info.when)}</dd>
+                ${info.rotor ? `<dt>Rotor</dt><dd>${text(info.rotor)}</dd>` : ''}
             </dl>
             <div class="ow-card-note">${icon('waves')}<span>${text(info.note)}</span></div>
         </div>`;

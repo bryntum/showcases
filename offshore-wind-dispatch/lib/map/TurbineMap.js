@@ -1,19 +1,41 @@
-import { Button, Collection, DomHelper, Model, Store, StringHelper, Tooltip, Widget } from '@bryntum/core-enterprise';
+import { Button, Collection, DomHelper, DragHelper, Model, Store, StringHelper, Tooltip, Widget } from '@bryntum/core-enterprise';
 import { mapPort, mapXY, rowName, substation, turbineIds } from '../plan/Farm.js';
 import { icon } from '../util/Icons.js';
-import { turbineMarker } from './Turbine.js';
+import { markerParts, setRotorSpeed, turbineMarker } from './Turbine.js';
 
 const
-    // The whole farm, the SVG's own viewBox
-    farmView    = Object.freeze({ x : 0, y : 0, width : 440, height : 330 }),
+    // The whole farm, the SVG's own viewBox, also the furthest the map zooms out
+    farmView     = Object.freeze({ x : 0, y : 0, width : 440, height : 330 }),
+    aspect       = farmView.width / farmView.height,
     // The port's marker and its label, kept in view when fitted to a trip
-    portBox     = { x1 : 4, y1 : 288, x2 : 140, y2 : 310 },
-    // Room around the fitted turbines for their labels, and the closest the map zooms in
-    fitPad      = 26,
-    minWidth    = 220,
+    portBox      = { x1 : 4, y1 : 288, x2 : 140, y2 : 310 },
+    // Room around the fitted turbines for their labels, the closest a fit zooms in, the closest the user zooms in
+    fitPad       = 26,
+    minWidth     = 220,
+    zoomInWidth  = 70,
     // A press that moves this many px pans the map, less is a click
     panThreshold = 4,
-    viewKey     = ({ x, y, width, height }) => [x, y, width, height].map(n => Number(n.toFixed(1))).join(' ');
+    // How long the view takes to fit a selection, and to follow a wheel or pinch step
+    fitMs        = 450,
+    zoomMs       = 180,
+    viewKey      = ({ x, y, width, height }) => [x, y, width, height].map(n => Number(n.toFixed(1))).join(' '),
+    isFarm       = view => view.width >= farmView.width - 0.5,
+    clamp        = (value, min, max) => Math.min(Math.max(value, min), max);
+
+/**
+ * A view of the farm's aspect ratio, `width` wide, kept inside the farm
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} width
+ * @returns {Object} `{ x, y, width, height }`
+ */
+function boundedView(x, y, width) {
+    const
+        w = clamp(width, zoomInWidth, farmView.width),
+        h = w / aspect;
+
+    return { x : clamp(x, 0, farmView.width - w), y : clamp(y, 0, farmView.height - h), width : w, height : h };
+}
 
 /**
  * The viewBox that fits turbines and the port, at the farm's aspect ratio, inside the farm
@@ -27,21 +49,13 @@ function fitView(ids) {
         y1     = Math.min(portBox.y1, ...points.map(p => p.y)) - fitPad,
         x2     = Math.max(portBox.x2, ...points.map(p => p.x)) + fitPad,
         y2     = Math.max(portBox.y2, ...points.map(p => p.y)) + fitPad,
-        aspect = farmView.width / farmView.height,
-        width  = Math.min(farmView.width, Math.max(minWidth, x2 - x1, (y2 - y1) * aspect)),
-        height = width / aspect,
-        clamp  = (value, size, max) => Math.min(Math.max(value, 0), max - size);
+        width  = Math.min(farmView.width, Math.max(minWidth, x2 - x1, (y2 - y1) * aspect));
 
     if (width >= farmView.width) {
         return farmView;
     }
 
-    return {
-        x : clamp((x1 + x2 - width) / 2, width, farmView.width),
-        y : clamp((y1 + y2 - height) / 2, height, farmView.height),
-        width,
-        height
-    };
+    return boundedView((x1 + x2 - width) / 2, (y1 + y2 - width / aspect) / 2, width);
 }
 
 /**
@@ -99,6 +113,9 @@ const directions = {
  * - The map is one tab stop: the arrow keys move the focus to the nearest turbine in that direction
  * - The tooltip is a Bryntum Tooltip on the markers (`forSelector`), its content from the `tipHtml` function, shown on
  *   hover and on keyboard focus
+ * - It zooms like a map: the wheel and a trackpad or finger pinch zoom around the pointer, from the whole farm to a
+ *   few turbines, a drag (Bryntum's DragHelper) or a two finger scroll pans. `fitTo()` fits it to a trip, Show all
+ *   goes back to the whole farm. The view the user chose stays until the app fits it again (DispatchApp#fitMap)
  *
  * Drawn in `currentColor` and CSS custom properties, so it follows light and dark.
  *
@@ -179,6 +196,8 @@ export default class TurbineMap extends Widget {
             forElement  : me.element,
             forSelector : '.ow-marker',
             cls         : 'ow-map-tip',
+            // The card's width (map.css) and the tooltip's padding, so its padding is the same on both sides
+            maxWidth    : 'min(25rem, calc(100vw - 16px))',
             hoverDelay  : 250,
             hideDelay   : 100,
             getHtml     : ({ activeTarget }) => me.tipHtml?.(activeTarget.dataset.turbine) ?? ''
@@ -199,8 +218,9 @@ export default class TurbineMap extends Widget {
             }
         });
 
-        me.element.addEventListener('click', event => me.onMapClick(event));
-        me.svgElement.addEventListener('pointerdown', event => me.onPanStart(event));
+        me.initGestures();
+
+        me.element.addEventListener('click', event => me.onMapClick(event), true);
         me.element.addEventListener('keydown', event => me.onMapKeyDown(event));
         me.element.addEventListener('focusin', event => me.onMarkerFocus(event));
         me.element.addEventListener('focusout', event => me.onMarkerBlur(event));
@@ -208,45 +228,71 @@ export default class TurbineMap extends Widget {
         me.element.addEventListener('pointerleave', () => me.hover(null));
     }
 
+    // The drag that pans the map, the wheel and the trackpad, the pinch of two fingers
+    initGestures() {
+        const me = this;
+
+        // A drag on the map pans it: Bryntum's DragHelper runs the gesture (the threshold, mouse, pen and touch, the
+        // release anywhere on the page, Escape). Locked on both axes, the SVG itself stays put, the drag moves the view
+        me.panHelper = new DragHelper({
+            callOnFunctions : true,
+            outerElement    : me.element,
+            targetSelector  : '.ow-map-svg',
+            mode            : 'translateXY',
+            lockX           : true,
+            lockY           : true,
+            constrain       : false,
+            dragThreshold   : panThreshold,
+            onDragStart     : ({ event }) => me.onPanStart(event),
+            onDrag          : ({ context, event }) => me.onPan(context, event),
+            onDrop          : () => me.onPanEnd(),
+            onAbort         : () => me.onPanEnd()
+        });
+
+        // Two fingers on a touch screen pinch the map, see onPinchPointer
+        me.touches = new Map();
+        me.svgElement.addEventListener('pointerdown', event => me.onPinchPointer(event));
+        me.svgElement.addEventListener('pointermove', event => me.onPinchPointer(event));
+        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type =>
+            me.svgElement.addEventListener(type, event => me.onPinchPointer(event)));
+        // The wheel and the trackpad zoom or pan the map, not the page
+        me.svgElement.addEventListener('wheel', event => me.onWheel(event), { passive : false });
+    }
+
     doDestroy() {
         cancelAnimationFrame(this.frame);
+        this.panHelper?.destroy();
         this.wholeFarmButton?.destroy();
         this.tooltip?.destroy();
         this.turbines?.destroy();
         super.doDestroy();
     }
 
-    //region Zoom
+    //region Zoom and pan
 
     /**
-     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. Zoomed in, the user
-     * can pan it (onPanStart)
+     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. The app calls it
+     * when the selection changes (DispatchApp#fitMap), so a view the user panned or zoomed to stays until then
      * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
      */
     fitTo(ids) {
+        this.animateTo(ids?.length ? fitView(ids) : farmView, fitMs);
+    }
+
+    /**
+     * Eases the view to another, the way a wheel notch, a fit or Show all moves it
+     * @param {Object} target `{ x, y, width, height }`
+     * @param {Number} duration Milliseconds, none with reduced motion
+     */
+    animateTo(target, duration) {
         const
-            me     = this,
-            target = ids?.length ? fitView(ids) : farmView,
-            key    = viewKey(target);
-
-        me.wholeFarmButton.hidden = target === farmView;
-        me.element.classList.toggle('ow-map-zoomed', target !== farmView);
-
-        // Already there, unless panned away since
-        if (key === me.viewTarget && key === viewKey(me.view)) {
-            return;
-        }
-
-        me.viewTarget = key;
-        cancelAnimationFrame(me.frame);
-
-        const
-            from     = { ...me.view },
-            started  = performance.now(),
-            duration = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 450,
-            step     = time => {
+            me      = this,
+            from    = { ...me.view },
+            started = performance.now(),
+            length  = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : duration,
+            step    = time => {
                 const
-                    t    = duration ? Math.min(1, (time - started) / duration) : 1,
+                    t    = length ? Math.min(1, (time - started) / length) : 1,
                     ease = 1 - (1 - t) ** 3;
 
                 me.setView(Object.fromEntries(Object.keys(from).map(k => [k, from[k] + (target[k] - from[k]) * ease])));
@@ -254,85 +300,218 @@ export default class TurbineMap extends Widget {
                 if (t < 1) {
                     me.frame = requestAnimationFrame(step);
                 }
+                else {
+                    me.frame = me.target = null;
+                }
             };
 
+        me.target = target;
+        cancelAnimationFrame(me.frame);
         me.frame = requestAnimationFrame(step);
     }
 
     /**
-     * A press on the map pans it once it moves a few px: the view follows the pointer, kept inside the farm. A press
-     * that starts on a turbine still selects it, moved or not. A press without a move is a click (onMapClick)
-     * @param {PointerEvent} event
+     * Stops an animation of the view where it is, the user takes over
+     */
+    stopAnimation() {
+        cancelAnimationFrame(this.frame);
+        this.frame = this.target = null;
+    }
+
+    /**
+     * How the SVG shows a viewBox in its box: scaled to fit and centred (`xMidYMid meet`)
+     * @param {Object} [view] `{ width, height }`
+     * @returns {Object} `{ scale, left, top }`, px per map unit, and where the view's top left is on the screen
+     */
+    screenOf(view = this.view) {
+        const
+            box   = this.svgElement.getBoundingClientRect(),
+            scale = Math.min(box.width / view.width, box.height / view.height);
+
+        return {
+            scale,
+            left : box.left + (box.width - view.width * scale) / 2,
+            top  : box.top + (box.height - view.height * scale) / 2
+        };
+    }
+
+    /**
+     * Zooms around a point of the screen, which stays over the same point of the farm, as a map does
+     * @param {Number} factor Above 1 zooms in
+     * @param {Number} clientX
+     * @param {Number} clientY
+     * @param {Boolean} [animate] Eased (a wheel notch), or at once (a trackpad or finger pinch, in small steps of its
+     * own)
+     */
+    zoomAt(factor, clientX, clientY, animate = false) {
+        const
+            me     = this,
+            // From the view it is heading to, so wheel notches in a row add up
+            from   = me.target ?? me.view,
+            screen = me.screenOf(from),
+            x      = from.x + (clientX - screen.left) / screen.scale,
+            y      = from.y + (clientY - screen.top) / screen.scale,
+            width  = clamp(from.width / factor, zoomInWidth, farmView.width),
+            next   = me.screenOf({ width, height : width / aspect }),
+            target = boundedView(x - (clientX - next.left) / next.scale, y - (clientY - next.top) / next.scale, width);
+
+        if (animate) {
+            me.animateTo(target, zoomMs);
+        }
+        else {
+            me.stopAnimation();
+            me.setView(target);
+        }
+    }
+
+    /**
+     * Moves the view by a distance on the screen, within the farm
+     * @param {Number} dx px
+     * @param {Number} dy px
+     * @param {Object} [from] The view to move, the current one by default
+     */
+    panBy(dx, dy, from = this.view) {
+        const { scale } = this.screenOf(from);
+
+        this.setView(boundedView(from.x - dx / scale, from.y - dy / scale, from.width));
+    }
+
+    /**
+     * The wheel: a trackpad pinch (the browser sends it with `ctrlKey`) and a mouse wheel zoom around the pointer, a
+     * two finger scroll on a trackpad pans
+     * @param {WheelEvent} event
+     */
+    onWheel(event) {
+        const
+            me    = this,
+            lines = event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL,
+            // A mouse wheel moves in whole notches along one axis, a trackpad in small steps along both
+            mouse = lines || (!event.deltaX && Number.isInteger(event.deltaY) && Math.abs(event.deltaY) >= 50),
+            dy    = lines ? event.deltaY * 33 : event.deltaY;
+
+        event.preventDefault();
+        me.tooltip.hide();
+
+        if (event.ctrlKey) {
+            me.zoomAt(Math.exp(-dy * 0.01), event.clientX, event.clientY);
+        }
+        else if (mouse) {
+            me.zoomAt(Math.exp(-dy * 0.0025), event.clientX, event.clientY, true);
+        }
+        else {
+            me.stopAnimation();
+            me.panBy(-event.deltaX, -event.deltaY);
+        }
+    }
+
+    /**
+     * A drag past the threshold starts a pan (DragHelper's `dragStart`). The view moves from the one at the start
+     * @param {MouseEvent|TouchEvent} event
      */
     onPanStart(event) {
-        if (event.button !== 0 || !event.isPrimary) {
+        const
+            me    = this,
+            point = event.touches?.[0] ?? event;
+
+        if (me.pinch) {
+            return;
+        }
+
+        me.stopAnimation();
+        me.panning = { x : point.clientX, y : point.clientY, view : { ...me.view } };
+        me.element.classList.add('ow-map-panning');
+        me.tooltip.hide();
+    }
+
+    // DragHelper's `drag`: the view follows the pointer
+    onPan(context, event) {
+        const
+            { panning } = this,
+            point       = event.touches?.[0] ?? event;
+
+        // Nothing is dropped, a pan is never refused
+        context.valid = true;
+
+        if (panning && !this.pinch) {
+            this.panBy(point.clientX - panning.x, point.clientY - panning.y, panning.view);
+        }
+    }
+
+    // DragHelper's `drop` and `abort`: the pan ends where it is, the click that may follow it selects nothing
+    // (onMapClick)
+    onPanEnd() {
+        const me = this;
+
+        if (me.panning) {
+            me.panning = null;
+            me.panned  = true;
+            setTimeout(() => {
+                me.panned = false;
+            }, 0);
+        }
+
+        me.element.classList.remove('ow-map-panning');
+    }
+
+    /**
+     * Two fingers on a touch screen pinch the map: it zooms around their midpoint and moves with it. The second finger
+     * takes over from a pan of the first
+     * @param {PointerEvent} event
+     */
+    onPinchPointer(event) {
+        const
+            me          = this,
+            { touches } = me;
+
+        if (event.pointerType !== 'touch') {
+            return;
+        }
+
+        if (event.type === 'pointerdown' || (event.type === 'pointermove' && touches.has(event.pointerId))) {
+            touches.set(event.pointerId, { x : event.clientX, y : event.clientY });
+        }
+        else {
+            touches.delete(event.pointerId);
+        }
+
+        const [a, b] = [...touches.values()];
+
+        if (!b) {
+            me.pinch = null;
+
             return;
         }
 
         const
-            me     = this,
-            svg    = me.svgElement,
-            marker = event.target.closest?.('.ow-marker')?.dataset.turbine ?? null,
-            start  = { x : event.clientX, y : event.clientY, view : { ...me.view } },
-            clamp  = (value, size, max) => Math.min(Math.max(value, 0), max - size),
-            move   = ev => {
-                const
-                    dx = ev.clientX - start.x,
-                    dy = ev.clientY - start.y;
+            mid      = { x : (a.x + b.x) / 2, y : (a.y + b.y) / 2 },
+            distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
 
-                if (!me.panning && Math.hypot(dx, dy) < panThreshold) {
-                    return;
-                }
+        if (me.pinch) {
+            me.zoomAt(distance / me.pinch.distance, mid.x, mid.y);
+            me.panBy(mid.x - me.pinch.mid.x, mid.y - me.pinch.mid.y);
+        }
+        else {
+            // The first finger's pan stops here, the pinch goes on from this view
+            me.panHelper.abort(true);
+            me.onPanEnd();
+            me.stopAnimation();
+        }
 
-                if (!me.panning) {
-                    me.panning = true;
-                    cancelAnimationFrame(me.frame);
-                    svg.setPointerCapture(ev.pointerId);
-                    me.element.classList.add('ow-map-panning');
-                    me.tooltip.hide();
-                }
-
-                // The viewBox keeps the farm's aspect ratio, one scale for both axes
-                const
-                    { view } = start,
-                    scale    = view.width / svg.clientWidth;
-
-                me.setView({
-                    ...view,
-                    x : clamp(view.x - dx * scale, view.width, farmView.width),
-                    y : clamp(view.y - dy * scale, view.height, farmView.height)
-                });
-            },
-            up     = () => {
-                svg.removeEventListener('pointermove', move);
-                svg.removeEventListener('pointerup', up);
-                svg.removeEventListener('pointercancel', up);
-                me.element.classList.remove('ow-map-panning');
-
-                if (me.panning) {
-                    // The click that follows a pan is not a selection, the press on a turbine is
-                    me.panning = false;
-                    me.panned  = true;
-                    setTimeout(() => {
-                        me.panned = false;
-                    }, 0);
-
-                    if (marker) {
-                        me.select(marker);
-                    }
-                }
-            };
-
-        svg.addEventListener('pointermove', move);
-        svg.addEventListener('pointerup', up);
-        svg.addEventListener('pointercancel', up);
+        me.pinch = { mid, distance };
     }
 
     setView(view) {
-        this.view = view;
-        this.svgElement.setAttribute('viewBox', viewKey(view));
+        const
+            me     = this,
+            zoomed = !isFarm(view);
+
+        me.view = view;
+        me.svgElement.setAttribute('viewBox', viewKey(view));
         // Text keeps its size as the map zooms in
-        this.svgElement.style.setProperty('--ow-map-zoom', String(farmView.width / view.width));
+        me.svgElement.style.setProperty('--ow-map-zoom', String(farmView.width / view.width));
+        // Show all, whenever the view is not the whole farm
+        me.wholeFarmButton.hidden = !zoomed;
+        me.element.classList.toggle('ow-map-zoomed', zoomed);
     }
 
     //endregion
@@ -378,10 +557,9 @@ export default class TurbineMap extends Widget {
     <g class="ow-labels" aria-hidden="true"></g>
 </svg>
 <div class="ow-map-top"><div class="ow-map-callout" hidden></div></div>
-<div class="ow-map-legend">
-    <span class="ow-m-work"><i></i>In work</span><span class="ow-m-planned"><i></i>Planned</span>
-    <span class="ow-m-waiting"><i></i>Waiting</span><span class="ow-m-risk"><i></i>At risk</span>
-    <span class="ow-m-moved"><i></i>Moved</span><span class="ow-m-fault"><i></i>Stopped</span>
+<div class="ow-map-legend">${[['ow-m-work', 'In work'], ['ow-m-planned', 'Planned'], ['ow-m-waiting', 'Waiting'],
+            ['ow-m-risk', 'At risk'], ['ow-m-fault', 'Stopped']].map(([cls, label]) =>
+        `<span><svg class="ow-legend-mark ${cls}" viewBox="-8 -8 19 19" aria-hidden="true">${markerParts()}</svg>${label}</span>`).join('')}
 </div>`;
     }
 
@@ -389,10 +567,13 @@ export default class TurbineMap extends Widget {
      * Shows the plan: each turbine's status, the routes, the labels, the callout and the selected turbine
      * @param {Object} model See MapModel#mapModel
      */
-    draw({ markers, labels, routes, callout, selected }) {
+    draw({ markers, labels, routes, callout, selected, wind }) {
         const
             me        = this,
             { parts } = me;
+
+        // Every turning rotor on the page, at the speed of the wind now
+        setRotorSpeed(wind);
 
         me.turbines.forEach(record => {
             record.status = markers.get(record.id) ?? '';
@@ -487,10 +668,15 @@ export default class TurbineMap extends Widget {
         });
     }
 
+    // A press and release without a move selects the turbine. The click that ends a pan selects nothing, even where the
+    // pan started on a turbine
     onMapClick(event) {
         const id = event.target.closest?.('.ow-marker')?.dataset.turbine;
 
-        if (id && !this.panned) {
+        if (this.panned) {
+            event.stopPropagation();
+        }
+        else if (id) {
             this.select(id);
         }
     }

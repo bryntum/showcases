@@ -1,12 +1,12 @@
 // The Group feature is a Grid feature, importing the package registers it
 import '@bryntum/grid-enterprise';
-import { Scheduler } from '@bryntum/scheduler-enterprise';
+import { ProjectModelEnterprise, Scheduler } from '@bryntum/scheduler-enterprise';
 import { StringHelper } from '@bryntum/core-enterprise';
 import TripModel from '../model/TripModel.js';
 import VesselModel from '../model/VesselModel.js';
 import ForecastHeader from './ForecastHeader.js';
 import { hoursText, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
-import { duration, hhmm, toDate, toMinutes } from '../util/Time.js';
+import { duration, hhmm, toDate } from '../util/Time.js';
 
 const
     // The trips' place in their 64px row: 7px above, 14px below, room for the dependency line to pass under a trip
@@ -21,10 +21,14 @@ const
 /**
  * The vessels and helicopters on the day's timeline, a Scheduler on the Enterprise tier:
  *
+ * - The scheduling engine places the trips: the Enterprise tier runs on a ProjectModelEnterprise, which keeps each
+ *   trip's legs in order from its departure and starts a stop that depends on another trip once that trip is back,
+ *   pushing the rest of its trip (TripModel)
  * - Trips are parent events, their legs (transits and turbine stops) are child events drawn inside them by the
  *   NestedEvents feature (TripModel, TripRendering)
  * - A dependency runs from the HV isolation flown to the substation into the one stop that needs it, drawn by the
- *   Dependencies feature from a trip to a nested event
+ *   Dependencies feature from a trip to a nested event. Red only where the engine cannot resolve it: the wait it
+ *   forces brings the trip back after its weather window
  * - The weather no-go of each vessel is a resource time range, from the hour the forecast crosses its limit
  * - The time axis carries the forecast: the wave height chart and the wind (ForecastHeader)
  * - The vessel column shows how much of the window left is booked, and the seats taken
@@ -46,8 +50,9 @@ export default class DispatchScheduler extends Scheduler {
     static type = 'dispatchscheduler';
 
     static configurable = {
-        // Nested events and their dependencies are Enterprise features
-        tier : 'enterprise',
+        // Nested events, their dependencies and the scheduling engine are Enterprise features
+        tier              : 'enterprise',
+        projectModelClass : ProjectModelEnterprise,
 
         /**
          * The dispatcher's state, the weather windows and the clock
@@ -170,7 +175,7 @@ export default class DispatchScheduler extends Scheduler {
                     radius          : 4,
                     showTooltip     : true,
                     tooltipTemplate : dependency => StringHelper.encodeHtml(me.dependencyText(dependency)),
-                    renderer        : args => renderDependency(args)
+                    renderer        : args => renderDependency(args, TripModel.isChain)
                 }
             }
         });
@@ -180,6 +185,23 @@ export default class DispatchScheduler extends Scheduler {
             timelineViewportResize : 'fitTicks',
             thisObj                : me
         });
+        me.project.on({ dataReady : 'onPlanCalculated', thisObj : me });
+    }
+
+    /**
+     * Fired after the scheduling engine has calculated a change, when it changed how long a trip waits on station for
+     * another trip: the trips' ends and status may have changed
+     * @event waitChange
+     * @param {TripModel[]} trips The trips whose wait changed
+     */
+
+    // The engine has placed the legs: each trip reads its wait on station from them
+    onPlanCalculated() {
+        const changed = this.trips.filter(trip => trip.updateWait());
+
+        if (changed.length) {
+            this.trigger('waitChange', { trips : changed });
+        }
     }
 
     doDestroy() {
@@ -301,8 +323,29 @@ export default class DispatchScheduler extends Scheduler {
                 endDate    : toDate(trip.was + trip.endMinute - trip.departs)
             }));
 
-        me.resourceTimeRangeStore.removeAll();
-        me.resourceTimeRangeStore.add([...nogo, ...ghosts.filter(ghost => ghost.startDate < end)]);
+        DispatchScheduler.syncStore(me.resourceTimeRangeStore, [...nogo, ...ghosts.filter(ghost => ghost.startDate < end)]);
+    }
+
+    /**
+     * Brings a store's records in line with the passed data, by ID: updated in place, added or removed. The stores are
+     * the scheduling project's, replacing every record would leave the ones drawn before behind
+     * @param {Core.data.Store} store
+     * @param {Object[]} data
+     */
+    static syncStore(store, data) {
+        const ids = new Set(data.map(({ id }) => id));
+
+        store.remove(store.records.filter(record => !ids.has(record.id)));
+        data.forEach(values => {
+            const record = store.getById(values.id);
+
+            if (record) {
+                record.set(values);
+            }
+            else {
+                store.add(values);
+            }
+        });
     }
 
     /**
@@ -332,8 +375,7 @@ export default class DispatchScheduler extends Scheduler {
             now            = toDate(state.now),
             timeRangeStore = me.project.timeRangeStore;
 
-        timeRangeStore.removeAll();
-        timeRangeStore.add([
+        DispatchScheduler.syncStore(timeRangeStore, [
             { id : 'past', startDate : me.startDate, endDate : now, cls : 'ow-past' },
             { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
         ]);
@@ -373,40 +415,7 @@ export default class DispatchScheduler extends Scheduler {
             return { valid : false, message : 'Cannot leave port in the past' };
         }
 
-        return this.validateDependencies(trip, toMinutes(startDate) - trip.departs);
-    }
-
-    /**
-     * The trip's active dependencies, finish-to-start, with the trip moved by `shift` minutes: its stop that waits for
-     * another trip starts after that trip is back, and it is back before the stop of another trip that waits for it
-     * @param {TripModel} trip
-     * @param {Number} shift Minutes
-     * @returns {Boolean|Object} `true`, or `{ valid : false, message }`
-     */
-    validateDependencies(trip, shift) {
-        const stopFrom = stop => stop.trip.legs.find(leg => leg.type === 'stop' && leg.turbine === stop.turbine)?.from;
-
-        for (const dependency of this.dependencyStore) {
-            const { fromEvent, toEvent, active } = dependency;
-
-            if (!active || !fromEvent || !toEvent) {
-                continue;
-            }
-
-            const
-                into = toEvent.trip === trip,
-                from = fromEvent === trip,
-                back = fromEvent.endMinute + (from ? shift : 0),
-                stop = stopFrom(toEvent) + (into ? shift : 0);
-
-            if ((into || from) && back > stop) {
-                return {
-                    valid   : false,
-                    message : `${toEvent.turbine} on ${toEvent.trip.id} must wait for ${fromEvent.id}, back ${hhmm(back)}`
-                };
-            }
-        }
-
+        // A stop that waits for another trip is not refused: the engine starts it once that trip is back
         return true;
     }
 
@@ -415,6 +424,9 @@ export default class DispatchScheduler extends Scheduler {
             close = this.dispatch.closeOf(trip.resource),
             stops = trip.legs.filter(leg => leg.type === 'stop' && !leg.preview).map(leg =>
                 StringHelper.xss`<dt>${leg.turbine}</dt><dd>${hhmm(leg.from)} – ${hhmm(leg.to)} · ${hoursText(leg.minutes)}</dd>`),
+            // The engine's waits on station for another trip
+            waits = trip.waits.map(({ turbine, minutes, after }) =>
+                StringHelper.xss`<dt>Waits</dt><dd>${duration(minutes)} at ${turbine}${after ? ` for ${after}` : ''}</dd>`),
             back  = trip.endMinute;
 
         return `<div class="ow-tip">
@@ -422,7 +434,8 @@ export default class DispatchScheduler extends Scheduler {
             <dl>
                 <dt>Leaves</dt><dd>${hhmm(trip.startMinute)}</dd>
                 ${stops.join('')}
-                <dt>Back</dt><dd>${hhmm(back)}, ${back > close ? `${duration(back - close)} after` : `${duration(close - back)} before`} the window closes at ${hhmm(close)}</dd>
+                ${waits.join('')}
+                <dt>Back in port by</dt><dd>${hhmm(back)}, ${back > close ? `${duration(back - close)} after` : `${duration(close - back)} before`} the window closes at ${hhmm(close)}</dd>
             </dl>
         </div>`;
     }

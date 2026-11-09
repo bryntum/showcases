@@ -111,17 +111,31 @@ export function renderTrip({ eventRecord, renderData }, close) {
 }
 
 /**
- * The dependency line, drawn by the Dependencies feature from a trip into a stop of another trip. Red when the
- * predecessor is back after the stop starts, hidden while the stop's trip is moved to tomorrow
+ * The dependency lines, drawn by the Dependencies feature. The links that keep a trip's legs in order are the engine's
+ * business and not drawn. The one from a trip into a stop of another trip is grey while the engine resolves it, the
+ * stop simply waits on station until the trip is back. It turns red where the engine cannot resolve it: the stop
+ * still starts before the trip is back, or the wait brings the stop's trip back after its weather window. Hidden while
+ * the stop's trip is moved to tomorrow
  * @param {Object} args The Dependencies feature's renderer arguments
+ * @param {Function} isChain Tells the links between legs from the dependencies of the plan
  */
-export function renderDependency({ domConfig, dependencyRecord }) {
+export function renderDependency({ domConfig, dependencyRecord }, isChain) {
+    const { fromEvent, toEvent } = dependencyRecord;
+
+    if (isChain(dependencyRecord)) {
+        domConfig.class['ow-dep-chain'] = 1;
+
+        return;
+    }
+
     const
-        { fromEvent, toEvent } = dependencyRecord,
-        stop                   = toEvent?.trip.legs.find(leg => leg.type === 'stop' && leg.turbine === toEvent.turbine);
+        before = toEvent?.previousSibling,
+        waits  = Boolean(before && toEvent.startDate > before.endDate),
+        broken = Boolean(fromEvent && toEvent && fromEvent.endDate > toEvent.startDate) ||
+            (waits && toEvent.trip.status === 'at-risk');
 
     domConfig.class['ow-dep']        = 1;
-    domConfig.class['ow-dep-broken'] = Boolean(fromEvent && stop && fromEvent.endMinute > stop.from);
+    domConfig.class['ow-dep-broken'] = broken;
     domConfig.class['ow-dep-moved']  = toEvent?.trip.status === 'moved';
 }
 

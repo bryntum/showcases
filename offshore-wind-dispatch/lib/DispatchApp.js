@@ -9,7 +9,7 @@ import TeamDrag from './TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
 import { mapModel } from './map/MapModel.js';
 import { cardHtml, cardInfo, tipInfo } from './map/TurbineCard.js';
-import { legendHtml, scheduleBarHtml, sideBarHtml, tabsHtml } from './TitleBars.js';
+import { legendHtml, scheduleBarHtml, sideBarHtml } from './TitleBars.js';
 import { toDate, toMinutes } from './util/Time.js';
 // Also registers the widget types used below
 import { dayKpis } from './KpiBar.js';
@@ -92,9 +92,13 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
             afterEventDrop       : 'onTripDrop',
+            waitChange           : 'onWaitChange',
             thisObj              : me
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
+        // The TabPanel's tab list has the tab roles and switching but no arrow keys (Core/widget/TabBar), the ARIA
+        // tabs pattern moves between the tabs with them
+        me.widgetMap.tabs.tabBar.element.addEventListener('keydown', event => me.onTabKey(event));
         me.mapLink = new MapLink({ map, scheduler, focusTrip : () => me.drop?.trip ?? scheduler.selectedEvents[0] });
         me.element.addEventListener('click', event => me.onAction(event));
 
@@ -104,13 +108,24 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.refreshAll();
     }
 
-    // The header, the tabs, the schedule half and the map half
+    // The header, the schedule half and the map half, and the tab panel that holds the two halves on a phone
     itemsConfig(data, site) {
         const me = this;
 
         return {
             kpis : { type : 'kpibar' },
-            tabs : { type : 'widget', cls : 'ow-tabs' },
+            // On a phone the schedule and the map are its tabs (updatePhone), the TabPanel gives the tab list, its
+            // keyboard and the switching
+            tabs : {
+                type   : 'tabpanel',
+                cls    : 'ow-tabs',
+                flex   : 1,
+                hidden : true,
+                tabBar : { cls : 'ow-tab-bar' },
+                onTabChange({ activeItem }) {
+                    me.tab = activeItem && activeItem === me.widgetMap.side ? 'map' : 'schedule';
+                }
+            },
             main : {
                 type   : 'container',
                 cls    : 'ow-main',
@@ -120,11 +135,13 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                     schedulePane : {
                         type   : 'container',
                         cls    : 'ow-schedule',
+                        // Its tab's text on a phone
+                        title  : 'Schedule',
                         flex   : 1,
                         layout : 'vbox',
                         items  : {
                             scheduleBar : { type : 'widget', cls : 'ow-panel-bar' },
-                            tray        : { type : 'teamtray', port : site.port },
+                            tray        : { type : 'teamtray', port : site.portShort ?? site.port },
                             notice      : { type : 'forecastnotice' },
                             scheduler   : me.schedulerConfig(data),
                             legend      : { type : 'widget', cls : 'ow-legend', html : legendHtml }
@@ -133,6 +150,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                     side : {
                         type   : 'container',
                         cls    : 'ow-side',
+                        title  : 'Map',
                         width  : 400,
                         layout : 'vbox',
                         items  : {
@@ -195,12 +213,17 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             await new Promise(resolve => scheduler.on({ paint : resolve, once : true }));
         }
 
+        // The engine's first calculation: the legs placed, the waits on station known
+        await scheduler.project.commitAsync();
+        me.evaluate();
+        me.refreshAll();
+
         scheduler.selectEvent(first);
         // From here on, a trip or turbine the user selects fits the map to it
         me.started = true;
 
         if (state === 'forecast') {
-            me.applyForecast();
+            await me.applyForecast();
         }
         else if (state === 'drag' && me.dispatch.waiting.length) {
             me.drag.showHeld(me.dispatch.waitingTeams[0].team.id, first);
@@ -230,36 +253,57 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     }
 
     /**
-     * Changes the plan and draws it. A team held over a trip has its previewed stop taken off first, so the change and
-     * the trips' status see the plan only, then previewed again and checked against the plan and forecast as they are
-     * now: the trip, the map, the card and the drag's tooltip never show a check made against the old ones
+     * Changes the plan, lets the scheduling engine place it, and draws it. A team held over a trip has its previewed
+     * stop taken off first, so the change and the trips' status see the plan only, then previewed again and checked
+     * against the plan and forecast as they are now: the trip, the map, the card and the drag's tooltip never show a
+     * check made against the old ones
      * @param {Function} [change] Changes the plan
+     * @returns {Promise} Resolves once drawn
      */
-    replan(change) {
+    async replan(change) {
         const
             me   = this,
-            held = me.drop && { teamId : me.drop.team.id, trip : me.drop.trip };
+            held = me.drop && { teamId : me.drop.team.id, target : me.drop.target };
 
+        me.replanning = true;
         me.clearPreview();
         change?.();
+
+        try {
+            // The engine pushes the stops that wait for another trip, and the legs after them
+            await me.scheduler.project.commitAsync();
+        }
+        finally {
+            me.replanning = false;
+        }
+
+        if (me.isDestroyed) {
+            return;
+        }
+
         me.evaluate();
 
-        if (held) {
-            me.holdPreview(held.teamId, held.trip);
+        // Held again, unless the pointer has moved on to another trip meanwhile
+        if (held && !me.drop) {
+            me.holdPreview(held.teamId, held.target);
         }
 
         me.refreshAll();
         me.drag?.refresh();
     }
 
-    // A trip dragged to a new departure: its legs are placed again from it
-    onTripDrop({ eventRecords, valid }) {
-        if (valid) {
-            // Read before the preview comes off, which lays the trip out again
-            const departures = eventRecords.map(trip => [trip, toMinutes(trip.startDate)]);
-
-            this.replan(() => departures.forEach(([trip, departs]) => trip.layout({ departs })));
+    // The engine changed how long a trip waits on station, outside a change of the app's own (a trip dragged): its end
+    // and status follow. Not while a team is held: its previewed stop is no change of the plan, the plan is checked
+    // again once it comes off
+    onWaitChange() {
+        if (!this.replanning && !this.drop) {
+            this.replan();
         }
+    }
+
+    // A trip dragged to a new departure: the engine moves its legs with it, and pushes any stop that waits for it
+    onTripDrop({ valid }) {
+        return valid ? this.replan() : null;
     }
 
     /**
@@ -308,16 +352,17 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         me.fitMap(selectedTrip, turbine);
 
         if (turbine) {
-            card.draw(cardInfo({ state : dispatch, trips, turbine, drop }));
+            card.draw(cardInfo({ state : dispatch, trips, turbine, drop, selectedTrip }));
         }
     }
 
     // The map's tooltip on a turbine: the card's turbine at the forecast wave height, its job, team and when a trip
-    // reaches it
+    // reaches it, and its rotor
     turbineTipHtml(turbine) {
         const
             { dispatch, trips, drop } = this,
-            info                      = tipInfo({ state : dispatch, trips, turbine, drop });
+            selectedTrip              = this.scheduler.selectedEvents[0] ?? null,
+            info                      = tipInfo({ state : dispatch, trips, turbine, drop, selectedTrip });
 
         return `<div class="ow-card ow-card-tip" data-tone="${info.tone}">${cardHtml(info, 'ow-tip')}</div>`;
     }
@@ -339,13 +384,14 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     /**
      * Brings in the next forecast and re-plans the day against it
+     * @returns {Promise} Resolves once the plan is drawn
      */
-    applyForecast() {
+    async applyForecast() {
         const me = this;
 
         let changes = [];
 
-        me.replan(() => {
+        await me.replan(() => {
             changes = me.forecastPlanner.apply(me.dispatch.waiting);
         });
         me.reviewIndex = -1;
@@ -361,7 +407,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const me = this;
 
         me.widgetMap.notice.hidden = true;
-        me.replan(() => {
+
+        return me.replan(() => {
             me.dispatch.waiting = me.forecastPlanner.undo();
         });
     }
@@ -440,21 +487,40 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
     /**
      * Fits the map to the selected trip's turbines and the port, or to the selected turbine and the port, once the
-     * user selected one. A team held over a trip shows the whole farm, what the trip can still reach is all over it
+     * user selected one. A team held over a trip shows the whole farm, what the trip can still reach is all over it.
+     *
+     * Only a change of what is shown moves the map: another trip or turbine selected, the map following or not, a
+     * team held or not. A redraw of the same selection (the plan, the clock, a hover) leaves the view the user panned
+     * or zoomed to where it is
      * @param {TripModel|null} trip
      * @param {String|null} turbine
      */
     fitMap(trip, turbine) {
         const
+            me       = this,
+            follow   = Boolean(me.mapFollows && !me.drop),
+            key      = me.fitKeyOf(trip, turbine),
             turbines = trip ? [...trip.turbines, ...(trip.removed ?? [])] : [],
             fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
 
-        this.widgetMap.map.fitTo(this.mapFollows && !this.drop ? fit : null);
+        if (key !== me.fitKey) {
+            me.fitKey = key;
+            me.widgetMap.map.fitTo(follow ? fit : null);
+        }
     }
 
-    // The map's Whole farm button: the map stays on the whole farm until the user selects another trip or turbine
+    // What the map is fitted to, see fitMap
+    fitKeyOf(trip, turbine) {
+        return [trip?.id, turbine, Boolean(this.mapFollows && !this.drop), Boolean(this.drop)].join('|');
+    }
+
+    // The map's Show all button (it has gone to the whole farm): the map stays there, or where the user pans or zooms
+    // it, until the user selects another trip or turbine
     onWholeFarm() {
-        this.mapFollows = false;
+        const me = this;
+
+        me.mapFollows = false;
+        me.fitKey     = me.fitKeyOf(me.scheduler.selectedEvents[0] ?? null, me.drop?.job.turbine ?? me.selectedTurbine);
     }
 
     //endregion
@@ -475,8 +541,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             'zoom-out' : () => scheduler.zoomStep = Math.max(scheduler.zoomStep - 1, 0),
             'zoom-in'  : () => scheduler.zoomStep = Math.min(scheduler.zoomStep + 1, scheduler.lastZoomStep),
             'zoom-day' : () => scheduler.zoomStep = 0,
-            view       : () => me.mapView = button.dataset.view,
-            tab        : () => me.tab = button.dataset.tab
+            view       : () => me.mapView = button.dataset.view
         };
 
         if (actions[action]) {
@@ -485,11 +550,11 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
     }
 
-    // The schedule's and the map's title bars, and the phone tabs
+    // The schedule's and the map's title bars
     refreshBars() {
         const
-            { dispatch, scheduler, tab, mapView } = this,
-            { scheduleBar, sideBar, tabs }        = this.widgetMap;
+            { dispatch, scheduler, mapView } = this,
+            { scheduleBar, sideBar }         = this.widgetMap;
 
         scheduleBar.html = scheduleBarHtml({
             vessels      : dispatch.vessels,
@@ -503,7 +568,6 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             due      : dispatch.dueTurbines.length,
             mapView
         });
-        tabs.html = tabsHtml(tab);
     }
 
     updateMapView() {
@@ -512,27 +576,55 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         }
     }
 
+    // On a phone the two halves move into the tab panel, back side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, side } = this.widgetMap ?? {};
+        const { scheduler, schedulePane, side, main, tabs } = this.widgetMap ?? {};
 
         // Applied again once the items exist, see construct
         if (!scheduler) {
             return;
         }
 
+        const home = phone ? tabs : main;
+
         scheduler.phone = phone;
         side.flex       = phone ? 1 : null;
         side.width      = phone ? null : 400;
+
+        if (schedulePane.owner !== home) {
+            home.add([schedulePane, side]);
+            // A tab panel shows one of them, side by side both
+            schedulePane.hidden = side.hidden = false;
+        }
+
+        tabs.hidden = !phone;
+        main.hidden = phone;
         this.toggleCls('ow-phone', phone);
         this.updateTab(this.tab);
     }
 
-    updateTab(tab) {
-        const { schedulePane, side } = this.widgetMap ?? {};
+    // Left and right move to the previous or next tab and show it, as in the ARIA tabs pattern
+    onTabKey(event) {
+        const
+            { tabs } = this.widgetMap,
+            step     = { ArrowLeft : -1, ArrowRight : 1 }[event.key],
+            count    = tabs.items.length;
 
-        if (schedulePane) {
-            schedulePane.hidden = this.phone && tab !== 'schedule';
-            side.hidden         = this.phone && tab !== 'map';
+        if (step) {
+            const index = (tabs.activeIndex + step + count) % count;
+
+            event.preventDefault();
+            tabs.activeTab = index;
+            // The focus stays in the tab list, on the tab shown
+            requestAnimationFrame(() => tabs.tabBar.element.querySelectorAll('[role="tab"]')[index]?.focus());
+        }
+    }
+
+    updateTab(tab) {
+        const { tabs } = this.widgetMap ?? {};
+
+        if (tabs && this.phone) {
+            tabs.activeTab = tab === 'map' ? 1 : 0;
         }
     }
 

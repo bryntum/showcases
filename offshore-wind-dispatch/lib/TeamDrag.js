@@ -4,20 +4,23 @@ import { icon } from './util/Icons.js';
 import { duration, hhmm } from './util/Time.js';
 
 /**
- * Dragging a team from the tray onto a trip. Bryntum's DragHelper runs the drag: the threshold, the proxy following
- * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop, and the trip bars
- * (`.b-sch-event-wrap`) as the drop targets. Over a trip the app previews the stop the team would get
- * (DispatchApp#previewDrop): the trip shows it, the map rings the turbines the trip can still reach, and a Bryntum
- * Tooltip, shown by the point the team is held at, says when the trip is back against the window. The dispatch checks
- * are the drag's validation: a team that does not fit marks the drag invalid, and released there the app says why.
- * Released over a trip that fits, the app books it.
+ * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following
+ * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop. The whole time axis
+ * of the schedule is its drop target: over a trip bar, or anywhere on a vessel's row, the app previews the stop the
+ * team would get (DispatchApp#previewDrop), on that trip or the vessel's best one, or on a new trip from port: the trip
+ * shows it, the map rings the turbines the trip can still reach, and a Bryntum Tooltip, shown by the point the team is
+ * held at, says when the trip is back against the window. The dispatch check is the drag's validation: a team that
+ * does not fit marks the drag invalid (`context.valid`), and released there the app says why. The proxy says it too,
+ * as it moves, from the same check: "Fits SR-1, back 12:40" or "35 min after window", neutral over empty space.
+ * Released where it fits, the app books it.
  *
  * DragHelper has no keyboard drag, so the keyboard holds a team over a trip itself: Enter or Space on a focused chip
  * holds the team over the selected trip (or the first one), the arrow keys move it to the previous or next trip,
  * Enter or Space books it, and Escape or Tab puts it back. The tooltip is a live region, so a screen reader reads what
  * each trip would give.
  *
- * The trip under the pointer is found from the event element's `data-event-id`, which Scheduler sets on each bar.
+ * The trip under the pointer is found from the event element's `data-event-id`, which Scheduler sets on each bar, the
+ * vessel from the row's `data-id`.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -33,8 +36,10 @@ import { duration, hhmm } from './util/Time.js';
 export function dropTipHtml({ trip, team, job, result, reach, close }, keyboard = false) {
     const
         text  = StringHelper.encodeHtml,
-        head  = result.valid ? `${icon('check-circle')} ${text(job.turbine)} fits on ${text(trip.id)}` :
-            `${icon('warning')} ${text(job.turbine)} does not fit on ${text(trip.id)}`,
+        // A vessel with no trip left to join gets a new one
+        name  = trip.draft ? `a new trip, ${text(trip.id)} from port at ${hhmm(trip.departs)}` : text(trip.id),
+        head  = result.valid ? `${icon('check-circle')} ${text(job.turbine)} fits on ${name}` :
+            `${icon('warning')} ${text(job.turbine)} does not fit on ${name}`,
         certs = result.certs.map(cert => `${text(cert)} ${team.certs.includes(cert) ? '✓' : '✗'}`).join(' '),
         keys  = keyboard ?
             '<div class="ow-drop-tip-keys"><kbd>←</kbd> <kbd>→</kbd> another trip · <kbd>Enter</kbd> book · <kbd>Esc</kbd> cancel</div>' :
@@ -50,10 +55,31 @@ export function dropTipHtml({ trip, team, job, result, reach, close }, keyboard 
         </dl>
         <div class="ow-drop-tip-foot">${result.valid ?
         `${text(trip.id)} can still reach ${reach.size} turbines before ${hhmm(close)}, see the map` :
-        text(result.margin < 0 ? `${result.reason}, ${duration(-result.margin)} late` : result.reason)}</div>${keys}`;
+        text(result.reason)}</div>${keys}`;
 }
 
 const chipSelector = '.ow-team[data-team]';
+
+/**
+ * Shows on the drag proxy what the team held gives, from the same check as the tooltip: green and "Fits SR-1, back
+ * 12:40", red and the short reason, or neutral over empty space. Only touched when it changes, so it does not flicker
+ * @param {HTMLElement} chip The proxy, or the chip held from the keyboard
+ * @param {Object|null} drop See DispatchApp#previewDrop
+ */
+export function showOnChip(chip, drop) {
+    const
+        state  = drop ? (drop.result.valid ? 'valid' : 'invalid') : 'neutral',
+        text   = drop?.result.short ?? '',
+        status = chip?.querySelector('.ow-drag-status');
+
+    if (!status || (chip.dataset.state === state && status.textContent === text)) {
+        return;
+    }
+
+    chip.dataset.state = state;
+    status.textContent = text;
+    status.hidden      = !text;
+}
 
 export default class TeamDrag {
     /**
@@ -72,7 +98,8 @@ export default class TeamDrag {
             callOnFunctions      : true,
             outerElement         : source,
             targetSelector       : chipSelector,
-            dropTargetSelector   : '.b-sch-event-wrap[data-event-id]',
+            // The trips and the vessels' rows
+            dropTargetSelector   : '.ow-scheduler .b-time-axis-sub-grid',
             // A small chip centred on the pointer, the team's place in the tray stays, dimmed
             cloneTarget          : true,
             autoSizeClonedTarget : false,
@@ -112,13 +139,17 @@ export default class TeamDrag {
     createChip(teamId) {
         const { team, job } = this.handler.waitingTeam(teamId);
 
+        // The status line says what the trip under it gives (showOnChip)
         return DomHelper.createElement({
-            class : 'ow-drag-chip',
-            html  : `${teamChipHtml(team, job, true)}${icon('hand-grabbing', 'ow-drag-hand')}`
+            class   : 'ow-drag-chip',
+            dataset : { state : 'neutral' },
+            html    : `<span class="ow-drag-team">${teamChipHtml(team, job, true)}</span>` +
+                `<span class="ow-drag-status" aria-hidden="true" hidden></span>${icon('hand-grabbing', 'ow-drag-hand')}`
         });
     }
 
     onDragStart(context) {
+        this.proxy = context.element;
         this.lift(context.grabbed.dataset.team);
     }
 
@@ -130,24 +161,24 @@ export default class TeamDrag {
         // Kept for refresh(), the plan may change under a still pointer
         me.point = point;
 
-        // The dispatch checks validate the drop: over a trip the team fits on
-        context.valid = Boolean(me.hover(me.tripOf(context.target), point)?.result.valid);
+        // The dispatch check validates the drop: over a trip or a row where the team fits
+        context.valid = Boolean(me.hover(me.targetAt(point), point)?.result.valid);
     }
 
-    // Released over a trip, booked if it fits, else the app says why (DropPreview#dropTeam)
-    onDrop(context) {
+    // Released over a trip or a row, booked if it fits, else the app says why (DropPreview#dropTeam). Booked before
+    // the drag ends, so a new trip previewed for the team is kept
+    onDrop() {
         const
-            me    = this,
+            me     = this,
             // The preview redraws the trip under the pointer, its element then may not be the one of the last move
-            { point } = me,
-            trip  = me.tripOf(point ? document.elementFromPoint(point.x, point.y) : context.target),
-            team  = me.team;
+            target = me.point ? me.targetAt(me.point) : null,
+            team   = me.team;
+
+        if (target && team) {
+            me.handler.dropTeam(team, target);
+        }
 
         me.end();
-
-        if (trip && team) {
-            me.handler.dropTeam(team, trip);
-        }
     }
 
     /**
@@ -159,7 +190,7 @@ export default class TeamDrag {
     refresh() {
         const
             me   = this,
-            trip = me.handler.drop?.trip;
+            trip = me.handler.drop?.target;
 
         if (!me.isDragging) {
             return;
@@ -171,7 +202,7 @@ export default class TeamDrag {
         }
 
         if (me.point) {
-            me.hover(me.tripOf(document.elementFromPoint(me.point.x, me.point.y)), me.point);
+            me.hover(me.targetAt(me.point), me.point);
         }
         else if (trip) {
             me.holdOver(trip);
@@ -182,12 +213,27 @@ export default class TeamDrag {
         }
     }
 
-    // The trip of an element in a trip bar, should it be over a leg
-    tripOf(element) {
-        const wrap = element?.closest?.('.b-sch-event-wrap[data-event-id]');
+    /**
+     * What a team held at a point is over: a trip bar (a draft trip counts as its vessel's row), else a vessel's row in
+     * the time axis, else nothing
+     * @param {{x: Number, y: Number}} point In the viewport
+     * @returns {TripModel|VesselModel|null}
+     */
+    targetAt({ x, y }) {
+        const
+            { scheduler } = this,
+            axis          = scheduler.timeAxisSubGridElement,
+            elements      = document.elementsFromPoint(x, y).filter(element => axis?.contains(element)),
+            wrap          = elements.find(element => element.matches('.b-sch-event-wrap[data-event-id]')),
+            trip          = wrap && scheduler.eventStore.getById(wrap.dataset.eventId)?.trip,
+            row           = elements.find(element => element.matches('.b-grid-row[data-id]')),
+            vessel        = row && scheduler.resourceStore.getById(row.dataset.id);
 
-        return wrap && this.scheduler.element.contains(wrap) ?
-            this.scheduler.eventStore.getById(wrap.dataset.eventId)?.trip ?? null : null;
+        if (trip && !trip.draft) {
+            return trip;
+        }
+
+        return vessel && !vessel.isSpecialRow && !vessel.isGroupHeader ? vessel : trip?.resource ?? null;
     }
 
     //endregion
@@ -274,15 +320,14 @@ export default class TeamDrag {
     // Books the team on the trip it is held over
     book(team) {
         const
-            me   = this,
-            trip = me.handler.drop?.trip ?? me.keyboard.trips[me.keyboard.index];
+            me     = this,
+            target = me.handler.drop?.target ?? me.keyboard.trips[me.keyboard.index];
 
-        me.endHeld();
-
-        if (trip) {
-            me.handler.dropTeam(team, trip);
+        if (target) {
+            me.handler.dropTeam(team, target);
         }
 
+        me.endHeld();
         me.focusChip(team);
     }
 
@@ -322,21 +367,22 @@ export default class TeamDrag {
             me.scheduler.scrollEventIntoView(trip, { block : 'nearest' });
         }
 
-        // Placed once the trip shows the previewed stop
-        requestAnimationFrame(() => requestAnimationFrame(() => {
+        // Placed once the trip shows the previewed stop, the engine places it first
+        me.scheduler.project.commitAsync().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
             const
-                selector = `.b-sch-event-wrap[data-event-id="${trip.id}"] .ow-seg-preview`,
+                drop     = me.handler.drop,
+                selector = `.b-sch-event-wrap[data-event-id="${CSS.escape(String(drop?.trip.id))}"] .ow-seg-preview`,
                 rect     = me.scheduler.element.querySelector(selector)?.getBoundingClientRect(),
                 point    = rect ?
                     { x : rect.left + rect.width / 2, y : rect.top + 8 } :
                     { x : innerWidth / 2, y : innerHeight / 2 };
 
             // Still held over this trip, the keys may have moved on
-            if (me.held && me.handler.drop?.trip === trip) {
+            if (me.held && drop?.target === trip) {
                 DomHelper.setTranslateXY(me.held, point.x - 20, point.y + 8);
                 me.hover(trip, point);
             }
-        }));
+        })));
     }
 
     endHeld() {
@@ -375,16 +421,19 @@ export default class TeamDrag {
     }
 
     /**
-     * Previews the team on a trip, or none, and shows the tooltip below the point
-     * @param {TripModel|null} trip
+     * Previews the team on a trip or a vessel, or none, and shows the tooltip below the point. The tooltip, the proxy
+     * and the trip's highlight all show this one check
+     * @param {TripModel|VesselModel|null} target
      * @param {{x: Number, y: Number}} point In the viewport
      * @returns {Object|null} See DispatchApp#previewDrop
      */
-    hover(trip, point) {
+    hover(target, point) {
         const
             me      = this,
             { tip } = me,
-            drop    = me.handler.previewDrop(me.team, trip);
+            drop    = me.handler.previewDrop(me.team, target);
+
+        showOnChip(me.held ?? me.proxy, drop);
 
         if (!drop) {
             tip.hide();
@@ -410,7 +459,7 @@ export default class TeamDrag {
 
         if (me.team) {
             me.tip.destroy();
-            me.tip = me.team = me.point = null;
+            me.tip = me.team = me.point = me.proxy = null;
             me.handler.endDrag();
         }
     }

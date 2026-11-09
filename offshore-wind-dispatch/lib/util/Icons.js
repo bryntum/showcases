@@ -15,6 +15,7 @@ import handGrabbing from '@phosphor-icons/core/assets/light/hand-grabbing-light.
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
 import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
+import wrench from '@phosphor-icons/core/assets/light/wrench-light.svg?raw';
 
 // The drawn icons: stroked paths in Phosphor Light's grid (256) and line (12), round caps and joins
 const drawn = {
@@ -61,8 +62,19 @@ const phosphor = {
     'hand-grabbing' : handGrabbing,
     warning,
     waves,
-    wind
+    wind,
+    wrench
 };
+
+/**
+ * The path data of a one path Phosphor icon, in its 256 grid, to draw it inside another SVG (the map's markers, the
+ * turbine illustration)
+ * @param {String} name A Phosphor name above
+ * @returns {String}
+ */
+export function iconPath(name) {
+    return phosphor[name].match(/\sd="([^"]+)"/)[1];
+}
 
 /**
  * An icon as inline SVG

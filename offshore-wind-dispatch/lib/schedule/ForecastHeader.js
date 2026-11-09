@@ -9,7 +9,7 @@ import { dayLong } from '../util/Time.js';
  * 1. The day, "Sunday 8 November 2026 · Today"
  * 2. The hours, the ticks of the schedule
  * 3. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
- * 4. The wind at hub height per hour, over 20 m/s in the helicopters' purple
+ * 4. The wind at hub height per hour, from 20 m/s in the helicopters' purple
  *
  * The vessel column's header beside them names the rows and the forecast they show. A header row is rendered by its
  * `renderer` whenever the time axis is drawn. The chart lives in one element of its own, moved into the wave height
@@ -55,7 +55,7 @@ export default class ForecastHeader {
                     return `<span class="ow-day">${dayLong}<em>Today</em></span>`;
                 }
             },
-            { unit : 'hour', dateFormat : 'HH:mm', align : 'start' },
+            { unit : 'hour', dateFormat : 'HH:mm', align : 'start', headerCellCls : 'ow-hour-cell' },
             {
                 unit     : 'day',
                 renderer : (startDate, endDate, config) => {
@@ -76,7 +76,7 @@ export default class ForecastHeader {
         ];
     }
 
-    // The wind of an hour, marked when it is over the helicopters' limit
+    // The wind of an hour, marked when it is at or over the helicopters' limit
     windHtml(hour) {
         const { wind, over } = this.windAt(hour);
 
@@ -88,7 +88,9 @@ export default class ForecastHeader {
             { forecast, limits, day } = this.state,
             wind                      = forecast.wind[hour - day.dayStart];
 
-        return { wind, over : wind > limits.heli.wind };
+        // Marked from the limit itself, so the hour at the limit stands out before the one that closes the window
+        // (Weather.js closes it above the limit)
+        return { wind, over : wind >= limits.heli.wind };
     }
 
     /**

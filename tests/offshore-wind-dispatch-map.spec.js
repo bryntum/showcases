@@ -70,7 +70,7 @@ test.describe('Offshore Wind Dispatch map selection', () => {
         await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.selectEvent(
             globalThis.bryntum.query('dispatchapp').trips.find(each => each.id === 'BP-1')));
 
-        await expect(marker(page, 'T-45')).toHaveAttribute('aria-selected', 'true');
+        await expect(marker(page, 'T-46')).toHaveAttribute('aria-selected', 'true');
 
         for (const id of ['T-45', 'T-46', 'T-55']) {
             await expect(marker(page, id)).toHaveClass(/\bow-m-ring\b/);
@@ -118,6 +118,271 @@ test.describe('Offshore Wind Dispatch map zoom', () => {
 
         await expect(svg).toHaveAttribute('viewBox', '0 0 440 330');
         await expect(wholeFarm).toBeHidden();
+    });
+});
+
+test.describe('Offshore Wind Dispatch map pan and zoom', () => {
+    const
+        svg      = page => page.locator('.ow-side .ow-map-svg'),
+        viewBox  = async page => (await svg(page).getAttribute('viewBox')).split(' ').map(Number),
+        // Fits the map to SR-1 by selecting it, so there is room to pan
+        zoomIn   = async page => {
+            await trip(page, 'SR-1').click();
+            await page.waitForTimeout(700);
+        },
+        // A point of the map in the viewport, a fraction of its box
+        mapPoint = async(page, fx, fy) => {
+            const box = await svg(page).boundingBox();
+
+            return { x : box.x + box.width * fx, y : box.y + box.height * fy };
+        },
+        // Presses at a point and moves by dx, dy in steps, the button still down
+        pressAndMove = async(page, from, dx, dy) => {
+            await page.mouse.move(from.x, from.y);
+            await page.mouse.down();
+
+            for (let step = 1; step <= 8; step++) {
+                await page.mouse.move(from.x + dx * step / 8, from.y + dy * step / 8);
+            }
+        },
+        // The point of the farm under a point of the screen
+        farmPointAt = (page, { x, y }) => page.evaluate(({ x, y }) => {
+            const
+                map    = globalThis.bryntum.query('turbinemap'),
+                screen = map.screenOf();
+
+            return {
+                x : map.view.x + (x - screen.left) / screen.scale,
+                y : map.view.y + (y - screen.top) / screen.scale
+            };
+        }, { x, y });
+
+    test('a pan sticks: a refresh, a hover or the clock does not move the map back', async({ page }) => {
+        await open(page);
+        await zoomIn(page);
+
+        const before = await viewBox(page);
+
+        await pressAndMove(page, await mapPoint(page, 0.5, 0.45), -60, -30);
+        await page.mouse.up();
+
+        const panned = await viewBox(page);
+
+        expect(panned).not.toEqual(before);
+
+        // Everything that draws the map again, then longer than the fit's animation
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').refreshAll());
+        await marker(page, 'T-60').hover();
+        await page.waitForTimeout(1500);
+
+        expect(await viewBox(page)).toEqual(panned);
+    });
+
+    test('released outside the map, the pan ends', async({ page }) => {
+        await open(page);
+        await zoomIn(page);
+
+        await pressAndMove(page, await mapPoint(page, 0.5, 0.45), -60, -30);
+        await expect(page.locator('.ow-side .ow-map')).toHaveClass(/\bow-map-panning\b/);
+
+        // Out of the map panel, over the schedule, and released there
+        await page.mouse.move(200, 400, { steps : 4 });
+        await page.mouse.up();
+
+        const ended = await viewBox(page);
+
+        await expect(page.locator('.ow-side .ow-map')).not.toHaveClass(/\bow-map-panning\b/);
+
+        // Moving over the map again, no button down, pans nothing
+        await page.mouse.move(...Object.values(await mapPoint(page, 0.3, 0.3)), { steps : 6 });
+        expect(await viewBox(page)).toEqual(ended);
+        // The SVG itself never moved, DragHelper only gave the gesture
+        expect(await svg(page).evaluate(el => {
+            const
+                own   = el.getBoundingClientRect(),
+                frame = el.parentElement.getBoundingClientRect();
+
+            return [own.left - frame.left, own.top - frame.top];
+        })).toEqual([0, 0]);
+    });
+
+    test('Escape ends a pan', async({ page }) => {
+        await open(page);
+        await zoomIn(page);
+
+        await pressAndMove(page, await mapPoint(page, 0.5, 0.45), -40, -20);
+        await page.keyboard.press('Escape');
+
+        const ended = await viewBox(page);
+
+        await expect(page.locator('.ow-side .ow-map')).not.toHaveClass(/\bow-map-panning\b/);
+        await page.mouse.move(...Object.values(await mapPoint(page, 0.2, 0.2)), { steps : 6 });
+        await page.mouse.up();
+        expect(await viewBox(page)).toEqual(ended);
+    });
+
+    test('a drag that starts on a turbine pans, it neither selects the turbine nor fits the map to it', async({ page }) => {
+        await open(page);
+        await zoomIn(page);
+
+        // SR-1 selected, with the stop clicked. The drag starts on another of its turbines
+        const
+            before   = await viewBox(page),
+            selected = await page.evaluate(() => globalThis.bryntum.query('turbinemap').selected.values[0].id),
+            other    = ['T-07', 'T-08', 'T-17'].find(id => id !== selected),
+            from     = await marker(page, other).boundingBox();
+
+        await pressAndMove(page, { x : from.x + from.width / 2, y : from.y + from.height / 2 }, -50, -20);
+        await page.mouse.up();
+        await page.waitForTimeout(700);
+
+        const after = await viewBox(page);
+
+        await expect(marker(page, selected)).toHaveAttribute('aria-selected', 'true');
+        await expect(marker(page, other)).toHaveAttribute('aria-selected', 'false');
+        expect(await selectedTrip(page)).toEqual(['SR-1']);
+        // Moved by the pan only: the same size, further east
+        expect(after[2]).toBeCloseTo(before[2], 1);
+        expect(after[0]).toBeGreaterThan(before[0]);
+    });
+
+    test('a pinch on the trackpad zooms around the pointer, no further out than the whole farm', async({ page }) => {
+        await open(page);
+
+        const
+            point = await mapPoint(page, 0.6, 0.4),
+            under = await farmPointAt(page, point),
+            pinch = deltaY => svg(page).dispatchEvent('wheel', { deltaY, ctrlKey : true, clientX : point.x, clientY : point.y });
+
+        await pinch(-60);
+
+        const zoomed = await viewBox(page);
+
+        expect(zoomed[2]).toBeLessThan(440);
+
+        // The farm point under the pointer is still under it
+        const still = await farmPointAt(page, point);
+
+        expect(Math.abs(still.x - under.x)).toBeLessThan(1);
+        expect(Math.abs(still.y - under.y)).toBeLessThan(1);
+        await expect(page.locator('.ow-side .ow-map-whole')).toBeVisible();
+
+        // Far out: the whole farm and no further
+        await pinch(4000);
+        expect(await viewBox(page)).toEqual([0, 0, 440, 330]);
+        await expect(page.locator('.ow-side .ow-map-whole')).toBeHidden();
+    });
+
+    test('the mouse wheel zooms in smoothly, a two finger scroll pans', async({ page }) => {
+        await open(page);
+
+        const point = await mapPoint(page, 0.5, 0.5);
+
+        await page.mouse.move(point.x, point.y);
+        await page.mouse.wheel(0, -200);
+        await expect.poll(async() => (await viewBox(page))[2]).toBeLessThan(440);
+        await page.waitForTimeout(400);
+
+        const zoomed = await viewBox(page);
+
+        // A trackpad's scroll: small steps on both axes
+        await svg(page).dispatchEvent('wheel', { deltaX : 12.5, deltaY : 8.5, clientX : point.x, clientY : point.y });
+
+        const scrolled = await viewBox(page);
+
+        expect(scrolled[2]).toBeCloseTo(zoomed[2], 1);
+        expect(scrolled[0]).toBeGreaterThan(zoomed[0]);
+    });
+});
+
+test.describe('Offshore Wind Dispatch turbines', () => {
+    test('the rotors turn at the wind of the hour, stopped turbines stand still, the wrench marks the ones in work', async({ page }) => {
+        await open(page);
+
+        const
+            glyph     = id => marker(page, id).locator('.ow-marker-glyph'),
+            animation = id => glyph(id).evaluate(el => getComputedStyle(el).animationName),
+            badge     = id => marker(page, id).locator('.ow-marker-badge'),
+            // Off the map first, the tooltip of the last turbine may cover the next one
+            hover     = async id => {
+                await page.mouse.move(5, 5);
+                await expect(tooltip(page)).toBeHidden();
+                await marker(page, id).hover({ force : true });
+            };
+
+        // 10 m/s at 07:40: 8.75 rpm, a revolution every 6.86 s
+        expect(await page.evaluate(() => getComputedStyle(document.documentElement)
+            .getPropertyValue('--ow-rotor-period').trim())).toBe('6.86s');
+
+        // A running turbine turns when hovered, its tooltip says how fast
+        await hover('T-60');
+        await expect.poll(() => animation('T-60')).toBe('ow-spin');
+        await expect(tooltip(page)).toContainText('8.8 rpm · wind 10 m/s');
+        await expect(tooltip(page).locator('.ow-turbine-rotor')).toHaveCount(1);
+
+        // T-34 has a fault: still on the map and in its tooltip
+        await hover('T-34');
+        await expect(tooltip(page)).toContainText('T-34');
+        await expect(tooltip(page)).toContainText('Stopped, fault');
+        expect(await animation('T-34')).toBe('none');
+        await expect(tooltip(page).locator('.ow-turbine-rotor')).toHaveCount(0);
+
+        // SR-1 has left port: T-07 is in work, stopped, with the wrench, in the tooltip's drawing too
+        await expect(badge('T-07')).toBeVisible();
+        await expect(badge('T-60')).toBeHidden();
+        await hover('T-07');
+        await expect(tooltip(page)).toContainText('Stopped, under repair');
+        await expect(tooltip(page).locator('.ow-turbine-badge')).toHaveCount(1);
+        expect(await animation('T-07')).toBe('none');
+    });
+
+    test('the legend fits one row: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
+        await open(page);
+
+        const entries = page.locator('.ow-side .ow-map-legend > span');
+
+        await expect(entries).toHaveText(['In work', 'Planned', 'Waiting', 'At risk', 'Stopped']);
+        await expect(entries.first().locator('.ow-marker-badge')).toBeVisible();
+
+        const tops = await entries.evaluateAll(spans => spans.map(span => span.getBoundingClientRect().top));
+
+        expect(new Set(tops).size).toBe(1);
+    });
+
+    test('of the trips serving a turbine, the card shows the selected trip\'s visit', async({ page }) => {
+        await open(page);
+
+        // T-58: dropped off by H1-1 in the morning, picked up by H1-2 in the afternoon
+        await page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            app.scheduler.selectEvent(app.trips.find(each => each.id === 'H1-2'));
+        });
+
+        await expect(card(page)).toContainText('H1-2');
+        await expect(card(page)).toContainText('On station 14:55 – 15:15');
+    });
+
+    test('the tooltip keeps its padding on both sides, its note wraps inside it', async({ page }) => {
+        await open(page);
+        await marker(page, 'T-60').hover();
+        await expect(tooltip(page)).toBeVisible();
+
+        const gaps = await tooltip(page).evaluate(tip => {
+            const
+                outer = tip.getBoundingClientRect(),
+                inner = tip.querySelector('.ow-card-tip').getBoundingClientRect(),
+                note  = tip.querySelector('.ow-card-note').getBoundingClientRect();
+
+            return {
+                left      : inner.left - outer.left,
+                right     : outer.right - inner.right,
+                noteRight : outer.right - note.right
+            };
+        });
+
+        expect(Math.abs(gaps.left - gaps.right)).toBeLessThan(1.5);
+        expect(gaps.noteRight).toBeGreaterThan(gaps.right - 1);
     });
 });
 

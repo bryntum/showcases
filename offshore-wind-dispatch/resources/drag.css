@@ -33,6 +33,55 @@
     }
 }
 
+/* What the trip under the chip gives (TeamDrag showOnChip), from the same check as the tooltip: the chip turns green
+   where the team fits, red where it does not, and stays neutral over empty space */
+.ow-drag-chip {
+    flex-wrap : wrap;
+    max-width : 260px;
+
+    &[data-state='valid'] {
+        border-color : var(--ow-reach);
+        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), 0 10px 24px rgb(0 0 0 / 22%);
+    }
+
+    &[data-state='invalid'] {
+        border-color : var(--ow-cancel);
+        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-cancel) 30%, transparent), 0 10px 24px rgb(0 0 0 / 22%);
+    }
+
+    &[data-state='neutral'] {
+        border-color : var(--ow-border);
+    }
+}
+
+.ow-drag-team {
+    display     : flex;
+    align-items : center;
+    gap         : 7px;
+}
+
+.ow-drag-status {
+    flex-basis    : 100%;
+    padding       : 2px 6px;
+    border-radius : 4px;
+    font-size     : 11px;
+    font-weight   : 600;
+
+    [data-state='valid'] > & {
+        color            : color-mix(in srgb, var(--ow-reach) 80%, var(--ow-ink));
+        background-color : color-mix(in srgb, var(--ow-reach) 14%, transparent);
+    }
+
+    [data-state='invalid'] > & {
+        color            : var(--ow-cancel);
+        background-color : color-mix(in srgb, var(--ow-cancel) 12%, transparent);
+    }
+
+    &[hidden] {
+        display : none;
+    }
+}
+
 .ow-drag-hand {
     position           : absolute;
     inset-inline-end   : -12px;

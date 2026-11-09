@@ -8,6 +8,22 @@ import { duration, hhmm, nextDay } from '../util/Time.js';
  */
 
 /**
+ * Whether a turbine is stopped, and why: a team works on it (its trip has left port), or it has a fault. A stopped
+ * turbine's rotor does not turn
+ * @param {DispatchState} state
+ * @param {TripModel[]} trips
+ * @param {String} id
+ * @returns {String|null} `repair`, `fault` or `null` when it runs
+ */
+export function stoppedOf(state, trips, id) {
+    if (trips.some(trip => trip.status !== 'moved' && trip.startMinute <= state.now && trip.turbines.includes(id))) {
+        return 'repair';
+    }
+
+    return state.faults.has(id) ? 'fault' : null;
+}
+
+/**
  * The trip serving each turbine
  * @param {TripModel[]} trips
  * @returns {Map<String,TripModel>}
@@ -23,6 +39,13 @@ function tripsByTurbine(trips) {
 // The status class of one turbine, see map.css. While a trip's reach is shown, the turbines outside it are dimmed,
 // all but the stops of that trip itself
 function statusOf(id, context) {
+    // A stopped turbine's rotor stands still, map.css does not turn it on hover
+    const still = stoppedOf(context.state, context.trips, id) ? ' ow-m-stopped' : '';
+
+    return `${shownStatusOf(id, context)}${still}`.trim();
+}
+
+function shownStatusOf(id, context) {
     const { reach, target, focusTrip, byTurbine } = context;
 
     if (id === target) {
@@ -101,7 +124,7 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
  * @param {String} [options.selectedTurbine]
  * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see DispatchApp#previewDrop
  * @param {Object} [options.access] The Access view: `{ trip, reach, minutes }`
- * @returns {Object} `{ markers, labels, routes, callout, selected }`
+ * @returns {Object} `{ markers, labels, routes, callout, selected, wind }`, `wind` at hub height now, for the rotors
  */
 export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, access }) {
     const
@@ -110,6 +133,7 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
         focus     = drop ?? access,
         context   = {
             state,
+            trips,
             byTurbine,
             removed,
             reach     : focus?.reach ?? null,
@@ -130,7 +154,7 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
         routes.push({ stops : [...trip.turbines, job.turbine], cls : 'ow-route-preview' });
         labels = [{
             id   : job.turbine,
-            text : result.valid ? `${job.turbine} · +${duration(job.minutes)} · back ${hhmm(result.back)}` : `${job.turbine} · ${result.reason}`,
+            text : result.valid ? `${job.turbine} · +${duration(job.minutes)} · back ${hhmm(result.back)}` : `${job.turbine} · ${result.short}`,
             cls  : result.valid ? 'ow-map-label-target' : 'ow-map-label-fault'
         }];
         callout = `<b>${drop.reach.size} turbines</b> within reach of ${trip.id} before the window closes at ${hhmm(drop.close)}`;
@@ -145,5 +169,5 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
         }
     }
 
-    return { markers, labels, routes, callout, selected : selectedTurbine };
+    return { markers, labels, routes, callout, selected : selectedTurbine, wind : state.windAt() };
 }

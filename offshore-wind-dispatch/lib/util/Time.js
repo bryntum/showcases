@@ -58,14 +58,18 @@ export function parseTime(text) {
 }
 
 /**
- * Minutes since midnight as "07:40"
+ * Minutes since midnight as "07:40", past midnight as "01:28 tomorrow"
  * @param {Number} minutes
  * @returns {String}
  */
 export function hhmm(minutes) {
-    const rounded = Math.round(minutes);
+    const
+        rounded = Math.round(minutes),
+        day     = 24 * 60,
+        time    = rounded % day;
 
-    return `${String(Math.floor(rounded / 60)).padStart(2, '0')}:${String(rounded % 60).padStart(2, '0')}`;
+    return `${String(Math.floor(time / 60)).padStart(2, '0')}:${String(time % 60).padStart(2, '0')}` +
+        (rounded >= day ? ' tomorrow' : '');
 }
 
 /**

@@ -29,7 +29,8 @@ export default class ForecastPlanner {
         const
             me           = this,
             { dispatch } = me,
-            trips        = [...me.getTrips()].sort((a, b) => a.departs - b.departs),
+            // Not a new trip shown for a team held over a vessel
+            trips        = me.getTrips().filter(trip => !trip.draft).sort((a, b) => a.departs - b.departs),
             ends         = new Map();
 
         me.snapshot = {

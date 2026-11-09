@@ -18,7 +18,7 @@
 }
 
 /* The app panel's body and its containers: no padding, no gaps, the parts meet at their borders */
-.ow-app-body, .ow-main, .ow-schedule, .ow-side {
+.ow-app-body, .ow-main, .ow-schedule, .ow-side, .ow-tabs {
     gap            : 0;
     border-radius  : 0;
 
@@ -206,7 +206,7 @@
     }
 }
 
-.ow-seg-buttons, .ow-tabs {
+.ow-seg-buttons {
     display          : flex;
     padding          : 2px;
     border-radius    : 7px;
@@ -232,10 +232,6 @@
         background-color : var(--ow-surface);
         box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
     }
-}
-
-.ow-tabs.b-widget {
-    display : none;
 }
 
 /* Teams waiting at the port */
@@ -301,6 +297,16 @@
     display        : flex;
     flex-direction : column;
     line-height    : 1.25;
+}
+
+.ow-team-name {
+    display     : flex;
+    align-items : center;
+    gap         : 10px;
+
+    .ow-certs {
+        margin-inline-start : auto;
+    }
 }
 
 .ow-team-job {

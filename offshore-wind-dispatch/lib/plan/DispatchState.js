@@ -100,6 +100,15 @@ export default class DispatchState {
     }
 
     /**
+     * The wind at hub height at a time, now by default
+     * @param {Number} [minutes]
+     * @returns {Number} m/s
+     */
+    windAt(minutes = this.now) {
+        return valueAt(this.forecast.wind, minutes, this.day.dayStart);
+    }
+
+    /**
      * The job at a turbine, with the turbine and the minutes it takes
      * @param {String} turbine
      * @returns {Object|null} `{ turbine, job, team, certs, minutes }`

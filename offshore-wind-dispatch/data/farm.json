@@ -2,6 +2,7 @@
     "site": {
         "name": "Skarv Bank",
         "port": "Havnes O&M base",
+        "portShort": "Havnes",
         "portKm": 34,
         "turbineMw": 8,
         "now": "07:40",
@@ -59,8 +60,8 @@
         "T-55": { "job": "Tower flange inspection", "team": "D" },
         "T-58": { "job": "Blade inspection from the hoist", "team": "J" },
         "OSS": { "job": "HV isolation of string 4", "team": "AP", "certs": ["HV"] },
-        "T-34": { "job": "Converter fault, reset and test", "team": "F", "certs": ["HV"], "minutes": 48 },
-        "T-49": { "job": "Blade leading edge repair", "team": "G", "certs": ["Rope"], "minutes": 240 },
+        "T-34": { "job": "Converter fault, reset and test", "short": "Converter fault", "team": "F", "certs": ["HV"], "minutes": 48 },
+        "T-49": { "job": "Blade leading edge repair", "short": "Blade leading edge", "team": "G", "certs": ["Rope"], "minutes": 240 },
         "T-02": { "job": "Annual service", "team": "H", "minutes": 360 }
     },
     "faults": ["T-34"],
@@ -77,8 +78,8 @@
         {
             "id": "NT-1", "resourceId": "nt", "start": "07:45",
             "stops": [
-                { "turbine": "T-22", "minutes": 75, "team": "B" },
-                { "turbine": "T-23", "minutes": 75, "team": "B" }
+                { "turbine": "T-22", "minutes": 60, "team": "B" },
+                { "turbine": "T-23", "minutes": 60, "team": "B" }
             ]
         },
         {
@@ -91,13 +92,13 @@
         {
             "id": "BP-1", "resourceId": "bp", "start": "06:45",
             "stops": [
-                { "turbine": "T-45", "minutes": 180, "team": "D" },
                 { "turbine": "T-46", "minutes": 150, "team": "E" },
+                { "turbine": "T-45", "minutes": 180, "team": "D" },
                 { "turbine": "T-55", "minutes": 105, "team": "D" }
             ]
         },
         {
-            "id": "H2-1", "resourceId": "h2", "start": "06:30",
+            "id": "H2-1", "resourceId": "h2", "start": "08:30",
             "stops": [
                 { "turbine": "OSS", "minutes": 30, "team": "AP" }
             ]

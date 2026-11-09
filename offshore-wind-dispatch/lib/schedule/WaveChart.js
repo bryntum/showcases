@@ -78,6 +78,16 @@ export default class WaveChart {
         me.media = matchMedia('(prefers-color-scheme: dark)');
         me.onMedia = () => me.redraw();
         me.media.addEventListener('change', me.onMedia);
+        // AG Charts sizes itself to its container. A chart created while the header cell had no size yet (being
+        // drawn, a hidden phone tab) stays empty, so it is drawn again once the container has a size
+        me.sized = new ResizeObserver(([entry]) => {
+            const { width, height } = entry.contentRect;
+
+            if (width && height) {
+                me.redraw();
+            }
+        });
+        me.sized.observe(element);
     }
 
     /**
@@ -97,7 +107,8 @@ export default class WaveChart {
     redraw() {
         const me = this;
 
-        if (!me.forecast || !me.element.isConnected) {
+        // Not in the page or not sized yet: drawn by the ResizeObserver once it is
+        if (!me.forecast || !me.element.isConnected || !me.element.clientWidth || !me.element.clientHeight) {
             return Promise.resolve();
         }
 
@@ -113,6 +124,7 @@ export default class WaveChart {
 
     destroy() {
         this.observer.disconnect();
+        this.sized.disconnect();
         this.media.removeEventListener('change', this.onMedia);
         this.chart?.destroy();
     }
@@ -228,7 +240,7 @@ export default class WaveChart {
             label                = { fontFamily, fontSize : 9.5 },
             // At the top of the chart, clear of the value labels under the points. The earlier of the two lines has its
             // label on its left, the later one on its right, so they part
-            side                 = later => later ? 'inside-top-right' : 'inside-top-left';
+            side                 = later => later ? 'right-top' : 'left-top';
 
         return {
             type       : 'number',
@@ -272,15 +284,16 @@ export default class WaveChart {
     heightAxis(colors) {
         const
             { ctv, swath } = this.limits,
-            // From the calmest sea of the day to room above the highest values: the CTV and SWATH lines far enough
-            // apart for a label above each, and room under the lowest points for their values
-            bottom         = 0.2,
-            top            = 2.7,
+            // From calm water, so the area fills the row to its foot, with room under the calmest hour (0.9 m) for its
+            // value label under its point, and above the roughest one for its point and label: no label is cut at the
+            // chart's edges. The CTV and SWATH lines are far enough apart for a label above each
+            bottom         = 0,
+            top            = 2.9,
             // Above its line at the left. The value labels are under their points
             label          = (text, color) => ({
                 text,
                 color,
-                placement  : 'inside-top-left',
+                placement  : 'top-left',
                 padding    : 2,
                 fontSize   : 9,
                 fontWeight : 700,

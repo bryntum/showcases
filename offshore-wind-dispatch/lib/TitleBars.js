@@ -2,8 +2,8 @@ import { StringHelper } from '@bryntum/core-enterprise';
 import { icon } from './util/Icons.js';
 
 /**
- * The title bars above the schedule and the map, the phone tabs and the legend, as HTML. Their buttons carry a
- * `data-action` that DispatchApp#onAction handles.
+ * The title bars above the schedule and the map and the legend, as HTML. Their buttons carry a `data-action` that
+ * DispatchApp#onAction handles. The phone tabs are a Bryntum TabPanel (DispatchApp#updatePhone).
  */
 
 const pressed = on => on ? ' class="ow-pressed" aria-pressed="true"' : ' aria-pressed="false"';
@@ -47,17 +47,6 @@ export function sideBarHtml({ site, turbines, due, mapView }) {
             <button type="button" data-action="view" data-view="status"${pressed(mapView === 'status')}>Status</button>
             <button type="button" data-action="view" data-view="access"${pressed(mapView === 'access')}>Access</button>
         </span>`;
-}
-
-/**
- * The tabs on a phone
- * @param {String} tab `schedule` or `map`
- * @returns {String}
- */
-export function tabsHtml(tab) {
-    return `
-        <button type="button" data-action="tab" data-tab="schedule"${pressed(tab === 'schedule')}>Schedule</button>
-        <button type="button" data-action="tab" data-tab="map"${pressed(tab === 'map')}>Map</button>`;
 }
 
 /**

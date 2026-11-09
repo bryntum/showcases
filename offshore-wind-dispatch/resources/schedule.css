@@ -2,6 +2,8 @@
  * ranges, the shaded past and the now line, and the dependency line */
 
 .ow-scheduler {
+    /* The legs' bars inside a trip, under its head line */
+    --ow-seg-height            : 16px;
     --b-grid-row-border-color  : var(--ow-border);
     --b-grid-cell-border-color : var(--ow-border);
     --b-grid-row-border-width  : 1px;
@@ -23,13 +25,18 @@
     .b-grid-row.b-group-row {
         background-color : var(--ow-sunken);
 
+        /* Small and untracked, so "Crew transfer vessels" and its count fit the column */
         .b-grid-cell {
-            font-size      : 11px;
+            font-size      : 10px;
             font-weight    : 700;
-            letter-spacing : 0.05em;
+            letter-spacing : 0;
             text-transform : uppercase;
             color          : var(--ow-ink-sub);
             border-inline  : 0;
+        }
+
+        .ow-resource-cell.b-grid-cell.b-group-title {
+            padding-inline : 16px 8px;
         }
     }
 
@@ -125,12 +132,22 @@
     color       : var(--ow-ink-sub);
 }
 
+/* In the narrow phone column the name gives way (ellipsis), the count stays whole */
 .ow-group {
     display     : flex;
     align-items : center;
-    gap         : 8px;
+    gap         : 6px;
+    min-width   : 0;
+    white-space : nowrap;
+
+    span {
+        min-width     : 0;
+        overflow      : hidden;
+        text-overflow : ellipsis;
+    }
 
     small {
+        flex             : none;
         padding          : 0 6px;
         border-radius    : 8px;
         font-size        : 1em;
@@ -318,13 +335,19 @@
 }
 
 /* The legs, nested events. They let the pointer through to their trip, which is dragged, hovered and clicked as one
- * (a click on a stop finds it by time, DispatchApp#onTripClick). 1px each side and 3px below leave a gap between legs */
+ * (a click on a stop finds it by time, DispatchApp#onTripClick). 1px each side leaves a gap between legs.
+ *
+ * Centred in the trip's body under its head line: the feature makes each leg's box the trip's height less the head
+ * (`headerHeight`), which counts the trip's 1px top and bottom border in, so the box reaches 2px below the body. The
+ * bar is centred in that box with 2px kept free under it, which centres it in the body itself */
 .ow-scheduler .b-nested-event {
     pointer-events : none;
 
     > .b-sch-event.ow-seg {
+        box-sizing       : border-box;
         width            : calc(100% - 2px);
-        height           : calc(100% - 3px);
+        height           : var(--ow-seg-height);
+        margin-block     : 0 2px;
         margin-inline    : 1px;
         translate        : none;
         display          : flex;
@@ -337,17 +360,22 @@
         background       : none;
         font-size        : 11px;
         font-weight      : 400;
+        line-height      : 1;
         white-space      : nowrap;
         overflow         : hidden;
 
+        /* The turbine and its hours, or the vessel's icon, in the middle of the bar both ways */
         > .b-sch-event-content {
-            display     : flex;
-            align-items : center;
-            gap         : 4px;
-            margin      : 0;
-            padding     : 0;
-            font-size   : 1em;
-            line-height : normal;
+            display         : flex;
+            flex            : 0 1 auto;
+            align-items     : center;
+            justify-content : center;
+            gap             : 4px;
+            min-width       : 0;
+            margin          : 0;
+            padding         : 0;
+            font-size       : 1em;
+            line-height     : 1;
         }
 
         small {
@@ -366,8 +394,8 @@
         }
 
         .ow-icon {
-            width  : 16px;
-            height : 16px;
+            width  : 14px;
+            height : 14px;
         }
     }
 
@@ -405,6 +433,11 @@
     &.ow-dep-moved {
         display : none;
     }
+}
+
+/* The links that keep a trip's legs in order, for the scheduling engine (TripModel#chainData), are not drawn */
+.ow-scheduler .b-sch-dependency.ow-dep-chain {
+    display : none;
 }
 
 /* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by default

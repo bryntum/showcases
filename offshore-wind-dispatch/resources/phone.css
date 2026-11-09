@@ -33,17 +33,46 @@
         }
     }
 
-    .ow-tabs.b-widget {
-        display : flex;
-        margin  : 8px 12px;
+    /* The schedule and the map as the tabs of a Bryntum TabPanel (DispatchApp#updatePhone), its tab bar styled as a
+       segmented control */
+    .ow-tabs.b-tabpanel {
+        --b-panel-padding : 0;
 
-        button {
-            flex   : 1;
-            height : 30px;
+        border-radius : 0;
+    }
+
+    .ow-tab-bar.b-tab-bar {
+        min-height         : 0;
+        margin             : 8px 12px;
+        padding            : 2px;
+        gap                : 0;
+        border-radius      : 7px;
+        background-color   : var(--b-neutral-95);
+        border-block-end   : 0;
+
+        .b-tab {
+            flex          : 1;
+            min-height    : 30px;
+            margin        : 0;
+            border        : 0;
+            border-radius : 5px;
+            font-size     : 13px;
+            font-weight   : 500;
+            color         : var(--ow-ink);
+            background    : none;
+
+            &::after, &::before {
+                display : none;
+            }
+
+            &.b-active {
+                background-color : var(--ow-surface);
+                box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+            }
         }
     }
 
-    .ow-main {
+    .ow-tabs > .b-panel-body-wrap > .b-panel-content {
         border-block-start : 1px solid var(--ow-border);
     }
 
@@ -73,8 +102,17 @@
         overflow-x : auto;
     }
 
-    .ow-axis-label .ow-axis-row, .ow-resource-cell.b-grid-cell {
+    .ow-axis-label .ow-axis-row, .ow-resource-cell.b-grid-cell,
+    .ow-scheduler .b-group-row .ow-resource-cell.b-grid-cell.b-group-title {
         padding-inline-start : 10px;
+    }
+
+    /* "Forecast" over its time, the narrow column holds it on two lines */
+    .ow-axis-forecast {
+        display         : inline-block;
+        max-inline-size : 5em;
+        white-space     : normal;
+        line-height     : 1.25;
     }
 
     .ow-resource-icon {

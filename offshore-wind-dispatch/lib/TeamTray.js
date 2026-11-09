@@ -13,7 +13,7 @@ import { icon } from './util/Icons.js';
 /**
  * A team's chip, also the one following the pointer while it is dragged
  * @param {Object} team `{ id, name, techs, certs }`
- * @param {Object} job `{ turbine, job, minutes }`
+ * @param {Object} job `{ turbine, job, short, minutes }`, `short` names the job in a few words for the chip
  * @param {Boolean} [compact] Its letter, name and certificates only
  * @returns {String} HTML
  */
@@ -26,13 +26,13 @@ export function teamChipHtml(team, job, compact = false) {
         return `<span class="ow-team-avatar">${text(team.id)}</span><b>${text(team.name)}</b>${certs}`;
     }
 
+    // The certificates on the name's line, so the chip is no wider than its job's line
     return `
         <span class="ow-team-avatar">${text(team.id)}</span>
         <span class="ow-team-text">
-            <span><b>${text(team.name)}</b> · ${team.techs} techs</span>
-            <span class="ow-team-job">${text(job.turbine)} · ${text(job.job)} · ${duration(job.minutes)}</span>
-        </span>
-        <span class="ow-certs">${certs}</span>`;
+            <span class="ow-team-name"><span><b>${text(team.name)}</b> · ${team.techs} techs</span><span class="ow-certs">${certs}</span></span>
+            <span class="ow-team-job">${text(job.turbine)} · ${text(job.short ?? job.job)} · ${duration(job.minutes)}</span>
+        </span>`;
 }
 
 export default class TeamTray extends Widget {
@@ -65,7 +65,7 @@ export default class TeamTray extends Widget {
         this.html = `
             <span class="ow-tray-title">${icon('anchor')} Waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')}</span>
             ${chips || '<span class="ow-tray-empty">Every team has a trip</span>'}
-            <span class="ow-tray-hint">Drag a team onto a trip</span>`;
+            <span class="ow-tray-hint">Drag a team onto a vessel</span>`;
     }
 }
 
