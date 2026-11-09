@@ -11,7 +11,7 @@
     color            : var(--ow-ink);
     /* The shell paints the frame of the app panel (shared/shell.css), the page colour goes over it */
     background-color : var(--b-panel-background);
-    font-size        : 13px;
+    font-size        : var(--ow-size-base);
 
     small {
         font-size : 0.85em;

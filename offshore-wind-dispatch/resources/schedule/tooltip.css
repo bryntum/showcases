@@ -5,14 +5,14 @@
     --ow-tip-tone : var(--ow-c-work);
 
     min-width : 17rem;
-    font-size : 12px;
+    font-size : var(--ow-size-sm);
     color     : var(--ow-ink);
 
     header {
         display     : flex;
         align-items : center;
-        gap         : 8px;
-        margin      : 0 0 10px;
+        gap         : 0.667em;
+        margin      : 0 0 0.8334em;
     }
 
     .ow-tip-vessel {
@@ -20,14 +20,14 @@
         color   : var(--ow-ink-sub);
 
         .ow-icon {
-            width  : 20px;
-            height : 20px;
+            width  : 1.667em;
+            height : 1.667em;
         }
     }
 
     .ow-tip-title {
         flex        : 1;
-        font-size   : 13px;
+        font-size   : var(--ow-size-base);
         white-space : nowrap;
 
         b {
@@ -37,9 +37,9 @@
 
     /* How the trip stands against its window: a quiet blue tint, orange when it is late */
     .ow-tip-status {
-        padding          : 3px 10px;
+        padding          : 0.273em 0.9091em;
         border-radius    : 99px;
-        font-size        : 11px;
+        font-size        : var(--ow-size-xs);
         font-weight      : 600;
         line-height      : 1;
         white-space      : nowrap;
@@ -55,8 +55,8 @@
     /* The trip from departure to return: its line, the work on it in proportion, the window's close */
     .ow-tip-track {
         position         : relative;
-        height           : 14px;
-        margin-block     : 0 12px;
+        height           : 1.167em;
+        margin-block     : 0 1em;
 
         &::before {
             content           : '';
@@ -72,9 +72,9 @@
         position         : absolute;
         inset-block      : 0;
         box-sizing       : border-box;
-        min-inline-size  : 3px;
+        min-inline-size  : 0.25em;
         border           : 1px solid var(--ow-c-work-line);
-        border-radius    : 3px;
+        border-radius    : 0.25em;
         background-color : var(--ow-c-work-tint);
         box-shadow       : 0 0 0 2px var(--ow-surface);
 
@@ -86,7 +86,7 @@
 
     .ow-tip-close {
         position         : absolute;
-        inset-block      : -3px;
+        inset-block      : -0.25em;
         inline-size      : 0;
         border-inline-start : 1.5px dashed var(--ow-c-risk-line);
     }
@@ -94,7 +94,7 @@
     dl {
         display               : grid;
         grid-template-columns : auto 1fr;
-        gap                   : 4px 14px;
+        gap                   : 0.3334em 1.167em;
         margin                : 0;
     }
 

@@ -109,20 +109,20 @@
     }
 }
 
-/* "SP-1 · Team C · 4 pax", 11px muted, from the departure on: back by the sail out (--ow-pre, TripRendering.js) */
+/* "SP-1 · Team C · 4 pax", small and muted, from the departure on: back by the sail out (--ow-pre, TripRendering.js) */
 .ow-trip-head {
     display             : flex;
     align-items         : center;
-    gap                 : 8px;
+    gap                 : 0.7273em;
     height              : var(--b-nested-events-header-height);
     margin-inline-start : calc(-1 * var(--ow-pre, 0px));
-    font-size           : 11px;
+    font-size           : var(--ow-size-xs);
     color       : var(--ow-c-muted);
     white-space : nowrap;
 
     /* No box of its own (it showed on a selected row's tint); the 1 px now line may cross it */
     > span {
-        padding-inline : 2px;
+        padding-inline : 0.182em;
     }
 
     /* A forecast's change, quiet */

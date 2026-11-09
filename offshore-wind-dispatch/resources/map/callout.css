@@ -3,9 +3,9 @@
 .ow-map-callout {
     flex             : 1 1 auto;
     min-width        : 0;
-    padding          : 7px 10px;
-    border-radius    : 7px;
-    font-size        : 12px;
+    padding          : 0.5834em 0.8334em;
+    border-radius    : 0.4375rem;
+    font-size        : var(--ow-size-sm);
     color            : var(--ow-ink);
     background-color : color-mix(in srgb, var(--ow-surface) 88%, transparent);
     border           : 1px solid color-mix(in srgb, var(--ow-reach) 45%, transparent);

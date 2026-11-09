@@ -8,7 +8,7 @@
     display               : grid;
     grid-template-columns : var(--ow-art-w) minmax(0, 1fr);
     align-items           : stretch;
-    gap                   : 10px;
+    gap                   : 0.625rem;
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
     &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
@@ -21,12 +21,12 @@
 }
 
 .ow-card.b-widget {
-    /* 20px narrower than in the tooltip, so the status line beside it stays whole within the card's padding */
-    --ow-art-w : 104px;
+    /* 1.25rem narrower than in the tooltip, so the status line beside it stays whole within the card's padding */
+    --ow-art-w : 6.5rem;
 
     flex             : none;
     box-sizing       : border-box;
-    padding          : 16px;
+    padding          : var(--ow-inset);
     background-color : var(--ow-surface);
     border-radius    : var(--ow-card-radius);
     box-shadow       : var(--ow-card-shadow);
@@ -45,6 +45,7 @@
     align-items : flex-end;
 }
 
+/* In the illustration's SVG units */
 .ow-turbine-label {
     font-size   : 8.5px;
     font-weight : 700;
@@ -68,16 +69,16 @@
 .ow-card-body {
     display        : flex;
     flex-direction : column;
-    gap             : 4px;
+    gap             : 0.25rem;
     justify-content : space-between;
     min-width       : 0;
 
     dl {
         display               : grid;
         grid-template-columns : auto 1fr;
-        gap                   : 3px 10px;
+        gap                   : 0.25em 0.8334em;
         margin                : 0;
-        font-size             : 12px;
+        font-size             : var(--ow-size-sm);
     }
 
     dt {
@@ -95,10 +96,10 @@
     display     : flex;
     flex-wrap   : wrap;
     align-items : baseline;
-    gap         : 0 8px;
+    gap         : 0 0.5rem;
 
     b {
-        font-size   : 18px;
+        font-size   : var(--ow-size-xl);
         font-weight : 700;
     }
 
@@ -114,10 +115,10 @@
 .ow-card-note {
     display          : flex;
     align-items      : center;
-    gap              : 4px;
-    padding          : 4px 5px;
-    border-radius    : 6px;
-    font-size        : 10.5px;
+    gap              : 0.381em;
+    padding          : 0.381em 0.4762em;
+    border-radius    : 0.375rem;
+    font-size        : 0.65625rem;
     font-weight      : 400;
     color            : color-mix(in srgb, var(--ow-tone) 75%, var(--ow-ink));
     background-color : color-mix(in srgb, var(--ow-tone) 12%, transparent);
@@ -148,12 +149,12 @@
 .ow-card-rating {
     display             : inline-flex;
     align-items         : center;
-    gap                 : 3px;
+    gap                 : 0.273em;
     /* At the right end of the title line; a little less on the icon's side, whose glyph has its own space */
     margin-inline-start : auto;
-    padding             : 3px 10px 3px 8px;
+    padding             : 0.273em 0.9091em 0.273em 0.7273em;
     border-radius       : 99px;
-    font-size           : 11px;
+    font-size           : var(--ow-size-xs);
     line-height         : 1;
     font-weight         : 500;
     color               : var(--ow-ink-sub);

@@ -29,10 +29,10 @@
    through to the map where it is empty */
 .ow-map-top {
     position       : absolute;
-    inset          : 10px 10px auto;
+    inset          : 0.625rem 0.625rem auto;
     display        : flex;
     align-items    : flex-start;
-    gap            : 8px;
+    gap            : 0.5rem;
     pointer-events : none;
 
     > * {

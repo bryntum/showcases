@@ -69,38 +69,55 @@
     --ow-c-chart-fill  : light-dark(rgb(31 111 184 / 10%), rgb(90 160 230 / 14%));
     --ow-c-chart-risk  : light-dark(rgb(224 123 0 / 12%), rgb(240 150 46 / 14%));
 
-    /* Sizes */
+    /* The type scale, in rem: the app's text is 13px (layout/app.css), titles a step up, notes and labels steps down */
+    --ow-size-2xs       : 0.625rem;
+    --ow-size-xs        : 0.6875rem;
+    --ow-size-sm        : 0.75rem;
+    --ow-size-base      : 0.8125rem;
+    --ow-size-md        : 0.875rem;
+    --ow-size-lg        : 1rem;
+    --ow-size-xl        : 1.125rem;
+    --ow-size-kpi       : 1.1875rem;
+
+    /* Sizes. The timeline's are px: its rows, ticks and margins are px in the Scheduler's configs
+       (DispatchScheduler.js) */
+    /* The work blocks' height, as the NestedEvents feature sizes them in a trip's row */
     --ow-c-block        : 28px;
     /* The transit line and the rings of its end dots, the hollow dot's outer size and the solid one's */
     --ow-transit-w      : 1px;
     --ow-dot-out        : 8px;
     --ow-dot-back       : 6px;
-    --ow-size-kpi       : 19px;
-    --ow-bar-control    : 30px;
+    --ow-bar-control    : 1.875rem;
+    /* The KPI header over the cards and the schedule's footer */
+    --ow-header-h       : 4.5rem;
+    --ow-footer-h       : 2.25rem;
     /* A card's inner inset: its title bar, its left column, and the header and crews tray lined up with them */
-    --ow-inset          : 16px;
-    --ow-bar-inset      : 12px;
+    --ow-inset          : 1rem;
+    --ow-bar-inset      : 0.75rem;
+    /* The map's inline margin in its card, px as MapPanel.js sets it: the title bar and the legend line up with it */
+    --ow-map-margin     : 16px;
     /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
        the corner curve ends. A card concentric with it would have that radius less the padding, none at all: the
        cards keep a radius of their own */
-    --ow-frame-radius   : 24px;
+    --ow-frame-radius   : 1.5rem;
     --ow-gutter         : var(--ow-frame-radius);
-    /* The map's card's width (MapPanel), the header's counts over it are as wide */
+    /* The map's card's width, px as MapPanel.js sets it; the header's counts over it are as wide */
     --ow-rail-w         : 400px;
-    --ow-card-radius    : 8px;
+    --ow-card-radius    : 0.5rem;
     /* One soft, diffuse shadow, no ring: a ring with an offset shadow read as a second, darker edge. In dark the cards
        are a step lighter than the frame, which already sets them off */
     --ow-card-shadow    : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
-    --ow-c-radius       : 4px;
+    --ow-c-radius       : 0.25rem;
 
-    /* Shadows: the pressed segment of a segmented control, a crew's card in the tray, the card following the pointer
-       in a drag and the tooltip beside it */
+    /* Shadows, px: the pressed segment of a segmented control, a crew's card in the tray, the card following the
+       pointer in a drag and the tooltip beside it */
     --ow-shadow-raised  : 0 1px 2px rgb(0 0 0 / 12%);
     --ow-shadow-chip    : 0 1px 3px rgb(0 0 0 / 8%);
     --ow-shadow-lifted  : 0 10px 24px rgb(0 0 0 / 22%);
     --ow-shadow-float   : 0 10px 30px rgb(0 0 0 / 20%);
     /* Shared by the Day and the Week view: the weather no-go hatch (a helicopter's purple tinted), and the drop target of
-       a crew held over a trip or a free day, a subtle blue tint with a thin blue outline */
+       a crew held over a trip or a free day, a subtle blue tint with a thin blue outline. In px, as the rows they are
+       in */
     --ow-hatch             : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
     --ow-hatch-heli        : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
     --ow-drop-outline      : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);

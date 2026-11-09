@@ -9,7 +9,8 @@
     /* A selected row: a quiet tint in the work blue across the whole row, the vessel cell included, hovered or not */
     --b-grid-cell-selected-background       : var(--ow-c-row-selected);
     --b-grid-cell-hover-selected-background : var(--ow-c-row-selected);
-    /* The group rows, Vessels and Helicopters, a slim band in muted semibold. The Group feature sizes them from this */
+    /* The group rows, Vessels and Helicopters, a slim band in muted semibold. The Group feature sizes them from this,
+       read as px */
     --b-group-row-height                    : 28px;
     --b-group-header-background             : var(--ow-c-footer);
     --b-group-header-color                  : var(--ow-c-muted);
@@ -27,13 +28,13 @@
     .ow-resource-cell.b-grid-cell {
         --b-grid-cell-background       : var(--ow-surface);
         --b-grid-cell-hover-background : var(--ow-surface);
-        --b-grid-cell-padding-inline   : var(--ow-column-inset) 8px;
+        --b-grid-cell-padding-inline   : var(--ow-column-inset) 0.5rem;
     }
 
     /* Group rows: Vessels, Helicopters */
     .b-grid-row.b-group-row {
         .b-grid-cell {
-            --b-grid-cell-font-size : 11px;
+            --b-grid-cell-font-size : var(--ow-size-xs);
 
             letter-spacing : 0.06em;
             text-transform : uppercase;
