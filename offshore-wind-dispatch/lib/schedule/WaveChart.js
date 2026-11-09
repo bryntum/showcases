@@ -163,7 +163,7 @@ export default class WaveChart {
             series     : [me.series(colors, tone), me.valueLabels(tone)],
             axes       : {
                 x : me.timeAxis(colors, color('--ow-ink-sub'), color('--ow-grid')),
-                y : me.heightAxis(colors)
+                y : me.heightAxis()
             }
         };
     }
@@ -281,7 +281,9 @@ export default class WaveChart {
     }
 
     // Metres, with the CTV and SWATH limits as dashed lines and the heights above them tinted
-    heightAxis(colors) {
+    heightAxis() {
+        const color = cssColor;
+
         const
             { ctv, swath } = this.limits,
             // From calm water, so the area fills the row to its foot, with room under the calmest hour (0.9 m) for its
@@ -290,14 +292,25 @@ export default class WaveChart {
             bottom         = 0,
             top            = 2.9,
             // Above its line at the left. The value labels are under their points
-            label          = (text, color) => ({
+            // Small and quiet, at the right end of its line
+            neutral        = color(this.element, '--ow-ink-faint'),
+            label          = (text, placement) => ({
                 text,
-                color,
-                placement  : 'top-left',
+                color      : neutral,
+                placement,
                 padding    : 2,
                 fontSize   : 9,
-                fontWeight : 700,
+                fontWeight : 500,
                 fontFamily
+            }),
+            line           = (value, text, placement) => ({
+                type        : 'line',
+                value,
+                stroke      : neutral,
+                lineDash    : [3, 3],
+                strokeWidth : 1,
+                strokeOpacity : 0.6,
+                label       : label(text, placement)
             });
 
         return {
@@ -312,24 +325,8 @@ export default class WaveChart {
             tick       : { enabled : false },
             gridLine   : { enabled : false },
             crossLines : [
-                { type : 'range', range : [ctv, swath], fill : colors.amber, fillOpacity : 0.07, strokeWidth : 0 },
-                { type : 'range', range : [swath, top], fill : colors.red, fillOpacity : 0.07, strokeWidth : 0 },
-                {
-                    type        : 'line',
-                    value       : ctv,
-                    stroke      : colors.amber,
-                    lineDash    : [4, 3],
-                    strokeWidth : 1,
-                    label       : label(`CTV ${ctv.toFixed(1)}`, colors.amber)
-                },
-                {
-                    type        : 'line',
-                    value       : swath,
-                    stroke      : colors.red,
-                    lineDash    : [4, 3],
-                    strokeWidth : 1,
-                    label       : label(`SWATH ${swath.toFixed(1)}`, colors.red)
-                }
+                line(ctv, `CTV ${ctv.toFixed(1)}`, 'bottom-right'),
+                line(swath, `SWATH ${swath.toFixed(1)}`, 'top-right')
             ]
         };
     }

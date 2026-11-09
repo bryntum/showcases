@@ -58,11 +58,16 @@
             border-inline-color  : var(--ow-row-line);
         }
 
-        /* The hours sit in the top of their row, the now line's time is docked at its bottom (below) */
-        .ow-hour-cell {
-            align-items         : flex-start;
-            padding-block-start : 1px;
-            line-height         : 14px;
+        /* The hours are centred in their row, on the same middle line as the now pill (below) */
+        .ow-hour-cell, .ow-day-cell {
+            align-items         : center;
+            padding-block       : 0;
+            line-height         : 1;
+        }
+
+        /* Hidden while the now pill covers it (ForecastHeader.js) */
+        .ow-hour-cell.ow-covered {
+            color : transparent;
         }
 
         /* One cell over the whole day, the label stays in view while the hours scroll (phones) */
@@ -248,21 +253,21 @@
         inset-block-start   : var(--ow-row-day);
         height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
 
-        /* The time, docked at the bottom of the hours row, above the wave chart and under the hour labels, which sit
-           in the top of their row. It starts at the line, so it keeps clear of the hour the line is in */
+        /* The time, a pill centred on the line and on the hours row's middle line, over the hour label it covers */
         label {
             position           : absolute;
-            inset-block-start  : calc(var(--ow-row-hours) - 13px);
+            inset-block-start  : calc((var(--ow-row-hours) - 14px) / 2);
             inset-block-end    : auto;
-            inset-inline-start : -1px;
+            inset-inline-start : 0;
+            transform          : translateX(-50%);
             box-sizing         : border-box;
-            height             : 12px;
-            padding          : 0 5px 0 4px;
+            height             : 14px;
+            padding          : 0 5px;
             white-space      : nowrap;
-            border-radius    : 0 6px 6px 0;
+            border-radius    : 7px;
             font-size        : 9.5px;
             font-weight      : 700;
-            line-height      : 12px;
+            line-height      : 14px;
             font-variant-numeric : tabular-nums;
             color            : #fff;
             background-color : var(--ow-now);
