@@ -158,11 +158,22 @@ export function weatherText(limit) {
 }
 
 /**
+ * Why a trip back at a time does not fit before its window closes, the wording of the drag tooltips
+ * @param {Number} back Minutes since midnight
+ * @param {Number} close When the window closes, minutes since midnight
+ * @param {Object} limit `{ name, hs }` or `{ name, wind }`
+ * @returns {String} "Back in port 14:35, the CTV window closes 14:00 (waves over 1.5 m)"
+ */
+export function noGoText(back, close, limit) {
+    return `Back in port ${hhmm(back)}, the ${limit.name} window closes ${hhmm(close)} (${weatherText(limit)})`;
+}
+
+/**
  * The first dispatch rule a team on a trip breaks, as a sentence for the tooltip and the card, and short for the drag
  * proxy. One check gives both, so they never disagree
  * @returns {String[]} `[reason, short]`, `[null, null]` when it breaks none
  */
-function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back }) {
+function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at }) {
     const
         missing = (job.certs ?? []).filter(cert => !team.certs.includes(cert)),
         late    = back - close;
@@ -188,11 +199,12 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back })
     }
 
     if (late > 0) {
-        return [
-            `Back at port ${hhmm(back)}, ${duration(late)} after the ${limit.name} weather window closes at ` +
-                `${hhmm(close)} (${weatherText(limit)})`,
-            `${duration(late)} after window`
-        ];
+        return [noGoText(back, close, limit), `${duration(late)} after window`];
+    }
+
+    // Dropped where the weather is already over the limit
+    if (at != null && at >= close) {
+        return [noGoText(back, close, limit), 'In weather no-go'];
     }
 
     return [null, null];
@@ -208,15 +220,16 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back })
  * @param {Object} options.limit The trip's weather limit, `{ name, hs }` or `{ name, wind }`
  * @param {Number} options.now
  * @param {String} options.vessel The vessel's name, for the messages
+ * @param {Number} [options.at] Where on the time axis the team is dropped, minutes. Not inside the no-go range
  * @returns {Object} `{ valid, reason, short, stops, stop, back, margin, seats, certs }`. `reason` is a sentence,
  * `short` a few words for the drag proxy: why it does not fit, or "Fits SR-1, back 12:40"
  */
-export function previewDrop({ trip, team, job, close, limit, now, vessel }) {
+export function previewDrop({ trip, team, job, close, limit, now, vessel, at }) {
     const
         { stops, stop, back } = appendStop(trip,
             { turbine : job.turbine, minutes : job.minutes, team : team.id, preview : true }),
         seats                 = trip.pax + team.techs,
-        [reason, short]       = brokenRule({ trip, team, job, close, limit, now, vessel, seats, back });
+        [reason, short]       = brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at });
 
     return {
         valid  : !reason,

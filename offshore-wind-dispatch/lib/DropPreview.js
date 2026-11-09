@@ -51,19 +51,24 @@ export default Target => class DropPreview extends Target {
      * the turbine
      * @param {String} teamId
      * @param {TripModel|VesselModel|null} target The trip or the vessel's row the team is held over
+     * @param {Number|null} [at] Minutes since midnight at the point held on the time axis, none from the keyboard
      * @returns {Object|null} `{ target, trip, team, job, result, reach, close }`
      */
-    previewDrop(teamId, target) {
-        const me = this;
+    previewDrop(teamId, target, at = null) {
+        const
+            me      = this,
+            vessel  = target instanceof TripModel ? target.resource : target,
+            // Held where the weather is over the vessel's limit
+            blocked = at != null && at >= me.dispatch.closeOf(vessel);
 
-        if (me.drop?.target === target && me.drop?.team.id === teamId) {
+        if (me.drop?.target === target && me.drop?.team.id === teamId && (me.drop.at != null) === blocked) {
             return me.drop;
         }
 
         me.clearPreview();
 
         if (target) {
-            me.holdPreview(teamId, target);
+            me.holdPreview(teamId, target, blocked ? at : null);
         }
 
         me.refreshSide();
@@ -75,9 +80,10 @@ export default Target => class DropPreview extends Target {
      * Previews a team's stop on the trip it goes on, checked against the plan and the forecast as they are now
      * @param {String} teamId
      * @param {TripModel|VesselModel} target
+     * @param {Number|null} [at] Minutes since midnight at the point held, when that is in the vessel's no-go range
      * @returns {Object|null} See previewDrop, `null` when the team no longer waits
      */
-    holdPreview(teamId, target) {
+    holdPreview(teamId, target, at = null) {
         const
             me    = this,
             entry = me.waitingTeam(teamId);
@@ -90,8 +96,8 @@ export default Target => class DropPreview extends Target {
             { team, job }          = entry,
             { plan, trip, vessel } = me.tripFor(target, team, job),
             close                  = me.dispatch.closeOf(vessel),
-            result          = me.checkPlan(plan, vessel, team, job),
-            stop            = stopOf(team, job, true);
+            result          = me.checkPlan(plan, vessel, team, job, at),
+            stop           = stopOf(team, job, true);
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
         // on a helicopter, which never takes a team
@@ -102,7 +108,9 @@ export default Target => class DropPreview extends Target {
             trip.layout({ stops : [...trip.stops, stop] });
         }
 
-        return me.drop = { target, trip : held, team, job, result, close, reach : reachable(plan, job.minutes, close) };
+        return me.drop = {
+            target, at, trip : held, team, job, result, close, reach : reachable(plan, job.minutes, close)
+        };
     }
 
     /**
@@ -170,7 +178,7 @@ export default Target => class DropPreview extends Target {
     }
 
     // Whether a team's job fits on a trip's plan, on a vessel
-    checkPlan(plan, vessel, team, job) {
+    checkPlan(plan, vessel, team, job, at = null) {
         const { dispatch } = this;
 
         return previewDrop({
@@ -180,7 +188,8 @@ export default Target => class DropPreview extends Target {
             close  : dispatch.closeOf(vessel),
             limit  : dispatch.limits[vessel.window],
             now    : dispatch.now,
-            vessel : vessel.name
+            vessel : vessel.name,
+            at
         });
     }
 

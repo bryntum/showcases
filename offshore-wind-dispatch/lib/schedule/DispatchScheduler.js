@@ -9,7 +9,8 @@ import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
-import { toDate } from '../util/Time.js';
+import { toDate, toMinutes } from '../util/Time.js';
+import { noGoText } from '../plan/Planner.js';
 
 const
     // The trips' place in their 64px row: 7px above, 14px below, room for the dependency line to pass under a trip
@@ -315,7 +316,9 @@ export default class DispatchScheduler extends Scheduler {
         me.forecastHeader.refresh();
     }
 
-    validateTripDrag({ eventRecords, startDate }) {
+    validateTripDrag(context) {
+        const { eventRecords, startDate } = context;
+
         const
             trip  = eventRecords[0],
             now   = toDate(this.dispatch.now);
@@ -327,6 +330,16 @@ export default class DispatchScheduler extends Scheduler {
         // Trips under way are not draggable at all (their `draggable` field, DispatchApp#evaluate)
         if (startDate < now) {
             return { valid : false, message : 'Cannot leave port in the past' };
+        }
+
+        // Out at sea while the vessel's weather is over its limit
+        const
+            vessel = (context.newResource ?? trip.resource),
+            close  = this.dispatch.closeOf(vessel),
+            back   = toMinutes(startDate) + trip.endMinute - trip.departs;
+
+        if (back > close) {
+            return { valid : false, message : noGoText(back, close, this.dispatch.limits[vessel.window]) };
         }
 
         // A stop that waits for another trip is not refused: the engine starts it once that trip is back

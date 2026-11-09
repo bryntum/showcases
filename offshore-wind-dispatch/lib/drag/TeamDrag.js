@@ -1,5 +1,6 @@
 import { DragHelper, Widget } from '@bryntum/core-enterprise';
 import { createChip, showOnChip } from './DragChip.js';
+import { toMinutes } from '../util/Time.js';
 import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
 // Also registers the tooltip type used below
 import './DropTooltip.js';
@@ -199,7 +200,9 @@ export default class TeamDrag {
     hover(target, point) {
         const
             me   = this,
-            drop = me.handler.previewDrop(me.team, target);
+            // Where on the time axis the team is held, the keyboard has no point
+            at   = me.keys.keyboard ? null : toMinutes(me.scheduler.getDateFromCoordinate(point.x, null, false)),
+            drop = me.handler.previewDrop(me.team, target, at);
 
         showOnChip(me.keys.held ?? me.proxy, drop);
 

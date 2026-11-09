@@ -217,7 +217,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
     async replan(change) {
         const
             me   = this,
-            held = me.drop && { teamId : me.drop.team.id, target : me.drop.target };
+            held = me.drop && { teamId : me.drop.team.id, target : me.drop.target, at : me.drop.at };
 
         me.replanning = true;
         me.clearPreview();
@@ -239,7 +239,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
 
         // Held again, unless the pointer has moved on to another trip meanwhile
         if (held && !me.drop) {
-            me.holdPreview(held.teamId, held.target);
+            me.holdPreview(held.teamId, held.target, held.at);
         }
 
         me.refreshAll();

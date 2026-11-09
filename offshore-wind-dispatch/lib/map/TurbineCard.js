@@ -103,7 +103,8 @@ function describe(state, turbine) {
         sub    : `${rowName(turbine)}${state.faults.has(turbine) ? ' · stopped' : ''}`,
         rating : `${state.site.turbineMw.toFixed(1)} MW`,
         job    : job?.job ?? 'No work due today',
-        team   : team ? `${team.name} · ${team.certs.join(', ')}` : '–'
+        // Every technician has the GWO basics, only a certificate that limits where a team can go is worth a word
+        team   : team ? [team.name, team.certs.filter(cert => cert !== 'GWO').join(', ')].filter(Boolean).join(' · ') : '–'
     };
 }
 

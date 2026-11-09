@@ -283,6 +283,31 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
         await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
     });
 
+    test('a trip dragged so that it is at sea when its window has closed is invalid, and says why', async({ page }) => {
+        await open(page);
+
+        const
+            hour = await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.tickSize),
+            box  = await trip(page, 'NT-1').boundingBox(),
+            from = { x : box.x + 30, y : box.y + 4 };
+
+        await page.mouse.move(from.x, from.y);
+        await page.mouse.down();
+
+        // Two hours later it would be back at 14:11, after the CTV window closed at 14:00
+        for (let step = 1; step <= 10; step++) {
+            await page.mouse.move(from.x + hour * 2 * step / 10, from.y);
+        }
+
+        // The feature's own drag tooltip carries the message, the trip is drawn invalid
+        await expect(page.locator('.b-tooltip', { hasText : 'Back in port 14:11, the CTV window closes 14:00 (waves over 1.5 m)' }))
+            .toBeVisible();
+        await expect(page.locator('.b-drag-invalid')).not.toHaveCount(0);
+
+        await page.keyboard.press('Escape');
+        await page.mouse.up();
+    });
+
     test('a trip dragged while a team is held over it is checked again from its new departure', async({ page }) => {
         await open(page, '?state=drag');
 
@@ -601,12 +626,33 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         console.log(results.map(each => `${each.team} → ${each.vessel} (${each.trip}): ${each.valid ? 'fits' : each.reason}`)
             .join('\n'));
 
-        expect(fits).toEqual(['F on NT-1']);
-        expect(results.filter(each => !each.valid).length).toBe(results.length - 1);
+        // Dropped at the end of the day, inside every window's no-go range: none fits there
+        expect(fits).toEqual([]);
 
-        // Refused in plain words: when it would be back against the window and the weather that closes it
+        // Refused in plain words: when it would be back and the window that closes, with the weather that closes it
         expect(results.find(each => each.team === 'G' && each.vessel === 'Northern Tern').reason)
-            .toMatch(/^Back at port \d\d:\d\d, (\d+ h )?\d+ min after the CTV weather window closes at 14:00 \(waves over 1\.5 m\)$/);
+            .toBe('Back in port 17:47, the CTV window closes 14:00 (waves over 1.5 m)');
+        // Not only trips that come back late: F would be back at 13:19, but is dropped at the end of the day
+        expect(results.find(each => each.team === 'F' && each.vessel === 'Northern Tern').reason)
+            .toBe('Back in port 13:19, the CTV window closes 14:00 (waves over 1.5 m)');
+
+        // The same team dropped on the same row before the window closes fits
+        const
+            axisBox = await scheduler(page).locator('.b-time-axis-sub-grid').boundingBox(),
+            rowBox  = await scheduler(page).locator('.b-grid-row[data-id="nt"]').first().boundingBox(),
+            noon    = await page.evaluate(() => {
+                const { scheduler : s } = globalThis.bryntum.query('dispatchapp');
+
+                return s.getCoordinateFromDate(new Date(s.startDate.getFullYear(), s.startDate.getMonth(),
+                    s.startDate.getDate(), 12), true);
+            });
+
+        await holdAt(page, 'F', { x : axisBox.x + noon, y : rowBox.y + rowBox.height / 2 });
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop?.result.valid))
+            .toBe(true);
+        await page.keyboard.press('Escape');
+        await page.mouse.up();
+
         // A vessel with no trip left to join gets a new trip from port
         expect(results.find(each => each.team === 'F' && each.vessel === 'Skarv Runner').trip).toBe('SR-2');
         expect(results.find(each => each.team === 'F' && each.vessel === 'Heli 1').short).toBe('Vessels only');
