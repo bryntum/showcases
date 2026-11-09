@@ -295,18 +295,20 @@ export default Target => class DropPreview extends Target {
 
         me.clearFitting();
         entry && me.dropTargets().filter(trip => me.checkDrop(trip, entry.team, entry.job).valid)
-            .forEach(trip => TripModel.fitting.add(trip));
+            .forEach(trip => me.scheduler.fittingTrips.add(trip));
         me.outlineFitting(true);
     }
 
     clearFitting() {
         this.outlineFitting(false);
-        TripModel.fitting.clear();
+        this.scheduler.fittingTrips.clear();
     }
 
     // The outline is the trip's class, put on its element now, no redraw (the renderer keeps it on a later one)
     outlineFitting(on) {
-        TripModel.fitting.forEach(trip => this.scheduler.getElementFromEventRecord(trip)
+        const { scheduler } = this;
+
+        scheduler.fittingTrips.forEach(trip => scheduler.getElementFromEventRecord(trip)
             ?.classList.toggle('ow-trip-fits', on));
     }
 

@@ -138,10 +138,11 @@ function renderLeg(leg, renderData, close, typeOf) {
  * @param {Number} options.close When the trip's window closes
  * @param {Number} options.sailOut How wide the trip's sail out is drawn, px
  * @param {Number} options.firstSailing When the next day's first trips sail, minutes since midnight
+ * @param {Boolean} options.dropFit A team is dragged and would fit on the trip
  * @param {Function} options.typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstSailing, typeOf }) {
+export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstSailing, dropFit, typeOf }) {
     if (eventRecord.isLeg) {
         return renderLeg(eventRecord, renderData, close, typeOf);
     }
@@ -157,7 +158,7 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstS
     renderData.cls[`ow-trip-${trip.status}`] = 1;
     renderData.cls['ow-trip-heli']           = trip.mode === 'heli';
     renderData.cls['ow-trip-drop']           = trip.hasPreview;
-    renderData.cls['ow-trip-fits']           = trip.dropFit;
+    renderData.cls['ow-trip-fits']           = dropFit;
 
     // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
     // the trip's start: the legs' container is shifted back by the sail out, and the label starts over the departure

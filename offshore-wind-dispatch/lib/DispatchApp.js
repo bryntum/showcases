@@ -2,7 +2,6 @@ import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import { dayKpis } from './plan/Kpis.js';
-import TripModel from './model/TripModel.js';
 import DropPreview from './DropPreview.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
@@ -73,8 +72,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
             dispatch = new DispatchState(config.data),
             { site } = dispatch;
 
-        me.dispatch     = dispatch;
-        TripModel.teams = dispatch.teams;
+        me.dispatch = dispatch;
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 

@@ -66,27 +66,6 @@ export default class TripModel extends EventModelEnterprise {
     ];
 
     /**
-     * The teams by ID, set once the data is loaded
-     * @type {Map<String,Object>}
-     */
-    static teams = new Map();
-
-    /**
-     * The trips a team dragged would fit on, outlined while the drag lasts (DropPreview#markFitting). Not a field: a
-     * change of the record would redraw the trip and its legs
-     * @type {Set<TripModel>}
-     */
-    static fitting = new Set();
-
-    /**
-     * A team is dragged and would fit on the trip
-     * @property {Boolean}
-     */
-    get dropFit() {
-        return TripModel.fitting.has(this);
-    }
-
-    /**
      * Whether a dragged team's stop is previewed on the trip
      * @property {Boolean}
      */
@@ -307,12 +286,10 @@ export default class TripModel extends EventModelEnterprise {
      * @property {String}
      */
     get teamText() {
-        const
-            { teams } = TripModel,
-            ids       = this.shownTeamIds;
+        const ids = this.shownTeamIds;
 
         if (ids.length === 1) {
-            return teams.get(ids[0])?.name ?? ids[0];
+            return this.teamOf(ids[0])?.name ?? ids[0];
         }
 
         return ids.length ? `Teams ${ids.join(', ')}` : 'New trip';
@@ -323,7 +300,7 @@ export default class TripModel extends EventModelEnterprise {
      * @property {Number}
      */
     get pax() {
-        return TripModel.techsOf(this.teamIds);
+        return this.techsOf(this.teamIds);
     }
 
     /**
@@ -331,7 +308,16 @@ export default class TripModel extends EventModelEnterprise {
      * @property {Number}
      */
     get shownPax() {
-        return TripModel.techsOf(this.shownTeamIds);
+        return this.techsOf(this.shownTeamIds);
+    }
+
+    /**
+     * A team, from the teams the project holds (DispatchProject#teams)
+     * @param {String} id
+     * @returns {Object|undefined} `{ id, name, techs, certs }`
+     */
+    teamOf(id) {
+        return this.project?.teams?.get(id);
     }
 
     /**
@@ -339,8 +325,8 @@ export default class TripModel extends EventModelEnterprise {
      * @param {String[]} ids Team IDs
      * @returns {Number}
      */
-    static techsOf(ids) {
-        return ids.reduce((sum, id) => sum + (TripModel.teams.get(id)?.techs ?? 0), 0);
+    techsOf(ids) {
+        return ids.reduce((sum, id) => sum + (this.teamOf(id)?.techs ?? 0), 0);
     }
 
     /**

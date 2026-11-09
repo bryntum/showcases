@@ -1,7 +1,8 @@
 // The Group feature is a Grid feature, importing the package registers it
 import '@bryntum/grid-enterprise';
-import { ProjectModelEnterprise, Scheduler } from '@bryntum/scheduler-enterprise';
+import { Scheduler } from '@bryntum/scheduler-enterprise';
 import { StringHelper } from '@bryntum/core-enterprise';
+import DispatchProject from '../model/DispatchProject.js';
 import PlanDependencyModel from '../model/PlanDependencyModel.js';
 import TripModel from '../model/TripModel.js';
 import VesselModel from '../model/VesselModel.js';
@@ -62,7 +63,7 @@ export default class DispatchScheduler extends Scheduler {
     static configurable = {
         // Nested events, their dependencies and the scheduling engine are Enterprise features
         tier              : 'enterprise',
-        projectModelClass : ProjectModelEnterprise,
+        projectModelClass : DispatchProject,
 
         /**
          * The dispatcher's state, the weather windows and the clock
@@ -135,6 +136,13 @@ export default class DispatchScheduler extends Scheduler {
             me     = this,
             header = me.forecastHeader = new ForecastHeader(config.dispatch);
 
+        /**
+         * The trips a dragged team would fit on, outlined while the drag lasts (DropPreview#markFitting). Not a field
+         * of the trip: a change of the record would redraw the trip and its legs
+         * @property {Set<TripModel>}
+         */
+        me.fittingTrips = new Set();
+
         // The day's hours, with the weather rows in the time axis
         me.dayPreset = {
             base              : 'hourAndDay',
@@ -163,6 +171,8 @@ export default class DispatchScheduler extends Scheduler {
             }],
             project : {
                 ...config.project,
+                // The trips read the teams on board from their project
+                teams                       : config.dispatch.teams,
                 eventModelClass             : TripModel,
                 resourceModelClass          : VesselModel,
                 dependencyModelClass        : PlanDependencyModel,
@@ -328,6 +338,7 @@ export default class DispatchScheduler extends Scheduler {
             close        : dispatch.closeOf(trip.resource),
             sailOut      : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
             firstSailing : dispatch.firstSailing,
+            dropFit      : this.fittingTrips.has(trip),
             typeOf       : turbine => dispatch.jobAt(turbine)?.type ?? ''
         });
     }
