@@ -74,7 +74,7 @@
     }
 
     /* Not cards on a phone: the tab fills the width */
-    .ow-schedule, .ow-side {
+    .ow-schedule, .ow-side, .ow-side-card, .ow-side .ow-card.b-widget {
         border-radius : 0;
         box-shadow    : none;
     }

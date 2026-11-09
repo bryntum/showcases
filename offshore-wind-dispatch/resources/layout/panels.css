@@ -6,7 +6,7 @@
 }
 
 /* Each half is a card on the page: a surface, 8px radius, one soft shadow. The inside is clipped to the corners */
-.ow-schedule, .ow-side {
+.ow-schedule, .ow-side-card, .ow-side .ow-card.b-widget {
     min-width        : 0;
     min-height       : 0;
     overflow         : hidden;
@@ -15,8 +15,16 @@
     box-shadow       : var(--ow-card-shadow);
 }
 
+/* The map half is a column of two such cards, a gutter apart: the site's (title bar, map, legend) and the turbine's */
 .ow-side {
-    flex : none;
+    --b-panel-gap : var(--ow-gutter);
+
+    flex       : none;
+    min-height : 0;
+}
+
+.ow-side-card {
+    --b-container-gap : 0;
 }
 
 /* The Panel's tbar as the title bar: one row 44px high, the title, a note, then the buttons at the end */

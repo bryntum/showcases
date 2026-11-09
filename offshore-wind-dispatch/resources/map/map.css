@@ -4,6 +4,7 @@
     position         : relative;
     min-height       : 0;
     background-color : var(--ow-sea-map);
+    border-radius    : var(--ow-card-radius);
     overflow         : hidden;
 }
 

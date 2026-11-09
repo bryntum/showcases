@@ -15,9 +15,20 @@
 }
 
 .ow-card.b-widget {
-    flex               : none;
-    padding            : 12px 10px;
-    border-block-start : 1px solid var(--ow-border);
+    flex             : none;
+    box-sizing       : border-box;
+    padding          : 16px;
+    background-color : var(--ow-surface);
+    border-radius    : var(--ow-card-radius);
+    box-shadow       : var(--ow-card-shadow);
+
+    /* The padding takes 12px of the line, the illustration gives them back so the status line stays whole */
+    --ow-art-w            : 104px;
+    grid-template-columns : var(--ow-art-w) minmax(0, 1fr);
+
+    .ow-turbine {
+        width : var(--ow-art-w);
+    }
 }
 
 .ow-card-art {

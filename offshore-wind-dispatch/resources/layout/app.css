@@ -22,7 +22,7 @@
 }
 
 /* The app panel's body and its containers: no padding, no gaps of their own */
-.ow-app-body, .ow-left, .ow-schedule, .ow-side, .ow-tabs {
+.ow-app-body, .ow-left, .ow-schedule, .ow-side, .ow-side-card, .ow-tabs {
     border-radius : 0;
 
     --b-panel-padding     : 0;

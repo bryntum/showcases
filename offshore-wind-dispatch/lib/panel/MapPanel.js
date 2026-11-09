@@ -6,8 +6,9 @@ import '../map/TurbineMap.js';
 import '../map/TurbineCard.js';
 
 /**
- * The map half of the app: a Panel whose tbar holds the site's name and the Status / Access switch, with the map of
- * the farm (TurbineMap) and the selected turbine's card (TurbineCard) in its body. On a phone it is the Map tab.
+ * The map half of the app: a column of two cards. The site's card has a title bar with the site's name and the
+ * Status / Access switch, the map of the farm (TurbineMap) inset, and its legend. The selected turbine's card
+ * (TurbineCard) is under it. On a phone it is the Map tab.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
@@ -54,28 +55,40 @@ export default class MapPanel extends Panel {
 
         super.construct({
             ...config,
-            // Its tab's text on a phone, the tbar is the title bar
+            // Its tab's text on a phone
             title  : 'Map',
             header : false,
-            tbar   : {
-                cls   : 'ow-panel-bar',
-                items : {
-                    title : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
-                    count : {
-                        type    : 'widget',
-                        cls     : 'ow-panel-count',
-                        tooltip : `${turbineIds.length} turbines`
-                    },
-                    spacer : '->',
-                    view   : {
-                        type        : 'buttongroup',
-                        toggleGroup : true,
-                        items       : { status : show('status'), access : show('access') }
+            items  : {
+                // The site's card: the title bar, the map inset with the card's padding, the legend on the card
+                place : {
+                    type   : 'container',
+                    cls    : 'ow-side-card',
+                    flex   : 1,
+                    layout : 'vbox',
+                    items  : {
+                        bar : {
+                            type  : 'toolbar',
+                            cls   : 'ow-panel-bar',
+                            items : {
+                                title : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
+                                count : {
+                                    type    : 'widget',
+                                    cls     : 'ow-panel-count',
+                                    tooltip : `${turbineIds.length} turbines`
+                                },
+                                spacer : '->',
+                                view   : {
+                                    type        : 'buttongroup',
+                                    toggleGroup : true,
+                                    items       : { status : show('status'), access : show('access') }
+                                }
+                            }
+                        },
+                        map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '16 16 0' },
+                        legend : { type : 'maplegend' }
                     }
-                }
-            },
-            items : {
-                map  : { type : 'turbinemap', flex : 1, site, tipContent },
+                },
+                // The selected turbine, a card of its own
                 card : { type : 'turbinecard' }
             }
         });
@@ -85,11 +98,11 @@ export default class MapPanel extends Panel {
         super.afterConstruct();
 
         // The turbine count, with the turbine's icon
-        this.tbar.widgetMap.count.html = [iconConfig('turbine'), { tag : 'span', text : String(turbineIds.length) }];
+        this.widgetMap.bar.widgetMap.count.html = [iconConfig('turbine'), { tag : 'span', text : String(turbineIds.length) }];
     }
 
     updateMapView(mapView) {
-        const { status, access } = this.tbar?.widgetMap ?? {};
+        const { status, access } = this.widgetMap?.bar?.widgetMap ?? {};
 
         if (status) {
             (mapView === 'access' ? access : status).pressed = true;

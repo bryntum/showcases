@@ -34,7 +34,6 @@ const directions = {
  * - It zooms like a map (MapViewport): the wheel and a trackpad or finger pinch zoom around the pointer, a drag or a
  *   two finger scroll pans. `fitTo()` fits it to a trip, the Show all button (ShowAllButton) goes back to the whole
  *   farm. The view the user chose stays until the app fits it again (DispatchApp#fitMap)
- * - The legend of the statuses is a MapLegend
  *
  * Drawn in `currentColor` and CSS custom properties, so it follows light and dark.
  *
@@ -132,7 +131,6 @@ export default class TurbineMap extends Widget {
                 me.trigger('wholeFarm');
             }
         });
-        me.legend = Widget.create({ type : 'maplegend', appendTo : me.element });
 
         me.viewport = new MapViewport({ map : me });
 
@@ -146,7 +144,6 @@ export default class TurbineMap extends Widget {
 
     doDestroy() {
         this.viewport?.destroy();
-        this.legend?.destroy();
         this.wholeFarmButton?.destroy();
         this.markerTip?.destroy();
         this.turbines?.destroy();
