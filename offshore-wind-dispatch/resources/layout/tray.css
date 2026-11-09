@@ -4,9 +4,9 @@
 .ow-tray {
     flex       : none;
     gap        : 16px;
-    /* Room under and over the cards for their hover ring and shadow. The tray still clips what is too wide for it, but
+    /* Air between the schedule card and the crews, and room under the cards for their hover ring and shadow. The tray still clips what is too wide for it, but
        6px past its edges, so the ring of the first card is whole */
-    padding    : 5px 0 6px;
+    padding    : 13px 0 6px;
     overflow   : clip;
     overflow-clip-margin : 6px;
 }

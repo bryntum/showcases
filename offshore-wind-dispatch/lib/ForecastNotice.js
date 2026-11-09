@@ -24,15 +24,19 @@ export default class ForecastNotice extends Container {
         items  : {
             text : { type : 'widget', cls : 'ow-toast-text' },
             undo : {
-                type    : 'iconbutton',
-                text    : 'Undo',
-                svg     : 'arrow-undo',
-                onClick : 'up.clickUndo'
+                type      : 'iconbutton',
+                rendition : 'text',
+                text      : 'Undo',
+                svg       : 'arrow-undo',
+                onClick   : 'up.clickUndo'
             },
+            // The theme's own filled blue button: white text on the work blue
             review : {
-                type    : 'button',
-                cls     : 'ow-toast-primary',
-                onClick : 'up.clickReview'
+                type      : 'button',
+                rendition : 'filled',
+                color     : 'b-blue',
+                cls       : 'ow-toast-primary',
+                onClick   : 'up.clickReview'
             }
         }
     };

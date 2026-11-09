@@ -83,6 +83,8 @@ export default class WeekBoard extends Scheduler {
             eventDrag          : false,
             eventResize        : false,
             eventDragCreate    : false,
+            // The board draws no dependencies: no feature, so no terminals to draw new ones
+            dependencies       : false,
             eventTooltip       : false,
             scheduleTooltip    : false,
             stickyEvents       : false,

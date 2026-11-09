@@ -138,7 +138,9 @@
     display             : inline-flex;
     align-items         : center;
     gap                 : 3px;
-    padding             : 3px 10px;
+    /* At the right end of the title line; a little less on the icon's side, whose glyph has its own space */
+    margin-inline-start : auto;
+    padding             : 3px 10px 3px 8px;
     border-radius       : 99px;
     font-size           : 11px;
     line-height         : 1;

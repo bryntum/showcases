@@ -19,6 +19,16 @@
         background-color : var(--ow-surface);
     }
 
+    /* A selected row: a quiet tint in the work blue across the whole row, the vessel cell included */
+    .b-grid-row.b-selected {
+        background-color : var(--ow-c-row-selected);
+
+        /* Every cell paints its own background, the vessel cell and the timeline alike */
+        > .b-grid-cell {
+            background-color : var(--ow-c-row-selected);
+        }
+    }
+
     /* Group rows: Vessels, Helicopters */
     .b-grid-row.b-group-row {
         .b-grid-cell {

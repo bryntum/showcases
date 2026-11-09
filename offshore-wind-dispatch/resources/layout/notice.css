@@ -33,13 +33,17 @@
     }
 }
 
-.ow-toast-primary.b-button {
-    --b-button-color            : var(--b-color-white);
-    --b-button-background       : var(--ow-c-work);
-    --b-button-hover-background : color-mix(in srgb, var(--ow-c-work) 88%, var(--b-color-black));
-}
 
 /* Messages after a drop */
 .ow-toast-message {
     font-size : 13px;
+}
+
+/* The theme's filled button takes dark text in light: white on the work blue, through its own variables (set where
+   the colour class sets them, on the button, with the toast's specificity) */
+.ow-toast .ow-toast-primary.b-button {
+    --b-button-filled-color : var(--b-color-white);
+    --b-button-color        : var(--b-color-white);
+
+    color : var(--b-color-white);
 }

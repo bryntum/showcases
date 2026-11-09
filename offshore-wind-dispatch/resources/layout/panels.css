@@ -24,10 +24,20 @@
 
     flex       : none;
     min-height : 0;
+
+    /* The Panel's body clips by default, which cut the cards' shadows at their sides: let them show */
+    > .b-panel-body-wrap, .b-panel-content.b-map-panel-content {
+        overflow : visible;
+    }
 }
 
 .ow-side-card {
     --b-container-gap : 0;
+
+    /* The map is inset with its own rounded edge: no line under this card's title bar */
+    > .b-panel-body-wrap > .ow-panel-bar.b-toolbar, .ow-panel-bar.b-toolbar {
+        border-block-end : 0;
+    }
 }
 
 /* The Panel's tbar as the title bar: one row 44px high, the title, a note, then the buttons at the end */

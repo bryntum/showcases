@@ -74,11 +74,12 @@
             border-radius  : var(--ow-c-radius);
         }
 
-        /* A team held over the trip: what it can reach, outlined */
+        /* A team held over the trip, the drop target: a subtle blue tint with a thin blue outline */
         &.ow-trip-drop > .b-nested-events-container {
-            outline        : 1.5px dashed var(--ow-reach);
-            outline-offset : 1px;
-            border-radius  : var(--ow-c-radius);
+            outline          : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+            outline-offset   : 3px;
+            border-radius    : var(--ow-c-radius);
+            background-color : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
         }
     }
 
@@ -99,10 +100,9 @@
     color       : var(--ow-c-muted);
     white-space : nowrap;
 
-    /* On the row's own colour, so the now line does not cut through it */
+    /* No box of its own (it showed on a selected row's tint); the 1 px now line may cross it */
     > span {
-        padding-inline   : 2px;
-        background-color : var(--ow-surface);
+        padding-inline : 2px;
     }
 
     /* A forecast's change, quiet */
