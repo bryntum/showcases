@@ -36,52 +36,35 @@ function tripsByTurbine(trips) {
     return map;
 }
 
-// The status class of one turbine, see resources/map/turbines.css. While a trip's reach is shown, the turbines outside
-// it are dimmed, all but the stops of that trip itself
-function statusOf(id, context) {
-    // A stopped turbine's rotor stands still, resources/map/turbines.css does not turn it on hover
-    const still = stoppedOf(context.state, context.trips, id) ? ' ow-m-stopped' : '';
-
-    return `${shownStatusOf(id, context)}${still}`.trim();
-}
-
-function shownStatusOf(id, context) {
+// How one turbine is shown: its status, and dimmed while a trip's reach is shown and it lies outside it (all but the
+// stops of that trip itself). TurbineMap#syncMarker turns it into the marker's classes
+function markerOf(id, context) {
     const { reach, target, focusTrip, byTurbine } = context;
 
-    if (id === target) {
-        return 'ow-m-target';
-    }
-
-    if (reach?.has(id)) {
-        return 'ow-m-reach';
-    }
-
-    const status = planStatusOf(id, context);
-
-    if (reach && !(focusTrip && byTurbine.get(id) === focusTrip)) {
-        return status ? `${status} ow-m-dim` : 'ow-m-dim';
-    }
-
-    return status;
+    return {
+        status : id === target ? 'target' : reach?.has(id) ? 'reach' : planStatusOf(id, context),
+        dimmed : Boolean(reach) && id !== target && !reach.has(id) && !(focusTrip && byTurbine.get(id) === focusTrip)
+    };
 }
 
-// The status of a turbine in the plan: served by a trip, moved, stopped, waiting for its team, or none
+// The status of a turbine in the plan: served by a trip (`work`, `planned`, `risk`), `moved`, stopped (`fault`),
+// `waiting` for its team, or none
 function planStatusOf(id, { state, byTurbine, removed }) {
     const trip = byTurbine.get(id);
 
     if (trip?.status === 'moved' || removed.has(id)) {
-        return 'ow-m-moved';
+        return 'moved';
     }
 
     if (trip) {
-        return trip.status === 'at-risk' ? 'ow-m-risk' : trip.startMinute <= state.now ? 'ow-m-work' : 'ow-m-planned';
+        return trip.status === 'at-risk' ? 'risk' : trip.startMinute <= state.now ? 'work' : 'planned';
     }
 
     if (state.faults.has(id)) {
-        return 'ow-m-fault';
+        return 'fault';
     }
 
-    return state.waiting.includes(id) ? 'ow-m-waiting' : '';
+    return state.waiting.includes(id) ? 'waiting' : '';
 }
 
 // The labels of the plan: the selected turbine, faults, trips past the window, and what the forecast moved
@@ -96,7 +79,7 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
 
     for (const id of state.faults) {
         if (id !== selectedTurbine) {
-            labels.push({ id, text : id, cls : 'ow-map-label-fault' });
+            labels.push({ id, text : id, tone : 'fault' });
         }
     }
 
@@ -107,18 +90,21 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
                 return;
             }
 
-            labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), cls : 'ow-map-label-risk' });
+            labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), tone : 'risk' });
         }
         else if (trip.status === 'trimmed' && trip.removed.length) {
-            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${nextDay}`, cls : 'ow-map-label-moved' });
+            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${nextDay}`, tone : 'moved' });
         }
         else if (trip.status === 'moved' && trip.turbines.length) {
-            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${nextDay}`, cls : 'ow-map-label-moved' });
+            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${nextDay}`, tone : 'moved' });
         }
     });
 
     return labels;
 }
+
+// The count that leads the callout, in bold
+const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
 
 /**
  * The map's content
@@ -129,7 +115,9 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
  * @param {String} [options.selectedTurbine]
  * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see DispatchApp#previewDrop
  * @param {Object} [options.access] The Access view: `{ trip, reach, minutes }`
- * @returns {Object} `{ markers, labels, routes, callout, selected, wind }`, `wind` at hub height now, for the rotors
+ * @returns {Object} `{ markers, labels, routes, callout, selected }`: `markers` maps each turbine to
+ * `{ status, dimmed }`, a label is `{ id, text, tone }`, a route `{ stops, kind }` (`selected`, `preview` or
+ * none) and the callout the DomConfig children of its line, or `null`
  */
 export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, access }) {
     const
@@ -145,10 +133,10 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
             target    : drop?.job.turbine,
             focusTrip : focus?.trip ?? null
         },
-        markers   = new Map(turbineIds.map(id => [id, statusOf(id, context)])),
+        markers   = new Map(turbineIds.map(id => [id, markerOf(id, context)])),
         routes    = trips.filter(trip => trip.mode === 'vessel' && trip.status !== 'moved').map(trip => ({
             stops : trip.turbines,
-            cls   : trip === (focus?.trip ?? selectedTrip) ? 'ow-route-selected' : ''
+            kind  : trip === (focus?.trip ?? selectedTrip) ? 'selected' : null
         }));
 
     let labels, callout = null;
@@ -156,23 +144,23 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
     if (drop) {
         const { result, job, trip } = drop;
 
-        routes.push({ stops : [...trip.turbines, job.turbine], cls : 'ow-route-preview' });
+        routes.push({ stops : [...trip.turbines, job.turbine], kind : 'preview' });
         labels = [{
             id   : job.turbine,
             text : result.valid ? `${job.turbine} · +${duration(job.minutes)} · back ${hhmm(result.back)}` : `${job.turbine} · ${result.short}`,
-            cls  : result.valid ? 'ow-map-label-target' : 'ow-map-label-fault'
+            tone : result.valid ? 'target' : 'fault'
         }];
-        callout = `<b>${drop.reach.size} turbines</b> within reach of ${trip.id} before the window closes at ${hhmm(drop.close)}`;
+        callout = [turbineCount(drop.reach), ` within reach of ${trip.id} before the window closes at ${hhmm(drop.close)}`];
     }
     else {
         labels = planLabels({ state, trips, selectedTurbine, byTurbine });
 
         if (access) {
             callout = access.trip ?
-                `<b>${access.reach.size} turbines</b> where ${access.trip.id} could still add a ${duration(access.minutes)} stop before ${hhmm(access.close)}` :
-                'Select a trip to see where it can still go before its window closes';
+                [turbineCount(access.reach), ` where ${access.trip.id} could still add a ${duration(access.minutes)} stop before ${hhmm(access.close)}`] :
+                ['Select a trip to see where it can still go before its window closes'];
         }
     }
 
-    return { markers, labels, routes, callout, selected : selectedTurbine, wind : state.windAt() };
+    return { markers, labels, routes, callout, selected : selectedTurbine };
 }

@@ -1,33 +1,42 @@
 /* The selected turbine (map/TurbineCard.js) */
 
-/* The selected turbine, and the map's tooltip on a turbine (ow-card-tip) */
+/* The selected turbine, and the map's tooltip on a turbine (ow-card-tip). Each sets the width of its illustration,
+   --ow-art-w */
 :is(.ow-card.b-widget, .ow-card-tip) {
     --ow-tone : var(--ow-sea-ok);
 
     display               : grid;
-    grid-template-columns : 124px minmax(0, 1fr);
+    grid-template-columns : var(--ow-art-w) minmax(0, 1fr);
     align-items           : stretch;
     gap                   : 10px;
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
     &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
     &[data-tone='cancel'] { --ow-tone : var(--ow-cancel); }
+
+    .ow-turbine {
+        width  : var(--ow-art-w);
+        height : auto;
+    }
 }
 
 .ow-card.b-widget {
+    /* 20px narrower than in the tooltip, so the status line beside it stays whole within the card's padding */
+    --ow-art-w : 104px;
+
     flex             : none;
     box-sizing       : border-box;
     padding          : 16px;
     background-color : var(--ow-surface);
     border-radius    : var(--ow-card-radius);
     box-shadow       : var(--ow-card-shadow);
+}
 
-    /* The padding takes 12px of the line, the illustration gives them back so the status line stays whole */
-    --ow-art-w            : 104px;
-    grid-template-columns : var(--ow-art-w) minmax(0, 1fr);
-
-    .ow-turbine {
-        width : var(--ow-art-w);
+/* On a short screen the map needs the rail's height more than the turbine's card does: the map's tooltip still names
+   the turbine */
+@media (max-height: 820px) {
+    .ow-side .ow-card.b-widget {
+        display : none;
     }
 }
 
@@ -36,18 +45,14 @@
     align-items : flex-end;
 }
 
-.ow-turbine {
-    width  : 124px;
-    height : auto;
-}
-
 .ow-turbine-label {
     font-size   : 8.5px;
     font-weight : 700;
     fill        : var(--ow-ink-sub);
 }
 
-/* The illustration's rotor, only drawn turning for a running turbine (TurbineCard), at the wind's speed */
+/* The illustration's rotor, only drawn turning for a running turbine (TurbineCard), at the wind's speed: each drawing
+   sets its --ow-rotor-period (map/Turbine.js) */
 @media (prefers-reduced-motion : no-preference) {
     .ow-turbine-rotor {
         animation : ow-spin var(--ow-rotor-period, 0s) linear infinite;
@@ -63,9 +68,9 @@
 .ow-card-body {
     display        : flex;
     flex-direction : column;
-    gap            : 4px;
+    gap             : 4px;
     justify-content : space-between;
-    min-width      : 0;
+    min-width       : 0;
 
     dl {
         display               : grid;

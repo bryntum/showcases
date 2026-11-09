@@ -6,6 +6,14 @@
     background-color : var(--ow-sea-map);
     border-radius    : var(--ow-card-radius);
     overflow         : hidden;
+
+    &.ow-map-zoomed .ow-map-svg {
+        cursor : grab;
+    }
+
+    &.ow-map-panning :is(.ow-map-svg, .ow-marker) {
+        cursor : grabbing;
+    }
 }
 
 .ow-map-svg {
@@ -15,14 +23,6 @@
     height       : 100%;
     /* Zoomed in, the map pans by dragging (MapViewport#onPanStart) */
     touch-action : none;
-}
-
-.ow-map-zoomed .ow-map-svg {
-    cursor : grab;
-}
-
-.ow-map-panning .ow-map-svg, .ow-map-panning .ow-marker {
-    cursor : grabbing;
 }
 
 /* The callout and the Whole farm button share one row over the map, so they never overlap. The row lets the pointer

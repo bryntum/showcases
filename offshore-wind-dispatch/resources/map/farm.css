@@ -1,9 +1,11 @@
 /* The farm on the map: the depth contours, the export cable, the routes of the trips, the port and the substation (map/MapDrawing.js) */
 
-.ow-contours path {
-    fill         : none;
-    stroke       : var(--ow-contour);
-    stroke-width : 1;
+.ow-contours {
+    path {
+        fill         : none;
+        stroke       : var(--ow-contour);
+        stroke-width : 1;
+    }
 }
 
 .ow-depth {
@@ -51,10 +53,12 @@
     }
 }
 
-.ow-port text {
-    font-size   : calc(10.5px / var(--ow-map-zoom, 1));
-    font-weight : 600;
-    fill        : var(--ow-ink-sub);
+.ow-port {
+    text {
+        font-size   : calc(10.5px / var(--ow-map-zoom, 1));
+        font-weight : 600;
+        fill        : var(--ow-ink-sub);
+    }
 }
 
 .ow-oss {

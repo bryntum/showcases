@@ -26,7 +26,7 @@ const firstSailing = 6 * 60 + 30;
  * @param {Object} [options.drop] A team held over a trip, see DispatchApp#previewDrop
  * @param {TripModel} [options.selectedTrip] The trip selected in the schedule: of the trips serving the turbine (a
  * drop-off and a pickup), its visit is the one shown
- * @returns {Object} `{ name, sub, rating, stand, job, team, trip, when, hs, limit, note, tone, stopped }`, the
+ * @returns {Object} `{ name, sub, rating, stand, job, team, trip, when, hs, limit, note, tone, stopped, wind }`, the
  * substation has no `rating`
  */
 export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
@@ -43,6 +43,8 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     return {
         ...describe(state, turbine),
         stopped : stoppedOf(state, trips, turbine),
+        // At hub height now, how fast the rotor of the drawing turns
+        wind    : state.windAt(),
         stand,
         trip    : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
         when    : whenOf(stand, stop),
@@ -178,7 +180,7 @@ export function tipInfo({ state, trips, turbine, drop, selectedTrip }) {
     const
         card = cardInfo({ state, trips, turbine, drop, selectedTrip }),
         // The tooltip alone says how fast the rotor turns
-        info = turbine === substation ? card : { ...card, rotor : rotorText(state.windAt(), card.stopped) };
+        info = turbine === substation ? card : { ...card, rotor : rotorText(card.wind, card.stopped) };
 
     if (info.stand !== 'none' || turbine === substation) {
         return info;
@@ -204,7 +206,14 @@ export function tipInfo({ state, trips, turbine, drop, selectedTrip }) {
 export function cardContent(info, id = 'ow') {
     // A stopped turbine's rotor stands still, the wrench marks one under repair
     const
-        art  = turbineSvg({ hs : info.hs, limit : info.limit, id, spin : !info.stopped, repair : info.stopped === 'repair' }),
+        art  = turbineSvg({
+            hs     : info.hs,
+            limit  : info.limit,
+            id,
+            spin   : !info.stopped,
+            wind   : info.wind,
+            repair : info.stopped === 'repair'
+        }),
         rows = [['Team', info.team], ['Trip', info.trip], ['When', info.when], info.rotor && ['Rotor', info.rotor]]
             .filter(Boolean).flatMap(([term, text]) => [{ tag : 'dt', text : term }, { tag : 'dd', text }]);
 

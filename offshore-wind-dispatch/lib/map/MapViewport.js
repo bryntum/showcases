@@ -1,4 +1,4 @@
-import { DragHelper } from '@bryntum/core-enterprise';
+import { DragHelper, EventHelper } from '@bryntum/core-enterprise';
 import { aspect, boundedView, clamp, farmView, fitView, isFarm, viewKey, zoomInWidth } from './MapView.js';
 
 const
@@ -51,16 +51,25 @@ export default class MapViewport {
 
         // Two fingers on a touch screen pinch the map, see onPinchPointer
         me.touches = new Map();
-        svgElement.addEventListener('pointerdown', event => me.onPinchPointer(event));
-        svgElement.addEventListener('pointermove', event => me.onPinchPointer(event));
-        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type =>
-            svgElement.addEventListener(type, event => me.onPinchPointer(event)));
-        // The wheel and the trackpad zoom or pan the map, not the page
-        svgElement.addEventListener('wheel', event => me.onWheel(event), { passive : false });
+
+        // Not a Bryntum class, so its own `destroy()` removes them
+        me.detachListeners = EventHelper.on({
+            element            : svgElement,
+            thisObj            : me,
+            autoDetach         : false,
+            pointerdown        : 'onPointerDown',
+            pointermove        : 'onPinchPointer',
+            pointerup          : 'onPinchPointer',
+            pointercancel      : 'onPinchPointer',
+            lostpointercapture : 'onPinchPointer',
+            // The wheel and the trackpad zoom or pan the map, not the page
+            wheel              : { handler : 'onWheel', passive : false }
+        });
     }
 
     destroy() {
         cancelAnimationFrame(this.frame);
+        this.detachListeners?.();
         this.panHelper?.destroy();
     }
 
@@ -220,19 +229,22 @@ export default class MapViewport {
     }
 
     // DragHelper's `drop` and `abort`: the pan ends where it is, the click that may follow it selects nothing
-    // (TurbineMap#onMapClick, which reads `panned`)
+    // (TurbineMap#onMapClickCapture, which reads `panned`, until the next press)
     onPanEnd() {
         const me = this;
 
         if (me.panning) {
             me.panning = null;
             me.panned  = true;
-            setTimeout(() => {
-                me.panned = false;
-            }, 0);
         }
 
         me.map.element.classList.remove('ow-map-panning');
+    }
+
+    // A new press, a new gesture: the click that ended the last pan has gone by (see onPanEnd)
+    onPointerDown(event) {
+        this.panned = false;
+        this.onPinchPointer(event);
     }
 
     /**

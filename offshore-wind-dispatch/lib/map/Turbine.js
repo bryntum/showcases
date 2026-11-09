@@ -5,9 +5,10 @@
  *
  * Colours come from CSS custom properties (see resources/tokens.css), so one drawing works in light and dark.
  *
- * The rotors turn at the speed the wind of the hour gives an 8 MW turbine (rotorRpm). One CSS custom property,
- * `--ow-rotor-period` on the root, sets how long a revolution takes, so every turning rotor on the page follows the
- * clock and the forecast. A stopped turbine (a fault, or a team working on it) does not turn.
+ * The rotors turn at the speed the wind of the hour gives an 8 MW turbine (rotorRpm). Each drawing carries how long a
+ * revolution takes in a CSS custom property, `--ow-rotor-period` on its rotor, so it follows the clock and the forecast
+ * wherever it is shown (the card, the map's tooltip). A stopped turbine (a fault, or a team working on it) does not
+ * turn.
  */
 import { iconPath } from '../util/Icons.js';
 
@@ -53,14 +54,14 @@ export function rotorText(wind, stopped) {
 }
 
 /**
- * Sets how long a revolution of every turning rotor takes, from the wind at hub height. On the root, as the map's
- * tooltip renders outside the app
+ * How long a revolution of a turning rotor takes at a wind speed at hub height, for `--ow-rotor-period`
  * @param {Number} wind m/s
+ * @returns {String} A CSS time, `0s` when still
  */
-export function setRotorSpeed(wind) {
+export function rotorPeriod(wind) {
     const rpm = rotorRpm(wind);
 
-    document.documentElement.style.setProperty('--ow-rotor-period', rpm ? `${(60 / rpm).toFixed(2)}s` : '0s');
+    return rpm ? `${(60 / rpm).toFixed(2)}s` : '0s';
 }
 
 /**
@@ -102,12 +103,13 @@ const defs = id => `
  * @param {Object} [options]
  * @param {Number} [options.hs] The wave height to draw, in metres (0.5 to 2.5)
  * @param {Number} [options.limit] The vessel limit, drawn as a dashed line on the transition piece
- * @param {Boolean} [options.spin] Turn the blades, at the speed of `--ow-rotor-period`
+ * @param {Boolean} [options.spin] Turn the blades
+ * @param {Number} [options.wind] The wind at hub height in m/s, sets how fast the blades turn
  * @param {Boolean} [options.repair] Under repair, the wrench badge by the transition piece
  * @param {String} [options.id] Prefix of the IDs of its gradients, unique per drawing on the page
  * @returns {String} SVG markup
  */
-export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, repair = false, id = 'ow' } = {}) {
+export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repair = false, id = 'ow' } = {}) {
     const
         // The still water line, and 7 px per metre of wave height (exaggerated, it is a picture)
         sea    = 196,
@@ -151,7 +153,7 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, repair = false,
 
     <!-- Rotor -->
     <g transform="translate(80 50)">
-        <g class="${spin ? 'ow-turbine-rotor' : ''}">
+        <g${spin ? ` class="ow-turbine-rotor" style="--ow-rotor-period: ${rotorPeriod(wind)}"` : ''}>
             <path d="${blade}" fill="url(#${id}-blade)"/>
             <path d="${blade}" fill="url(#${id}-blade)" transform="rotate(120)"/>
             <path d="${blade}" fill="url(#${id}-blade)" transform="rotate(240)"/>

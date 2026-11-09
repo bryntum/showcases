@@ -41,6 +41,11 @@
 
 .ow-marker {
     cursor : pointer;
+
+    /* One tab stop for the map, the arrow keys move between the turbines */
+    &:focus {
+        outline : none;
+    }
 }
 
 /* The wrench badge of the turbine illustration (Phosphor's light wrench, thickened by a stroke of its own colour) */
@@ -112,36 +117,35 @@
     }
 }
 
-.ow-m-target .ow-marker-halo {
-    fill         : color-mix(in srgb, var(--ow-reach) 22%, transparent);
-    stroke       : var(--ow-reach);
-    stroke-width : 1.2;
-}
+/* The halo around a marker: the drop target, selected, ringed, hovered, focused (in this order, the later wins) */
+.ow-marker-halo {
+    .ow-m-target & {
+        fill         : color-mix(in srgb, var(--ow-reach) 22%, transparent);
+        stroke       : var(--ow-reach);
+        stroke-width : 1.2;
+    }
 
-.ow-m-selected .ow-marker-halo {
-    stroke       : var(--ow-tone);
-    stroke-width : 1.4;
-}
+    .ow-m-selected & {
+        stroke       : var(--ow-tone);
+        stroke-width : 1.4;
+    }
 
-/* The stops of the trip selected or hovered in the schedule */
-.ow-m-ring:not(.ow-m-selected) .ow-marker-halo {
-    stroke           : color-mix(in srgb, var(--ow-plan) 70%, transparent);
-    stroke-width     : 1.2;
-    stroke-dasharray : 3 2;
-}
+    /* The stops of the trip selected or hovered in the schedule */
+    .ow-m-ring:not(.ow-m-selected) & {
+        stroke           : color-mix(in srgb, var(--ow-plan) 70%, transparent);
+        stroke-width     : 1.2;
+        stroke-dasharray : 3 2;
+    }
 
-.ow-m-hover .ow-marker-halo {
-    fill : color-mix(in srgb, var(--ow-tone) 18%, transparent);
-}
+    .ow-m-hover & {
+        fill : color-mix(in srgb, var(--ow-tone) 18%, transparent);
+    }
 
-/* One tab stop for the map, the arrow keys move between the turbines */
-.ow-marker:focus {
-    outline : none;
-}
-
-.ow-marker:focus-visible .ow-marker-halo {
-    stroke       : var(--b-primary, var(--ow-plan));
-    stroke-width : 2.4;
+    /* The halo shows the focus, Bryntum's focus colour */
+    .ow-marker:focus-visible & {
+        stroke       : var(--b-widget-focus-outline-color);
+        stroke-width : 2.4;
+    }
 }
 
 .ow-m-dim {

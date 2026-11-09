@@ -54,25 +54,25 @@ export function mapSvg(site) {
 
 /**
  * A route from the port to each stop
- * @param {Object} route `{ stops, cls }`
+ * @param {Object} route `{ stops, kind }`, kind `selected`, `preview` or none
  * @returns {String} SVG
  */
-export function routeSvg({ stops, cls }) {
+export function routeSvg({ stops, kind }) {
     if (!stops.length) {
         return '';
     }
 
     const points = [mapPort, ...stops.map(mapXY)];
 
-    return `<path class="ow-route ${cls}" d="M${points.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L')}"/>`;
+    return `<path class="ow-route${kind ? ` ow-route-${kind}` : ''}" d="M${points.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L')}"/>`;
 }
 
 /**
  * The label above a turbine, below it where above would sit on the substation
- * @param {Object} label `{ id, text, cls }`
+ * @param {Object} label `{ id, text, tone }`, tone `fault`, `risk`, `moved`, `target` or none
  * @returns {String} SVG
  */
-export function labelSvg({ id, text, cls = '' }) {
+export function labelSvg({ id, text, tone }) {
     // The substation is not a turbine, it carries no label
     if (id === substation) {
         return '';
@@ -85,6 +85,6 @@ export function labelSvg({ id, text, cls = '' }) {
         covers   = Math.abs(oss.x - x) < text.length * 1.7 + 10 && Math.abs(oss.y - (y - 13)) < 14,
         labelY   = covers ? y + 20 : y - 13;
 
-    return `<g class="ow-map-label ${cls}" transform="translate(${x.toFixed(1)} ${labelY.toFixed(1)})">
+    return `<g class="ow-map-label${tone ? ` ow-map-label-${tone}` : ''}" transform="translate(${x.toFixed(1)} ${labelY.toFixed(1)})">
             <text text-anchor="middle">${StringHelper.encodeHtml(text)}</text></g>`;
 }

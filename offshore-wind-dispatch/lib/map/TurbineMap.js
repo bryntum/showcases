@@ -1,6 +1,5 @@
-import { Collection, DomHelper, Store, Widget } from '@bryntum/core-enterprise';
+import { Collection, DomSync, EventHelper, Store, Widget } from '@bryntum/core-enterprise';
 import { mapXY, rowName, turbineIds } from '../plan/Farm.js';
-import { setRotorSpeed } from './Turbine.js';
 import { labelSvg, mapSvg, routeSvg } from './MapDrawing.js';
 import TurbineModel from './TurbineModel.js';
 import MapViewport from './MapViewport.js';
@@ -117,7 +116,7 @@ export default class TurbineMap extends Widget {
         me.markerTip = Widget.create({
             type       : 'turbinetooltip',
             forElement : me.element,
-            getHtml    : ({ activeTarget }) => me.tipContent?.(activeTarget.dataset.turbine) ?? ''
+            contentOf  : turbine => me.tipContent?.(turbine) ?? ''
         });
 
         me.svgElement = me.element.querySelector('.ow-map-svg');
@@ -134,12 +133,24 @@ export default class TurbineMap extends Widget {
 
         me.viewport = new MapViewport({ map : me });
 
-        me.element.addEventListener('click', event => me.onMapClick(event), true);
-        me.element.addEventListener('keydown', event => me.onMapKeyDown(event));
-        me.element.addEventListener('focusin', event => me.onMarkerFocus(event));
-        me.element.addEventListener('focusout', event => me.onMarkerBlur(event));
-        me.element.addEventListener('pointerover', event => me.hover(event.target.closest?.('.ow-marker')?.dataset.turbine ?? null));
-        me.element.addEventListener('pointerleave', () => me.hover(null));
+        // Removed when the map is destroyed (thisObj). With `delegate`, the event's currentTarget is the marker
+        EventHelper.on({
+            element      : me.element,
+            thisObj      : me,
+            click        : { handler : 'onMapClickCapture', capture : true },
+            // The pointer over a marker or between them, both are a change of the turbine hovered
+            pointerover  : 'onMapPointerOver',
+            pointerleave : () => me.hover(null)
+        });
+        EventHelper.on({
+            element  : me.element,
+            delegate : '.ow-marker',
+            thisObj  : me,
+            click    : 'onMarkerClick',
+            keydown  : 'onMarkerKeyDown',
+            focusin  : 'onMarkerFocus',
+            focusout : 'onMarkerBlur'
+        });
     }
 
     doDestroy() {
@@ -165,22 +176,23 @@ export default class TurbineMap extends Widget {
      * Shows the plan: each turbine's status, the routes, the labels, the callout and the selected turbine
      * @param {Object} model See MapModel#mapModel
      */
-    draw({ markers, labels, routes, callout, selected, wind }) {
+    draw({ markers, labels, routes, callout, selected }) {
         const
             me        = this,
             { parts } = me;
 
-        // Every turning rotor on the page, at the speed of the wind now
-        setRotorSpeed(wind);
-
         me.turbines.forEach(record => {
-            record.status = markers.get(record.id) ?? '';
+            const { status = '', dimmed = false } = markers.get(record.id) ?? {};
+
+            record.set({ status, dimmed });
         });
 
         parts.routes.innerHTML = routes.map(route => routeSvg(route)).join('');
         parts.labels.innerHTML = labels.map(label => labelSvg(label)).join('');
-        parts.callout.hidden   = !callout;
-        parts.callout.innerHTML = callout ?? '';
+        DomSync.sync({
+            targetElement : parts.callout,
+            domConfig     : { className : 'ow-map-callout', hidden : callout ? null : true, children : callout ?? [] }
+        });
 
         // The app's selection, not the user's
         me.drawing = true;
@@ -191,7 +203,8 @@ export default class TurbineMap extends Widget {
     }
 
     /**
-     * Brings a marker in line with its record and the view: status, selected, ringed, hovered, its accessible name
+     * Brings a marker in line with its record and the view: its status and dimmed as classes, selected, ringed,
+     * hovered, its accessible name
      * @param {TurbineModel} record
      */
     syncMarker(record) {
@@ -204,10 +217,12 @@ export default class TurbineMap extends Widget {
             return;
         }
 
-        el.setAttribute('class', ['ow-marker', record.status,
-            selected ? 'ow-m-selected' : '',
-            me.ringed.has(record.id) ? 'ow-m-ring' : '',
-            me.hovered === record.id ? 'ow-m-hover' : ''].filter(Boolean).join(' '));
+        el.setAttribute('class', ['ow-marker',
+            record.status && `ow-m-${record.status}`,
+            record.dimmed && 'ow-m-dim',
+            selected && 'ow-m-selected',
+            me.ringed.has(record.id) && 'ow-m-ring',
+            me.hovered === record.id && 'ow-m-hover'].filter(Boolean).join(' '));
         el.setAttribute('aria-selected', String(Boolean(selected)));
         el.setAttribute('aria-label', [record.id, record.statusText].filter(Boolean).join(', '));
     }
@@ -248,22 +263,25 @@ export default class TurbineMap extends Widget {
         });
     }
 
-    // A press and release without a move selects the turbine. The click that ends a pan selects nothing, even where the
-    // pan started on a turbine
-    onMapClick(event) {
-        const id = event.target.closest?.('.ow-marker')?.dataset.turbine;
-
+    // The click that ends a pan selects nothing, even where the pan started on a turbine: it stops on its way down
+    onMapClickCapture(event) {
         if (this.viewport.panned) {
             event.stopPropagation();
         }
-        else if (id) {
-            this.select(id);
-        }
+    }
+
+    // A press and release without a move selects the turbine
+    onMarkerClick(event) {
+        this.select(event.currentTarget.dataset.turbine);
     }
 
     //endregion
 
     //region Hover and rings
+
+    onMapPointerOver(event) {
+        this.hover(event.target.closest('.ow-marker')?.dataset.turbine ?? null);
+    }
 
     hover(id) {
         const
@@ -313,14 +331,10 @@ export default class TurbineMap extends Widget {
     }
 
     // The arrows move to the nearest turbine in their direction, Enter or Space selects, Escape hides the tooltip
-    onMapKeyDown(event) {
+    onMarkerKeyDown(event) {
         const
             me   = this,
-            from = event.target.closest?.('.ow-marker')?.dataset.turbine;
-
-        if (!from) {
-            return;
-        }
+            from = event.currentTarget.dataset.turbine;
 
         if (directions[event.key]) {
             const next = me.nearest(from, directions[event.key]);
@@ -373,22 +387,21 @@ export default class TurbineMap extends Widget {
 
     // A turbine focused from the keyboard shows its tooltip, as hovering it would
     onMarkerFocus(event) {
-        const
-            me     = this,
-            marker = event.target.closest?.('.ow-marker');
+        const marker = event.currentTarget;
 
-        if (marker) {
-            me.setFocusable(marker.dataset.turbine);
+        this.setFocusable(marker.dataset.turbine);
 
-            if (DomHelper.usingKeyboard) {
-                me.markerTip.showForMarker(marker);
-            }
+        if (marker.matches(':focus-visible')) {
+            this.markerTip.showForMarker(marker);
         }
     }
 
+    // Leaving the map hides the tooltip of the turbine it had the focus on
     onMarkerBlur(event) {
-        if (!this.element.contains(event.relatedTarget) && this.markerTip.activeTarget === event.target) {
-            this.markerTip.hide();
+        const { markerTip } = this;
+
+        if (!this.element.contains(event.relatedTarget) && markerTip.marker === event.currentTarget) {
+            markerTip.hide();
         }
     }
 

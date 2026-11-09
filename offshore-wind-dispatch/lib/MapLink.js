@@ -33,7 +33,7 @@ export default class MapLink {
     constructor({ map, scheduler, focusTrip }) {
         const me = this;
 
-        Object.assign(me, { map, scheduler, focusTrip, hoverTrip : null });
+        Object.assign(me, { map, scheduler, focusTrip, hoverTrip : null, lighting : false });
 
         map.on({ turbineHover : ({ turbine }) => me.lightTrips(turbine) });
         scheduler.on({
@@ -56,7 +56,8 @@ export default class MapLink {
      */
     lightTrips(turbine) {
         const
-            { scheduler } = this,
+            me            = this,
+            { scheduler } = me,
             trips         = tripsOf(scheduler.trips, turbine);
 
         if (trips.length) {
@@ -67,9 +68,12 @@ export default class MapLink {
                 unhighlightOthers  : true
             });
         }
-        else if (scheduler.timeAxisSubGridElement?.classList.contains('b-is-highlighting')) {
+        // Only the trips this link lit up
+        else if (me.lighting) {
             scheduler.unhighlightEvents();
         }
+
+        me.lighting = trips.length > 0;
     }
 
     onTripMouseEnter({ eventRecord }) {
@@ -79,11 +83,12 @@ export default class MapLink {
 
     onTripMouseLeave({ eventRecord, event }) {
         const
-            me   = this,
+            me      = this,
+            related = event?.relatedTarget,
             // Moving between a trip and its legs is not leaving it
-            into = event?.relatedTarget?.closest?.('.b-sch-event-wrap[data-event-id]')?.dataset.eventId;
+            into    = related instanceof Element ? me.scheduler.resolveEventRecord(related) : null;
 
-        if (me.hoverTrip === eventRecord.trip && me.scheduler.eventStore.getById(into)?.trip !== me.hoverTrip) {
+        if (me.hoverTrip === eventRecord.trip && into?.trip !== me.hoverTrip) {
             me.hoverTrip = null;
             me.map.ring(me.ringedTurbines());
         }
