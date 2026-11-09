@@ -96,12 +96,12 @@ test.describe('Offshore Wind Dispatch', () => {
 
         expect(m.body[0]).toBe(m.body[1]);
         expect(m.scroll).toBe(0);
-        // The header text, the schedule card and the crews tray share one x, the KPIs and the rail card another; the
-        // frame's padding is its corner radius
-        expect(Math.abs(m.clock - m.schedule)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.tray - m.schedule)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.kpis - m.side)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.inset - m.radius)).toBeLessThanOrEqual(1);
+        // The header text and the crews tray start where the cards' content does, 24px in from the schedule card's edge,
+        // and the KPIs end 24px in from the rail card's; the frame's padding is its corner radius
+        expect(Math.abs(m.clock - m.schedule - 24)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.tray - m.clock)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.side - m.kpis - 24)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.inset - m.radius - 24)).toBeLessThanOrEqual(1);
         expect(m.noteCut).toBe(false);
         expect(m.noteRows).toBe(true);
     });

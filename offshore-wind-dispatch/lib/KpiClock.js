@@ -1,8 +1,8 @@
 import { Widget } from '@bryntum/core-enterprise';
-import { dayShort, hhmm } from './util/Time.js';
+import { dayShort } from './util/Time.js';
 
 /**
- * The site, today and the time, quiet beside the weather window
+ * The site and the day, quiet; the time is the schedule's now line
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
@@ -20,16 +20,11 @@ export default class KpiClock extends Widget {
      * Shows the clock
      * @param {Object} values
      * @param {String} values.site
-     * @param {Number|null} values.now Minutes of the day, none on a later day than today
      */
-    draw({ site, now }) {
+    draw({ site }) {
         this.html = [
             { tag : 'b', text : site },
-            {
-                tag      : 'small',
-                children : now == null ? [dayShort] :
-                    [`${dayShort} · `, { tag : 'span', class : 'ow-clock-time', text : hhmm(now) }]
-            }
+            { tag : 'small', text : dayShort }
         ];
     }
 }

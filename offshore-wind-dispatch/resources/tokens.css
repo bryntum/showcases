@@ -86,7 +86,7 @@
     --ow-dot-out        : 8px;
     --ow-dot-back       : 6px;
     --ow-size-hero      : 22px;
-    --ow-size-kpi       : 22px;
+    --ow-size-kpi       : 19px;
     --ow-bar-control    : 30px;
     /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
        the corner curve ends. The cards inside are concentric: radius less padding, never below the smallest radius a
