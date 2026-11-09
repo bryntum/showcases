@@ -1,10 +1,10 @@
-/* The crews waiting at the port (TeamTray.js, TeamChip.js), a slim tray under the schedule's card, on the page */
+/* The crews waiting at the port (TeamTray.js, TeamChip.js), at the right end of the header over the schedule */
 
 /* A Container with an hbox layout: the title, then a small card per team */
 .ow-tray {
     --b-container-gap     : 16px;
-    /* Air between the schedule card and the crews, and room under the cards for their hover ring and shadow */
-    --b-container-padding : 12px 0 6px var(--ow-inset);
+    /* Room around the cards for their hover ring and shadow */
+    --b-container-padding : 6px 0;
 
     flex                 : none;
     /* The tray still clips what is too wide for it, but 6px past its edges, so the ring of the first card is whole */
@@ -24,8 +24,9 @@
     white-space : nowrap;
 }
 
-/* A team's card: no coloured border on any */
+/* A team's card: no coloured border on any, never squeezed narrower than its two lines */
 .ow-team {
+    flex             : none;
     display          : flex;
     align-items      : center;
     gap              : 12px;

@@ -23,3 +23,11 @@
         height   : 16px;
     }
 }
+
+/* On a short screen the map needs the height more than its key does: it goes under 800px, as the schedule's
+   (layout/legend.css) */
+@media (max-height: 800px) {
+    .ow-map-legend.b-widget {
+        display : none;
+    }
+}

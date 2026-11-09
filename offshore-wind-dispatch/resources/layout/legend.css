@@ -121,3 +121,11 @@
         }
     }
 }
+
+/* On a short screen the rows need the height more than the key does: it goes first, under 800px (the turbine's card
+   goes under 720px, map/card.css) */
+@media (max-height: 800px) {
+    .ow-legend.b-widget {
+        display : none;
+    }
+}

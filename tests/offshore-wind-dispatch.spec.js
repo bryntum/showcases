@@ -46,7 +46,7 @@ test.describe('Offshore Wind Dispatch', () => {
     });
 
     test('renders the vessels, their trips, the weather window and the map', async({ page }) => {
-        // Tall enough for every row: the cards, the header and the tray under the schedule take their space
+        // Tall enough for every row: the cards and the header, with the crews in it, take their space
         await page.setViewportSize({ width : 1280, height : 860 });
         await open(page);
 
@@ -75,33 +75,35 @@ test.describe('Offshore Wind Dispatch', () => {
                 left   = selector => document.querySelector(selector).getBoundingClientRect().left,
                 right  = selector => document.querySelector(selector).getBoundingClientRect().right,
                 app    = document.querySelector('.ow-app'),
-                kpis   = [...document.querySelectorAll('.ow-kpis > *')].at(-1),
+                kpis   = [...document.querySelectorAll('.ow-kpis .ow-kpi')].at(-1),
                 note   = document.querySelector('.ow-side .ow-card-note > span:last-child'),
                 { scheduler } = globalThis.bryntum.query('dispatchapp'),
                 radius = parseFloat(getComputedStyle(app).borderTopLeftRadius),
                 border = parseFloat(getComputedStyle(app).borderLeftWidth);
 
             return {
-                body     : [document.body.scrollHeight, document.body.clientHeight],
-                scroll   : scheduler.scrollable.maxY,
-                clock    : left('.ow-clock'),
-                schedule : left('.ow-schedule'),
-                tray     : left('.ow-tray > :first-child'),
-                kpis     : kpis.getBoundingClientRect().right,
-                side     : right('.ow-side'),
-                inset    : left('.ow-clock') - app.getBoundingClientRect().left - border,
+                body        : [document.body.scrollHeight, document.body.clientHeight],
+                scroll      : scheduler.scrollable.maxY,
+                clock       : left('.ow-clock'),
+                schedule    : left('.ow-schedule'),
+                scheduleEnd : right('.ow-schedule'),
+                tray        : [...document.querySelectorAll('.ow-tray .ow-team')].at(-1).getBoundingClientRect().right,
+                kpis        : kpis.getBoundingClientRect().right,
+                side        : right('.ow-side'),
+                inset       : left('.ow-clock') - app.getBoundingClientRect().left - border,
                 radius,
-                noteCut  : note.scrollWidth > note.clientWidth,
-                noteRows : note.getBoundingClientRect().height < 20
+                noteCut     : note.scrollWidth > note.clientWidth,
+                noteRows    : note.getBoundingClientRect().height < 20
             };
         });
 
         expect(m.body[0]).toBe(m.body[1]);
         expect(m.scroll).toBe(0);
-        // The header text and the crews tray start where the cards' content does, one inset (16px) in from the schedule
-        // card's edge, and the KPIs end one inset in from the rail card's; the frame's padding is its corner radius
+        // The header in two parts as the cards under it: the site starts one inset (16px) in from the schedule card's
+        // edge and the crews end one inset in from its other edge, the KPIs end one inset in from the rail card's; the
+        // frame's padding is its corner radius
         expect(Math.abs(m.clock - m.schedule - 16)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.tray - m.clock)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.scheduleEnd - m.tray - 16)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.side - m.kpis - 16)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.inset - m.radius - 16)).toBeLessThanOrEqual(1);
         expect(m.noteCut).toBe(false);

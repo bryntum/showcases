@@ -2,10 +2,12 @@ import { Container } from '@bryntum/core-enterprise';
 // Also registers the widget types used below
 import './Kpi.js';
 import './KpiClock.js';
+import './TeamTray.js';
 
 /**
- * The header, clean: the site and the day shown (KpiClock) on the left, the day's counts (Kpi, from plan/Kpis.js) on
- * the right, the plan's first and what needs acting on after a divider. The time is the schedule's now line, and the
+ * The header, in two parts as the app under it: over the schedule the site and the day shown (KpiClock) and, at its
+ * right end, the crews waiting at the port (TeamTray); over the map the day's counts (Kpi, from plan/Kpis.js), the
+ * plan's first and what needs acting on after a divider. The time is the schedule's now line, and the
  * weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and the late trip's tag.
  *
  * Learn more:
@@ -17,20 +19,52 @@ export default class KpiBar extends Container {
     static type = 'kpibar';
 
     static configurable = {
+        /**
+         * The port's name, for the crews' title
+         * @config {String}
+         */
+        port : null,
+
         cls    : 'ow-kpis',
         layout : { type : 'hbox', align : 'center' },
         items  : {
-            clock  : { type : 'kpiclock' },
-            // Pushes the counts to the right end
-            fill   : { type : 'widget', cls : 'ow-kpi-fill', flex : '1 1 0' },
-            first  : { type : 'kpi' },
-            second : { type : 'kpi' },
-            // Between the plan and what needs acting on
-            split  : { type : 'widget', cls : 'ow-kpi-split', ariaHidden : true },
-            third  : { type : 'kpi' },
-            fourth : { type : 'kpi' }
+            // Over the schedule: the site, and the crews at its right end
+            lead : {
+                type   : 'container',
+                cls    : 'ow-kpis-lead',
+                flex   : 1,
+                layout : { type : 'hbox', align : 'center' },
+                items  : {
+                    clock : { type : 'kpiclock' },
+                    // Pushes the crews to the right end
+                    fill  : { type : 'widget', cls : 'ow-kpi-fill', flex : '1 1 0' },
+                    tray  : { type : 'teamtray' }
+                }
+            },
+            // Over the map, as wide as it: the counts at its right end
+            counts : {
+                type   : 'container',
+                cls    : 'ow-kpis-counts',
+                layout : { type : 'hbox', align : 'center' },
+                items  : {
+                    // Pushes the counts to the right end
+                    push   : { type : 'widget', cls : 'ow-kpi-fill', flex : '1 1 0' },
+                    first  : { type : 'kpi' },
+                    second : { type : 'kpi' },
+                    // Between the plan and what needs acting on
+                    split  : { type : 'widget', cls : 'ow-kpi-split', ariaHidden : true },
+                    third  : { type : 'kpi' },
+                    fourth : { type : 'kpi' }
+                }
+            }
         }
     };
+
+    afterConstruct() {
+        super.afterConstruct();
+
+        this.widgetMap.tray.port = this.port;
+    }
 
     /**
      * Shows the site and the day's counts

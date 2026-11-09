@@ -1,16 +1,85 @@
 /* The KPI header (KpiBar.js): the site and the day, and the numbers of the day, quiet */
 
-/* KPI header, a Container with an hbox layout, floating free on the page background */
+/* KPI header, a Container with an hbox layout, floating free on the page background. Two parts as the app under it:
+   the gutter at its sides and between them, the map's width for the counts. Each part's content starts and ends where
+   the cards' does, past their rounded corners: the cards' own inner padding */
 .ow-kpis {
-    --b-container-gap     : 32px;
-    /* Its text starts and ends where the cards' content does, past their rounded corners: the gutter plus the cards'
-       own inner padding */
-    --b-container-padding : 0 calc(var(--ow-gutter) + var(--ow-inset));
+    --b-container-gap     : var(--ow-gutter);
+    --b-container-padding : 0 var(--ow-gutter);
 
     flex       : none;
     box-sizing : border-box;
-    height     : 58px;
+    height     : 72px;
 
+    :is(.ow-kpis-lead, .ow-kpis-counts) {
+        --b-container-gap     : 32px;
+        --b-container-padding : 0 var(--ow-inset);
+
+        box-sizing : border-box;
+        height     : 100%;
+    }
+
+    /* The site never gives way; the crews do, their title first where the part over the schedule gets narrow */
+    .ow-kpis-lead {
+        container : ow-kpis-lead / inline-size;
+        min-width : 0;
+
+        .ow-clock {
+            flex : none;
+        }
+
+        .ow-tray {
+            flex      : 0 1 auto;
+            min-width : 0;
+        }
+
+        @container ow-kpis-lead (max-width: 900px) {
+            .ow-tray-title {
+                display : none;
+            }
+        }
+
+        /* Narrower still: each crew's card on one line, its job in its tooltip, as on a phone */
+        @container ow-kpis-lead (max-width: 720px) {
+            .ow-team-job {
+                display : none;
+            }
+        }
+
+        /* Narrowest: the name and the people on board only, and the cards scroll sideways, faded at the end where
+           more are to come */
+        @container ow-kpis-lead (max-width: 560px) {
+            .ow-tray {
+                overflow-x      : auto;
+                scrollbar-width : none;
+                mask-image      : linear-gradient(to right, #000 calc(100% - 24px), transparent);
+            }
+
+            .ow-tray .ow-team {
+                padding-inline : 12px;
+
+                .ow-team-crew {
+                    display : none;
+                }
+            }
+        }
+    }
+
+    /* As wide as the map's card (MapPanel's width) */
+    .ow-kpis-counts {
+        flex  : none;
+        width : var(--ow-rail-w);
+    }
+
+}
+
+/* The site and each count stack their label over the figure (the crews' cards in the header keep their own lines) */
+:is(.ow-clock, .ow-kpi).b-widget {
+    display : block;
+}
+
+/* Without weight, so a count's tone (below) still colours its label */
+:where(.ow-clock, .ow-kpi) {
     small {
         display     : block;
         font-size   : 12px;
@@ -24,11 +93,6 @@
         line-height : 1.2;
         white-space : nowrap;
     }
-}
-
-/* The site and each count stack their label over the figure */
-:is(.ow-clock, .ow-kpi).b-widget {
-    display : block;
 }
 
 /* "Skarv Bank" over "Mon 9 Nov" */

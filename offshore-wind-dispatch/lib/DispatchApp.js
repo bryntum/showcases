@@ -115,7 +115,8 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
         const me = this;
 
         return {
-            kpis : { type : 'kpibar' },
+            // The header: the site and the crews waiting over the schedule, the counts over the map
+            kpis : { type : 'kpibar', port : site.portShort ?? site.port },
             // On a phone the schedule and the map are its tabs (updatePhone)
             tabs : {
                 type : 'phonetabs',
@@ -129,8 +130,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                 flex   : 1,
                 layout : 'hbox',
                 items  : {
-                    // The schedule's card, the crews waiting at the port under it on the page. On a phone this is
-                    // the Schedule tab
+                    // The schedule's card. On a phone this is the Schedule tab
                     column : {
                         type   : 'container',
                         cls    : 'ow-left',
@@ -138,8 +138,7 @@ export default class DispatchApp extends DropPreview(Panel.mixin(Responsive)) {
                         flex   : 1,
                         layout : 'vbox',
                         items  : {
-                            schedulePane : { type : 'schedulepanel', flex : 1, dispatch : me.dispatch, data },
-                            tray         : { type : 'teamtray', port : site.portShort ?? site.port }
+                            schedulePane : { type : 'schedulepanel', flex : 1, dispatch : me.dispatch, data }
                         }
                     },
                     side : {

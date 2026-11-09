@@ -334,6 +334,8 @@ test.describe('Offshore Wind Dispatch turbines', () => {
     });
 
     test('the legend fits one row: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
+        // Tall enough for the legends, which give way on short screens
+        await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
 
         const entries = page.locator('.ow-side .ow-map-legend > span');

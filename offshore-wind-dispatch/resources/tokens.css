@@ -85,6 +85,8 @@
        cards keep a radius of their own */
     --ow-frame-radius   : 24px;
     --ow-gutter         : var(--ow-frame-radius);
+    /* The map's card's width (MapPanel), the header's counts over it are as wide */
+    --ow-rail-w         : 400px;
     --ow-card-radius    : 8px;
     /* One soft, diffuse shadow, no ring: a ring with an offset shadow read as a second, darker edge. In dark the cards
        are a step lighter than the frame, which already sets them off */
