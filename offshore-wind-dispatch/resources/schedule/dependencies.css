@@ -1,13 +1,14 @@
-/* The dependencies of the plan (schedule/TripRendering.js): drawn by the Dependencies feature, a thin neutral line a
- * shade darker than the transit line, a small arrowhead, no glow. It may cross rows. Blue, as the work, on hover */
+/* The dependencies of the plan (schedule/TripRendering.js): drawn by the Dependencies feature, 1 px in the colour of
+ * the work block they come from (its tonal hairline), a small arrowhead, no glow. It may cross rows. The full work
+ * blue on hover */
 .ow-scheduler {
-    --b-dependency-stroke-width       : 1.25;
-    --b-dependency-hover-stroke-width : 1.75;
+    --b-dependency-stroke-width       : 1;
+    --b-dependency-hover-stroke-width : 1.5;
 }
 
 .ow-scheduler .b-sch-dependency {
     &.ow-dep {
-        --b-dependency-color : var(--ow-c-dependency);
+        --b-dependency-color : var(--ow-c-work-line);
 
         stroke-dasharray : none;
         stroke-linejoin  : round;
