@@ -1,11 +1,15 @@
 import { Scheduler } from '@bryntum/scheduler-enterprise';
+import VesselModel from '../model/VesselModel.js';
+import VesselRangeModel from '../model/VesselRangeModel.js';
+import WeekCellModel from './WeekCellModel.js';
 import { dateOn, dayOf, lateText, weekCells, weekDays } from './WeekCells.js';
 
 const
-    // A day as one cell: the planning answer, not the times of the legs
+    // A day as one cell: the planning answer, not the times of the legs. The days share the width down to the tick
+    // width, then the week scrolls: Scheduler stretches the ticks to fill a wider view
     dayPreset = {
         base           : 'dayAndWeek',
-        tickWidth      : 120,
+        tickWidth      : 112,
         shiftUnit      : 'week',
         shiftIncrement : 1,
         timeResolution : { unit : 'day', increment : 1 }
@@ -17,10 +21,12 @@ const
  *
  * - A view preset of one tick a day, `fillTicks` so each vessel-day is one full cell, the seven days sharing the width
  *   down to a readable cell, then the week scrolls
- * - One derived event per vessel and day with trips (WeekCells), so cells never stack: its times top left, its seats
- *   top right, its turbines, and the seats used as the PercentBar feature's thin bar. A day back after its window is
- *   orange with how late
- * - Whole-day resource time ranges for the days without trips: `No-go`, hatched, or `Free` until the window closes,
+ * - The vessels are the Day view's (VesselModel)
+ * - One derived event per vessel and day with trips (WeekCellModel, WeekCells), so cells never stack: its times top
+ *   left, its seats top right, its turbines, and the seats used as the PercentBar feature's thin bar. A day back after
+ *   its window is orange with how late
+ * - Whole-day resource time ranges for the days without trips (VesselRangeModel): `No-go`, hatched, or `Free` until
+ *   the window closes,
  *   dashed, where a crew dragged from the tray plans a new trip (TeamDrag, DropPreview). The cell the crew is held
  *   over is tinted blue like the Day view's target trip (`dropCell`)
  * - A header row renderer per day: the date, the crew transfer vessels' sea state, the wave height and the wind
@@ -72,12 +78,6 @@ export default class WeekBoard extends Scheduler {
         useInitialAnimation       : false,
         multiEventSelect          : false,
 
-        /**
-         * The days share the width down to this many px each, then the week scrolls
-         * @config {Number}
-         */
-        minDayWidth : 112,
-
         features : {
             cellEdit           : false,
             cellMenu           : false,
@@ -128,18 +128,19 @@ export default class WeekBoard extends Scheduler {
                 headerRenderer : () => '<b>Sea state</b><small>CTV window, Hs, wind</small>',
                 renderer       : ({ record }) => [
                     { tag : 'b', text : record.name },
-                    { tag : 'small', text : `${record.kind.split(' · ')[0]} · ${record.seats} pax` }
+                    { tag : 'small', text : `${record.vesselType} · ${record.seats} pax` }
                 ],
                 // The summary row's label: the time axis has the values
                 summaries : [{ sum : () => 0, renderer : () => 'Jobs · planned / due' }]
             }],
             project : {
-                resourceStore : { fields : ['kind', 'seats', 'window', 'mode'], data : config.dispatch.vessels },
-                eventStore    : {
-                    fields         : ['day', 'trips', 'turbines', 'pax', 'seats', 'late', 'percentDone'],
-                    syncDataOnLoad : true
-                },
-                resourceTimeRangeStore : { fields : ['day', 'kind'], syncDataOnLoad : true }
+                resourceModelClass          : VesselModel,
+                eventModelClass             : WeekCellModel,
+                resourceTimeRangeModelClass : VesselRangeModel,
+                resources                   : config.dispatch.vessels,
+                // Drawn again on each change of the plan (draw), records that stay are updated, not replaced
+                eventStore                  : { syncDataOnLoad : true },
+                resourceTimeRangeStore      : { syncDataOnLoad : true }
             },
             eventRenderer             : args => me.renderCell(args),
             resourceTimeRangeRenderer : args => me.renderFree(args),
@@ -153,24 +154,11 @@ export default class WeekBoard extends Scheduler {
 
         me.days = [];
         me.on({
-            eventClick             : ({ eventRecord }) => me.openDay(eventRecord.day),
-            scheduleClick          : ({ date }) => me.openDay(dayOf(date)),
-            timeAxisHeaderClick    : ({ startDate }) => me.openDay(dayOf(startDate)),
-            timelineViewportResize : 'fitTicks',
-            paint                  : 'fitTicks',
-            thisObj                : me
+            eventClick          : ({ eventRecord }) => me.openDay(eventRecord.day),
+            scheduleClick       : ({ date }) => me.openDay(dayOf(date)),
+            timeAxisHeaderClick : ({ startDate }) => me.openDay(dayOf(startDate)),
+            thisObj             : me
         });
-    }
-
-    /**
-     * The seven days share the width, down to `minDayWidth` each, then the week scrolls
-     */
-    fitTicks() {
-        const width = this.timeAxisSubGridElement?.clientWidth;
-
-        if (width && !this.isDestroyed) {
-            this.tickSize = Math.max(this.minDayWidth, Math.floor(width / 7));
-        }
     }
 
     updatePhone(phone) {
@@ -183,7 +171,7 @@ export default class WeekBoard extends Scheduler {
     updateDropCell(cell, was) {
         const me = this;
 
-        if (me.isPainted) {
+        if (me.isVisible) {
             new Set([was?.vesselId, cell?.vesselId]).forEach(id => {
                 const vessel = id != null && me.resourceStore.getById(id);
 
@@ -217,8 +205,8 @@ export default class WeekBoard extends Scheduler {
         me.eventStore.data = events;
         me.resourceTimeRangeStore.data = ranges;
         // The header and the summary show the days' forecasts and counts, which change with the plan
-        me.timeAxisColumn?.refreshHeader?.();
-        me.features.summary.refresh?.();
+        me.timeAxisColumn.refreshHeader();
+        me.features.summary.refresh();
     }
 
     /**
@@ -229,13 +217,14 @@ export default class WeekBoard extends Scheduler {
      */
     cellAt({ x, y }) {
         const
-            me    = this,
-            axis  = me.timeAxisSubGridElement,
-            row   = document.elementsFromPoint(x, y).find(element => axis?.contains(element) &&
-                element.matches('.b-grid-row[data-id]')),
-            date  = row && me.getDateFromCoordinate(x, null, false),
-            day   = date ? dayOf(date) : -1,
-            range = row && me.resourceTimeRangeStore.getById(`${row.dataset.id}:${day}`);
+            me      = this,
+            element = document.elementFromPoint(x, y),
+            // The vessel of the row under the point, in the days (not the vessel column)
+            inDays  = element && me.timeAxisSubGridElement.contains(element),
+            vessel  = inDays ? me.resolveResourceRecord(element, [x, y]) : null,
+            date    = vessel && me.getDateFromCoordinate(x, null, false),
+            day     = date ? dayOf(date) : -1,
+            range   = vessel?.timeRanges.find(each => each.day === day);
 
         if (!range) {
             return null;
@@ -246,7 +235,7 @@ export default class WeekBoard extends Scheduler {
         const key = `${range.id}:${range.kind}`;
 
         if (!me.cells.has(key)) {
-            me.cells.set(key, { isWeekCell : true, id : range.id, vesselId : row.dataset.id, day, kind : range.kind });
+            me.cells.set(key, { isWeekCell : true, id : range.id, vesselId : vessel.id, day, kind : range.kind });
         }
 
         return me.cells.get(key);
@@ -294,10 +283,11 @@ export default class WeekBoard extends Scheduler {
         ];
     }
 
-    // A vessel's day without trips: free until its window closes, or no-go. Tinted while a crew is held over it
+    // A vessel's day without trips: free until its window closes, or no-go. Tinted while a crew is held over it. The
+    // classes go on the range's own element, its `wrapperCls`
     renderFree({ resourceTimeRangeRecord : range, renderData }) {
-        renderData.cls[`ow-week-${range.kind}`] = 1;
-        renderData.cls['ow-week-drop']          = this.dropCell?.id === range.id;
+        renderData.wrapperCls[`ow-week-${range.kind}`] = 1;
+        renderData.wrapperCls['ow-week-drop']          = this.dropCell?.id === range.id;
 
         return range.name;
     }

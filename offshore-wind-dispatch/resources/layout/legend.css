@@ -1,4 +1,4 @@
-/* The schedule's footer (Legend.js): 40px under the last row, the legend on the left, the credit on the right */
+/* The schedule's footer (Legend.js): 36px under the last row, the legend on the left, the credit on the right */
 
 .ow-legend {
     flex               : none;
@@ -31,8 +31,8 @@
         border-radius : 2px;
     }
 
-    /* The tonal work block: its tint and hairline (tokens.css) */
-    .ow-l-work i {
+    /* The tonal work block, and the Week view's day with trips: its tint and hairline (tokens.css) */
+    :is(.ow-l-work, .ow-l-cell) i {
         background-color : var(--ow-c-work-tint);
         box-shadow       : inset 0 0 0 1px var(--ow-c-work-line);
     }
@@ -45,15 +45,15 @@
         background-color : var(--ow-c-transit);
 
         &::before, &::after {
-            content          : '';
-            position         : absolute;
+            content           : '';
+            position          : absolute;
             inset-block-start : 50%;
-            box-sizing       : border-box;
-            width            : var(--ow-dot-out);
-            height           : var(--ow-dot-out);
-            border           : var(--ow-transit-w) solid var(--ow-c-transit);
-            border-radius    : 50%;
-            translate        : 0 -50%;
+            box-sizing        : border-box;
+            width             : var(--ow-dot-out);
+            height            : var(--ow-dot-out);
+            border            : var(--ow-transit-w) solid var(--ow-c-transit);
+            border-radius     : 50%;
+            translate         : 0 -50%;
         }
 
         &::before {
@@ -77,16 +77,16 @@
         background-color : var(--ow-c-work-line);
 
         &::after {
-            content           : '';
-            position          : absolute;
-            inset-block-start : 50%;
-            inset-inline-end  : 0;
-            width             : 0;
-            height            : 0;
-            border            : 3.5px solid transparent;
+            content                   : '';
+            position                  : absolute;
+            inset-block-start         : 50%;
+            inset-inline-end          : 0;
+            width                     : 0;
+            height                    : 0;
+            border                    : 3.5px solid transparent;
             border-inline-start-color : var(--ow-c-work-line);
             border-inline-end-width   : 0;
-            translate         : 0 -50%;
+            translate                 : 0 -50%;
         }
     }
 
@@ -101,28 +101,23 @@
             color-mix(in srgb, var(--ow-c-muted) 55%, transparent) 0 1.5px, transparent 1.5px 4px);
     }
 
-    /* The Week view's: a day's trips, a workable day left free */
-    .ow-l-cell i {
-        background-color : var(--ow-c-work-tint);
-        box-shadow       : inset 0 0 0 1px var(--ow-c-work-line);
-    }
-
+    /* The Week view's workable day left free */
     .ow-l-free i {
         border : 1px dashed var(--ow-c-transit);
     }
 
     .ow-legend-credit {
         margin-inline-start : auto;
-    }
-}
 
-/* The credit's product links: quiet, underlined on hover */
-.ow-legend-credit a {
-    color           : inherit;
-    text-decoration : none;
+        /* The product links: quiet, underlined on hover */
+        a {
+            color           : inherit;
+            text-decoration : none;
 
-    &:hover {
-        color           : var(--ow-c-work);
-        text-decoration : underline;
+            &:hover {
+                color           : var(--ow-c-work);
+                text-decoration : underline;
+            }
+        }
     }
 }

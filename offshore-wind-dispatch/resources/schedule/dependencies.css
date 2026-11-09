@@ -2,31 +2,28 @@
  * the work block they come from (its tonal hairline), a small arrowhead, no glow. It may cross rows. The full work
  * blue on hover */
 .ow-scheduler {
-    --b-dependency-stroke-width       : 1;
     --b-dependency-hover-stroke-width : 1.5;
-}
 
-.ow-scheduler .b-sch-dependency {
-    &.ow-dep {
-        --b-dependency-color : var(--ow-c-work-line);
+    .b-sch-dependency {
+        &.ow-dep {
+            --b-dependency-color : var(--ow-c-work-line);
 
-        stroke-dasharray : none;
-        stroke-linejoin  : round;
-        stroke-linecap   : round;
-        fill             : none;
+            stroke-linejoin : round;
+            stroke-linecap  : round;
 
-        &.b-sch-dependency-over {
-            --b-dependency-color : var(--ow-c-work);
+            &.b-sch-dependency-over {
+                --b-dependency-color : var(--ow-c-work);
+            }
+
+            &.ow-dep-broken {
+                --b-dependency-color : var(--ow-c-risk-line);
+            }
         }
 
-        &.ow-dep-broken {
-            --b-dependency-color : var(--ow-c-risk-line);
+        /* A stop waits for tomorrow with its trip, and the links that keep a trip's legs in order, for the scheduling
+           engine (PlanDependencyModel#isChain), are not drawn */
+        &.ow-dep-moved, &.ow-dep-chain {
+            display : none;
         }
-    }
-
-    /* A stop waits for tomorrow with its trip, and the links that keep a trip's legs in order, for the scheduling
-       engine (TripData#chainData), are not drawn */
-    &.ow-dep-moved, &.ow-dep-chain {
-        display : none;
     }
 }

@@ -1,5 +1,5 @@
 import { portMinutes } from '../plan/Farm.js';
-import { icon } from '../util/Icons.js';
+import { iconConfig } from '../util/Icons.js';
 import { duration, hhmm } from '../util/Time.js';
 
 /**
@@ -14,11 +14,9 @@ import { duration, hhmm } from '../util/Time.js';
 export function tripTipContent(trip, state) {
     const
         close  = state.closeOf(trip.resource),
-        start  = trip.startMinute,
+        start  = trip.departs,
         back   = trip.endMinute,
         late   = back - close,
-        // Its vessel's icon: the SWATH has its own, the crew transfer vessels share one
-        mode   = trip.mode === 'heli' ? 'heli' : trip.resource?.window === 'swath' ? 'swath' : 'ctv',
         stops  = trip.legs.filter(leg => leg.type === 'stop' && !leg.preview),
         share  = minutes => `${((minutes - start) / Math.max(1, back - start) * 100).toFixed(2)}%`,
         // A stop the vessel cannot get back from before its window closes, as the schedule draws it
@@ -41,7 +39,8 @@ export function tripTipContent(trip, state) {
             {
                 tag      : 'header',
                 children : [
-                    { tag : 'span', class : 'ow-tip-vessel', html : icon(mode) },
+                    // Its vessel's icon, as in the vessel column
+                    { tag : 'span', class : 'ow-tip-vessel', children : [iconConfig(trip.resource?.glyph ?? 'ctv')] },
                     {
                         tag      : 'span',
                         class    : 'ow-tip-title',

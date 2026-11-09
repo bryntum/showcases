@@ -4,23 +4,23 @@
  * legs on the line, the nested events placed at their own times. No box: the trip is its label and its line, the work
  * blocks carry the colour. The sail out and back are its buffer (transit.css) */
 .ow-scheduler {
-    /* The line through the middle of the 28px work blocks: under the 20px label, 2px down, half a block */
-    --ow-line-y : calc(20px + 2px + var(--ow-c-block) / 2);
+    /* The trip's label muted. No background behind the legs either (the trip's own stays the feature's transparent) */
+    --b-nested-events-parent-color                  : var(--ow-c-muted);
+    --b-nested-events-container-background          : transparent;
+    --b-nested-events-container-hover-background    : transparent;
+    --b-nested-events-container-selected-background : transparent;
+    /* The line through the middle of the work blocks: under the label (the feature's `headerHeight`), 2px down, half a
+       block */
+    --ow-line-y                                     : calc(var(--b-nested-events-header-height) + 2px +
+        var(--ow-c-block) / 2);
 
     .b-sch-event-wrap .b-sch-event.ow-trip {
-        --b-sch-event-color               : var(--ow-c-muted);
-        --b-sch-event-background          : transparent;
-        --b-sch-event-hover-background    : transparent;
-        --b-sch-event-selected-background : transparent;
-        --b-sch-event-border-width        : 0;
-        --b-sch-event-padding-inline      : 0;
-        --b-nested-events-container-background          : transparent;
-        --b-nested-events-container-hover-background    : transparent;
-        --b-nested-events-container-selected-background : transparent;
+        --b-sch-event-border-width   : 0;
+        --b-sch-event-padding-inline : 0;
+        --b-sch-event-box-shadow     : none;
 
         align-items : stretch;
         overflow    : visible;
-        box-shadow  : none;
 
         /* The label, the height of the feature's `headerHeight` */
         > .b-sch-event-content {
@@ -42,7 +42,7 @@
                 content            : '';
                 position           : absolute;
                 inset-inline-start : var(--ow-pre, 0px);
-                inset-block-start  : calc(var(--ow-line-y) - 20px - 1px);
+                inset-block-start  : calc(var(--ow-line-y) - var(--b-nested-events-header-height) - 1px);
                 width              : 100%;
                 height             : var(--ow-transit-w);
                 background-color   : var(--ow-c-transit);
@@ -74,12 +74,13 @@
             border-radius  : var(--ow-c-radius);
         }
 
-        /* A team held over the trip, the drop target: a subtle blue tint with a thin blue outline */
+        /* A team held over the trip, the drop target: a subtle blue tint with a thin blue outline, as a day of the
+           Week view held over (week/board.css) */
         &.ow-trip-drop > .b-nested-events-container {
-            outline          : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+            outline          : var(--ow-drop-outline);
             outline-offset   : 3px;
             border-radius    : var(--ow-c-radius);
-            background-color : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
+            background-color : var(--ow-drop-tint);
         }
     }
 
@@ -88,15 +89,22 @@
         color       : var(--ow-ink);
         font-weight : 600;
     }
+
+    /* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by
+       default so the plan stays readable */
+    .b-time-axis-sub-grid.b-is-highlighting .b-sch-canvas > .b-sch-event-wrap:not(.b-highlighted) {
+        opacity : 0.4;
+    }
 }
 
-/* "SP-1 · Team C · 4 pax", 11px muted, from the departure on (its margin, TripRendering.js) */
+/* "SP-1 · Team C · 4 pax", 11px muted, from the departure on: back by the sail out (--ow-pre, TripRendering.js) */
 .ow-trip-head {
-    display     : flex;
-    align-items : center;
-    gap         : 8px;
-    height      : 20px;
-    font-size   : 11px;
+    display             : flex;
+    align-items         : center;
+    gap                 : 8px;
+    height              : var(--b-nested-events-header-height);
+    margin-inline-start : calc(-1 * var(--ow-pre, 0px));
+    font-size           : 11px;
     color       : var(--ow-c-muted);
     white-space : nowrap;
 
@@ -109,10 +117,4 @@
     .ow-trip-change {
         color : var(--ow-c-work);
     }
-}
-
-/* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by default
-   so the plan stays readable */
-.ow-scheduler .b-time-axis-sub-grid.b-is-highlighting .b-sch-canvas > .b-sch-event-wrap:not(.b-highlighted) {
-    opacity : 0.4;
 }

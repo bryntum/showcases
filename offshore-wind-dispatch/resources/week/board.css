@@ -6,9 +6,6 @@
     --b-grid-cell-border-color   : var(--ow-tick);
     --b-column-lines-tick-color  : var(--ow-border);
     --b-column-lines-major-color : var(--ow-border);
-    /* The seats bar along a cell's foot */
-    --b-percent-bar-height       : 3px;
-    --b-percent-bar-background   : var(--ow-c-work);
 
     /* The vessel column, and its header naming the day header's rows */
     .ow-week-vessel.b-grid-cell, .ow-week-axis.b-grid-header {
@@ -16,12 +13,17 @@
         align-items     : flex-start;
         justify-content : center;
         gap             : 2px;
-        padding-inline  : 24px 8px;
     }
 
+    /* On the card's surface, also when hovered or selected */
     .ow-week-vessel.b-grid-cell {
-        background-color : var(--ow-surface);
+        --b-grid-cell-background                : var(--ow-surface);
+        --b-grid-cell-hover-background          : var(--ow-surface);
+        --b-grid-cell-selected-background       : var(--ow-surface);
+        --b-grid-cell-hover-selected-background : var(--ow-surface);
+        --b-grid-cell-padding-inline            : 24px 8px;
     }
+
 
     .ow-week-vessel, .ow-week-axis .b-grid-header-text-content {
         b {
@@ -45,7 +47,9 @@
     /* A day's header: the date, the sea state pill, the wave height and the wind. The vessel column's header sets the
        height, the time axis shares it */
     .ow-week-axis.b-grid-header {
-        min-height : 88px;
+        /* Not by the header's padding variable, which is its block padding too */
+        padding-inline : 24px 8px;
+        min-height     : 88px;
     }
 
     .b-sch-header-time-axis-cell.ow-week-day {
@@ -109,32 +113,29 @@
         color            : var(--ow-ink-sub);
     }
 
-    /* A vessel's day with trips, Bryntum's event element as the card */
+    /* A vessel's day with trips, Bryntum's event element as the card: the work tint with a hairline border, its text
+       inset 6px 8px 10px from the card's edge (the 1px border included), room for the seats bar at its foot */
     .b-sch-event-wrap .b-sch-event.ow-cell {
-        align-items      : flex-start;
-        padding          : 6px 8px 10px;
-        border-radius    : var(--ow-c-radius);
-        background-color : var(--ow-c-work-tint);
-        box-shadow       : inset 0 0 0 1px var(--ow-c-work-line);
-        color            : var(--ow-ink);
-        font-size        : 12px;
-        cursor           : pointer;
-    }
+        --b-sch-event-background     : var(--ow-c-work-tint);
+        --b-sch-event-color          : var(--ow-ink);
+        --b-sch-event-border-width   : 1px;
+        --b-sch-event-border-style   : solid;
+        --b-sch-event-border-color   : var(--ow-c-work-line);
+        --b-sch-event-border-radius  : var(--ow-c-radius);
+        --b-sch-event-font-size      : 12px;
+        --b-sch-event-padding-inline : 7px;
+        --b-sch-event-padding-block  : 5px 9px;
 
-    .b-sch-event.ow-cell {
-        container-type : inline-size;
-    }
+        align-items : flex-start;
 
-    .ow-cell .b-sch-event-content {
-        display        : flex;
-        flex-direction : column;
-        align-items    : stretch;
-        gap            : 3px;
-        width          : 100%;
-        min-width      : 0;
-        text-align     : start;
-        margin         : 0;
-        overflow       : hidden;
+        > .b-sch-event-content {
+            container-type : inline-size;
+            flex-direction : column;
+            align-items    : stretch;
+            gap            : 3px;
+            text-align     : start;
+            overflow       : hidden;
+        }
     }
 
     /* A narrow day keeps the times, its seats are the bar */
@@ -166,40 +167,47 @@
 
     /* Back after its window: orange, how late */
     .b-sch-event-wrap .b-sch-event.ow-cell-late {
-        --b-percent-bar-background : var(--ow-c-risk-line);
-
-        background-color : var(--ow-c-risk-tint);
-        box-shadow       : inset 0 0 0 1px var(--ow-c-risk-line);
+        --b-sch-event-background   : var(--ow-c-risk-tint);
+        --b-sch-event-border-color : var(--ow-c-risk-line);
 
         .ow-cell-head, .ow-cell-jobs {
             color : var(--ow-c-risk-ink);
         }
+
+        .b-task-percent-bar {
+            --b-percent-bar-background : var(--ow-c-risk-line);
+        }
     }
 
-    /* The seats bar: a thin line inside the cell's foot, on a faint track */
-    .ow-cell .b-task-percent-bar-outer {
-        position      : absolute;
-        inset         : auto 8px 5px;
-        width         : auto;
-        height        : 3px;
-        border-radius : 2px;
-        background    : color-mix(in srgb, var(--ow-c-transit) 35%, transparent);
+    /* The seats bar: a thin line inside the cell's foot, on a faint track. Positioned inside the cell's border */
+    .ow-cell {
+        .b-task-percent-bar-outer {
+            position      : absolute;
+            inset         : auto 7px 4px;
+            width         : auto;
+            height        : 3px;
+            border-radius : 2px;
+            background    : color-mix(in srgb, var(--ow-c-transit) 35%, transparent);
+        }
+
+        /* The feature declares its colour on the bar itself, so it is set here */
+        .b-task-percent-bar {
+            --b-percent-bar-background : var(--ow-c-work);
+
+            height        : 100%;
+            border-radius : 2px;
+            opacity       : 1;
+        }
     }
 
-    .ow-cell .b-task-percent-bar {
-        height           : 100%;
-        border-radius    : 2px;
-        background-color : var(--b-percent-bar-background);
-        opacity          : 1;
-    }
-
-    /* A vessel's day without trips: free until its window closes, dashed, or no-go, hatched */
+    /* A vessel's day without trips: free until its window closes, dashed, or no-go, hatched. The classes are on the
+       range's element (WeekBoard#renderFree) */
     .b-sch-resource-time-range {
         --b-resource-time-range-background  : none;
+        --b-resource-time-range-color       : var(--ow-c-muted);
         --b-resource-time-range-align-items : center;
 
         font-size : 12px;
-        color     : var(--ow-c-muted);
 
         .b-sch-event-content {
             justify-content : center;
@@ -207,7 +215,7 @@
             margin          : 0;
         }
 
-        &:has(> .ow-week-free, > .ow-week-drop)::before {
+        &:is(.ow-week-free, .ow-week-drop)::before {
             content       : '';
             position      : absolute;
             inset         : 5px;
@@ -215,15 +223,14 @@
             border-radius : var(--ow-c-radius);
         }
 
-        /* A crew held over the day, the drop target: the Day view's subtle blue tint with a thin blue outline
-           (schedule/trips.css, .ow-trip-drop) */
-        &:has(> .ow-week-drop)::before {
-            border           : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
-            background-color : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
+        /* A crew held over the day, the drop target: as a trip held over in the Day view (schedule/trips.css) */
+        &.ow-week-drop::before {
+            border           : var(--ow-drop-outline);
+            background-color : var(--ow-drop-tint);
         }
 
-        &:has(> .ow-week-nogo) {
-            background-image : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
+        &.ow-week-nogo {
+            --b-resource-time-range-background : var(--ow-hatch);
         }
     }
 

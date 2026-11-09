@@ -1,4 +1,5 @@
 import { closingTimes, valueAt } from './Weather.js';
+import { firstSailing } from './Farm.js';
 import { weekPlan } from './WeekPlan.js';
 import { parseTime } from '../util/Time.js';
 
@@ -51,6 +52,14 @@ export default class DispatchState {
      */
     showDay(index) {
         this.dayIndex = index;
+    }
+
+    /**
+     * The first sailing of a day, minutes since midnight: the start of the working day and the farm's `firstSailing`
+     * @property {Number}
+     */
+    get firstSailing() {
+        return this.day.dayStart * 60 + firstSailing;
     }
 
     /**

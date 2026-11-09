@@ -3,8 +3,9 @@ import { hhmm, toDate } from '../util/Time.js';
 
 /**
  * Brings the scheduling project's stores in line with the dispatch state (DispatchState): the weather no-go of each
- * vessel and the old place of trips brought forward as resource time ranges, the now line as a time
- * range, and the dependencies of the plan. Not a widget: it works on the stores of the DispatchScheduler that owns it.
+ * vessel and the old place of trips brought forward as resource time ranges (VesselRangeModel, by their `kind`), the
+ * now line as a time range, and the dependencies of the plan. Not a widget: it works on the stores of the
+ * DispatchScheduler that owns it.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
@@ -59,8 +60,10 @@ export default class DispatchSync {
             { scheduler } = this,
             state         = scheduler.dispatch,
             end           = toDate(state.day.dayEnd * 60),
-            nogo          = scheduler.resourceStore.allRecords.filter(vessel => !vessel.isSpecialRow).map(vessel => ({
+            // The Group feature's header rows are records of the store too
+            nogo          = scheduler.resourceStore.allRecords.filter(vessel => !vessel.isGroupHeader).map(vessel => ({
                 id         : `nogo-${vessel.id}`,
+                kind       : 'nogo',
                 resourceId : vessel.id,
                 startDate  : toDate(state.closeOf(vessel)),
                 endDate    : end,
@@ -68,6 +71,7 @@ export default class DispatchSync {
             })),
             ghosts        = scheduler.trips.filter(trip => trip.status === 'pulled').map(trip => ({
                 id         : `ghost-${trip.id}`,
+                kind       : 'ghost',
                 resourceId : trip.resource?.id,
                 startDate  : toDate(trip.was),
                 endDate    : toDate(trip.was + trip.endMinute - trip.departs)
