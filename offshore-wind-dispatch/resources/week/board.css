@@ -2,8 +2,8 @@
    per vessel and day, the jobs per day in the summary row */
 
 .ow-week-board {
-    --b-grid-row-border-color    : var(--ow-border);
-    --b-grid-cell-border-color   : var(--ow-border);
+    --b-grid-row-border-color    : var(--ow-tick);
+    --b-grid-cell-border-color   : var(--ow-tick);
     --b-column-lines-tick-color  : var(--ow-border);
     --b-column-lines-major-color : var(--ow-border);
     /* The seats bar along a cell's foot */

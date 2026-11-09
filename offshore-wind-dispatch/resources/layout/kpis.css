@@ -4,7 +4,7 @@
 .ow-kpis {
     flex             : none;
     box-sizing       : border-box;
-    height           : 72px;
+    height           : 58px;
     gap              : 32px;
     padding          : 0 var(--ow-gutter);
 

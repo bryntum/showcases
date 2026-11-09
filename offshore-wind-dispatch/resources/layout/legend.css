@@ -115,3 +115,14 @@
         margin-inline-start : auto;
     }
 }
+
+/* The credit's product links: quiet, underlined on hover */
+.ow-legend-credit a {
+    color           : inherit;
+    text-decoration : none;
+
+    &:hover {
+        color           : var(--ow-c-work);
+        text-decoration : underline;
+    }
+}

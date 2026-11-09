@@ -36,7 +36,17 @@ export default class Legend extends Widget {
             item('dependency', 'Must finish first'),
             item('risk', 'At risk'),
             item('nogo', 'Weather no-go'),
-            { tag : 'span', class : 'ow-legend-credit', text : 'Schedule: Bryntum Scheduler · Wave height: AG Charts' }
+            {
+                tag      : 'span',
+                class    : 'ow-legend-credit',
+                // The products the showcase is built with, linked to their pages (as on the gallery)
+                children : [
+                    'Schedule: ',
+                    { tag : 'a', href : 'https://bryntum.com/products/scheduler/', target : '_blank', rel : 'noopener', text : 'Bryntum Scheduler' },
+                    ' · Wave height: ',
+                    { tag : 'a', href : 'https://www.ag-grid.com/charts/', target : '_blank', rel : 'noopener', text : 'AG Charts' }
+                ]
+            }
         ];
     }
 }
