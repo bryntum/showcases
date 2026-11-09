@@ -6,7 +6,8 @@
     background-color : var(--ow-surface);
     font-size        : 13px;
 
-    button {
+    /* Plain buttons take the app's text, a class on one sets its own colour */
+    :where(button) {
         font   : inherit;
         color  : inherit;
         cursor : pointer;
@@ -19,8 +20,7 @@
 
 /* The app panel's body and its containers: no padding, no gaps, the parts meet at their borders */
 .ow-app-body, .ow-main, .ow-schedule, .ow-side, .ow-tabs {
-    gap            : 0;
-    border-radius  : 0;
+    border-radius : 0;
 
     --b-panel-padding     : 0;
     --b-panel-gap         : 0;
@@ -166,7 +166,6 @@
     gap             : 12px;
     height          : 44px;
     padding         : 0 16px;
-    box-sizing      : border-box;
     border-block-end : 1px solid var(--ow-border);
 }
 
@@ -195,11 +194,8 @@
     font-size        : 12px;
     font-weight      : 600;
     white-space      : nowrap;
+    color            : var(--ow-cancel);
     background-color : color-mix(in srgb, var(--ow-cancel) 8%, var(--ow-surface));
-
-    .ow-app & {
-        color : var(--ow-cancel);
-    }
 
     &:hover {
         background-color : color-mix(in srgb, var(--ow-cancel) 14%, var(--ow-surface));
@@ -343,8 +339,8 @@
 }
 
 .ow-cert-hv {
-    color            : light-dark(#8a5a00, #ffd166);
-    background-color : light-dark(#fff1c7, rgb(255 209 102 / 16%));
+    color            : var(--ow-weather);
+    background-color : color-mix(in srgb, var(--ow-weather) 14%, transparent);
 }
 
 /* The forecast's notice */
@@ -394,7 +390,7 @@
 
     .ow-toast-primary {
         border-color     : transparent;
-        color            : #fff;
+        color            : var(--b-color-white);
         background-color : var(--ow-plan);
     }
 }
@@ -407,7 +403,6 @@
     gap         : 16px;
     height      : 34px;
     padding     : 0 16px;
-    box-sizing  : border-box;
     border-block-start : 1px solid var(--ow-border);
     font-size   : 11.5px;
     color       : var(--ow-ink-sub);
@@ -431,24 +426,36 @@
             display : none;
         }
     }
-}
 
-.ow-l-plan::before { background-color : var(--ow-plan); }
-.ow-l-risk::before { background-color : var(--ow-risk); }
-.ow-l-trim::before { background-color : var(--ow-plan); box-shadow : inset 0 0 0 2px var(--ow-cancel); }
-.ow-l-cancel::before { border : 1.5px dashed var(--ow-cancel); box-sizing : border-box; }
+    .ow-l-plan::before {
+        background-color : var(--ow-plan);
+    }
 
-.ow-l-nogo::before {
-    background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px,
-        transparent 2px 4px);
-}
+    .ow-l-risk::before {
+        background-color : var(--ow-risk);
+    }
 
-.ow-legend > .ow-l-dep::before {
-    width              : 14px;
-    height             : 0;
-    border-block-start : 1.5px solid var(--ow-ink-sub);
-    border-radius      : 0;
-    vertical-align     : 3px;
+    .ow-l-trim::before {
+        background-color : var(--ow-plan);
+        box-shadow       : inset 0 0 0 2px var(--ow-cancel);
+    }
+
+    .ow-l-cancel::before {
+        border : 1.5px dashed var(--ow-cancel);
+    }
+
+    .ow-l-nogo::before {
+        background : repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ow-weather) 50%, transparent) 0 2px,
+            transparent 2px 4px);
+    }
+
+    .ow-l-dep::before {
+        width              : 14px;
+        height             : 0;
+        border-block-start : 1.5px solid var(--ow-ink-sub);
+        border-radius      : 0;
+        vertical-align     : 3px;
+    }
 }
 
 /* Messages after a drop */

@@ -13,9 +13,9 @@ const
 
 export const
     /**
-     * Today written out, "Sunday 8 November 2026", for the time axis
+     * Today on the time axis, "Nov 9", beside its Today pill
      */
-    dayLong  = format(midnight, { weekday : 'long', day : 'numeric', month : 'long', year : 'numeric' }),
+    dayAxis  = midnight.toLocaleDateString('en-US', { month : 'short', day : 'numeric' }),
 
     /**
      * Today short, "Sun 8 Nov", for the KPI bar

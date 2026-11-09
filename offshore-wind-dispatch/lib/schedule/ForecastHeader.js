@@ -1,12 +1,12 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
 import { icon } from '../util/Icons.js';
-import { dayLong } from '../util/Time.js';
+import { dayAxis } from '../util/Time.js';
 
 /**
  * The weather in the time axis. The Scheduler's header has four rows, defined by its view preset:
  *
- * 1. The day, "Sunday 8 November 2026 · Today"
+ * 1. The day, "Nov 9 · Today"
  * 2. The hours, the ticks of the schedule
  * 3. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
  * 4. The wind at hub height per hour, from 20 m/s in the helicopters' purple
@@ -52,7 +52,7 @@ export default class ForecastHeader {
                 renderer : (startDate, endDate, config) => {
                     config.headerCellCls = 'ow-day-cell';
 
-                    return `<span class="ow-day">${dayLong}<em>Today</em></span>`;
+                    return `<span class="ow-day">${dayAxis}<em>Today</em></span>`;
                 }
             },
             { unit : 'hour', dateFormat : 'HH:mm', align : 'start', headerCellCls : 'ow-hour-cell' },

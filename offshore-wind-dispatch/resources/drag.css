@@ -8,45 +8,39 @@
     font-size      : 12px;
 }
 
+/* What the trip under the chip gives (TeamDrag showOnChip), from the same check as the tooltip: the chip turns green
+   where the team fits, red where it does not, and stays neutral over empty space */
 .ow-drag-chip {
-    position : fixed;
-}
+    --ow-shadow : 0 10px 24px rgb(0 0 0 / 22%);
 
-.ow-drag-chip {
     position           : absolute;
     inset-block-start  : 0;
     inset-inline-start : 0;
-    z-index          : 10001;
-    display          : flex;
-    align-items      : center;
-    gap              : 7px;
-    padding          : 4px 10px 4px 4px;
-    border-radius    : 8px;
-    background-color : var(--ow-surface);
-    border           : 1px solid var(--ow-reach);
-    box-shadow       : 0 10px 24px rgb(0 0 0 / 22%);
-    rotate           : -3deg;
-    white-space      : nowrap;
+    z-index            : 10001;
+    display            : flex;
+    flex-wrap          : wrap;
+    align-items        : center;
+    gap                : 7px;
+    max-width          : 260px;
+    padding            : 4px 10px 4px 4px;
+    border-radius      : 8px;
+    background-color   : var(--ow-surface);
+    border             : 1px solid var(--ow-reach);
+    box-shadow         : var(--ow-shadow);
+    rotate             : -3deg;
+    white-space        : nowrap;
 
     .ow-cert + .ow-cert {
         margin-inline-start : -3px;
     }
-}
-
-/* What the trip under the chip gives (TeamDrag showOnChip), from the same check as the tooltip: the chip turns green
-   where the team fits, red where it does not, and stays neutral over empty space */
-.ow-drag-chip {
-    flex-wrap : wrap;
-    max-width : 260px;
 
     &[data-state='valid'] {
-        border-color : var(--ow-reach);
-        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), 0 10px 24px rgb(0 0 0 / 22%);
+        box-shadow : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), var(--ow-shadow);
     }
 
     &[data-state='invalid'] {
         border-color : var(--ow-cancel);
-        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-cancel) 30%, transparent), 0 10px 24px rgb(0 0 0 / 22%);
+        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-cancel) 30%, transparent), var(--ow-shadow);
     }
 
     &[data-state='neutral'] {
@@ -83,32 +77,26 @@
 }
 
 .ow-drag-hand {
-    position           : absolute;
-    inset-inline-end   : -12px;
-    inset-block-end    : -14px;
-    width    : 24px;
-    height   : 24px;
-    color    : var(--ow-ink);
-    filter   : drop-shadow(0 1px 0 var(--ow-surface));
+    position         : absolute;
+    inset-inline-end : -12px;
+    inset-block-end  : -14px;
+    width            : 24px;
+    height           : 24px;
+    color            : var(--ow-ink);
+    filter           : drop-shadow(0 1px 0 var(--ow-surface));
 }
 
 /* The Bryntum Tooltip of the trip under a held team, styled as a card */
 .b-tooltip.ow-drop-tip {
     --ow-tone : var(--ow-reach);
 
-    width            : 248px;
-    box-sizing       : border-box;
-    border-radius    : 9px;
-    background-color : var(--ow-surface);
-    border           : 1px solid var(--ow-border);
-    box-shadow       : 0 10px 30px rgb(0 0 0 / 20%);
+    --b-popup-background    : var(--ow-surface);
+    --b-popup-border        : 1px solid var(--ow-border);
+    --b-popup-border-radius : 9px;
+    --b-popup-padding       : 10px 12px;
 
-    .b-tooltip-content, .b-panel-content {
-        padding          : 10px 12px;
-        color            : var(--ow-ink);
-        font-size        : 12px;
-        background-color : transparent;
-    }
+    width      : 248px;
+    box-shadow : 0 10px 30px rgb(0 0 0 / 20%);
 
     dl {
         display               : grid;
@@ -125,10 +113,10 @@
         margin               : 0;
         font-variant-numeric : tabular-nums;
     }
-}
 
-.ow-drop-tip-invalid {
-    --ow-tone : var(--ow-cancel);
+    &.ow-drop-tip-invalid {
+        --ow-tone : var(--ow-cancel);
+    }
 }
 
 .ow-drop-tip-head {
@@ -142,8 +130,8 @@
 .ow-drop-tip-foot {
     padding-block-start : 7px;
     border-block-start  : 1px solid var(--ow-border);
-    font-size   : 11.5px;
-    color       : var(--ow-ink-sub);
+    font-size           : 11.5px;
+    color               : var(--ow-ink-sub);
 }
 
 /* Held from the keyboard, the keys that move, book or cancel */

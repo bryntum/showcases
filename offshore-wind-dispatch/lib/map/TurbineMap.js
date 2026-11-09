@@ -208,11 +208,12 @@ export default class TurbineMap extends Widget {
         // Back to the whole farm, shown only while the map is fitted to a trip
         me.wholeFarmButton = new Button({
             // In one row with the callout, so the two never overlap
-            appendTo : me.element.querySelector('.ow-map-top'),
-            cls      : 'ow-map-whole',
-            text     : 'Show all',
-            hidden   : true,
-            onClick  : () => {
+            appendTo  : me.element.querySelector('.ow-map-top'),
+            cls       : 'ow-map-whole',
+            rendition : 'elevated',
+            text      : 'Show all',
+            hidden    : true,
+            onClick   : () => {
                 me.fitTo(null);
                 me.trigger('wholeFarm');
             }

@@ -2,7 +2,7 @@
  * chart and the wind, and beside them the vessel column's header naming those rows. Row heights, top to bottom: 26,
  * 26, 67 and 20px. Both sides share the same row lines: each line is drawn inside the row above it (border-box), in
  * the one divider colour, so the day and hours rows together are exactly the height of the "Forecast" cell beside
- * them. The header's single 1px line under it all is the header container's, on both sides */
+ * them. The 1px line under it all is the theme's own, on the time axis header and on the vessel column's header */
 
 .ow-scheduler {
     --ow-row-day   : 26px;
@@ -15,12 +15,12 @@
     --b-grid-header-border-color                 : var(--ow-border);
     --b-horizontal-time-axis-cell-padding-inline : 6px;
 
+    /* One line under the whole header, left and right: the container's. The theme's line under the vessel column's
+       header is dropped, or the left side gets two (and the time axis side none) */
     .b-grid-header-container {
         border-block-end : 1px solid var(--ow-border);
     }
 
-    /* The vessel column's header cell draws no line of its own under it, the container's is the one line: otherwise
-       two 1px lines meet the first group row on the left and one on the right */
     .b-grid-header.ow-axis-header {
         border-block-end : 0;
     }
@@ -29,8 +29,6 @@
         /* Rows of a fixed height, not shared out, so they line up with the names in the vessel column's header */
         .b-sch-header-row {
             flex             : none;
-            box-sizing       : border-box;
-            min-height       : 0;
             height           : var(--ow-row-hours);
             border-block-end : 1px solid var(--ow-row-line);
 
@@ -62,9 +60,7 @@
 
         /* The hours are centred in their row, on the same middle line as the now pill (below) */
         .ow-hour-cell, .ow-day-cell {
-            align-items         : center;
-            padding-block       : 0;
-            line-height         : 1;
+            line-height : 1;
         }
 
         /* Hidden while the now pill covers it (ForecastHeader.js) */
@@ -85,12 +81,10 @@
             overflow : visible;
         }
 
-        /* Each value centred in its hour, both ways */
+        /* Each value centred in its hour */
         .ow-wind-cell {
-            align-items     : center;
-            justify-content : center;
-            padding         : 0;
-            border-inline   : 0;
+            padding       : 0;
+            border-inline : 0;
         }
     }
 }
@@ -108,7 +102,8 @@
     color       : var(--ow-ink);
 
     em {
-        padding          : 0 6px;
+        padding          : 2px 6px;
+        line-height      : 1.2;
         border-radius    : 4px;
         font-style       : normal;
         font-size        : 10.5px;
@@ -140,11 +135,11 @@
 
 /* The vessel column's header: the names of the weather rows, at the height of each */
 .ow-axis-header.b-grid-header {
-    align-items : stretch;
-    padding     : 0;
-    min-height  : 0;
+    --b-grid-header-padding        : 0;
+    --b-grid-header-text-transform : none;
 
-    --b-grid-header-padding : 0;
+    align-items : stretch;
+    min-height  : 0;
 
     .b-grid-header-text, .b-grid-header-text-content {
         display : flex;
@@ -165,8 +160,6 @@
     flex-direction  : column;
     justify-content : flex-end;
     width           : 100%;
-    margin          : 0;
-    text-transform  : none;
     letter-spacing  : normal;
 
     .ow-axis-row {
@@ -247,13 +240,21 @@
     .ow-now {
         z-index             : 4;
         overflow            : visible;
-        opacity             : 1;
         background          : none;
-        border              : 0;
-        border-inline-start : 1px solid var(--ow-now);
+        border-inline-start : 0;
         /* From the hours row down to the bottom of the header */
         inset-block-start   : var(--ow-row-day);
         height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
+
+        /* The line starts under the pill, it never runs through it */
+        &::before {
+            content             : '';
+            position            : absolute;
+            inset-inline-start  : 0;
+            inset-block-start   : calc((var(--ow-row-hours) + 14px) / 2);
+            inset-block-end     : 0;
+            border-inline-start : var(--b-time-range-line-width) solid var(--ow-now);
+        }
 
         /* The time, a pill centred on the line and on the hours row's middle line, over the hour label it covers */
         label {
@@ -271,7 +272,7 @@
             font-weight      : 700;
             line-height      : 14px;
             font-variant-numeric : tabular-nums;
-            color            : #fff;
+            color            : var(--b-color-white);
             background-color : var(--ow-now);
         }
     }

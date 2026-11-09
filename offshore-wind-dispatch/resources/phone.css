@@ -35,39 +35,32 @@
 
     /* The schedule and the map as the tabs of a Bryntum TabPanel (DispatchApp#updatePhone), its tab bar styled as a
        segmented control */
-    .ow-tabs.b-tabpanel {
-        --b-panel-padding : 0;
-
-        border-radius : 0;
-    }
-
     .ow-tab-bar.b-tab-bar {
-        min-height         : 0;
-        margin             : 8px 12px;
-        padding            : 2px;
-        gap                : 0;
-        border-radius      : 7px;
-        background-color   : var(--b-neutral-95);
-        border-block-end   : 0;
+        --b-tab-bar-background          : var(--b-neutral-95);
+        --b-tab-bar-padding             : 2px;
+        --b-tab-bar-border-bottom-width : 0;
+        --b-tab-border-radius           : 5px;
+        --b-tab-color                   : var(--ow-ink);
+        --b-tab-hover-color             : var(--ow-ink);
+        --b-tab-active-tab-color        : var(--ow-ink);
+        --b-tab-hover-background        : transparent;
+        --b-tab-active-background       : var(--ow-surface);
+        --b-tab-indicator-display       : none;
+
+        min-height    : 0;
+        margin        : 8px 12px;
+        gap           : 0;
+        border-radius : 7px;
 
         .b-tab {
-            flex          : 1;
-            min-height    : 30px;
-            margin        : 0;
-            border        : 0;
-            border-radius : 5px;
-            font-size     : 13px;
-            font-weight   : 500;
-            color         : var(--ow-ink);
-            background    : none;
-
-            &::after, &::before {
-                display : none;
-            }
+            flex       : 1;
+            min-height : 30px;
+            font-size  : 13px;
 
             &.b-active {
-                background-color : var(--ow-surface);
-                box-shadow       : 0 1px 2px rgb(0 0 0 / 12%);
+                --b-tab-hover-background : var(--ow-surface);
+
+                box-shadow : 0 1px 2px rgb(0 0 0 / 12%);
             }
         }
     }

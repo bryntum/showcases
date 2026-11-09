@@ -2,18 +2,17 @@
  * ranges, the shaded past and the now line, and the dependency line */
 
 .ow-scheduler {
-    /* The legs' bars inside a trip, under its head line */
-    --ow-seg-height            : 16px;
-    --b-grid-row-border-color  : var(--ow-border);
-    --b-grid-cell-border-color : var(--ow-border);
-    --b-grid-row-border-width  : 1px;
+    --b-grid-row-border-color   : var(--ow-border);
+    --b-grid-cell-border-color  : var(--ow-border);
     /* The group rows, Crew transfer vessels and Helicopters, a slim band. The Group feature sizes them from this */
-    --b-group-row-height       : 30px;
-
+    --b-group-row-height        : 30px;
+    --b-group-header-background : var(--ow-sunken);
     /* Hour lines, faint */
-    .b-column-line, .b-column-line-major {
-        border-inline-start-color : var(--ow-grid);
-    }
+    --b-column-lines-tick-color  : var(--ow-grid);
+    --b-column-lines-major-color : var(--ow-grid);
+    /* The now line, 1px, under the trips */
+    --b-time-range-line-width  : 1px;
+    --b-time-range-line-zindex : 4;
 
     /* The vessel column */
     .ow-resource-cell.b-grid-cell {
@@ -23,8 +22,6 @@
 
     /* Group rows: Crew transfer vessels, Helicopters */
     .b-grid-row.b-group-row {
-        background-color : var(--ow-sunken);
-
         /* Small and untracked, so "Crew transfer vessels" and its count fit the column */
         .b-grid-cell {
             font-size      : 10px;
@@ -32,7 +29,6 @@
             letter-spacing : 0;
             text-transform : uppercase;
             color          : var(--ow-ink-sub);
-            border-inline  : 0;
         }
 
         .ow-resource-cell.b-grid-cell.b-group-title {
@@ -40,18 +36,16 @@
         }
     }
 
-    /* The shaded past and the now line, in the rows */
+    /* The shaded past, in the rows */
     .b-sch-time-range.ow-past {
-        opacity          : 1;
-        background-color : var(--ow-past);
+        --b-time-range-opacity    : 1;
+        --b-time-range-background : var(--ow-past);
     }
 
-    .b-sch-time-range.ow-now {
-        z-index             : 4;
-        width               : 0;
-        opacity             : 1;
-        background          : none;
-        border-inline-start : 1px solid var(--ow-now);
+    /* The now line, in the rows */
+    .b-sch-line.ow-now {
+        --b-time-range-background : none;
+        --b-time-range-line-color : var(--ow-now);
     }
 }
 
@@ -105,9 +99,9 @@
 
 /* How much of what is left of the window is booked, and the seats */
 .ow-util {
-    display     : flex;
-    align-items : center;
-    gap         : 6px;
+    display            : flex;
+    align-items        : center;
+    gap                : 6px;
     margin-block-start : 3px;
 }
 
@@ -157,10 +151,12 @@
 
 /* Weather no-go: from the hour the limit is crossed, hatched in the weather colour, the window line at its start */
 .ow-scheduler .b-sch-resource-time-range {
-    --b-resource-time-range-background : none;
-    --b-resource-time-range-color      : var(--ow-weather);
-
-    opacity : 1;
+    --b-resource-time-range-background     : none;
+    --b-resource-time-range-color          : var(--ow-weather);
+    /* The label sits in the bottom left corner, 3px up and 8px in */
+    --b-resource-time-range-padding-block  : 0 3px;
+    --b-resource-time-range-padding-inline : 8px 0;
+    --b-resource-time-range-font-size      : 1em;
 
     &.ow-nogo {
         background-image    : repeating-linear-gradient(-45deg,
@@ -180,13 +176,6 @@
             border        : 1.5px dashed color-mix(in srgb, var(--ow-heli) 50%, transparent);
             border-radius : var(--ow-radius);
         }
-    }
-
-    .b-sch-event-content {
-        align-self : flex-end;
-        margin     : 0 0 3px 8px;
-        padding    : 0;
-        font-size  : 1em;
     }
 }
 
@@ -211,41 +200,35 @@
 }
 
 /* Trips: parent events, the head line on top, then their legs, the nested events (NestedEvents feature) placed at
- * their own times. Fully custom bars (`eventStyle : null`) */
+ * their own times. Fully custom bars (`eventStyle : null`), drawn from the event's own variables */
 .ow-scheduler .b-sch-event-wrap {
     .b-sch-event.ow-trip {
         --ow-tone : var(--ow-plan);
 
-        display          : flex;
-        flex-direction   : column;
-        align-items      : stretch;
-        padding          : 0;
-        box-sizing       : border-box;
-        border-radius    : var(--ow-radius);
-        border           : 1px solid color-mix(in srgb, var(--ow-tone) 40%, transparent);
-        background       : color-mix(in srgb, var(--ow-tone) 10%, var(--ow-surface));
-        color            : var(--ow-ink);
-        font-size        : 1em;
-        font-weight      : 400;
-        overflow         : hidden;
-        cursor           : pointer;
+        --b-sch-event-color               : var(--ow-ink);
+        --b-sch-event-background          : color-mix(in srgb, var(--ow-tone) 10%, var(--ow-surface));
+        --b-sch-event-hover-background    : var(--b-sch-event-background);
+        --b-sch-event-selected-background : var(--b-sch-event-background);
+        --b-sch-event-border-width        : 1px;
+        --b-sch-event-border-style        : solid;
+        --b-sch-event-border-color        : color-mix(in srgb, var(--ow-tone) 40%, transparent);
+        --b-sch-event-border-radius       : var(--ow-radius);
+        --b-sch-event-padding-inline      : 0;
+        --b-nested-events-container-background          : transparent;
+        --b-nested-events-container-hover-background    : transparent;
+        --b-nested-events-container-selected-background : transparent;
+
+        align-items : stretch;
+        /* Clips the legs to the rounded corners */
+        overflow    : hidden;
 
         /* The head line, the height of the feature's `headerHeight` */
         > .b-sch-event-content {
             /* Not a containing block: the shade of a trip under way covers the whole trip */
-            position       : static;
-            display        : block;
-            flex           : 0 0 var(--b-nested-events-header-height);
-            width          : 100%;
-            min-width      : 0;
-            margin         : 0;
-            padding        : 0;
-            font-size      : 1em;
-            line-height    : normal;
-        }
-
-        > .b-nested-events-container {
-            background : none;
+            position      : static;
+            display       : block;
+            padding-block : 0;
+            line-height   : normal;
         }
 
         &.ow-trip-heli {
@@ -263,9 +246,9 @@
         &.ow-trip-moved {
             --ow-tone : var(--ow-cancel);
 
-            border-style : dashed;
-            background   : transparent;
-            cursor       : default;
+            --b-sch-event-border-style        : dashed;
+            --b-sch-event-background          : transparent;
+            --b-sch-event-cursor              : default;
 
             > .b-nested-events-container {
                 opacity : 0.35;
@@ -276,6 +259,11 @@
                 text-decoration : line-through;
                 color           : var(--ow-ink-sub);
             }
+        }
+
+        /* Under way, the shade up to the Now line */
+        &.ow-trip-underway {
+            --b-sch-event-cursor : default;
         }
 
         &.ow-trip-drop {
@@ -293,16 +281,12 @@
 
 /* A trip under way: shaded up to the Now line */
 .ow-underway {
-    position         : absolute;
-    inset-block      : 0;
+    position           : absolute;
+    inset-block        : 0;
     inset-inline-start : 0;
-    background-color : color-mix(in srgb, var(--ow-ink) 14%, transparent);
-    pointer-events   : none;
-    z-index          : 1;
-}
-
-.ow-scheduler .b-sch-event.ow-trip-underway {
-    cursor : default;
+    background-color   : color-mix(in srgb, var(--ow-ink) 14%, transparent);
+    pointer-events     : none;
+    z-index            : 1;
 }
 
 .ow-trip-head {
@@ -325,6 +309,20 @@
         overflow      : hidden;
         text-overflow : ellipsis;
     }
+
+    > .ow-badge {
+        overflow : visible;
+    }
+
+    > .ow-badge-at-risk {
+        color            : var(--ow-risk);
+        background-color : color-mix(in srgb, var(--ow-risk) 15%, transparent);
+    }
+
+    > :is(.ow-badge-trimmed, .ow-badge-moved, .ow-badge-pulled) {
+        color            : var(--ow-cancel);
+        background-color : color-mix(in srgb, var(--ow-cancel) 12%, transparent);
+    }
 }
 
 .ow-badge {
@@ -334,20 +332,6 @@
     font-size     : 10.5px;
     font-weight   : 600;
     line-height   : 15px;
-}
-
-.ow-trip-head > .ow-badge {
-    overflow : visible;
-}
-
-.ow-trip-head > .ow-badge-at-risk {
-    color            : var(--ow-risk);
-    background-color : color-mix(in srgb, var(--ow-risk) 15%, transparent);
-}
-
-.ow-trip-head > :is(.ow-badge-trimmed, .ow-badge-moved, .ow-badge-pulled) {
-    color            : var(--ow-cancel);
-    background-color : color-mix(in srgb, var(--ow-cancel) 12%, transparent);
 }
 
 /* The legs, nested events. They let the pointer through to their trip, which is dragged, hovered and clicked as one
@@ -360,39 +344,29 @@
     pointer-events : none;
 
     > .b-sch-event.ow-seg {
-        box-sizing       : border-box;
-        width            : 100%;
-        height           : 100%;
-        margin           : 0;
         /* 1px of the feature's resourceMargin and 1px of this clear border on each side: 2px between neighbouring
            legs, 2px between the legs and the trip's edge, all round */
-        border           : 1px solid transparent;
-        background-clip  : padding-box;
-        translate        : none;
-        display          : flex;
-        align-items      : center;
-        justify-content  : center;
-        gap              : 4px;
-        padding          : 0;
-        border-radius    : 3px;
-        background-color : transparent;
-        font-size        : 11px;
-        font-weight      : 400;
-        line-height      : 1;
-        white-space      : nowrap;
-        overflow         : hidden;
+        --b-sch-event-border-width   : 1px;
+        --b-sch-event-border-style   : solid;
+        --b-sch-event-border-color   : transparent;
+        --b-sch-event-border-radius  : 3px;
+        --b-sch-event-background     : transparent;
+        --b-sch-event-padding-inline : 0;
+        --b-sch-event-font-size      : 11px;
+
+        justify-content : center;
+        margin          : 0;
+        padding         : 0;
+        background-clip : padding-box;
+        /* The feature shifts nested events by their border, the clear border here is part of the gap */
+        translate       : none;
+        line-height     : 1;
 
         /* The turbine and its hours, or the vessel's icon, in the middle of the bar both ways */
         > .b-sch-event-content {
-            display         : flex;
             flex            : 0 1 auto;
-            align-items     : center;
             justify-content : center;
-            gap             : 4px;
-            min-width       : 0;
-            margin          : 0;
-            padding         : 0;
-            font-size       : 1em;
+            padding-block   : 0;
             line-height     : 1;
         }
 
@@ -403,7 +377,8 @@
     }
 
     > .b-sch-event.ow-seg-transit {
-        color            : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink-sub));
+        --b-sch-event-color : color-mix(in srgb, var(--ow-tone) 70%, var(--ow-ink-sub));
+
         background-image : repeating-linear-gradient(-45deg,
             color-mix(in srgb, var(--ow-tone) 16%, transparent) 0 3px, transparent 3px 6px);
 
@@ -418,44 +393,37 @@
     }
 
     > .b-sch-event.ow-seg-stop {
-        color            : #fff;
-        background-color : var(--ow-tone);
+        --b-sch-event-color      : #fff;
+        --b-sch-event-background : var(--ow-tone);
     }
 
     > .b-sch-event.ow-seg-preview {
-        color            : var(--ow-reach);
-        background-color : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
-        outline          : 1.5px dashed var(--ow-reach);
-        outline-offset   : -1.5px;
+        --b-sch-event-color      : var(--ow-reach);
+        --b-sch-event-background : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
+
+        outline        : 1.5px dashed var(--ow-reach);
+        outline-offset : -1.5px;
     }
 }
 
-/* The dependency line, drawn by the Dependencies feature from a trip into a stop, solid, 1px */
-.ow-scheduler .b-sch-dependency.ow-dep {
-    --b-dependency-color        : var(--ow-ink-sub);
-    --b-dependency-stroke-width : 1;
+/* The dependency lines, drawn by the Dependencies feature from a trip into a stop, solid, 1px */
+.ow-scheduler .b-sch-dependency {
+    &.ow-dep {
+        --b-dependency-color : var(--ow-ink-sub);
 
-    stroke-width     : 1px;
-    stroke-dasharray : none;
-    stroke-linejoin  : round;
+        stroke-dasharray : none;
+        stroke-linejoin  : round;
 
-    &.ow-dep-broken {
-        --b-dependency-color : var(--ow-cancel);
+        &.ow-dep-broken {
+            --b-dependency-color : var(--ow-cancel);
+        }
     }
 
-    &.b-click-area {
-        stroke : transparent;
-    }
-
-    /* Its stop waits for tomorrow with its trip */
-    &.ow-dep-moved {
+    /* A stop waits for tomorrow with its trip, and the links that keep a trip's legs in order, for the scheduling
+       engine (TripModel#chainData), are not drawn */
+    &.ow-dep-moved, &.ow-dep-chain {
         display : none;
     }
-}
-
-/* The links that keep a trip's legs in order, for the scheduling engine (TripModel#chainData), are not drawn */
-.ow-scheduler .b-sch-dependency.ow-dep-chain {
-    display : none;
 }
 
 /* A turbine hovered on the map lights up its trips (Scheduler#highlightEvents), the others fade less than by default
