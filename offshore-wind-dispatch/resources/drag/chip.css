@@ -72,15 +72,7 @@
     }
 }
 
-.ow-drag-hand {
-    position         : absolute;
-    inset-inline-end : -12px;
-    inset-block-end  : -14px;
-    width            : 24px;
-    height           : 24px;
-    color            : var(--ow-ink);
-    filter           : drop-shadow(0 1px 0 var(--ow-surface));
-}
+
 
 /* While dragging, the page does not select text */
 body:has(.ow-drag-chip) {

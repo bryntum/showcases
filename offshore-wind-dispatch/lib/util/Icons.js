@@ -11,7 +11,6 @@ import arrowUndo from '@phosphor-icons/core/assets/light/arrow-u-up-left-light.s
 import broadcast from '@phosphor-icons/core/assets/light/broadcast-light.svg?raw';
 import caretDown from '@phosphor-icons/core/assets/light/caret-down-light.svg?raw';
 import checkCircle from '@phosphor-icons/core/assets/light/check-circle-light.svg?raw';
-import handGrabbing from '@phosphor-icons/core/assets/light/hand-grabbing-light.svg?raw';
 import hardHat from '@phosphor-icons/core/assets/light/hard-hat-light.svg?raw';
 import lightning from '@phosphor-icons/core/assets/light/lightning-light.svg?raw';
 import warning from '@phosphor-icons/core/assets/light/warning-light.svg?raw';
@@ -60,12 +59,11 @@ const drawn = {
 
 const phosphor = {
     anchor,
-    'arrow-undo'    : arrowUndo,
+    'arrow-undo'   : arrowUndo,
     broadcast,
-    'caret-down'    : caretDown,
-    'check-circle'  : checkCircle,
-    'hand-grabbing' : handGrabbing,
-    'hard-hat'      : hardHat,
+    'caret-down'   : caretDown,
+    'check-circle' : checkCircle,
+    'hard-hat'     : hardHat,
     lightning,
     warning,
     waves,

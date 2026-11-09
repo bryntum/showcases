@@ -1,6 +1,5 @@
 import { DomHelper } from '@bryntum/core-enterprise';
 import { teamChipContent } from '../TeamChip.js';
-import { iconConfig } from '../util/Icons.js';
 
 /**
  * The chip that follows the pointer while a team is dragged, or sits on the trip when the team is held from the
@@ -19,8 +18,7 @@ export function createChip(team, job) {
         dataset  : { state : 'neutral' },
         children : [
             { tag : 'span', class : 'ow-drag-team', children : teamChipContent(team, job, true) },
-            { tag : 'span', class : 'ow-drag-status', hidden : true, 'aria-hidden' : 'true' },
-            iconConfig('hand-grabbing', 'ow-drag-hand')
+            { tag : 'span', class : 'ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
         ]
     });
 }
