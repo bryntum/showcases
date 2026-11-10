@@ -175,7 +175,8 @@ export default class WaveChart {
             legend     : off,
             series     : [
                 me.series('calm', color('--ow-c-work'), color('--ow-c-chart-fill'), colors.surface, colors.muted),
-                me.series('rough', colors.rough, color('--ow-c-chart-risk'), colors.surface, colors.roughInk)
+                me.series('rough', colors.rough, color('--ow-c-chart-risk'), colors.surface, colors.roughInk),
+                ...me.closing(colors)
             ],
             axes : { x : me.timeAxis(colors), y : me.heightAxis(colors) }
         };
@@ -206,13 +207,13 @@ export default class WaveChart {
                     label    : label(`was ${hhmm(was)}`, later ? 'left-bottom' : 'right-bottom', muted)
                 },
                 closes > dayStart * 60 && closes < dayEnd * 60 && {
-                    id          : 'closes',
-                    type        : 'line',
-                    value       : closes / 60,
-                    stroke      : rough,
-                    strokeWidth : 1.5,
-                    label       : label(`${this.limits.ctv.toFixed(1)} m at ${hhmm(closes)}`,
-                        later ? 'right-top' : 'left-top', roughInk, { fontWeight : 600 })
+                    id            : 'closes',
+                    type          : 'line',
+                    value         : closes / 60,
+                    // The line is a series (closing()), under the ring; the cross line only brings the label
+                    strokeOpacity : 0,
+                    label         : label(`${this.limits.ctv.toFixed(1)} m at ${hhmm(closes)}`,
+                        later ? 'right-top' : 'left-top', roughInk, { fontWeight : 600, padding : 8 })
                 }
             ].filter(Boolean)
         };
@@ -220,13 +221,12 @@ export default class WaveChart {
 
     // The forecast and both limits, with room over and under them for the labels. A limit is named at its left end,
     // over its line, or under it when the wave starts the day above it
-    heightAxis({ muted }) {
+    heightAxis({ muted, surface }) {
         const
             { ctv, swath } = this.limits,
             { hs }         = this.forecast,
-            low            = Math.min(ctv, ...hs),
-            high           = Math.max(swath, ...hs),
-            room           = (high - low) / 2,
+            [min, max]     = this.heights(),
+            chip           = { fontSize : 9, fill : surface, padding : { top : 1, bottom : 1, left : 3, right : 3 } },
             limit          = (name, value) => ({
                 id            : name,
                 type          : 'line',
@@ -234,18 +234,53 @@ export default class WaveChart {
                 stroke        : muted,
                 strokeOpacity : 0.45,
                 lineDash      : [3, 3],
+                // At the left end over its line (under it when the day starts above it), on a chip of the surface so
+                // the other limit's dashes don't run through it
                 label         : label(`${name} limit ${value.toFixed(1)}`, hs[0] > value ? 'bottom-left' : 'top-left',
-                    muted, { fontSize : 9 })
+                    muted, chip)
             });
 
         return {
             ...bare,
             position   : 'left',
-            min        : low - room,
-            max        : high + room,
+            min,
+            max,
             gridLine   : off,
             crossLines : [limit('CTV', ctv), limit('SWATH', swath)]
         };
+    }
+
+    // The forecast and both limits, with room over and under them for the labels
+    heights() {
+        const
+            { ctv, swath } = this.limits,
+            { hs }         = this.forecast,
+            low            = Math.min(ctv, ...hs),
+            high           = Math.max(swath, ...hs),
+            room           = (high - low) / 2;
+
+        return [low - room, high + room];
+    }
+
+    // The window's close as a line over the areas but under the wave's markers, so the ring on it stays whole: a
+    // series, not a cross line, which AG Charts draws over every series
+    closing({ rough }) {
+        const
+            cross      = this.data().find(point => point.cross),
+            [min, max] = this.heights();
+
+        return cross ? [{
+            type         : 'line',
+            data         : [{ t : cross.t, y : min }, { t : cross.t, y : max }],
+            xKey         : 't',
+            yKey         : 'y',
+            stroke       : rough,
+            strokeWidth  : 1.5,
+            marker       : { enabled : false },
+            showInLegend : false,
+            tooltip      : { enabled : false },
+            highlight
+        }] : [];
     }
 
     // One half of the wave line, `calm` or `rough`. Markers only on the crossing (a ring) and the first and last hour,
