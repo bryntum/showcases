@@ -69,8 +69,8 @@ const limitFade = 0.45;
 /**
  * The wave height row of the time axis (ForecastHeader), an AG Charts Community area chart: the hourly significant
  * wave height against the CTV and SWATH limits, and the time the CTV window closes. Its x axis is the schedule's own
- * day with no padding, so each hour of the chart sits over the same hour of the trips. The line turns orange where it
- * crosses the CTV limit, hovering a point tells which vessels can still transfer.
+ * day with no padding, so each hour of the chart sits over the same hour of the trips. The line turns orange where the
+ * CTV window closes, hovering a point tells which vessels can still transfer.
  *
  * Not a widget: it draws into the element it is given. Colours are read from the showcase's CSS custom properties, so
  * the chart takes the Svalbard palette, and it is drawn again when the page switches between light and dark.
@@ -151,56 +151,87 @@ export default class WaveChart {
     }
 
     // The data: one point mid hour, the first and the last value held to the edges so the area spans the whole day.
-    // Where the line crosses a limit between two hours an extra point is put on the limit. Those points carry `edge`
-    // too. The line is `calm` up to where it first crosses the CTV limit (`cross`) and `rough` from there, both have
-    // that point. Labelled are the first hour, the crossing and the last hour only
+    // The line is `calm` while the CTV window is open and `rough` from when it closes: the closing time is the
+    // planner's (Weather#closingTimes, the start of the first hour over the limit), so the chart and the no-go ranges
+    // tell the same story. A point on the line marks that time (`cross`), both halves have it. A window closed from the
+    // start of the day is rough all through, one open all day calm. Labelled are the first hour, the crossing and the
+    // last hour only
     data() {
         const
             points = this.points(),
-            cross  = points.find(point => point.edge && point.hs === this.limits.ctv && point.t > this.day.dayStart),
+            split  = this.closesHour,
+            cross  = points.find(point => point.split),
             hours  = points.filter(point => !point.edge),
             first  = hours[0],
             last   = hours.at(-1);
 
         return points.map(point => ({
             ...point,
-            calm  : !cross || point.t <= cross.t ? point.hs : null,
-            rough : cross && point.t >= cross.t ? point.hs : null,
+            calm  : point.t <= split ? point.hs : null,
+            rough : point.t >= split ? point.hs : null,
             cross : point === cross,
             first : point === first,
             last  : point === last
         }));
     }
 
+    /**
+     * When the CTV window closes, in hours: before the day's start when it never opens, past its end when it stays
+     * open
+     * @property {Number}
+     */
+    get closesHour() {
+        const
+            { dayStart, dayEnd } = this.day,
+            hour                 = this.forecast.closes / 60;
+
+        return hour <= dayStart ? -Infinity : hour >= dayEnd ? Infinity : hour;
+    }
+
+    /**
+     * Whether the CTV window closes during the day shown, rather than staying shut or open all day
+     * @property {Boolean}
+     */
+    get closesInDay() {
+        return Number.isFinite(this.closesHour);
+    }
+
     points() {
         const
-            { hs }                 = this.forecast,
-            { dayStart, dayEnd }   = this.day,
-            { ctv, swath }         = this.limits,
-            hours                  = hs.slice(0, dayEnd - dayStart),
-            points                 = [
+            { hs }               = this.forecast,
+            { dayStart, dayEnd } = this.day,
+            hours                = hs.slice(0, dayEnd - dayStart),
+            split                = this.closesHour,
+            points               = [
                 { t : dayStart, hs : hours[0], edge : true },
                 ...hours.map((value, i) => ({ t : dayStart + i + 0.5, hs : value })),
                 { t : dayEnd, hs : hours.at(-1), edge : true }
-            ],
-            all                    = [];
+            ];
 
-        points.forEach((point, i) => {
-            const previous = points[i - 1];
+        if (!this.closesInDay) {
+            return points;
+        }
 
-            if (previous) {
-                [ctv, swath].filter(limit => (previous.hs - limit) * (point.hs - limit) < 0).
-                    sort((a, b) => (point.hs > previous.hs ? a - b : b - a)).
-                    forEach(limit => all.push({
-                        t    : previous.t + (point.t - previous.t) * (limit - previous.hs) / (point.hs - previous.hs),
-                        hs   : limit,
-                        edge : true
-                    }));
-            }
-            all.push(point);
+        // A point where the window closes, on the line between its neighbours
+        const
+            after  = points.findIndex(point => point.t >= split),
+            next   = points[after],
+            before = points[after - 1];
+
+        if (next.t === split) {
+            next.split = true;
+
+            return points;
+        }
+
+        points.splice(after, 0, {
+            t     : split,
+            hs    : before.hs + (next.hs - before.hs) * (split - before.t) / (next.t - before.t),
+            edge  : true,
+            split : true
         });
 
-        return all;
+        return points;
     }
 
     /**
@@ -400,9 +431,9 @@ export default class WaveChart {
         };
     }
 
-    // The close of the window and, after a new forecast, the one before. Series listed before the wave line, so the
-    // ring of the crossing is drawn over them (cross lines are always above the series). The earlier of the two has its
-    // label on its left, the later one on its right, so they part
+    // The close of the window, when it closes during the day, and, after a new forecast, the one before. Series listed
+    // before the wave line, so the ring of the crossing is drawn over them (cross lines are always above the series).
+    // The earlier of the two has its label on its left, the later one on its right, so they part
     windowLines(colors) {
         const
             { closes, was } = this.forecast,
@@ -418,7 +449,7 @@ export default class WaveChart {
                 color     : colors.muted,
                 placement : was > closes ? 'left' : 'right'
             }),
-            this.guide({
+            !this.closesInDay ? null : this.guide({
                 time      : closes / 60,
                 stroke    : colors.rough,
                 dash      : [],
