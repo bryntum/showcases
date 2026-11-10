@@ -316,7 +316,7 @@ export default class WeekBoard extends Scheduler {
         renderData.cls['ow-cell-late']    = cell.late > 0;
         renderData.cls['ow-cell-heli']    = cell.resource?.mode === 'heli';
         renderData.cls['ow-cell-carried'] = cell.carried;
-        // Its wrapper inset into the day, as a free day's placeholder (week/board.css)
+        // Its wrapper inset into the day, as a free day's placeholder (resources/week.css)
         renderData.wrapperCls['ow-cell-wrap'] = 1;
 
         return [

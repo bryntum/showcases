@@ -25,9 +25,9 @@ import { duration, hhmm } from '../util/Time.js';
  */
 const
     // A departure this close to the start of the timeline has no room for its clock time ("07:45" at 11px,
-    // transit.css) and the dot before it: the time goes after the dot
+    // trips.css) and the dot before it: the time goes after the dot
     edgeRoom  = 44,
-    // A work block's text (legs.css): about the average width of a 12px character, the block's
+    // A work block's text (trips.css): about the average width of a 12px character, the block's
     // `--b-sch-event-padding-inline` each side and the content's gap between the turbine, the type and the hours
     blockFont = { char : 7, padding : 6, gap : 6 };
 
@@ -143,10 +143,10 @@ function renderLeg(leg, renderData, close, typeOf) {
         fits = blockText(leg, renderData.width, type);
 
     // Bryntum's tonal event style in the work blue, or the at-risk orange: its tint and its text from that colour,
-    // tuned further by its variables (resources/schedule/legs.css)
+    // tuned further by its variables (resources/schedule/trips.css)
     renderData.eventStyle = 'tonal';
     renderData.eventColor = risk ? 'var(--ow-c-risk-line)' : 'var(--ow-c-work)';
-    // Too short for its name: the block grows to hold it (resources/schedule/legs.css)
+    // Too short for its name: the block grows to hold it (resources/schedule/trips.css)
     cls['ow-seg-narrow']  = !fits.turbine;
 
     return [

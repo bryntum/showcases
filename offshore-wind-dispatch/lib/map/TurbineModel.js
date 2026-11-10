@@ -13,7 +13,7 @@ const statusWords = {
 
 /**
  * A turbine of the map: where it is drawn, its status in the plan and whether it is dimmed (see MapModel). TurbineMap
- * shows them as classes of its marker (resources/map/turbines.css)
+ * shows them as classes of its marker (resources/map/map.css)
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/data/Model

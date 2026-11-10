@@ -233,7 +233,7 @@ export default class DispatchScheduler extends Scheduler {
     }
 
     // Trips are edited, not their legs: a double click on a leg reaches its trip, the legs let the pointer through
-    // (resources/schedule/legs.css). The draft trip shown while a team is dragged has no editor
+    // (resources/schedule/trips.css). The draft trip shown while a team is dragged has no editor
     onBeforeTripEdit({ taskRecord }) {
         return !taskRecord.isLeg && !taskRecord.draft;
     }

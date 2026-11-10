@@ -36,7 +36,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | What you see | Built with | Look in |
 |--------------|------------|---------|
 | Trips with their stops nested inside | Scheduler `NestedEvents`, an event store that is a tree | `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js` |
-| The sail out and back, with their times | `EventBuffer` (`preamble`, `postamble`) | `lib/schedule/TripRendering.js`, `resources/schedule/transit.css` |
+| The sail out and back, with their times | `EventBuffer` (`preamble`, `postamble`) | `lib/schedule/TripRendering.js`, `resources/schedule/trips.css` |
 | Trip times | The scheduling engine: dependencies between the legs, a constraint on the departure | `lib/model/TripModel.js#layout` |
 | "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js`, `lib/schedule/DispatchSync.js` |
 | Weather no-go hatch, ghost of a trip brought forward | `ResourceTimeRanges` | `lib/schedule/DispatchSync.js` |
@@ -209,8 +209,8 @@ engine places each changed trip before the next one on the vessel is planned.
     `TurbineTooltip`, the `MapLegend`, the selected turbine (`TurbineCard`) and the turbine
     drawing (`Turbine`)
   * `util/` formatting the planner's times of day, and the icons
-* `resources/` the CSS: `app.css` imports the tokens and one file per component, in folders that mirror `lib/`
-  (`layout/`, `schedule/`, `drag/`, `map/`), then the header and the phone layout
+* `resources/` the CSS: `app.css` imports the tokens, then one file per part of the app: the frame, the KPI header,
+  the schedule (`schedule/`), the Week view, the drag, the map (`map/`) and the phone layout
 
 ## Code tour
 
@@ -300,7 +300,8 @@ carried over and the teams waiting again; the new forecast stays.
 
 ## Styling
 
-Every colour is a token in `resources/tokens.css`, light and dark through `light-dark()`. In the schedule, the header
+Text, borders and the now line take the Svalbard theme's own variables; the showcase's own colours are tokens in
+`resources/tokens.css`, light and dark through `light-dark()`. In the schedule, the header
 and the tray, neutrals and blue carry the plan, orange marks only what is at risk (past the window), red only what is
 stopped; a trip a forecast carried over to the next day is dashed in blue, a team waiting for a trip slate and dashed,
 never an alarm colour. Purple is the helicopters' wind, teal what a dragged team can reach.

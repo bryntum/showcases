@@ -2,7 +2,7 @@ import { Widget } from '@bryntum/core-enterprise';
 
 /**
  * The schedule's footer, under its last row: what the work blocks, the transit line, the orange outline and the
- * hatching mean, and the products the page is built from. Its swatches are drawn by resources/layout/legend.css.
+ * hatching mean, and the products the page is built from. Its swatches are drawn by resources/schedule/scheduler.css.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html

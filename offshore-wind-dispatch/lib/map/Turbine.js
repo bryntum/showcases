@@ -172,7 +172,7 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
 
 /**
  * The parts of a map marker, centred on 0 0: a disc in the status colour with a three blade glyph (the rotor, it turns
- * when hovered if the turbine runs), and the wrench a turbine in work shows in its place (resources/map/turbines.css)
+ * when hovered if the turbine runs), and the wrench a turbine in work shows in its place (resources/map/map.css)
  * @returns {String} SVG markup
  */
 export function markerParts() {

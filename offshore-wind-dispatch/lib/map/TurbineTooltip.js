@@ -26,7 +26,7 @@ export default class TurbineTooltip extends Tooltip {
         forSelector : '.ow-marker',
         getHtml     : 'this.markerHtml',
         cls         : 'ow-map-tip',
-        // The card's width (resources/map/tooltip.css), which brings its own padding
+        // The card's width (resources/map/card.css), which brings its own padding
         maxWidth    : 'min(24rem, calc(100vw - 2rem))',
         hoverDelay  : 250,
         hideDelay   : 100
