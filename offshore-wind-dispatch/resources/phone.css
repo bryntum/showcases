@@ -135,6 +135,11 @@
         > .ow-notice-text {
             flex : 1 1 80%;
         }
+
+        /* What the re-plan did, without the forecast: the time axis shows it, its label and the window's new close */
+        .ow-notice-head {
+            display : none;
+        }
     }
 
     .ow-map.b-widget {

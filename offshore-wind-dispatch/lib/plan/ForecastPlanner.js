@@ -157,29 +157,43 @@ export default class ForecastPlanner {
         return reviewable[this.reviewIndex];
     }
 
-    // The notice's `{ headline, detail }`
+    /**
+     * The notice's two lines: the forecast and what changed on the day; then where the work cut went (a trip of the
+     * next day, else the port) and the trips already under way that stay at risk, as no re-plan brings them back sooner
+     * @param {Object[]} changes See apply()
+     * @returns {Object} `{ headline, today, later, carried }`, `carried` the first trip the cut work went to
+     */
     summary(changes) {
         const
-            { dispatch }    = this,
-            { forecast }    = dispatch,
-            closes          = dispatch.windows.ctv,
-            was             = dispatch.previousWindows?.ctv,
-            count           = kind => changes.filter(change => change.change === kind),
-            trimmed         = count('trimmed'),
-            // The stops cut that found no trip tomorrow: their teams wait at the port
-            waiting         = changes.filter(change => !change.carried).flatMap(change => change.later).length,
-            parts           = [
-                trimmed.length ? `${trimmed.length} ${trimmed.length === 1 ? 'trip' : 'trips'} trimmed` : null,
+            { dispatch }  = this,
+            { forecast }  = dispatch,
+            closes        = dispatch.windows.ctv,
+            was           = dispatch.previousWindows?.ctv,
+            count         = kind => changes.filter(change => change.change === kind),
+            plural        = (n, one, many) => `${n} ${n === 1 ? one : many}`,
+            trimmed       = count('trimmed'),
+            // The stops cut that found no trip on the next day: their teams wait at the port
+            waiting       = changes.filter(change => !change.carried).flatMap(change => change.later).length,
+            // Gone before the forecast came in: kept as planned, so still back after the window
+            underWay      = dispatch.lateTrips(this.getTrips()).filter(({ trip }) => trip.departs <= dispatch.now),
+            today         = [
+                trimmed.length ? `${plural(trimmed.length, 'trip', 'trips')} trimmed` : null,
+                ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`)
+            ],
+            later         = [
                 ...count('moved').map(({ vessel, carried }) =>
                     `${vessel.name}'s trip ${carried ? `moved to ${dispatch.nextLong} ${hhmm(carried.departs)}` : 'off today'}`),
-                ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`),
-                waiting ? `${waiting} ${waiting === 1 ? 'stop waits' : 'stops wait'} at the port, ${dispatch.nextLong} has no room` : null
-            ].filter(Boolean),
-            earlier         = was != null && was > closes ? `, ${duration(was - closes)} earlier` : '';
+                waiting ? `${plural(waiting, 'stop waits', 'stops wait')} at the port, ${dispatch.nextLong} has no room` : null,
+                underWay.length === 1 ? `${underWay[0].trip.resource.name}, under way, stays at risk` :
+                    underWay.length ? `${underWay.length} trips under way stay at risk` : null
+            ],
+            earlier       = was != null && was > closes ? `, ${duration(was - closes)} earlier` : '';
 
         return {
             headline : `Forecast ${forecast.issued}: Hs passes ${dispatch.limits.ctv.hs.toFixed(1)} m at ${hhmm(closes)}${earlier}.`,
-            detail   : `${parts.join(', ')}.`
+            today    : today.filter(Boolean).join(' · '),
+            later    : later.filter(Boolean).join(' · '),
+            carried  : changes.find(change => change.carried)?.carried ?? null
         };
     }
 

@@ -772,6 +772,31 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(board(page).locator('.b-time-axis-summary-value').nth(1)).toHaveText('3 / 8');
     });
 
+    test('the forecast\'s notice says what changed today, what went to tomorrow and what stays at risk', async({ page }) => {
+        await open(page);
+        await page.locator('.ow-forecast-button').click();
+
+        const notice = page.locator('.ow-notice');
+
+        // Two lines: the forecast and today's change; where the cut work went and the trips under way still at risk
+        await expect(notice.locator('.ow-notice-line')).toHaveText([
+            'Forecast 08:00: Hs passes 1.5 m at 12:00, 2 h earlier. Heli 1\'s pickup brought forward',
+            /^Sea Puffin's trip moved to \w+ 06:30 · 3 trips under way stay at risk$/
+        ]);
+        await expect(notice.getByRole('button', { name : 'Review 1 change today' })).toBeVisible();
+
+        // Show on <tomorrow> opens that day, the carried trip selected
+        await notice.getByRole('button', { name : /^Show on \w+$/ }).click();
+
+        await expect(trip(page, 'SP-5')).toContainText('carried over');
+        await expect(trip(page, 'SP-5')).toHaveClass(/\bb-selected\b/);
+        expect(await page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return [app.dispatch.dayIndex, app.selectedTrip?.id];
+        })).toEqual([1, 'SP-5']);
+    });
+
     test('a trip the forecast takes off today that does not fit tomorrow leaves its teams waiting', async({ page }) => {
         await open(page);
         await closeTomorrow(page);

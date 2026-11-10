@@ -22,9 +22,10 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
    trips not yet gone are brought forward, trimmed or taken off the day. The stops cut go to tomorrow as a trip of the
    same vessel if they fit its window and the vessel's other trips, else their teams wait at the port again, a chip
-   per stop. Sea Puffin's trip moves to tomorrow 06:30, in the morning window before the waves rise again. The notice
-   lists each change, on today only
-4. **Undo** in the notice puts every trip back and takes tomorrow's trips and any waiting chips away, in one step
+   per stop. Sea Puffin's trip moves to tomorrow 06:30, in the morning window before the waves rise again. The notice,
+   on today only, says in two lines what changed today, where the cut work went and which trips already under way stay
+   at risk; **Show on Wednesday** opens tomorrow on the trip carried there
+4. **Undo** (the arrow) in the notice puts every trip back and takes tomorrow's trips and any waiting chips away, in one step
 5. **Open Week**: the week as a day board, a cell per vessel per day. A free cell takes a team too, as a new trip on
    that day; a click on a day opens it in the Day view
 

@@ -166,13 +166,19 @@
         }
 
         b {
-            display : block;
+            font-weight : 600;
         }
     }
 
-    /* The icon in the Undo button's text, as far from the word as a Button's own icon */
-    .ow-notice-undo .ow-icon-host {
-        margin-inline-end : var(--b-button-gap);
+    .ow-notice-line {
+        display : block;
+    }
+
+    /* The review button's blue a step darker in light and dark, so its white text keeps 4.5:1. On the button, whose
+       `b-blue` sets the palette these steps read */
+    .ow-notice-primary.b-button {
+        --b-button-filled-background       : light-dark(var(--b-primary-35), var(--b-primary-70));
+        --b-button-filled-hover-background : light-dark(var(--b-primary-30), var(--b-primary-75));
     }
 }
 

@@ -454,6 +454,20 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         return me.replan(() => me.forecastPlanner.undo());
     }
 
+    // The notice's "Show on Wednesday": the next day, the trip the forecast's cut work went to selected
+    async showCarried() {
+        const
+            me   = this,
+            trip = me.forecastPlanner.changes.find(change => change.carried)?.carried;
+
+        if (trip?.eventStore) {
+            await me.openDay(trip.day);
+            me.selectedTurbine = trip.turbines[0];
+            me.scheduler.selectEvent(trip);
+            await me.scheduler.scrollEventIntoView(trip, { block : 'center', highlight : true });
+        }
+    }
+
     reviewNext() {
         const
             me     = this,

@@ -122,13 +122,22 @@ export default class SchedulePanel extends Panel {
                     layout : { type : 'hbox', align : 'center' },
                     items  : {
                         text : { type : 'widget', cls : 'ow-notice-text' },
-                        // A Button's text takes DomConfigs: the showcase's SVG icon goes in with the word
+                        // A Button's text takes DomConfigs: the showcase's SVG icon, named by its label and tooltip
                         undo : {
                             type      : 'button',
                             rendition : 'text',
                             cls       : 'ow-notice-undo',
-                            text      : [iconConfig('arrow-undo'), 'Undo'],
+                            text      : [iconConfig('arrow-undo')],
+                            ariaLabel : 'Undo',
+                            tooltip   : 'Undo the re-plan',
                             onClick   : 'up.undoForecast'
+                        },
+                        // Opens the next day on the trip the cut work went to
+                        carry : {
+                            type      : 'button',
+                            rendition : 'tonal',
+                            cls       : 'ow-notice-carry',
+                            onClick   : 'up.showCarried'
                         },
                         review : {
                             type      : 'button',
@@ -196,17 +205,27 @@ export default class SchedulePanel extends Panel {
     }
 
     /**
-     * Shows the notice of a forecast that changed the plan
+     * Shows the notice of a forecast that changed the plan, two lines: the forecast, and what the re-plan did
      * @param {Object} options
-     * @param {String} options.headline
-     * @param {String} options.detail
+     * @param {String} options.headline The forecast
+     * @param {String} options.today What changed on the day, after the headline
+     * @param {String} options.later Where the work cut went, what stays at risk; the second line
+     * @param {TripModel|null} options.carried The trip of the next day the cut work went to
      * @param {Number} options.changes The trips changed that are still on the day, to review
      */
-    showNotice({ headline, detail, changes }) {
-        const { notice, text, review, undo } = this.widgetMap;
+    showNotice({ headline, today, later, carried, changes }) {
+        const { notice, text, review, carry, undo } = this.widgetMap;
 
-        text.html     = [iconConfig('warning'), { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }];
-        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        text.html     = [iconConfig('warning'), {
+            tag      : 'span',
+            children : [
+                { class : 'ow-notice-line', children : [{ tag : 'b', class : 'ow-notice-head', text : headline }, today && ` ${today}`] },
+                later ? { class : 'ow-notice-line', text : later } : null
+            ]
+        }];
+        carry.text    = carried ? `Show on ${DateHelper.format(this.dispatch.dateOf(carried.day), 'dddd')}` : '';
+        carry.hidden  = !carried;
+        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'} today`;
         review.hidden = !changes;
         undo.hidden   = notice.hidden = false;
     }
