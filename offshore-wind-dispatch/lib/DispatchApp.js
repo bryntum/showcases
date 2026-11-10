@@ -1,19 +1,19 @@
-import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise';
+import { Panel, Responsive } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import { tripsOf } from './feature/MapLink.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
+import { planBreak, planSnapshot } from './schedule/TripValidator.js';
+import { tell } from './util/Message.js';
 // Also registers the widget types used below
 import './KpiBar.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
 
-const
-    // The turbine the page opens on: the one the weather puts at risk
-    openingTurbine = 'T-41',
-    tell           = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
+// The turbine the page opens on: the one the weather puts at risk
+const openingTurbine = 'T-41';
 
 /**
  * The app: the header, the schedule and the map, wired to the plan (the Scheduler's project), the dispatch state and
@@ -107,8 +107,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
-            // No trip is picked up while a change of the plan is placed (DispatchProject#runChange)
-            beforeEventDrag      : () => !scheduler.project.changePending,
+            beforeEventDrag      : 'onBeforeTripDrag',
             afterEventDrop       : 'onTripDrop',
             tripTimeChange       : 'onTripTimeChange',
             thisObj              : me
@@ -347,20 +346,35 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
     }
 
-    // The departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt)
+    // No trip is picked up while a change of the plan is placed (DispatchProject#runChange). The plan as it is, to
+    // check the drop against
+    onBeforeTripDrag() {
+        this.dragStartPlan = planSnapshot(this.scheduler.weekTrips);
+
+        return !this.scheduler.project.changePending;
+    }
+
+    // The departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt). Once the engine
+    // has placed it, a drop that breaks the plan (planBreak) goes back to where the trip was, and says why
     onTripDrop({ valid, eventRecords }) {
         const
-            { scheduler } = this,
-            trip          = eventRecords?.[0];
+            me            = this,
+            { scheduler } = me,
+            trip          = eventRecords?.[0],
+            before        = me.dragStartPlan;
 
-        if (!valid) {
-            return null;
-        }
+        return valid && trip && scheduler.project.runChange(async() => {
+            await me.replan(() => trip.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
 
-        this.planEdited();
+            const why = planBreak(scheduler, before, [trip]);
 
-        return scheduler.project.runChange(() =>
-            this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) })));
+            if (!why) {
+                return me.planEdited();
+            }
+
+            tell(why);
+            await me.replan(() => trip.layout({ departs : before.get(trip).start }));
+        });
     }
 
     // The trip editor has already laid the trip out from its new time on station

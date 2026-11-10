@@ -1,8 +1,9 @@
-import { DateHelper, StringHelper, Toast } from '@bryntum/core-enterprise';
-import { nextSailing, noGoText, previewDrop, reachable } from './plan/Planner.js';
+import { DateHelper } from '@bryntum/core-enterprise';
+import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
-import { busyOf } from './schedule/TripValidator.js';
+import { busyOf, planBreak, planSnapshot } from './schedule/TripValidator.js';
 import { addTrip, nextTripId } from './model/TripData.js';
+import { tell } from './util/Message.js';
 import { hhmm } from './util/Time.js';
 
 const
@@ -11,9 +12,7 @@ const
         id, start, stops : [], mode : vessel.mode, wait : 0, pax : 0, seats : vessel.seats
     }),
     // A new trip from port, only described until the team is dropped on it
-    draftOf = ({ id, start }, vessel) => ({ id, draft : true, departs : start, resource : vessel, turbines : [] }),
-    // Encoded: the reason comes from the plan
-    tell    = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
+    draftOf = ({ id, start }, vessel) => ({ id, draft : true, departs : start, resource : vessel, turbines : [] });
 
 /**
  * The `handler` TeamDrag calls: lifts a team, checks it where it is held, books it on release. Held over a vessel's
@@ -251,8 +250,9 @@ export default class DropController {
 
     /**
      * Checks the team again where it is released and books it. The check is the planner's prediction, the booking the
-     * engine's: the team leaves the tray and the booking is told only once the engine has placed it and the trip, and
-     * every trip that waits for it, is still back in its window. Else the trip is put back and the reason shown.
+     * engine's: the team leaves the tray and the booking is told only once the engine has placed it and every trip it
+     * moved is still back in its window and clear of its vessel's other trips (planBreak). Else the trip is put back
+     * and the reason shown.
      * One change of the plan at a time (DispatchProject#runChange): while the engine places it, the team is reserved
      * (`state.booking`, its card in the tray shows it pending) and no other change starts
      * @param {String} teamId
@@ -313,21 +313,19 @@ export default class DropController {
         return true;
     }
 
-    // Taken back when the engine's result breaks a window or the engine fails, `why` then says how
+    // Taken back when the engine's result breaks the plan (planBreak) or the engine fails, `why` then says how
     async book({ trip, team, job, vessel = trip.resource }, day) {
         const
             me                      = this,
             { project, eventStore } = me.scheduler,
             stop                    = stopOf(team, job),
             fresh                   = trip.draft && { id : trip.id, departs : trip.departs, day },
-            before                  = !fresh && trip.plan.stops;
+            before                  = !fresh && trip.plan.stops,
+            plan                    = planSnapshot(me.scheduler.weekTrips);
 
         let booked = fresh ? null : trip, why;
 
         try {
-            // When each trip that waits for this one is back without the team
-            const waits = fresh ? [] : me.waitingOn(trip).map(link => ({ link, back : link.toEvent.trip.endMinute }));
-
             if (fresh) {
                 booked = addTrip(eventStore, vessel, { ...fresh, midnight : me.dispatch.dateOf(day) }, [stop]);
             }
@@ -336,7 +334,7 @@ export default class DropController {
             }
 
             await project.commitAsync();
-            why = me.lateAfterBooking(booked, waits);
+            why = planBreak(me.scheduler, plan, [booked]);
         }
         catch(error) {
             console.warn(error);
@@ -355,36 +353,6 @@ export default class DropController {
         }
 
         return { trip : booked, why };
-    }
-
-    // The dependencies from a trip into a stop of another trip
-    waitingOn(trip) {
-        return this.scheduler.dependencyStore.records.filter(link => !link.isChain && link.fromEvent?.trip === trip &&
-            link.toEvent?.trip);
-    }
-
-    // The trip is back after its window, or a trip that waits for it now is, and later than it was
-    lateAfterBooking(trip, waits) {
-        const
-            { dispatch } = this,
-            closeOf      = each => dispatch.windowsOf(each.day)[each.resource.window];
-
-        if (trip.endMinute > closeOf(trip)) {
-            return noGoText(trip.endMinute, closeOf(trip), dispatch.limits[trip.resource.window]);
-        }
-
-        for (const { link, back } of waits) {
-            const
-                dependent = link.toEvent.trip,
-                close     = closeOf(dependent);
-
-            if (dependent.endMinute > Math.max(back, close)) {
-                return `${link.text}: ${dependent.id} would be back ${hhmm(dependent.endMinute)}, ` +
-                    `after its window closes ${hhmm(close)}`;
-            }
-        }
-
-        return null;
     }
 
     endDrag() {
