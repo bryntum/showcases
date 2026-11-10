@@ -132,13 +132,20 @@ export default class WaveChart {
             { hs, low, high }    = this.forecast,
             { dayStart, dayEnd } = this.day,
             count                = dayEnd - dayStart,
-            point                = (t, i, end) => ({ t, hs : hs[i], low : low?.[i], high : high?.[i], end });
+            point                = (t, i, end) => ({ t, hs : hs[i], low : low?.[i], high : high?.[i], end }),
+            at                   = this.forecast.closes / 60,
+            // The wave where the window closes, half way between the hours either side: its ring (wave's itemStyler)
+            mid                  = (values, i) => values && (values[i - 1] + values[i]) / 2,
+            hour                 = at - dayStart,
+            close                = at > dayStart && at < dayEnd &&
+                { t : at, hs : mid(hs, hour), low : mid(low, hour), high : mid(high, hour), ring : true };
 
         return [
             point(dayStart, 0),
             ...hs.slice(0, count).map((value, i) => point(dayStart + i + 0.5, i, !i || i === count - 1)),
-            point(dayEnd, count - 1)
-        ];
+            point(dayEnd, count - 1),
+            close
+        ].filter(Boolean).sort((a, b) => a.t - b.t);
     }
 
     // The colours of the chart, read from the page's CSS custom properties each time it is drawn
@@ -159,17 +166,19 @@ export default class WaveChart {
             series = { xKey : 't', showInLegend : false, highlight : off, tooltip : { renderer : me.tooltip.bind(me) } };
 
         return {
-            container  : me.element,
-            data       : me.data(),
-            theme      : { baseTheme : 'ag-default', params : { fontFamily } },
-            background : { visible : false },
-            padding    : 0,
-            seriesArea : { padding : 0 },
-            animation  : off,
-            legend     : off,
+            container   : me.element,
+            data        : me.data(),
+            theme       : { baseTheme : 'ag-default', params : { fontFamily } },
+            background  : { visible : false },
+            padding     : 0,
+            seriesArea  : { padding : 0 },
+            animation   : off,
+            legend      : off,
+            // In development a wrong option throws instead of quietly falling back
+            validations : import.meta.env.DEV ? { throwOn : ['error', 'warning', 'deprecation'] } : undefined,
             // One tooltip, from the band or the wave, whichever is nearer: the same hour either way
-            tooltip    : { mode : 'single' },
-            series     : [
+            tooltip     : { mode : 'single' },
+            series      : [
                 // The forecast's likely range, a faint band without an outline under the wave
                 me.forecast.low && {
                     ...series,
@@ -181,15 +190,14 @@ export default class WaveChart {
                     segmentation : split(at, [c.work, c.work], [c.rough, c.rough])
                 },
                 ...me.limitLines(c, series, range),
-                me.wave(at, c, series),
-                me.closing(at, range, c, series)
+                me.wave(at, c, series)
             ].filter(Boolean),
             axes : { x : me.timeAxis(c), y : me.heightAxis(range) }
         };
     }
 
     // The wave, blue for work until the CTV window closes, orange for risk after; the close is the dispatch state's, so
-    // chart and no-go ranges agree. The first and last hour are marked and labelled
+    // chart and no-go ranges agree. The first and last hour are marked and labelled, the close is ringed
     wave(at, c, series) {
         return {
             ...series,
@@ -202,7 +210,8 @@ export default class WaveChart {
             marker        : {
                 size        : 8,
                 strokeWidth : 0,
-                itemStyler  : ({ datum }) => (datum.end ? { fill : datum.t < at ? c.work : c.rough } : { size : 0 })
+                itemStyler  : ({ datum }) => (datum.ring ? { fill : c.surface, stroke : c.rough, strokeWidth : 2 } :
+                    datum.end ? { fill : datum.t < at ? c.work : c.rough } : { size : 0 })
             },
             // Away from the limits' names: under the line when they are over it
             label : label(this.forecast.hs[0] > this.limits.ctv ? ['top', 'bottom'] : ['bottom', 'top'], c.muted, {
@@ -215,7 +224,7 @@ export default class WaveChart {
 
     // The day in hours, with a crosshair naming the time and the wave height under the pointer. After a new forecast,
     // the close before is a dashed line, named at its foot on the side away from the close
-    timeAxis({ muted, ink, surface, grid }) {
+    timeAxis({ muted, ink, surface, grid, rough, roughInk }) {
         const
             { dayStart, dayEnd } = this.day,
             { closes, was, hs }  = this.forecast,
@@ -246,15 +255,24 @@ export default class WaveChart {
                     })
                 }
             },
-            crossLines : was == null ? [] : [{
-                type     : 'line',
-                value    : was / 60,
-                stroke   : muted,
-                lineDash : [2, 3],
-                label    : label(closes > was ? 'left-bottom' : 'right-bottom', muted, {
-                    text : `was ${hhmm(was)}`, padding : 4
-                })
-            }]
+            crossLines : [
+                closes > dayStart * 60 && closes < dayEnd * 60 && {
+                    type        : 'line',
+                    value       : closes / 60,
+                    stroke      : rough,
+                    strokeWidth : 1.5,
+                    label       : label('right-top', roughInk, { text : `CTV closes ${hhmm(closes)}`, fontWeight : 600 })
+                },
+                was != null && {
+                    type     : 'line',
+                    value    : was / 60,
+                    stroke   : muted,
+                    lineDash : [2, 3],
+                    label    : label(closes > was ? 'left-bottom' : 'right-bottom', muted, {
+                        text : `was ${hhmm(was)}`, padding : 4
+                    })
+                }
+            ].filter(Boolean)
         };
     }
 
@@ -262,9 +280,9 @@ export default class WaveChart {
         return { ...bare, position : 'left', min, max, gridLine : off, crosshair : off };
     }
 
-    // The CTV and SWATH limits, dashed line series listed before the wave and the close, so their markers and the
-    // ring are drawn over them (AG Charts draws cross lines over every series). Each is named on its line at the left
-    // end, on a chip of the surface the dashes stop at
+    // The CTV and SWATH limits, dashed line series listed before the wave, so its ring is drawn over them. Each is
+    // named on its line at the left end, on a chip of the surface the dashes stop at: as cross lines, about 8px apart
+    // at this height, their names would not fit
     limitLines({ muted, surface }, series, [min, max]) {
         const
             { dayStart, dayEnd } = this.day,
@@ -302,39 +320,6 @@ export default class WaveChart {
             room                               = (high - low) / 2;
 
         return [low - room * 1.4, high + room];
-    }
-
-    // The window's close, a line series over the wave, named at its top, ringed where it meets the wave line (half
-    // way between the hours either side) by its own marker, which AG Charts draws over the line: the ring stays whole
-    closing(at, [min, max], { rough, roughInk, surface }, series) {
-        const
-            { dayStart, dayEnd } = this.day,
-            { hs }               = this.forecast;
-
-        return at > dayStart && at < dayEnd && {
-            ...series,
-            type : 'line',
-            data : [
-                { t : at, y : min },
-                { t : at, y : (hs[at - dayStart - 1] + hs[at - dayStart]) / 2, ring : true },
-                { t : at, y : max, top : true }
-            ],
-            yKey        : 'y',
-            stroke      : rough,
-            strokeWidth : 1.5,
-            marker      : {
-                size        : 8,
-                strokeWidth : 2,
-                fill        : surface,
-                stroke      : rough,
-                itemStyler  : ({ datum }) => (datum.ring ? {} : { size : 0 })
-            },
-            label : label('bottom-right', roughInk, {
-                fontWeight : 600,
-                formatter  : ({ datum }) => (datum.top ? `CTV closes ${hhmm(at * 60)}` : '')
-            }),
-            tooltip : off
-        };
     }
 
     // The hour under the pointer: who may transfer, its Hs and the forecast's likely range. Hs is the mean of the
