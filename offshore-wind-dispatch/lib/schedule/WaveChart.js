@@ -255,7 +255,7 @@ export default class WaveChart {
                 rough     : color('--ow-c-risk-line'),
                 roughFill : color('--ow-c-chart-risk'),
                 roughInk  : color('--ow-c-risk-ink'),
-                muted     : color('--ow-c-muted'),
+                muted     : color('--b-neutral-40'),
                 surface   : color('--ow-surface')
             };
 

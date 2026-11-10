@@ -38,7 +38,6 @@
     --ow-c-stop-ink  : light-dark(#b71c1c, #ff8f86);
     --ow-c-transit   : light-dark(#b8c0c8, #7b8794);
     --ow-c-dependency  : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%), #5f8fc4);
-    --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
     --ow-c-neutral-bg  : light-dark(#eef0f3, #2a313b);
     --ow-c-button-tint : light-dark(#e8f1fb, #1c3550);

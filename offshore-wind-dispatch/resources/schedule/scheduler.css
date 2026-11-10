@@ -11,9 +11,9 @@
     /* The Group feature reads the height as px */
     --b-group-row-height         : 28px;
     --b-group-header-background  : var(--ow-c-footer);
-    --b-group-header-color       : var(--ow-c-muted);
+    --b-group-header-color       : var(--b-neutral-40);
     --b-group-header-font-weight : 600;
-    --b-group-header-icon-color  : var(--ow-c-muted);
+    --b-group-header-icon-color  : var(--b-neutral-40);
     --b-column-lines-tick-color  : var(--ow-tick);
     --b-column-lines-major-color : var(--ow-tick);
     /* The now line under the trips */
@@ -112,7 +112,7 @@
         height        : 2.7693em;
         border-radius : 50%;
         background    : conic-gradient(var(--ow-ring) var(--ow-use, 0%),
-            color-mix(in srgb, var(--ow-c-muted) 14%, transparent) 0);
+            color-mix(in srgb, var(--b-neutral-40) 14%, transparent) 0);
 
         &.ow-resource-ring-risk {
             --ow-ring : var(--ow-c-risk-line);
@@ -127,8 +127,8 @@
         width            : 2.462em;
         height           : 2.462em;
         border-radius    : 50%;
-        color            : var(--ow-c-muted);
-        background-color : color-mix(in srgb, var(--ow-c-muted) 9%, var(--ow-surface));
+        color            : var(--b-neutral-40);
+        background-color : color-mix(in srgb, var(--b-neutral-40) 9%, var(--ow-surface));
     }
 
     .ow-resource-icon {
@@ -150,7 +150,7 @@
 
     small {
         font-size : var(--ow-size-sm);
-        color     : var(--ow-c-muted);
+        color     : var(--b-neutral-40);
     }
 }
 
@@ -171,7 +171,7 @@
     background-color   : var(--ow-c-footer);
     border-block-start : 1px solid var(--b-border-7);
     font-size          : var(--ow-size-sm);
-    color              : var(--ow-c-muted);
+    color              : var(--b-neutral-40);
     white-space        : nowrap;
     overflow           : hidden;
 
@@ -254,7 +254,7 @@
     /* The rows' hatch, denser and darker to read at this size */
     .ow-l-nogo i {
         background-image : repeating-linear-gradient(135deg,
-            color-mix(in srgb, var(--ow-c-muted) 55%, transparent) 0 1.5px, transparent 1.5px 4px);
+            color-mix(in srgb, var(--b-neutral-40) 55%, transparent) 0 1.5px, transparent 1.5px 4px);
     }
 
     /* The Week view's workable day left free */

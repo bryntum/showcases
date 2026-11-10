@@ -82,7 +82,7 @@
         display            : block;
         margin-block-start : 0.125rem;
         font-size          : var(--ow-size-sm);
-        color              : var(--ow-c-muted);
+        color              : var(--b-neutral-40);
     }
 
     b {
@@ -144,7 +144,7 @@
 
 .ow-tray-hint, .ow-tray-empty {
     font-size   : var(--ow-size-sm);
-    color       : var(--ow-c-muted);
+    color       : var(--b-neutral-40);
     white-space : nowrap;
 }
 
@@ -179,7 +179,7 @@
     width            : 2.462em;
     height           : 2.462em;
     border-radius    : 50%;
-    color            : var(--ow-c-muted);
+    color            : var(--b-neutral-40);
     background-color : var(--ow-c-neutral-bg);
 
     svg {
@@ -200,7 +200,7 @@
 
 .ow-team-job {
     font-size : var(--ow-size-sm);
-    color     : var(--ow-c-muted);
+    color     : var(--b-neutral-40);
 }
 
 .ow-team-fault {

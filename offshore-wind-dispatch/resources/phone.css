@@ -6,6 +6,11 @@
     --ow-card-radius : 0;
     --ow-card-shadow : none;
 
+    /* A narrower inset in the vessel column; on the Scheduler itself, which sets the wide one */
+    .ow-scheduler {
+        --ow-column-inset : 0.625rem;
+    }
+
     .ow-kpis {
         --b-container-gap     : 0.625rem 0.875rem;
         --b-container-padding : 0.625rem 0.75rem;

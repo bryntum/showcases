@@ -48,7 +48,7 @@
 
 .ow-cert {
     font-size : 0.65625rem;
-    color     : var(--ow-c-muted);
+    color     : var(--b-neutral-40);
 
     & + &::before {
         content           : '/';

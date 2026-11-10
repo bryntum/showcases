@@ -5,7 +5,7 @@ import globals from 'globals';
 // Bryntum code style, formatting rules through @stylistic. `const me = this` is applied by hand
 export default [
     {
-        ignores : ['dist/', 'node_modules/', 'test-results/', 'playwright-report/']
+        ignores : ['dist/', 'node_modules/', 'test-results/', 'playwright-report/', '.worktrees/']
     },
     js.configs.recommended,
     {

@@ -2,11 +2,11 @@
  * feature's header and the line its legs sit on. The sail out and back are its EventBuffer */
 
 .ow-scheduler {
-    --b-nested-events-parent-color                  : var(--ow-c-muted);
+    --b-nested-events-parent-color                  : var(--b-neutral-40);
     --b-nested-events-container-background          : transparent;
     --b-nested-events-container-hover-background    : transparent;
     --b-nested-events-container-selected-background : transparent;
-    --b-event-buffer-label-color                    : var(--ow-c-muted);
+    --b-event-buffer-label-color                    : var(--b-neutral-40);
     /* The line through the middle of the work blocks: under the label, 2px down, half the 28px block */
     --ow-line-y : calc(var(--b-nested-events-header-height) + 2px + 14px);
 
@@ -250,7 +250,7 @@
     height              : var(--b-nested-events-header-height);
     margin-inline-start : calc(-1 * var(--ow-pre, 0px));
     font-size           : var(--ow-size-xs);
-    color               : var(--ow-c-muted);
+    color               : var(--b-neutral-40);
 
     > span {
         padding-inline : 0.182em;
