@@ -51,10 +51,13 @@ jobs:
       # The deployed build, with Bryntum's GA4 property, consent denied (cookieless, no ads). Only the pages deployed
       # from this repository load it: the tests, local builds and the deploys of a fork build without it. The ID is
       # public, it could also come from a repository variable: SHOWCASES_GA4_ID: ${{ vars.SHOWCASES_GA4_ID }}
+      # The AG Grid / AG Charts Enterprise licence comes from the repository secret AG_LICENSE_KEY, for the pages
+      # deployed from this repository only; everything else builds unlicensed (AG's watermark)
       - if: github.event_name != 'pull_request'
         run: npm run build
         env:
           SHOWCASES_GA4_ID: ${{ github.repository == 'bryntum/showcases' && 'G-1VY6776VJP' || '' }}
+          VITE_AG_LICENSE_KEY: ${{ github.repository == 'bryntum/showcases' && secrets.AG_LICENSE_KEY || '' }}
 
       - if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5
