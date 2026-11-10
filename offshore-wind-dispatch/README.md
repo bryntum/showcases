@@ -1,14 +1,83 @@
 # Offshore Wind Dispatch
 
-The marine coordinator's day at Skarv Bank, an offshore wind farm of 60 turbines: five vessels (four crew transfer
-vessels, one of them on standby, and a SWATH) and two helicopters take maintenance teams out to the turbines and back,
-in a Bryntum Scheduler. The Week view shows the week as a day board: one cell per vessel per day.
-The plan does not run against fixed sites but against the weather. Each vessel may only transfer people while the
-significant wave height (Hs) stays under its limit, and a trip has to be back at port before that window closes.
+A marine coordinator's day at Skarv Bank, an offshore wind farm of 60 turbines. Eight craft take maintenance teams out
+to the turbines and back: four crew transfer vessels (Kittiwake on standby), a SWATH and three helicopters (Heli 3 on
+standby). The plan runs against the weather: a vessel may only put people onto a turbine while the significant wave
+height (Hs) stays under its limit, and a trip has to be back at port before that window closes. This morning Sea
+Puffin is due back 17 minutes after the CTV window closes, T-34 has stopped with a fault and Team F waits at the port to
+repair it, and at 08:00 a new forecast brings the window two hours forward. The schedule is Bryntum Scheduler
+Enterprise, its scheduling engine calculates every trip, and the wave height chart in its time axis is AG Charts.
 
-The schedule, the Week view, the header, the tooltips and the panels are Bryntum widgets and features. The map of the
-farm is not: it is a custom SVG drawing in a plain Bryntum `Widget` (`lib/map/`), with its turbines in a Bryntum
-`Store`, since no Bryntum product draws maps.
+To run it locally, see the [getting started guide](../CONTRIBUTING.md).
+
+## Try it in 60 seconds
+
+1. **Inspect T-41.** The page opens on it: its card under the map says Sea Puffin is back at 14:17, 17 minutes after
+   the CTV window. In the schedule that is the orange stop and return tag; in the time axis, the wave height crossing
+   the 1.5 m limit at 14:00
+2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip (or Tab to its card and
+   press Enter, the arrow keys pick the trip, Enter books it). While it is held, the trip shows the stop it would get,
+   a tooltip says when the trip would be back and checks the seats and certificates, and the map rings every turbine
+   the trip could still reach before the window closes. Drop it to book it
+3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
+   trips not yet gone are brought forward, trimmed (their last stops wait for tomorrow) or moved to tomorrow. The
+   notice lists each change
+4. **Undo** in the notice puts every trip back, in one step
+5. **Open Week**: the week as a day board, a cell per vessel per day. A free cell takes a team too, as a new trip on
+   that day; a click on a day opens it in the Day view
+
+`?state=drag` opens with Team F held over Northern Tern's trip, `?state=forecast` with the 08:00 forecast applied,
+`?view=week` on the Week view, `?tab=map` on the map tab at phone widths.
+
+## Where each feature is
+
+| What you see | Built with | Look in |
+|--------------|------------|---------|
+| Trips with their stops nested inside | Scheduler `NestedEvents`, an event store that is a tree | `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js` |
+| The sail out and back, with their times | `EventBuffer` (`preamble`, `postamble`) | `lib/schedule/TripRendering.js`, `resources/schedule/transit.css` |
+| Trip times | The scheduling engine: dependencies between the legs, a constraint on the departure | `lib/model/TripModel.js#layout` |
+| "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js`, `lib/schedule/DispatchSync.js` |
+| Weather no-go hatch, ghost of a moved trip | `ResourceTimeRanges` | `lib/schedule/DispatchSync.js` |
+| Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
+| Dragging a trip, refused when it breaks the window | `EventDrag` with a `validatorFn` | `lib/schedule/TripValidator.js` |
+| Dragging a team from the header onto a trip | `DragHelper`, a `Tooltip` | `lib/drag/` |
+| The drop preview: back when, does it fit, what it can reach | Plain synchronous functions | `lib/plan/Planner.js` |
+| A forecast's re-plan, and its Undo | `StateTrackingManager` (`project.stm`) | `lib/plan/ForecastPlanner.js` |
+| The Week view | A second Scheduler: `fillTicks`, `PercentBar`, `Summary` | `lib/week/` |
+| Header, panels, notice, tabs | `Panel`, `Container`, `Toolbar`, `ButtonGroup`, `TabPanel` | `lib/KpiBar.js`, `lib/panel/` |
+| The map of the farm | Custom SVG in a `Widget`, its turbines in a `Store` | `lib/map/` |
+
+## What is on the screen
+
+* **Schedule**: one row per vessel or helicopter. A trip is a parent event over its time on station, its turbine stops
+  are nested events inside it, solid blue work blocks with the turbine and the hours. The sail out and back are the
+  trip's buffer time (the EventBuffer feature): a thin line with the departure and return times at its ends. From the
+  time the forecast crosses a vessel's limit, a hatched weather no-go area covers its row; hatching means only that. A
+  trip back after the window closes has its last stop and the late part of its sail back in orange, ending in the time
+  and how late it is
+* **Weather in the time axis**: under the hours, the hourly Hs forecast is drawn as an AG Charts area chart against the
+  1.5 m CTV and 2.0 m SWATH limits, blue up to where it crosses the CTV limit and orange after, then the wind at hub
+  height for the helicopters (limit 20 m/s, bold above it)
+* **Header**: over the schedule, the site and the day shown, and at its right end the crews waiting at the port; over
+  the map, the day's counts: due, assigned, at risk in orange (or, once a forecast moved some, moved to tomorrow in
+  blue) and stopped in red. The weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and a
+  late trip's tag
+* **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
+* **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
+  its cable work, and Team J is picked up from T-58 three hours after the drop-off. The Dependencies feature draws both
+  as thin lines with an arrowhead, each with its reason in the tooltip
+* **Crews waiting**: in the header, a card per team waiting at the port, its certificates and job in its tooltip. Drop
+  one on a trip, or on an empty part of a vessel's row, which books it on the vessel's best trip or a new trip from
+  port. Should the plan or the forecast change while a team is held, it is checked again
+* **Map** (custom SVG): the farm with every turbine's status (blue in work or planned, orange at risk, red stopped,
+  dashed slate a team waiting for a trip, dashed blue work a forecast moved to tomorrow), the substation, the port and
+  the routes of the trips. The selected
+  turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
+  limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
+  select a trip and its turbines are ringed; hover a turbine and its trips light up (the Scheduler's event
+  highlighting), hover a trip and its turbines are ringed. A Bryntum Tooltip on each turbine shows it at the forecast
+  wave height with its job, its team and when a trip reaches it. The map is one tab stop: the arrow keys move to the
+  nearest turbine in that direction, Enter or Space selects it
 
 ### Glossary
 
@@ -28,48 +97,6 @@ farm is not: it is a custom SVG drawing in a plain Bryntum `Widget` (`lib/map/`)
 | Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
 | Pulled, moved, trimmed | What a new forecast did to a trip: brought forward, moved to tomorrow, or its last stops moved to tomorrow |
 | Draft | A new trip from port, shown while a team is held over a vessel with no trip it could join, removed unless the team is booked on it |
-
-* **Schedule**: one row per vessel or helicopter. A trip is a parent event over its time on station, its turbine stops
-  are nested events inside it, solid blue work blocks with the turbine and the hours. The sail out and back are the
-  trip's buffer time (the EventBuffer feature): a thin line with the departure and return times at its ends. From the
-  time the forecast crosses a vessel's limit, a hatched weather no-go area covers its row; hatching means only that. A
-  trip back after the window closes has its last stop and the late part of its sail back in orange, ending in the time
-  and how late it is
-* **Weather in the time axis**: under the hours, the hourly Hs forecast is drawn as an AG Charts area chart against the
-  1.5 m CTV and 2.0 m SWATH limits, blue up to where it crosses the CTV limit and orange after, then the wind at hub
-  height for the helicopters (limit 20 m/s, bold above it)
-* **Header**: over the schedule, the site and the day shown, and at its right end the crews waiting at the port; over
-  the map, the day's counts: due, assigned, at risk in orange (or, once a forecast moved some, moved to tomorrow) and
-  stopped in red. The weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and a
-  late trip's tag
-* **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
-* **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
-  its cable work, and Team J is picked up from T-58 three hours after the drop-off. The Dependencies feature draws both
-  as thin lines with an arrowhead, each with its reason in the tooltip
-* **Crews waiting**: in the header, a card per team waiting at the port, its certificates and job in its tooltip
-* **Map** (custom SVG): the farm with every turbine's status, the substation, the port and the routes of the trips. The selected
-  turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
-  limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
-  select a trip and its turbines are ringed; hover a turbine and its trips light up (the Scheduler's event
-  highlighting), hover a trip and its turbines are ringed. A Bryntum Tooltip on each turbine shows it at the forecast
-  wave height with its job, its team and when a trip reaches it. The map is one tab stop: the arrow keys move to the
-  nearest turbine in that direction, Enter or Space selects it
-
-**Drag a team waiting at the port onto a trip** (or onto an empty part of a vessel's row, which books it on the
-vessel's best trip, or on a new trip from port). The trip shows the stop it would get, a tooltip says when the trip
-would be back against the window, and checks the seats and the certificates (GWO, HV, rope access). The map rings
-every turbine the trip could still reach before the window closes and dims the rest. Drop it to book it. Should the
-plan or the forecast change while a team is held, the team is checked again against it. Then press
-**Forecast 08:00 is in**: the new forecast brings the CTV window forward from 14:00 to 12:00, and the plan follows. Trips
-not yet gone are brought forward, trimmed (their last stops go to tomorrow) or moved to tomorrow. A notice offers Undo
-and a review of each change.
-
-The **Week** button shows the week as a day board; a free cell takes a team too, as a new trip on that day. A click on
-a day opens it in the Day view.
-
-The page opens on T-41, the turbine the weather puts at risk. `?state=drag` opens with Team F held over Northern Tern's
-trip, `?state=forecast` with the 08:00 forecast applied, `?view=week` on the Week view, `?tab=map` on the map tab at
-phone widths.
 
 ## How it works
 
@@ -91,11 +118,9 @@ TeamTray ◄── waitingStore        TeamDrag (DragHelper) ──► DropContr
 ```
 
 The trips are the source of truth, in the Scheduler's project, a tree: each trip is a parent event and its legs at
-sea (stops and the hops between them) are its children, the sail out and back its buffer. The scheduling engine owns
-their times: a trip's departure and return are its `outerStartDate` and `outerEndDate`, its legs' times their records'
-dates, the wait on station the gaps the engine leaves between them. A change of the plan (a team booked, a trip
-dragged or edited, a new forecast, its Undo) changes the stops or the departure (`TripModel#layout`), the engine
-calculates it (`DispatchApp#replan` awaits `project.commitAsync()`), and the project's `dataReady` redraws the views.
+sea (stops and the hops between them) are its children, the sail out and back its buffer. A change of the plan (a team
+booked, a trip dragged or edited, a new forecast, its Undo) goes through `TripModel#layout`, the engine calculates it
+(`await project.commitAsync()`), and the project's `dataReady` redraws the views.
 
 The app holds three observable sources and wires them to the views, it pushes no redraws by hand:
 
@@ -107,18 +132,29 @@ The app holds three observable sources and wires them to the views, it pushes no
 
 Several changes made together redraw once (the listeners' `buffer`).
 
-### What the engine calculates, and what the drop preview works out
+### Who works out the times
 
-A team held over a trip asks: does it fit, when is the trip back, which turbines could it still reach. That is
-`lib/plan/Planner.js`, plain synchronous functions on the trip's plan (`TripModel#plan`: its departure, stops and wait
-on station, read from the records as the engine placed them), in minutes since the trip's midnight. It answers a hover
-in about 2 ms, the 60 turbines of the reach included. The engine is not asked: a trial change placed by the engine and
-taken back takes about 90 ms a check (`layout()` with the previewed stop, `commitAsync()`, read, put back,
-`commitAsync()`), the reach would take seconds, and the drag runs a check on every move. The previewed stop is then
-placed by the engine like any leg, so the bar shows it where the engine puts it.
+The app decides **what** a trip does, the scheduling engine **when**:
 
-Committed trips are never modelled twice: the planner only reads them, and the forecast's re-plan lets the engine
-place each trip it changes before planning the next one on the vessel.
+| The app supplies (`TripModel#layout`) | The engine calculates |
+|---------------------------------------|-----------------------|
+| The stops in order, each with its duration (the job's minutes) | Each leg's start and end: a leg starts when the one before it ends (a finish-to-start dependency per pair, kind `chain`) |
+| The hops between the stops and the sail out and back, with their durations from the farm's geography (`Planner#buildLegs`) | The wait on station: a stop that must wait for another trip (a dependency with a lag) starts later, the legs after it move with it |
+| The earliest departure, as a `startnoearlierthan` constraint on the trip | The trip's start and end, rolled up from its legs; its departure and return are `outerStartDate` and `outerEndDate` |
+
+Nothing sets a committed leg's dates directly. Booking Team F on Northern Tern's trip, for example, is
+`trip.layout({ stops : [...trip.stops, stopOf(team, job)] })`: the T-34 stop and the hop to it are added as legs with
+their durations and chained after T-23, and after `commitAsync()` the engine has placed them, moved the sail back after
+them and rolled the trip's end out to the new return. The app then reads the times back.
+
+The **drop preview** is the exception, a what-if. A team held over a trip asks: does it fit, when would the trip be
+back, which turbines could it still reach. `lib/plan/Planner.js` answers that with plain synchronous functions on the
+trip's plan (`TripModel#plan`: its departure, stops and wait on station, read from the records as the engine placed
+them), in minutes since the trip's midnight: about 2 ms a hover, the 60 turbines of the reach included. The engine is
+not asked: a trial change placed by the engine and taken back takes about 90 ms a check, the reach would take seconds,
+and the drag checks on every move. Once the team is dropped, its stop is laid out like any other and the engine places
+it. The forecast's re-plan works the same way: the planner proposes each trip's new departure and stops, and the
+engine places each changed trip before the next one on the vessel is planned.
 
 | To change | Look in |
 |-----------|---------|
@@ -132,8 +168,6 @@ place each trip it changes before planning the next one on the vessel.
 | The turbine illustration and the map markers | `lib/map/Turbine.js` |
 | Colours, light and dark | `resources/tokens.css` |
 
-To run it locally, see the [getting started guide](../CONTRIBUTING.md).
-
 ## Files
 
 * `app.js` loads the farm data and creates the `DispatchApp`. It imports `scheduler.css` (the structural CSS of
@@ -142,7 +176,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
   dependency
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
-    `KpiClock`, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
+    the site and the day, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
     tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
     the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
     of the map and the schedule, `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
@@ -170,7 +204,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
     links between them as Scheduler data), `VesselModel` and `WaitingTeamModel` (a team waiting at the port)
   * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, `TurbineModel`, drawn from `MapModel` and
     `MapDrawing`), its viewport (`MapViewport` and the view arithmetic in `MapView`: zoom, pan and pinch), the
-    `TurbineTooltip`, the `MapLegend`, the `ShowAllButton`, the selected turbine (`TurbineCard`) and the turbine
+    `TurbineTooltip`, the `MapLegend`, the selected turbine (`TurbineCard`) and the turbine
     drawing (`Turbine`)
   * `util/` formatting the planner's times of day, and the icons
 * `resources/` the CSS: `app.css` imports the tokens and one file per component, in folders that mirror `lib/`
@@ -198,10 +232,9 @@ assigned to the vessel, a nested event shows only where it and its parent are bo
 
 The trip's stops are read from its stop children. Changing them, or the departure, goes through `TripModel#layout`:
 `Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and each leg gets its
-duration; the engine then places them in order from the departure, and the app reads the times once it has.
+duration; the engine then places them in order from the departure (see [Who works out the times](#who-works-out-the-times)).
 Legs that stay keep their record (a stop's ID is `<trip>:<turbine>`), new ones are added and assigned, gone ones
-removed. The trip and its legs are `manuallyScheduled`, so the scheduling engine keeps the times the planner gives
-them. The stop of a team being dragged over a trip is a leg too (`preview`), shown dashed in teal.
+removed. The stop of a team being dragged over a trip is a leg too (`preview`), shown dashed in teal.
 
 The event renderer draws the trip's label above its line (the feature's `headerHeight`), and each stop at its own
 time on it, solid with the turbine and the hours as far as its width has room. NestedEvents places nested events from
@@ -215,7 +248,8 @@ snapped to 5 minutes (`DispatchScheduler#departsAt`).
 
 The Dependencies feature draws the lines from a trip into a stop, a nested event, of another trip: the HV isolation
 (H2-1) into the T-45 stop of the SWATH's trip, and the helicopter's drop-off (H1-1) into the pick-up stop of H1-2 with a
-lag (`data/farm.json`, `dependencies`). The scheduling engine moves the dependent stop. A trip drag that would push a
+lag (`data/farm.json`, `dependencies`). The scheduling engine starts the dependent stop once the trip before it is done
+and the lag has passed, and the rest of its trip moves with it. A trip drag that would push a
 dependent stop so late that its trip is back after its window is refused, with the dependency's reason
 (`TripValidator#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
 bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a
@@ -224,7 +258,8 @@ it again whenever both ends are in the plan, so it comes back when Undo brings b
 
 ### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
 
-The view preset has four header rows: the day, the hours, the wave height and the wind. A header row is drawn by its
+The view preset has three header rows: the hours, the wave height and the wind (the day shown is in the page's
+header). A header row is drawn by its
 `renderer`. The wave height row is one cell over the whole day, holding an AG Charts Community area chart. Its x axis
 is the schedule's own day without padding, so each hour of the chart sits over the same hour of the trips. The chart
 element is moved into the cell each time the header is drawn, not recreated. Its colours are read from the CSS custom
@@ -258,12 +293,13 @@ forecast stays.
 ## Styling
 
 Every colour is a token in `resources/tokens.css`, light and dark through `light-dark()`. In the schedule, the header
-and the tray, neutrals and blue carry the plan, orange marks only what is past the window, red only what is stopped;
-purple is the helicopters' wind, teal what a dragged team can reach. The map and the turbine card keep their own
-status colours.
+and the tray, neutrals and blue carry the plan, orange marks only what is at risk (past the window), red only what is
+stopped; work a forecast moved to tomorrow is blue and dashed, a team waiting for a trip slate and dashed, never an
+alarm colour. Purple is the helicopters' wind, teal what a dragged team can reach.
 Below 760px wide the schedule and the map become tabs and the hours scroll sideways at 44px per hour.
 
 The generic icons are [Phosphor Icons](https://phosphoricons.com) (MIT), Light weight, from `@phosphor-icons/core`.
-Phosphor has no vessels or helicopters, so `lib/util/Icons.js` draws five more in the same grid and line weight: the
-crew transfer vessel, the SWATH, the helicopter, the offshore substation and the turbine. The wave height chart is
+The vessels, the helicopter and the crews are [Tabler Icons](https://tabler.io/icons) (MIT), outline;
+`lib/util/Icons.js` draws the turbine in Phosphor's grid and line weight, and the map draws the substation from
+Phosphor's lightning. The wave height chart is
 AG Charts Community (`ag-charts-community`), MIT licensed.
