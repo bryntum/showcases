@@ -60,7 +60,6 @@
     .b-sch-header-time-axis-cell.ow-week-day {
         align-items : stretch;
         padding     : 0.5rem 0.625rem;
-        cursor      : pointer;
 
         &:hover {
             background-color : var(--ow-c-footer);
@@ -140,7 +139,6 @@
             flex-direction : column;
             align-items    : stretch;
             gap            : 0.25em;
-            text-align     : start;
             overflow       : hidden;
         }
     }
@@ -156,7 +154,6 @@
         display         : flex;
         justify-content : space-between;
         gap             : 0.3334em;
-        white-space     : nowrap;
         color           : var(--ow-c-work-ink);
 
         b {
@@ -166,7 +163,6 @@
 
     .ow-cell-jobs {
         overflow      : hidden;
-        white-space   : nowrap;
         text-overflow : ellipsis;
         color         : var(--b-text-2);
     }
@@ -229,7 +225,6 @@
 
         .b-sch-event-content {
             justify-content : center;
-            width           : 100%;
             margin          : 0;
         }
 

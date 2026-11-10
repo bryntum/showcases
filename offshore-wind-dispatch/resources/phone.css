@@ -3,9 +3,8 @@
 
 .ow-app.ow-phone {
     /* Not cards on a phone: the tab fills the width */
-    --ow-card-radius  : 0;
-    --ow-card-shadow  : none;
-    --ow-column-inset : 0.625rem;
+    --ow-card-radius : 0;
+    --ow-card-shadow : none;
 
     .ow-kpis {
         --b-container-gap     : 0.625rem 0.875rem;
@@ -42,15 +41,12 @@
         --b-tab-active-background       : var(--ow-surface);
         --b-tab-indicator-display       : none;
 
-        min-height    : 0;
         margin        : 0.5rem 0.75rem;
-        gap           : 0;
         border-radius : 0.4375rem;
 
         .b-tab {
             flex       : 1;
             min-height : var(--ow-bar-control);
-            font-size  : var(--ow-size-base);
 
             &.b-active {
                 --b-tab-hover-background : var(--ow-surface);
@@ -75,15 +71,12 @@
         min-height : 2.5rem;
 
         .ow-forecast-button {
-            flex            : 1;
-            justify-content : center;
+            flex : 1;
         }
     }
 
     .ow-tray {
         --b-container-padding : 0.5rem 0.75rem;
-
-        overflow-x : auto;
     }
 
     /* "Forecast" over its time, the narrow column holds it on two lines */
@@ -91,7 +84,6 @@
         display         : inline-block;
         max-inline-size : 5em;
         white-space     : normal;
-        line-height     : 1.25;
     }
 
     /* The muted line gives way in the narrow column */

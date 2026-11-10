@@ -19,15 +19,13 @@
        a phone), their icons, and then they scroll sideways, faded where more are to come */
     .ow-kpis-lead {
         container : ow-kpis-lead / inline-size;
-        min-width : 0;
 
         .ow-clock {
             flex : none;
         }
 
         .ow-tray {
-            flex      : 0 1 auto;
-            min-width : 0;
+            flex : 0 1 auto;
         }
 
         @container ow-kpis-lead (max-width: 900px) {
@@ -130,7 +128,6 @@
     --b-container-gap     : 1rem;
     --b-container-padding : 0.375rem 0;
 
-    flex                 : none;
     overflow             : clip;
     overflow-clip-margin : 0.375rem;
 }
@@ -155,7 +152,6 @@
 /* A team's card, never squeezed narrower than its two lines. Pointer events drive the drag on touch too (TeamDrag) */
 .ow-team {
     flex             : none;
-    display          : flex;
     align-items      : center;
     gap              : 0.9231em;
     padding          : 0.462em 1.231em 0.462em 0.6154em;

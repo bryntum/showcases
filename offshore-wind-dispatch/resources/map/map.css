@@ -67,7 +67,6 @@
     --b-button-padding-inline      : 0.625rem;
     --b-widget-font-size           : var(--ow-size-sm);
 
-    flex                : none;
     margin-inline-start : auto;
 }
 

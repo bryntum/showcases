@@ -30,8 +30,6 @@
     --b-container-padding : 0 var(--ow-gutter) var(--ow-gutter);
     --b-container-gap     : var(--ow-gutter);
 
-    min-height : 0;
-
     > :is(.ow-left, .ow-side) {
         --b-container-padding : 0;
         --b-container-gap     : 0;
@@ -45,8 +43,6 @@
 /* The cards: the schedule (a Panel), the site's (a Container) and the turbine's (a Widget). No radius and no shadow
    on a phone (phone.css) */
 .ow-schedule, .ow-side-card, .ow-side .ow-card.b-widget {
-    --b-panel-background : var(--ow-surface);
-
     min-width        : 0;
     min-height       : 0;
     overflow         : hidden;
@@ -60,8 +56,7 @@
     --b-panel-gap        : var(--ow-gutter);
     --b-panel-background : transparent;
 
-    flex       : none;
-    min-height : 0;
+    flex : none;
 
     > .b-panel-body-wrap, .b-panel-content.b-map-panel-content {
         overflow : visible;
@@ -87,8 +82,6 @@
     --b-toolbar-padding    : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
     --b-toolbar-background : transparent;
 
-    flex             : none;
-    min-height       : 0;
     border-block-end : 1px solid var(--b-border-7);
 }
 
@@ -116,8 +109,6 @@
 }
 
 .ow-panel-count {
-    display     : flex;
-    align-items : center;
     gap         : 0.25rem;
     font-size   : var(--ow-size-md);
     color       : var(--b-text-2);
@@ -127,7 +118,6 @@
 /* The next forecast, a `tonal` button in the work blue, through its rendition's variables */
 .ow-forecast-button.b-button {
     --b-button-tonal-color             : var(--ow-c-work-ink);
-    --b-button-tonal-border-width      : 0;
     --b-button-tonal-background        : var(--ow-c-button-tint);
     --b-button-tonal-hover-background  : color-mix(in srgb, var(--ow-c-work) 11%, var(--ow-c-button-tint));
     --b-button-tonal-active-background : color-mix(in srgb, var(--ow-c-work) 18%, var(--ow-c-button-tint));
@@ -175,7 +165,6 @@
 
     .ow-notice-text {
         flex        : 1;
-        display     : flex;
         align-items : center;
         gap         : 0.8em;
         line-height : 1.4;

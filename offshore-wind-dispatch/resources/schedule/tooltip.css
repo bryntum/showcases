@@ -26,10 +26,6 @@
         flex        : 1;
         font-size   : var(--ow-size-base);
         white-space : nowrap;
-
-        b {
-            font-weight : 700;
-        }
     }
 
     /* How the trip stands against its window: a quiet blue tint, orange when it is late */

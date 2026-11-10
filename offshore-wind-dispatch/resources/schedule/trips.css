@@ -12,12 +12,9 @@
     --ow-line-y : calc(var(--b-nested-events-header-height) + 2px + 14px);
 
     .b-sch-event-wrap .b-sch-event.ow-trip {
-        --b-sch-event-border-width   : 0;
         --b-sch-event-padding-inline : 0;
-        --b-sch-event-box-shadow     : none;
 
         align-items : stretch;
-        overflow    : visible;
 
         /* The label */
         > .b-sch-event-content {
@@ -87,22 +84,17 @@
         pointer-events : none;
 
         > .b-sch-event.ow-seg {
-            --b-sch-event-border-width  : 0;
             --b-sch-event-border-radius : var(--ow-c-radius);
             /* px, as TripRendering.js#blockText counts them, the gap and the narrow block's padding too */
             --b-sch-event-padding-inline : 6px;
             --b-sch-event-font-size      : 12px;
 
-            margin    : 0;
             translate : none;
             overflow  : visible;
 
             > .b-sch-event-content {
-                overflow      : visible;
-                gap           : 6px;
-                padding-block : 0;
-                line-height   : 1;
-                white-space   : nowrap;
+                overflow    : visible;
+                line-height : 1;
             }
 
             b {
@@ -126,7 +118,6 @@
         /* Work, Bryntum's tonal event style in the work blue (eventStyle, eventColor): the turbine in semibold, the
            job type and the hours at the right in regular */
         > .b-sch-event.ow-seg-stop {
-            --b-sch-event-border-width : 1px;
             --b-sch-event-border-color : var(--ow-c-work-line);
             --b-sch-event-font-weight  : 400;
 
@@ -176,7 +167,6 @@
         position           : relative;
         align-self         : start;
         margin-block-start : calc(var(--ow-line-y) - 3px);
-        overflow           : visible;
 
         &::before, &::after {
             content           : '';
@@ -264,7 +254,6 @@
     margin-inline-start : calc(-1 * var(--ow-pre, 0px));
     font-size           : var(--ow-size-xs);
     color               : var(--ow-c-muted);
-    white-space         : nowrap;
 
     > span {
         padding-inline : 0.182em;
