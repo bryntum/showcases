@@ -3,8 +3,8 @@ import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
 import { DateHelper, StringHelper } from '@bryntum/core-enterprise';
 import DispatchProject from '../model/DispatchProject.js';
-import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
+import { hhmm } from '../util/Time.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
 import { beforeTripEditShow, tripEdit } from './TripEdit.js';
@@ -21,7 +21,7 @@ const
 /**
  * The Day view: the vessels and helicopters on the day's timeline, a Scheduler on the Enterprise tier. Mostly its
  * configs: the rendering, the checks and the trip editor live in the modules it imports, the store sync in
- * DispatchSync. Its event store holds the whole week; `trips` is the day shown.
+ * `refreshPlan()` and `refreshDispatch()`. Its event store holds the whole week; `trips` is the day shown.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
@@ -348,14 +348,62 @@ export default class DispatchScheduler extends Scheduler {
     //region Data and drag
 
     /**
-     * Redraws after the forecast or the plan changed
+     * Redraws after the plan changed: the ghosts of the trips brought forward, the vessels' seats taken
+     */
+    refreshPlan() {
+        this.syncRanges();
+        this.refreshRows();
+    }
+
+    /**
+     * Redraws after the day, the forecast or the clock changed: the no-go ranges, the now line, the time axis rows
      */
     refreshDispatch() {
-        const me = this;
+        this.refreshPlan();
+        this.syncNow();
+        this.forecastHeader.refresh();
+    }
 
-        (me.dispatchSync ??= new DispatchSync({ scheduler : me })).refresh();
-        me.refreshRows();
-        me.forecastHeader.refresh();
+    // A vessel's weather no-go from its window's close to the end of the day, and the ghost of a trip the forecast
+    // brought forward at its old place
+    syncRanges() {
+        const
+            me     = this,
+            state  = me.dispatch,
+            at     = minutes => DateHelper.add(state.midnight, minutes, 'minute'),
+            end    = at(state.day.dayEnd * 60),
+            // The Group feature's header rows are records of the store too
+            nogo   = me.resourceStore.allRecords.filter(vessel => !vessel.isGroupHeader).map(vessel => ({
+                id         : `nogo-${vessel.id}`,
+                kind       : 'nogo',
+                resourceId : vessel.id,
+                startDate  : at(state.closeOf(vessel)),
+                endDate    : end,
+                name       : state.limits[vessel.window].noGo
+            })),
+            ghosts = me.trips.filter(trip => trip.status === 'pulled' && trip.previousDeparture?.getTime() < end).map(trip => ({
+                id         : `ghost-${trip.id}`,
+                kind       : 'ghost',
+                resourceId : trip.resource?.id,
+                // From its old departure, as long as the trip is now
+                startDate  : trip.previousDeparture,
+                endDate    : DateHelper.add(trip.previousDeparture,
+                    trip.outerEndDate.getTime() - trip.outerStartDate.getTime(), 'millisecond')
+            }));
+
+        me.resourceTimeRangeStore.data = [...nogo, ...ghosts];
+    }
+
+    // The now line and the shaded past, today only
+    syncNow() {
+        const
+            state = this.dispatch,
+            now   = DateHelper.add(state.midnight, state.now, 'minute');
+
+        this.project.timeRangeStore.data = !state.isToday ? [] : [
+            { id : 'past', startDate : this.startDate, endDate : now, cls : 'ow-past' },
+            { id : 'now', startDate : now, endDate : now, name : hhmm(state.now), cls : 'ow-now' }
+        ];
     }
 
     /**

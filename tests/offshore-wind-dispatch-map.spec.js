@@ -172,7 +172,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         expect(panned).not.toEqual(before);
 
         // Everything that draws the map again, then longer than the fit's animation
-        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').refreshAll());
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').refreshPlan(true));
         await marker(page, 'T-60').hover();
         await page.waitForTimeout(1500);
 

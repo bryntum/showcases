@@ -662,6 +662,36 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             .toEqual(['hv-t45', 'pickup-t58']);
     });
 
+    test('Undo of the forecast brings back a dependency into a stop the forecast took off today', async({ page }) => {
+        await open(page);
+
+        // Sea Puffin's T-41 waits for the HV isolation: the forecast moves the whole trip to tomorrow
+        const into = () => page.evaluate(async() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            await app.scheduler.project.commitAsync();
+
+            return app.scheduler.dependencyStore.getById('hv-t41')?.toEvent?.id ?? null;
+        });
+
+        await page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return app.replan(() => app.scheduler.dependencyStore.add({
+                id : 'hv-t41', kind : 'plan', fromEvent : 'H2-1', toEvent : 'SP-1:T-41', lag : 0, lagUnit : 'minute'
+            }));
+        });
+        expect(await into()).toBe('SP-1:T-41');
+
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toBeVisible();
+        expect(await into()).toBeNull();
+
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        await expect(page.locator('.ow-notice')).toBeHidden();
+        expect(await into()).toBe('SP-1:T-41');
+    });
+
     const board = page => page.locator('.ow-week-board');
 
     // What the forecast left on a day: each trip with its stops and how it changed, the teams waiting

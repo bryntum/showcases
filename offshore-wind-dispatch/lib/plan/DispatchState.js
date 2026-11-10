@@ -70,8 +70,7 @@ export default class DispatchState extends Base.mixin(Events) {
             forecastIndex   : 0,
             now             : index ? me.day.dayStart * 60 : parseTime(data.site.now),
             windows         : closingTimes(forecasts[0], me.limits, me.day),
-            previousWindows : null,
-            dependencies    : index ? [] : data.dependencies
+            previousWindows : null
         }));
         me.dayIndex = 0;
         // Tracked by the project's STM during a forecast's re-plan (ForecastPlanner), so its Undo restores it too
@@ -180,10 +179,6 @@ export default class DispatchState extends Base.mixin(Events) {
 
     set previousWindows(value) {
         this.current.previousWindows = value;
-    }
-
-    get dependencies() {
-        return this.current.dependencies;
     }
 
     // `{ issued, received, hs, wind }`

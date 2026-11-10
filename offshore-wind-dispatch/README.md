@@ -38,8 +38,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Trips with their stops nested inside | Scheduler `NestedEvents`, an event store that is a tree | `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js` |
 | The sail out and back, with their times | `EventBuffer` (`preamble`, `postamble`) | `lib/schedule/TripRendering.js`, `resources/schedule/trips.css` |
 | Trip times | The scheduling engine: dependencies between the legs, a constraint on the departure | `lib/model/TripModel.js#layout` |
-| "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js`, `lib/schedule/DispatchSync.js` |
-| Weather no-go hatch, ghost of a trip brought forward | `ResourceTimeRanges` | `lib/schedule/DispatchSync.js` |
+| "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js` |
+| Weather no-go hatch, ghost of a trip brought forward | `ResourceTimeRanges` | `lib/schedule/DispatchScheduler.js` |
 | Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | Dragging a trip, refused when it breaks the window | `EventDrag` with a `validatorFn` | `lib/schedule/TripValidator.js` |
 | Dragging a team from the header onto a trip | `DragHelper`, a `Tooltip` | `lib/drag/` |
@@ -112,7 +112,7 @@ data/farm.json ──► DispatchState (site, forecasts, windows, the day shown,
                      │  dataReady
      ┌───────────────┼────────────────┬───────────────┬──────────────────┐
   Trip bars      No-go ranges     KPI bar       Week view          Map + turbine card
- (renderers)    (DispatchSync)  (DispatchApp)  (WeekBoard,         (MapPanel: MapModel,
+ (renderers)   (DispatchScheduler) (DispatchApp) (WeekBoard,         (MapPanel: MapModel,
                                                 its own listener)   TurbineMap, TurbineCard)
                                                                          ▲ change
 AppState (selected turbine, map follows, team lifted / held) ────────────┘
@@ -199,8 +199,8 @@ engine places each changed trip before the next one on the vessel is planned.
   * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
     ResourceTimeRanges and Summary features, redrawn from the Day view's project while it shows) and `WeekCells` (one
     derived cell per vessel per day)
-  * `schedule/` the `DispatchScheduler`, `DispatchSync` (the no-go ranges, the now line and the dependencies in the
-    project's stores), its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
+  * `schedule/` the `DispatchScheduler` (which also keeps the no-go ranges and the now line in the project's stores),
+    its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
     (`TripTip`), the checks of a trip moved to a new time (`TripValidator`), and the rendering of the trips and their
     legs, the vessels, groups, ranges and the dependency (`TripRendering`)
   * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs), `TripData` (a trip, its legs and the
@@ -215,11 +215,12 @@ engine places each changed trip before the next one on the vessel is planned.
 
 ## Code tour
 
-### Weather windows as resource time ranges: `lib/schedule/DispatchSync.js`
+### Weather windows as resource time ranges: `lib/schedule/DispatchScheduler.js`
 
 Each vessel's window closes at the start of the first hour its limit is crossed (`closingTimes` in `DispatchState.js`). `syncRanges()`
 turns that into one resource time range per vessel, from the close to the end of the day, drawn hatched by
-`renderRange`. They are rebuilt when the forecast changes, so the no-go area of each row moves with the forecast. A trip
+`renderRange`. They are derived anew when the forecast or the plan changes, the store's `syncDataOnLoad` keeping the
+records that stay, so the no-go area of each row moves with the forecast. A trip
 brought forward by the forecast leaves a faint ghost at its old place, a resource time range too. The shaded past and
 the now line are time ranges (the TimeRanges feature).
 
@@ -247,7 +248,7 @@ as one, and a click on a stop is found by time. Trips are dragged along their ow
 once gone (the EventDrag feature's `validatorFn`). A dropped trip's legs are placed again from its new departure,
 snapped to 5 minutes (`DispatchScheduler#departsAt`).
 
-### Dependencies into a stop: `lib/model/TripData.js`, `lib/schedule/DispatchSync.js`
+### Dependencies into a stop: `lib/model/TripData.js`
 
 The Dependencies feature draws the lines from a trip into a stop, a nested event, of another trip: the HV isolation
 (H2-1) into the T-45 stop of the SWATH's trip, and the helicopter's drop-off (H1-1) into the pick-up stop of H1-2 with a
@@ -256,8 +257,8 @@ lag (`data/farm.json`, `dependencies`). The scheduling engine starts the depende
 dependent stop so late that its trip is back after its window is refused, with the dependency's reason
 (`TripValidator#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
 bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a
-line orange when the plan breaks it. `syncDependencies()` adds
-it again whenever both ends are in the plan, so it comes back when Undo brings back a stop a forecast had cut.
+line orange when the plan breaks it. A stop a forecast cuts takes its dependency with it, and the forecast's Undo
+(the STM) brings both back.
 
 ### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
 

@@ -17,7 +17,7 @@ import './panel/PhoneTabs.js';
 const
     openingTurbine = 'T-41',
     hbox           = { type : 'hbox', align : 'center' },
-    // One of the day's counts, the figure over its label; drawn by refreshAll
+    // One of the day's counts, the figure over its label; drawn by refreshPlan
     kpi            = { type : 'widget', cls : 'ow-kpi' };
 
 /**
@@ -231,7 +231,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         // a visible element paints as it renders. The engine's first calculation: the legs placed, the waits known
         await scheduler.project.commitAsync();
         me.evaluate();
-        me.refreshAll();
+        me.refreshPlan(true);
 
         // The turbine first: selecting its trip keeps it, as it is on the trip (onTripSelectionChange). The opening
         // selection is the page's, not the user's: the map stays on the whole farm until the user selects
@@ -382,17 +382,18 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             this.refreshSide();
         }
         else {
-            this.refreshAll();
+            this.refreshPlan();
         }
     }
 
-    // The day, the forecast or the teams waiting changed, mostly with the plan: drawn once the engine has placed it
+    // The day or the forecast changed, mostly with the plan: drawn once the engine has placed it, the weather too
     async onDispatchChange() {
         await this.scheduler?.project.commitAsync();
-        this.refreshAll();
+        this.refreshPlan(true);
     }
 
-    refreshAll() {
+    // The header's counts, the schedule and the map. `weather` also the time axis rows and the no-go ranges
+    refreshPlan(weather = false) {
         const
             me                    = this,
             { dispatch }          = me,
@@ -412,7 +413,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         });
         // The forecast's notice is about the day it re-planned
         me.parts.notice.hidden = !me.forecastPlanner?.changes.length || me.forecastPlanner.day !== dispatch.dayIndex;
-        scheduler.refreshDispatch();
+        weather ? scheduler.refreshDispatch() : scheduler.refreshPlan();
         me.parts.schedulePane.refreshBar();
         me.refreshSide();
     }
