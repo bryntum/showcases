@@ -74,6 +74,22 @@
             border-color     : var(--ow-reach);
             background-color : color-mix(in srgb, var(--ow-reach) 16%, transparent);
         }
+
+        /* The held team's turbine, its name, over the outline in the lane of the trip's label: the chip under the
+           pointer hides most of the outline */
+        &.ow-drop-outline {
+            font-size   : var(--ow-size-sm);
+            font-weight : 600;
+            line-height : 1;
+            white-space : nowrap;
+            /* As the chip's status, a step towards the text colour, to read on the row */
+            color       : color-mix(in srgb, var(--ow-reach) 65%, var(--b-text-1));
+
+            .b-sch-event-content {
+                align-items : start;
+                padding     : 8px 0 0;
+            }
+        }
     }
 
     /* The dependencies (TripRendering.js). The links that only keep a trip's legs in order for the engine

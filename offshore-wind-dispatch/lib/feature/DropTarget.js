@@ -74,6 +74,8 @@ export default class DropTarget extends SchedulerFeature {
         return drop && !drop.target.isWeekCell && vessel?.mode === 'vessel' ? [{
             id         : 'drop',
             kind       : 'drop',
+            // Labels the outline: the chip under the pointer hides most of it
+            name       : drop.result.stop.turbine,
             resourceId : vessel.id,
             startDate  : at(drop.result.stop.from),
             endDate    : at(drop.result.stop.to)

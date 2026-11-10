@@ -210,15 +210,16 @@ export function renderGroup({ groupRowFor, groupRecords, isFirstColumn }) {
 
 /**
  * The resource time ranges (VesselRangeModel): a vessel's weather no-go, the ghost of a trip brought forward, or the
- * outline of a held team's stop. None has a label. The classes go on the range's own element, its `wrapperCls`
+ * outline of a held team's stop, the only one with a name, its turbine. The classes go on the range's own element,
+ * its `wrapperCls`
  * @param {Object} args The ResourceTimeRanges feature's renderer arguments
  * @returns {String}
  */
-export function renderRange({ resourceTimeRangeRecord : { kind, resource }, renderData : { wrapperCls } }) {
+export function renderRange({ resourceTimeRangeRecord : { kind, name, resource }, renderData : { wrapperCls } }) {
     wrapperCls['ow-nogo']         = kind === 'nogo';
     wrapperCls['ow-nogo-heli']    = kind === 'nogo' && resource?.mode === 'heli';
     wrapperCls['ow-ghost']        = kind === 'ghost';
     wrapperCls['ow-drop-outline'] = kind === 'drop';
 
-    return '';
+    return name ?? '';
 }

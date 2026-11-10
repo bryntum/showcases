@@ -52,7 +52,7 @@ dropped.
 | Stop | A turbine a team works at on a trip, a leg with its `turbine`, `team` and `duration`, the solid blue work block |
 | Transit | Time at sea between two places. The sail out from the port and back to it are the trip's buffer time, its `preamble` and `postamble` (the EventBuffer feature) |
 | Hop | A transit between two turbines, a leg of the trip |
-| Held team | A team dragged from the tray over a trip or a vessel's row: an outline shows where its stop would go, nothing is in the plan until it is dropped |
+| Held team | A team dragged from the tray over a trip or a vessel's row: an outline, named by its turbine, shows where its stop would go, nothing is in the plan until it is dropped |
 | Ring | The map's circle round a turbine: the turbines of the trip hovered or selected, and while a team is held the turbines its trip can still reach |
 | Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
 | Pulled, trimmed, moved | What a new forecast did to a trip: brought forward, its last stops cut, or all of them cut (the trip leaves the day) |
