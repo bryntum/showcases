@@ -50,10 +50,13 @@ const
             }
         }
     ],
-    // The trial badge out, the panel at the capture size
+    // The trial badge out, the panel at the capture size and square: the gallery tile rounds the image itself, the
+    // panel's own corners would show the page behind them
     captureCss = `
         .b-license-badge { display : none !important; }
-        .sc-container > .b-outer { flex : none; width : ${width}px; height : ${height}px; }
+        .sc-container > .b-outer {
+            flex : none; width : ${width}px; height : ${height}px; border-radius : 0; box-shadow : none;
+        }
     `;
 
 /**
