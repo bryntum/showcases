@@ -11,13 +11,26 @@ import { duration, hhmm } from '../util/Time.js';
  *
  * - A trip has to be back at port before the weather window of its vessel closes
  * - When a forecast closes the window earlier, a trip not yet gone is brought forward if it fits before the close,
- *   otherwise the last stops are cut and wait for tomorrow, and a trip left with nothing is moved to tomorrow
+ *   otherwise the last stops are cut and wait for tomorrow, and a trip left with nothing is moved to tomorrow. A trip
+ *   already gone is left as it is, flagged
  * - A team dropped on a trip gets a stop after the last one, if the seats, the certificates and the window allow it
  */
 
 const
     // Pulled forward trips start on a quarter hour, at least this long from now
-    quarter = 15;
+    quarter  = 15,
+    // Every technician going offshore holds GWO basic safety training, whatever the job asks for on top
+    baseline = ['GWO'];
+
+/**
+ * The certificates a job needs: the baseline offshore safety training and the job's own. One list, both checked
+ * against the team and shown
+ * @param {Object} job `{ certs }`
+ * @returns {String[]}
+ */
+export function requiredCerts(job) {
+    return [...new Set([...(job.certs ?? []), ...baseline])];
+}
 
 /**
  * The legs of a trip: out from the port, the stops with the short hops between them, back to the port
@@ -121,19 +134,17 @@ export function turbinesOf(stops) {
 export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earliest }) {
     const fits = kept => start + wait + tripMinutes(kept, mode) <= close;
 
-    if (!stops.length || fits(stops)) {
+    // A trip that has left port is not rewritten: its stops may be under way or done. It stays as it is, flagged past
+    // its window
+    if (!stops.length || start <= now || fits(stops)) {
         return null;
     }
 
-    const started = start <= now;
+    // The whole trip earlier, starting on a quarter hour
+    const latest = Math.floor((close - wait - tripMinutes(stops, mode)) / quarter) * quarter;
 
-    // Not gone yet: the whole trip earlier, starting on a quarter hour
-    if (!started) {
-        const latest = Math.floor((close - wait - tripMinutes(stops, mode)) / quarter) * quarter;
-
-        if (latest >= Math.max(earliest, now + quarter)) {
-            return { change : 'pulled', start : latest, stops, removed : [] };
-        }
+    if (latest >= Math.max(earliest, now + quarter)) {
+        return { change : 'pulled', start : latest, stops, removed : [] };
     }
 
     // The last stops wait for tomorrow
@@ -145,8 +156,29 @@ export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earli
         }
     }
 
-    // Nothing fits: a trip in port moves to tomorrow, one at sea stays flagged past the window
-    return started ? null : { change : 'moved', start, stops, removed : turbinesOf(stops) };
+    // Nothing fits: the trip moves to tomorrow
+    return { change : 'moved', start, stops, removed : turbinesOf(stops) };
+}
+
+/**
+ * The vessel's other trip a trip would overlap, port to port: a vessel is on one trip at a time. Only top-level trips
+ * count, from departure to return (the sail out and back included); a trip's own legs overlap it by design
+ * @param {Object} span `{ start, end }`, minutes since midnight
+ * @param {Object[]} busy The vessel's other trips, `{ id, start, end }`
+ * @returns {Object|null} The first trip it overlaps
+ */
+export function clashOf({ start, end }, busy) {
+    return busy.find(other => start < other.end && other.start < end) ?? null;
+}
+
+/**
+ * Why a vessel cannot do a trip at a time: it is out on another one then
+ * @param {String} vessel The vessel's name
+ * @param {Object} clash `{ id, start, end }`, see clashOf
+ * @returns {String} "Sea Puffin is out on SP-2 09:30–13:10"
+ */
+export function clashText(vessel, clash) {
+    return `${vessel} is out on ${clash.id} ${hhmm(clash.start)}–${hhmm(clash.end)}`;
 }
 
 /**
@@ -174,10 +206,11 @@ export function noGoText(back, close, limit) {
  * proxy. One check gives both, so they never disagree
  * @returns {String[]} `[reason, short]`, `[null, null]` when it breaks none
  */
-function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at, nowhere }) {
+function brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, back, at, nowhere, busy }) {
     const
-        missing = (job.certs ?? []).filter(cert => !team.certs.includes(cert)),
-        late    = back - close;
+        missing = certs.filter(cert => !team.certs.includes(cert)),
+        late    = back - close,
+        clash   = clashOf({ start : trip.start, end : back }, busy);
 
     if (trip.change === 'moved') {
         return [`${trip.id} is moved to tomorrow`, 'Moved to tomorrow'];
@@ -206,6 +239,10 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, a
             [noGoText(back, close, limit), `${duration(late)} after window`];
     }
 
+    if (clash) {
+        return [clashText(vessel, clash), `Clashes with ${clash.id}`];
+    }
+
     // Dropped where the weather is already over the limit
     if (at != null && at >= close) {
         return [noGoText(back, close, limit), 'In weather no-go'];
@@ -226,15 +263,18 @@ function brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, a
  * @param {String} options.vessel The vessel's name, for the messages
  * @param {Number} [options.at] Where on the time axis the team is dropped, minutes. Not inside the no-go range
  * @param {Boolean} [options.nowhere] The job fits on no trip or vessel today: the reason says so
+ * @param {Object[]} [options.busy] The vessel's other trips, `{ id, start, end }`: the trip may not run into one
  * @returns {Object} `{ valid, reason, short, stops, stop, back, margin, seats, certs }`. `reason` is a sentence,
  * `short` a few words for the drag proxy: why it does not fit, or "Fits SR-1, back 12:40"
  */
-export function previewDrop({ trip, team, job, close, limit, now, vessel, at, nowhere = false }) {
+export function previewDrop({ trip, team, job, close, limit, now, vessel, at, nowhere = false, busy = [] }) {
     const
         { stops, stop, back } = appendStop(trip,
             { turbine : job.turbine, minutes : job.minutes, team : team.id, preview : true }),
         seats                 = trip.pax + team.techs,
-        [reason, short]       = brokenRule({ trip, team, job, close, limit, now, vessel, seats, back, at, nowhere });
+        certs                 = requiredCerts(job),
+        [reason, short]       = brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, back, at,
+            nowhere, busy });
 
     return {
         valid  : !reason,
@@ -245,7 +285,7 @@ export function previewDrop({ trip, team, job, close, limit, now, vessel, at, no
         back,
         margin : close - back,
         seats,
-        certs  : (job.certs ?? []).concat('GWO').filter((cert, i, all) => all.indexOf(cert) === i)
+        certs
     };
 }
 

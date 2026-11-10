@@ -1,4 +1,4 @@
-import { noGoText } from '../plan/Planner.js';
+import { clashOf, clashText, noGoText } from '../plan/Planner.js';
 import { hhmm } from '../util/Time.js';
 
 /**
@@ -9,6 +9,20 @@ import { hhmm } from '../util/Time.js';
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
  */
+
+/**
+ * The other trips of a vessel on a day, port to port, that a trip has to keep clear of. Not the trip itself, not a
+ * draft shown for a team held over the vessel, not one moved to tomorrow
+ * @param {TripModel[]} trips The trips of the day
+ * @param {VesselModel} vessel
+ * @param {String} [except] The ID of the trip being checked
+ * @returns {Object[]} `{ id, start, end }`, minutes since midnight
+ */
+export function busyOf(trips, vessel, except) {
+    return trips
+        .filter(trip => trip.resource === vessel && trip.id !== except && !trip.draft && trip.change !== 'moved')
+        .map(trip => ({ id : trip.id, start : trip.departs, end : trip.endMinute }));
+}
 
 /**
  * The reason a trip moved to a new departure breaks a dependency of the plan, if it does: the engine would move the
@@ -49,7 +63,8 @@ export function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
 
 /**
  * Whether a trip may leave at the departure it is dragged to: not once moved to tomorrow, not in the past, back
- * before its window closes, and without a dependency pushing a stop past its window
+ * before its window closes, not while its vessel is out on another trip, and without a dependency pushing a stop past
+ * its window
  * @param {DispatchScheduler} scheduler
  * @param {Object} context The EventDrag feature's validation context, `{ eventRecords, startDate, newResource }`
  * @returns {Boolean|Object} `true`, or `{ valid : false, message }`
@@ -77,6 +92,12 @@ export function validateTripDrag(scheduler, { eventRecords, startDate, newResour
 
     if (back > close) {
         return { valid : false, message : noGoText(back, close, dispatch.limits[vessel.window]) };
+    }
+
+    const clash = clashOf({ start : departs, end : back }, busyOf(scheduler.trips, vessel, trip.id));
+
+    if (clash) {
+        return { valid : false, message : clashText(vessel.name, clash) };
     }
 
     // A stop that waits for another trip is not refused: the engine starts it once that trip is done. Unless that
