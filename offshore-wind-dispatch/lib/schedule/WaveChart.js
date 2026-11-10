@@ -180,10 +180,11 @@ export default class WaveChart {
                     strokeWidth  : 0,
                     segmentation : split(at, [c.work, c.work], [c.rough, c.rough])
                 },
+                ...me.limitLines(c, series),
                 me.wave(at, c, series),
                 me.closing(at, range, c, series)
             ].filter(Boolean),
-            axes : { x : me.timeAxis(c), y : me.heightAxis(range, c) }
+            axes : { x : me.timeAxis(c), y : me.heightAxis(range) }
         };
     }
 
@@ -255,32 +256,35 @@ export default class WaveChart {
         };
     }
 
-    // The forecast and both limits. A limit is named at its left end, over its line, or under it when the wave starts
-    // the day above it, on a chip of the surface so the other limit's dashes don't run through it
-    heightAxis([min, max], { muted, surface }) {
-        const limit = (name, value) => ({
+    heightAxis([min, max]) {
+        return { ...bare, position : 'left', min, max, gridLine : off, crosshair : off };
+    }
+
+    // The CTV and SWATH limits, dashed line series listed before the wave and the close, so their markers and the
+    // ring are drawn over them (AG Charts draws cross lines over every series). Each is named at its left end, over
+    // its line or under it when the day starts above it, on a chip of the surface so the other limit's dashes don't
+    // run through the name
+    limitLines({ muted, surface }, series) {
+        const { dayStart, dayEnd } = this.day;
+
+        return Object.entries({ CTV : this.limits.ctv, SWATH : this.limits.swath }).map(([name, value]) => ({
+            ...series,
             type          : 'line',
-            value,
+            data          : [{ t : dayStart, y : value, name : true }, { t : dayEnd, y : value }],
+            yKey          : 'y',
             stroke        : muted,
             strokeOpacity : 0.45,
+            strokeWidth   : 1,
             lineDash      : [3, 3],
-            label         : label(this.forecast.hs[0] > value ? 'bottom-left' : 'top-left', muted, {
-                text     : `${name} limit ${value.toFixed(1)}`,
-                fontSize : 9,
-                fill     : surface,
-                padding  : { top : 1, bottom : 1, left : 3, right : 3 }
-            })
-        });
-
-        return {
-            ...bare,
-            position   : 'left',
-            min,
-            max,
-            gridLine   : off,
-            crossLines : [limit('CTV', this.limits.ctv), limit('SWATH', this.limits.swath)],
-            crosshair  : off
-        };
+            marker        : off,
+            label         : label(this.forecast.hs[0] > value ? 'bottom-right' : 'top-right', muted, {
+                fontSize  : 9,
+                fill      : surface,
+                padding   : { top : 1, bottom : 1, left : 3, right : 3 },
+                formatter : ({ datum }) => (datum.name ? `${name} limit ${value.toFixed(1)}` : '')
+            }),
+            tooltip : off
+        }));
     }
 
     // The forecast and both limits, with room over and under them for the labels, a little more under
