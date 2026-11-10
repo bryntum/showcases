@@ -173,7 +173,7 @@ engine places each changed trip before the next one on the vessel is planned.
 * `app.js` loads the farm data and creates the `DispatchApp`. It imports `scheduler.css` (the structural CSS of
   Scheduler and the products it builds on), the Svalbard theme, then `resources/app.css`
 * `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
-  dependency
+  dependency of today, and under `week` the forecast, trips and jobs of the six days after it
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
     the site and the day, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
@@ -191,8 +191,7 @@ engine places each changed trip before the next one on the vessel is planned.
     that follows the pointer)
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
     the trips (`Planner`), the state apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts,
-    the waiting teams' store), the re-planning on a new forecast (`ForecastPlanner`) and the seeded generator of the
-    week's forecasts and trips (`WeekPlan`)
+    the waiting teams' store) and the re-planning on a new forecast (`ForecastPlanner`)
   * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
     ResourceTimeRanges and Summary features, redrawn from the Day view's project while it shows) and `WeekCells` (one
     derived cell per vessel per day)

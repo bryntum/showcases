@@ -1,8 +1,7 @@
 import { Base, DateHelper, Events, Store } from '@bryntum/core-enterprise';
 import WaitingTeamModel from '../model/WaitingTeamModel.js';
 import { closingTimes, valueAt } from './Weather.js';
-import { firstSailing } from './Farm.js';
-import { weekPlan } from './WeekPlan.js';
+import { firstSailing, substation } from './Farm.js';
 import { parseTime } from '../util/Time.js';
 
 /**
@@ -13,9 +12,10 @@ import { parseTime } from '../util/Time.js';
  * moves to when it was received and the windows close where the new forecast says, the previous closing times are
  * kept to show what changed.
  *
- * The week (WeekPlan) gives each of the next six days a forecast of its own, from today, the real current date. The
- * Day view shows one day at a time (`dayIndex`, `showDay`): the forecast, the windows, the clock and the dependencies
- * are that day's. A later day is planned before it starts, its clock stands at the start of the day.
+ * The week is today and the six days after it, from the real current date: data/farm.json holds today at its top level
+ * and the other days, each with its forecast, its trips and the turbines due, under `week`. The Day view shows one day
+ * at a time (`dayIndex`, `showDay`): the forecast, the windows, the clock and the dependencies are that day's. A later
+ * day is planned before it starts, its clock stands at the start of the day.
  *
  * The planner counts the times of the day shown in minutes since its midnight (Planner), the records and the
  * Scheduler in Dates: `toDate` and `toMinutes` convert between the two for the day shown, `dateOf` gives a day's
@@ -49,7 +49,18 @@ export default class DispatchState extends Base.mixin(Events) {
         me.limits   = data.limits;
         me.vessels  = data.vessels;
         me.teams    = new Map(data.teams.map(team => [team.id, team]));
-        me.week     = weekPlan(data);
+        // Today, then the rest of the week as the data has it
+        me.week     = {
+            jobs : data.week.jobs,
+            days : [
+                {
+                    forecasts : data.forecasts,
+                    trips     : data.trips,
+                    due       : Object.keys(data.jobs).filter(turbine => turbine !== substation)
+                },
+                ...data.week.days
+            ]
+        };
         // Today's jobs, and with them the rest of the week's on a later day
         me.dayJobs  = data.jobs;
         me.allJobs  = { ...me.week.jobs, ...data.jobs };
