@@ -130,6 +130,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
                 toggleGroup : true,
                 hidden      : true,
                 margin      : '8 12',
+                // Workaround for Bryntum 8.0: a ButtonGroup has no config to fill its container's width.
                 // As wide as the phone, a half each: `columns` fills the group with its buttons, their flex keeps them
                 // on one row inside its padding, and the vbox stretches the group within its margin (`auto`, not the
                 // columned group's 100%)

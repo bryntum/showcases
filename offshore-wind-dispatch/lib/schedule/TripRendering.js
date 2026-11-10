@@ -112,9 +112,8 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFi
     renderData.cls['ow-trip-drop']           = held;
     renderData.cls['ow-trip-fits']           = dropFit;
 
-    // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
-    // the trip's start: trips.css shifts the legs' container back by the sail out's width, and starts the label over
-    // the departure
+    // Workaround for Bryntum 8.0: NestedEvents ignores EventBuffer, it places the legs from the departure.
+    // trips.css shifts the legs' container back by the sail out's width, and starts the label over the departure
     renderData.wrapperStyle += `--ow-pre:${sailOut}px;`;
 
     return {

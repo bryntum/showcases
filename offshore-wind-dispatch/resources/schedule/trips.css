@@ -24,8 +24,9 @@
             overflow      : visible;
         }
 
-        /* NestedEvents places the legs from the wrapper's start, the departure: back by the sail out (--ow-pre,
-           TripRendering.js#renderTrip). The line runs behind them from the first stop on */
+        /* Workaround for Bryntum 8.0: NestedEvents ignores EventBuffer, it places the legs from the departure.
+           Moved back by the sail out (--ow-pre, TripRendering.js#renderTrip). The line runs behind them from the
+           first stop on */
         > .b-nested-events-container {
             translate : calc(-1 * var(--ow-pre, 0px)) 0;
 
@@ -241,7 +242,7 @@
     }
 }
 
-/* The trip's label, shifted back by the sail out so it starts at the departure */
+/* The trip's label, shifted back by the sail out so it starts at the departure (the workaround above) */
 .ow-trip-head {
     display             : flex;
     align-items         : center;

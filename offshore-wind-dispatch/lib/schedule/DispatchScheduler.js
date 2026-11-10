@@ -317,8 +317,9 @@ export default class DispatchScheduler extends Scheduler {
     }
 
     /**
-     * Selects a trip and scrolls its return into the middle of the view. Just shown again (a phone's Schedule), the
-     * time axis has no width until `timelineViewportResize`, a moment later: the scroll waits for it
+     * Selects a trip and scrolls its return into the middle of the view.
+     * Workaround for Bryntum 8.0: a Scheduler just shown scrolls nowhere until its `timelineViewportResize`.
+     * Shown again (a phone's Schedule), its time axis is 0 wide until then, a moment later: the scroll waits for it
      * @param {TripModel} trip
      * @returns {Promise} Resolves once scrolled
      */
