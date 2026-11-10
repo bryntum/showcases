@@ -224,6 +224,7 @@ export default class DispatchScheduler extends Scheduler {
         me.on({
             beforeTaskEdit     : 'onBeforeTripEdit',
             beforeTaskSave     : 'onBeforeTripSave',
+            afterTaskSave      : 'onAfterTripSave',
             beforeTaskEditShow : beforeTripEditShow,
             paint              : 'onSchedulerPaint',
             thisObj            : me
@@ -237,11 +238,10 @@ export default class DispatchScheduler extends Scheduler {
     }
 
     /**
-     * Fired when the trip editor is saved with a new time on station: the trip is laid out again from its new
-     * departure, as when it is dragged (DispatchApp#onTripTimeChange)
+     * Fired when the trip editor saved a new time on station, the trip laid out again from its new departure
+     * (DispatchApp#onTripTimeChange)
      * @event tripTimeChange
      * @param {TripModel} trip
-     * @param {Date} startDate The trip's new start, its arrival at the first stop
      */
 
     /**
@@ -272,17 +272,18 @@ export default class DispatchScheduler extends Scheduler {
         }
     }
 
-    // A trip's times follow from its departure and its legs, so the editor does not save it: it is closed, and the
-    // trip laid out again from the new departure, as when it is dragged. A time refused never gets here
-    // (checkTripTime)
-    onBeforeTripSave({ taskRecord : trip, editor }) {
-        const
-            me        = this,
-            startDate = editor.widgetMap.startDateField.value;
+    // The editor applies its fields to the trip as they change, in a transaction its Save commits. The time on station
+    // set that way would pin the trip's start only: its legs and their links follow from the departure, so the trip is
+    // laid out from it here, before the editor commits. A time refused never gets here (checkTripTime)
+    async onBeforeTripSave({ taskRecord : trip, editor }) {
+        const me = this;
 
-        me.features.taskEdit.cancel().then(() => me.trigger('tripTimeChange', { trip, startDate }));
+        trip.layout({ departs : me.departsAt(trip, editor.widgetMap.startDateField.value) });
+        await me.project.commitAsync();
+    }
 
-        return false;
+    onAfterTripSave({ taskRecord : trip }) {
+        this.trigger('tripTimeChange', { trip });
     }
 
     doDestroy() {

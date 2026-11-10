@@ -391,9 +391,10 @@ export default class TripModel extends EventModelEnterprise {
             me.set(buffers);
         }
 
-        if (start !== me.minutesOf(me.startDate)) {
-            const date = me.dateOf(start);
+        // Also when only the constraint lags: the trip editor sets the start without it
+        const date = me.dateOf(start);
 
+        if (start !== me.minutesOf(me.startDate) || me.constraintDate?.getTime() !== date.getTime()) {
             me.set({ startDate : date, constraintType : 'startnoearlierthan', constraintDate : date });
         }
     }
