@@ -19,7 +19,8 @@
  *   Scheduler's `features`. See {@link ForecastHeader}, {@link DropTarget} and {@link MapLink}.
  * - **View preset header rows with renderers, an AG Charts Enterprise chart in a header cell** — the wave height
  *   and the wind in the time axis, hour for hour over the trips; the wave one series in two segments, the forecast's
- *   spread a range area. See {@link ForecastHeader} and {@link WaveChart}.
+ *   spread a range area, the time and height under the pointer a crosshair. See {@link ForecastHeader} and
+ *   {@link WaveChart}.
  * - **EventDrag `validatorFn` and a cut-down TaskEdit** — a trip dragged or edited to a time that breaks its window,
  *   its vessel's other trip or a dependency is refused with the reason. See {@link DispatchScheduler#validateTripDrag}
  *   and {@link DispatchScheduler#checkTripTime}.

@@ -1,5 +1,5 @@
 import {
-    AgCharts, AllCommunityModule, LicenseManager, ModuleRegistry, RangeAreaSeriesModule
+    AgCharts, AllCommunityModule, CrosshairModule, LicenseManager, ModuleRegistry, RangeAreaSeriesModule
 } from 'ag-charts-enterprise';
 import { hhmm } from '../util/Time.js';
 
@@ -11,7 +11,7 @@ if (licenseKey) {
     LicenseManager.setLicenseKey(licenseKey);
 }
 
-ModuleRegistry.registerModules([AllCommunityModule, RangeAreaSeriesModule]);
+ModuleRegistry.registerModules([AllCommunityModule, CrosshairModule, RangeAreaSeriesModule]);
 
 const
     fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
@@ -61,6 +61,7 @@ function cssColor(element, name) {
  * https://www.ag-grid.com/charts/javascript/area-series/
  * https://www.ag-grid.com/charts/javascript/series-segmentation/
  * https://www.ag-grid.com/charts/javascript/range-area-series/
+ * https://www.ag-grid.com/charts/javascript/crosshairs/
  */
 export default class WaveChart {
     /**
@@ -143,7 +144,7 @@ export default class WaveChart {
     // The colours of the chart, read from the page's CSS custom properties each time it is drawn
     colors() {
         return Object.fromEntries([
-            ['muted', '--b-neutral-40'], ['work', '--ow-c-work'], ['fill', '--ow-c-chart-fill'],
+            ['muted', '--b-neutral-40'], ['ink', '--b-text-1'], ['work', '--ow-c-work'], ['fill', '--ow-c-chart-fill'],
             ['rough', '--ow-c-risk-line'], ['roughInk', '--ow-c-risk-ink'], ['roughFill', '--ow-c-chart-risk'],
             ['surface', '--ow-surface'], ['grid', '--ow-tick']
         ].map(([key, name]) => [key, cssColor(this.element, name)]));
@@ -213,20 +214,35 @@ export default class WaveChart {
         };
     }
 
-    // The day in hours. After a new forecast, the close before is a dashed line, named at its foot on the side away
-    // from the close
-    timeAxis({ muted, grid }) {
+    // The day in hours, with a crosshair naming the time and the wave height under the pointer. After a new forecast,
+    // the close before is a dashed line, named at its foot on the side away from the close
+    timeAxis({ muted, ink, surface, grid }) {
         const
             { dayStart, dayEnd } = this.day,
-            { closes, was }      = this.forecast;
+            { closes, was, hs }  = this.forecast;
 
         return {
             ...bare,
-            position   : 'bottom',
-            min        : dayStart,
-            max        : dayEnd,
-            interval   : { step : 1 },
-            gridLine   : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
+            position  : 'bottom',
+            min       : dayStart,
+            max       : dayEnd,
+            interval  : { step : 1 },
+            gridLine  : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
+            crosshair : {
+                snap     : false,
+                stroke   : muted,
+                lineDash : [2, 2],
+                // Lifted to the foot of the chart: under it, the header cell would clip it
+                label    : {
+                    yOffset  : -27,
+                    renderer : ({ value }) => ({
+                        text : `${hhmm(value * 60)} · ${hs[Math.min(Math.floor(value), dayEnd - 1) - dayStart]
+                            .toFixed(1)} m`,
+                        color           : surface,
+                        backgroundColor : ink
+                    })
+                }
+            },
             crossLines : was == null ? [] : [{
                 type     : 'line',
                 value    : was / 60,
@@ -262,7 +278,8 @@ export default class WaveChart {
             min,
             max,
             gridLine   : off,
-            crossLines : [limit('CTV', this.limits.ctv), limit('SWATH', this.limits.swath)]
+            crossLines : [limit('CTV', this.limits.ctv), limit('SWATH', this.limits.swath)],
+            crosshair  : off
         };
     }
 
