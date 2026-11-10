@@ -2,13 +2,8 @@ import { Rectangle, Tooltip } from '@bryntum/core-enterprise';
 import { iconConfig } from '../util/Icons.js';
 import { hhmm } from '../util/Time.js';
 
-/**
- * The content of the tooltip of a team held over a trip, as DomConfigs
- * @param {Object} drop See DropController#previewDrop
- * @param {Boolean} [keyboard] Held from the keyboard, the tooltip lists the keys
- * @returns {Object[]} DomConfig
- */
-function dropTipContent({ trip, team, job, result, reach, close }, keyboard = false) {
+// The content of the tooltip of a team held over a trip, see DropController#previewDrop
+function dropTipContent({ trip, team, job, result, reach, close }) {
     const
         // A vessel with no trip left to join gets a new one
         name  = trip.draft ? `a new trip, ${trip.id} from port at ${hhmm(trip.departs)}` : trip.id,
@@ -42,13 +37,6 @@ function dropTipContent({ trip, team, job, result, reach, close }, keyboard = fa
             text  : result.valid ?
                 `${trip.id} can still reach ${reach.size} turbines before ${hhmm(close)}, see the map` :
                 result.reason
-        },
-        keyboard && {
-            class    : 'ow-drop-tip-keys',
-            children : [
-                { tag : 'kbd', text : '←' }, ' ', { tag : 'kbd', text : '→' }, ' another trip · ',
-                { tag : 'kbd', text : 'Enter' }, ' book · ', { tag : 'kbd', text : 'Esc' }, ' cancel'
-            ]
         }
     ];
 }
@@ -81,12 +69,10 @@ export default class DropTooltip extends Tooltip {
     /**
      * Shows what a team gives on a trip, below a point
      * @param {Object} drop See DropController#previewDrop
-     * @param {{x: Number, y: Number}} point In the viewport: a one px rectangle at the pointer, or at the stop held
-     * from the keyboard
-     * @param {Boolean} keyboard Held from the keyboard
+     * @param {{x: Number, y: Number}} point In the viewport
      */
-    showDrop(drop, point, keyboard) {
-        this.html = dropTipContent(drop, keyboard);
+    showDrop(drop, point) {
+        this.html = dropTipContent(drop);
         this.element.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);
         this.showBy({
             target : new Rectangle(point.x, point.y, 1, 1),

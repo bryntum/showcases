@@ -20,13 +20,7 @@ const
     open      = async(page, query = '') => {
         await page.goto(`${url}${query}`);
         await expect(page.locator('html')).toHaveAttribute('data-ready', 'true');
-    },
-    // Selects a trip, as a click on it does
-    selectTrip = (page, id) => page.evaluate(id => {
-        const app = globalThis.bryntum.query('dispatchapp');
-
-        app.scheduler.selectEvent(app.trips.find(each => each.id === id));
-    }, id);
+    };
 
 let errors;
 
@@ -146,43 +140,6 @@ test.describe('Offshore Wind Dispatch', () => {
 });
 
 test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
-    test('a team can be held over a trip and booked from the keyboard', async({ page }) => {
-        await open(page);
-        // The page opens on SP-1, past its window: NT-1 is selected first
-        await selectTrip(page, 'NT-1');
-
-        const tip = page.locator('.ow-drop-tip');
-
-        await tray(page).locator('.ow-team[data-team="F"]').focus();
-        await page.keyboard.press('Enter');
-
-        // Held over the selected trip, NT-1, with the stop it would get previewed
-        await expect(tip).toContainText('T-34 fits on NT-1');
-        await expect(tip).toHaveAttribute('aria-live', 'polite');
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toContainText('T-34');
-
-        // The arrows move it to another trip, and back
-        await page.keyboard.press('ArrowRight');
-        await expect(tip).not.toContainText('on NT-1');
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
-        await page.keyboard.press('ArrowLeft');
-        await expect(tip).toContainText('T-34 fits on NT-1');
-
-        // Escape puts it back, the chip keeps the focus
-        await page.keyboard.press('Escape');
-        await expect(tip).toHaveCount(0);
-        await expect(tray(page).locator('.ow-team[data-team="F"]')).toBeFocused();
-
-        // Space holds it again, Enter books it
-        await page.keyboard.press(' ');
-        await expect(tip).toContainText('T-34 fits on NT-1');
-        await page.keyboard.press('Enter');
-
-        await expect(tip).toHaveCount(0);
-        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(0);
-        await expect(trip(page, 'NT-1').locator('.b-nested-event[data-event-id="NT-1:T-34"]')).toBeVisible();
-    });
-
     test('while a team is held over a trip, the map dims every turbine it cannot reach', async({ page }) => {
         await open(page, '?state=drag');
 
@@ -298,7 +255,7 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await page.evaluate(() => {
             const app = globalThis.bryntum.query('dispatchapp');
 
-            app.drag.showHeld('F', app.dropController.dropTargets()[0]);
+            return app.drag.showHeld('F', app.trips.find(each => each.id === 'NT-1'));
         });
         await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
@@ -411,35 +368,6 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
         expect(state.status).toBe(state.planStatus);
     });
 
-    test('held from the keyboard over a trip the forecast moves away, the arrows step through the trips left', async({ page }) => {
-        await open(page);
-        await selectTrip(page, 'NT-1');
-
-        await tray(page).locator('.ow-team[data-team="F"]').focus();
-        await page.keyboard.press('Enter');
-        await expect(page.locator('.ow-drop-tip')).toContainText('on NT-1');
-
-        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').applyForecast());
-
-        const targets = await page.evaluate(() => {
-            const app = globalThis.bryntum.query('dispatchapp');
-
-            return {
-                stepped : app.drag.keys.keyboard.trips.map(each => each.id),
-                fresh   : app.dropController.dropTargets().map(each => each.id)
-            };
-        });
-
-        // The trips the keys step through are those still on the day after the forecast
-        expect(targets.stepped).toEqual(targets.fresh);
-
-        await page.keyboard.press('ArrowRight');
-
-        const state = await heldState(page);
-
-        expect(state.held).toEqual(state.fresh);
-        expect(targets.fresh).toContain(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').held.target.id));
-    });
 });
 
 test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
@@ -1363,9 +1291,9 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
         const result = await page.evaluate(async() => {
             const app = globalThis.bryntum.query('dispatchapp');
 
-            app.drag.showHeld(app.dispatch.waitingStore.first.id, app.dropController.dropTargets()[0]);
+            await app.drag.showHeld(app.dispatch.waitingStore.first.id, app.trips.find(each => each.id === 'NT-1'));
             // Escape while the change is awaited
-            await app.replan(() => app.drag.keys.endHeld());
+            await app.replan(() => app.drag.end());
 
             return {
                 held     : app.held,

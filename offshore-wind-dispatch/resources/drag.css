@@ -152,18 +152,3 @@
     font-size           : 0.71875rem;
     color               : var(--b-text-2);
 }
-
-/* Held from the keyboard, the keys that move, book or cancel */
-.ow-drop-tip-keys {
-    margin-block-start : 0.546em;
-    font-size          : var(--ow-size-xs);
-    color              : var(--b-text-2);
-
-    kbd {
-        padding       : 0 0.364em;
-        border        : 1px solid var(--b-border-7);
-        border-radius : 0.1875rem;
-        font          : inherit;
-        font-weight   : 600;
-    }
-}

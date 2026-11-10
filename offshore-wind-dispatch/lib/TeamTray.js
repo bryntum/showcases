@@ -4,7 +4,7 @@ import './TeamChip.js';
 
 /**
  * The crews waiting at the port with no trip yet, in the header (KpiBar): the title with their count over a hint on
- * how to book one, then a card per team (TeamChip), dragged onto a trip or held over one with Enter (TeamDrag).
+ * how to book one, then a card per team (TeamChip), dragged onto a trip (TeamDrag).
  *
  * A chip per record of the teams' Store (DispatchState#waitingStore), in its order, kept in step by its `add`,
  * `remove` and `refresh` events. A booked team's chip goes; DragHelper holds on to the chip it drags.
@@ -47,7 +47,7 @@ export default class TeamTray extends Container {
                 layout : 'vbox',
                 items  : {
                     title : { type : 'widget', cls : 'ow-tray-title' },
-                    hint  : { type : 'widget', cls : 'ow-tray-hint', html : 'Drag onto a trip, or press Enter' }
+                    hint  : { type : 'widget', cls : 'ow-tray-hint', html : 'Drag onto a trip' }
                 }
             },
             empty : { type : 'widget', cls : 'ow-tray-empty', html : 'Every team has a trip' }

@@ -15,8 +15,7 @@ function jobText({ turbine, job, short }, fault) {
 /**
  * A team waiting at the port: a small card with the people icon, the team and its size over its turbine, its job and
  * how long it takes. The team's certificates and its full job are in its tooltip. A team waiting for a stopped turbine
- * is tinted red. It is what DragHelper drags (TeamDrag), or holds over a trip from the keyboard with Enter
- * (KeyboardDrag).
+ * is tinted red. It is what DragHelper drags (TeamDrag).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-tooltip
@@ -57,10 +56,7 @@ export default class TeamChip extends Widget {
          */
         lifted : false,
 
-        cls               : 'ow-team',
-        // A focusable button: a chip is held with Enter (KeyboardDrag)
-        role              : 'button',
-        elementAttributes : { tabindex : '0' }
+        cls : 'ow-team'
     };
 
     afterConstruct() {
@@ -82,7 +78,6 @@ export default class TeamChip extends Widget {
         me.job                  = job;
         me.element.dataset.team = me.waitingId;
         me.tooltip              = `${team.techs} technicians, ${team.certs.join(', ')} · ${job.turbine} ${job.job}`;
-        me.ariaLabel            = `${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`;
         // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
         me.html                 = [
             { tag : 'span', class : 'ow-team-crew', ariaHidden : true, children : [iconConfig('users')] },
@@ -106,10 +101,9 @@ export default class TeamChip extends Widget {
 TeamChip.initClass();
 
 /**
- * The chip that follows the pointer while a team is dragged, or sits on the trip when the team is held from the
- * keyboard (TeamDrag, KeyboardDrag): the team's name and its certificates, and a status line that says what the trip
- * under it gives (showOnChip). Every technician has the GWO basics, only a certificate that limits where a team can go
- * is worth a word
+ * The chip that follows the pointer while a team is dragged (TeamDrag): the team's name and its certificates, and a
+ * status line that says what the trip under it gives (showOnChip). Every technician has the GWO basics, only a
+ * certificate that limits where a team can go is worth a word
  * @param {Object} team `{ id, name, techs, certs }`
  * @returns {HTMLElement}
  */
@@ -139,7 +133,7 @@ export function createChip(team) {
 /**
  * Shows on the drag proxy what the team held gives, from the same check as the tooltip: green and "Fits SR-1, back
  * 12:40", red and the short reason, or neutral over empty space. Only touched when it changes, so it does not flicker
- * @param {HTMLElement} chip The proxy, or the chip held from the keyboard
+ * @param {HTMLElement} chip The proxy
  * @param {Object|null} drop See DropController#previewDrop
  */
 export function showOnChip(chip, drop) {

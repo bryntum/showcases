@@ -15,8 +15,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 1. **Inspect T-41.** The page opens on it: its card under the map says Sea Puffin is back at 14:17, 17 minutes after
    the CTV window. In the schedule that is the orange stop and return tag; in the time axis, the wave height crossing
    the 1.5 m limit at 14:00
-2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip (or Tab to its card and
-   press Enter, the arrow keys pick the trip, Enter books it). While it is held, the trip shows the stop it would get,
+2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip. While it is held, the
+   trip shows the stop it would get,
    a tooltip says when the trip would be back and checks the seats and certificates, and the map rings every turbine
    the trip could still reach before the window closes. Drop it to book it
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
@@ -93,7 +93,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Stop | A turbine a team works at on a trip, `{ turbine, minutes, team }`, the solid blue work block |
 | Transit | Time at sea between two places. The sail out from the port and back to it are the trip's buffer time, its `preamble` and `postamble` (the EventBuffer feature) |
 | Hop | A transit between two turbines, a leg of the trip |
-| Held team | A team dragged from the tray (or held from the keyboard) over a trip or a vessel's row: the trip previews its stop until it is dropped or moves on |
+| Held team | A team dragged from the tray over a trip or a vessel's row: the trip previews its stop until it is dropped or moves on |
 | Ring | The map's circle round a turbine: the turbines of the trip hovered or selected, and while a team is held the turbines its trip can still reach |
 | Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
 | Pulled, trimmed, moved | What a new forecast did to a trip: brought forward, its last stops cut, or all of them cut (the trip leaves the day) |
@@ -189,8 +189,8 @@ engine places each changed trip before the next one on the vessel is planned.
     button and a `ButtonGroup` for the Day / Week views; it holds the notice, the scheduler, the Week view and the
     footer), `MapPanel` (the map with its title bar and legend, and the turbine card, drawn by `draw()`, which also
     fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel` with the arrow keys)
-  * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
-    over a trip from the keyboard) and `DropTooltip` (the tooltip of the trip under the team). The chip that follows
+  * `drag/` dragging a team onto a trip: `TeamDrag` (with `DragHelper`) and `DropTooltip` (the tooltip of the trip
+    under the team). The chip that follows
     the pointer is `createChip` in `TeamChip.js`
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the trips (`Planner`), the state
     apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts and the weather windows they
@@ -267,14 +267,13 @@ is the schedule's own day without padding, so each hour of the chart sits over t
 element is moved into the cell each time the header is drawn, not recreated. Its colours are read from the CSS custom
 properties, and it is drawn again when the page switches between light and dark.
 
-### The drag: `lib/drag/TeamDrag.js`, `lib/drag/KeyboardDrag.js`, `lib/plan/Planner.js`
+### The drag: `lib/drag/TeamDrag.js`, `lib/plan/Planner.js`
 
 The team chips are dragged with Bryntum's `DragHelper` (the same helper as the Scheduler "drag from grid" demo), which
 handles the threshold, the proxy chip, mouse, pen and touch, Escape and the animated return of a refused drop. The
 whole time axis is its drop target: the Scheduler resolves the trip and the vessel under the pointer
 (`resolveEventRecord`, `resolveResourceRecord`), and the dispatch check below is its validation: a team that does not
-fit marks the drag invalid. The keyboard (Enter on a chip, the arrows, Enter again) holds a team over a
-trip without DragHelper, which has no keyboard drag. Over a trip, `Planner#previewDrop` places the team's stop after the last
+fit marks the drag invalid. Over a trip, `Planner#previewDrop` places the team's stop after the last
 one and tells when the trip would be back, whether the seats and the certificates allow it, and by how much it misses
 the window, shown in a Bryntum `Tooltip` aligned to the point the team is held at. `Planner#reachable` tries the same stop at each of the 60 turbines to find the ones the trip could still
 reach, which the map rings.

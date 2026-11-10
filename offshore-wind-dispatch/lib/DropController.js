@@ -88,15 +88,15 @@ export default class DropController {
     }
 
     /**
-     * Previews a team where it is held and checks it: the one check of a drop. The pointer's hover, its release and
-     * the keyboard all go through it, so what is booked is what was shown. Over a trip or a vessel's row of the Day
+     * Previews a team where it is held and checks it: the one check of a drop. The pointer's hover and its release
+     * both go through it, so what is booked is what was shown. Over a trip or a vessel's row of the Day
      * view the trip shows the stop, the map what the trip can still reach, the card the turbine; over a free cell of
      * the Week view a new trip that day is checked (cellDrop). The same team over the same target with the same
      * position against the weather keeps its check
      * @param {String} teamId
      * @param {TripModel|VesselModel|Object|null} target The trip, the vessel's row or the Week view's cell held over
-     * @param {Number|null} [at] Minutes since midnight at the point held on the Day view's time axis, none from the
-     * keyboard or over the Week view
+     * @param {Number|null} [at] Minutes since midnight at the point held on the Day view's time axis, none over the
+     * Week view
      * @param {Boolean} [fresh] Checked again even if unchanged, as a booking is
      * @returns {Object|null} `{ id, target, trip, team, job, result, reach, close, at }`, `id` the waiting record's
      */
@@ -321,7 +321,7 @@ export default class DropController {
             entry = me.waitingTeam(teamId);
 
         me.clearFitting();
-        entry && me.dropTargets().filter(trip => me.checkDrop(trip, entry.team, entry.job).valid)
+        entry && me.trips.filter(trip => !trip.draft && me.checkDrop(trip, entry.team, entry.job).valid)
             .forEach(trip => me.scheduler.fittingTrips.add(trip));
         me.outlineFitting(true);
     }
@@ -495,18 +495,6 @@ export default class DropController {
         }
 
         return null;
-    }
-
-    /**
-     * The trips a team held from the keyboard steps through: those still on the day, by vessel row then departure
-     * @returns {TripModel[]}
-     */
-    dropTargets() {
-        const { resourceStore } = this.scheduler;
-
-        return this.trips.filter(trip => trip.resource && !trip.draft)
-            .sort((a, b) => resourceStore.indexOf(a.resource) - resourceStore.indexOf(b.resource) ||
-                a.startDate - b.startDate);
     }
 
     endDrag() {

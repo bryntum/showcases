@@ -1,4 +1,4 @@
-import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise';
+import { Panel, Responsive } from '@bryntum/core-enterprise';
 import AppState from './AppState.js';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
@@ -109,13 +109,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             state,
             onBooked : booked => me.onTeamBooked(booked)
         });
-        me.drag            = new TeamDrag({
-            tray,
-            scheduler,
-            board,
-            handler : me.dropController,
-            showDay : () => me.showDayForKeyboard()
-        });
+        me.drag            = new TeamDrag({ tray, scheduler, board, handler : me.dropController });
         me.mapLink         = new MapLink({ map, scheduler, focusTrip : () => state.held?.trip ?? me.selectedTrip });
 
         // What the views follow: the plan as the engine placed it, the dispatch state and the app state. Several
@@ -257,7 +251,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             await me.applyForecast();
         }
         else if (state === 'drag' && me.dispatch.waitingStore.count) {
-            me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
+            await me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
         }
 
         await scheduler.forecastHeader.refresh();
@@ -285,18 +279,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             await me.replan();
             await me.scheduler.forecastHeader.refresh();
         }
-    }
-
-    // A team held from the keyboard while the Week view shows: the keys move it over the Day view's trips, so that
-    // view is shown, and said so
-    showDayForKeyboard() {
-        const { dispatch, parts } = this;
-
-        parts.schedulePane.showView('day');
-        Toast.show({
-            html : StringHelper.encodeHtml(`Showing the Day view, ${dispatch.dayShort}: pick a trip with the arrow keys`),
-            cls  : 'ow-toast-message'
-        });
     }
 
     //region Plan
