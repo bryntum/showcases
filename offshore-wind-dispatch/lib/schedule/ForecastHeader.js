@@ -42,6 +42,8 @@ export default class ForecastHeader {
                 unit     : 'day',
                 renderer : (startDate, endDate, config) => {
                     config.headerCellCls = 'ow-sea-cell ow-sea-today';
+                    // The cell is in the page once the header is drawn
+                    queueMicrotask(() => me.mount());
 
                     return '';
                 }
@@ -97,24 +99,14 @@ export default class ForecastHeader {
     }
 
     /**
-     * Puts the chart in the wave height cell, and again whenever the Scheduler draws its time axis anew (another view
-     * preset or time span), which makes a new cell. The header's own redraws (scroll, resize) keep the cell, and the
-     * `retainElement` chart stays in it
+     * Puts the chart in the wave height cell, and again into the new cell whenever the Scheduler draws its time axis
+     * anew (another view preset, time span or tick size). The header's own redraws (scroll, resize) keep the cell, and
+     * the `retainElement` chart stays in it
      * @param {Scheduler.view.Scheduler} scheduler
      */
     attach(scheduler) {
-        const me = this;
-
-        if (me.scheduler !== scheduler) {
-            me.scheduler = scheduler;
-            me.detach    = scheduler.ion({
-                presetChange   : 'mount',
-                timeAxisChange : 'mount',
-                thisObj        : me
-            });
-        }
-
-        me.mount();
+        this.scheduler = scheduler;
+        this.mount();
     }
 
     mount() {
@@ -159,7 +151,6 @@ export default class ForecastHeader {
     }
 
     destroy() {
-        this.detach?.();
         this.chart.destroy();
     }
 }

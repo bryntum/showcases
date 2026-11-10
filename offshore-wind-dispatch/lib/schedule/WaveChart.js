@@ -3,25 +3,28 @@ import { hhmm } from '../util/Time.js';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// The showcase's font, for the chart's labels; textHours() measures with it too
 const
     fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
-    // A limit's name, at the left end of its line
-    limitFont  = { fontSize : 9, fontWeight : 500, padding : 6 };
+    none       = { top : 0, right : 0, bottom : 0, left : 0 },
+    // Hovering a point only shows its tooltip: no dimming of the other series, no bigger marker
+    highlight  = {
+        highlightedSeries   : { opacity : 1 },
+        unhighlightedSeries : { opacity : 1 },
+        highlightedItem     : { strokeWidth : 2.5 },
+        unhighlightedItem   : { opacity : 1 },
+        bringToFront        : false
+    },
+    off        = { enabled : false },
+    // An axis that only places the series: the schedule's own header has the hours
+    bare       = { type : 'number', nice : false, thickness : 0, label : off, line : off, tick : off },
+    label      = (text, placement, color, extra) => ({
+        text, placement, color, fontSize : 10, fontWeight : 500, padding : 4, ...extra
+    });
 
-// Room the wave height axis keeps for labels and points, px (range()), so no label is cut at the chart's edges
-const room = { label : 20, point : 5, limit : 13, guide : 8, under : 24 };
+let pixel;
 
-// Hovering a point only shows its tooltip: no dimming of the other series, no bigger marker
-const highlight = {
-    highlightedSeries   : { opacity : 1 },
-    unhighlightedSeries : { opacity : 1 },
-    highlightedItem     : { strokeWidth : 2.5 },
-    unhighlightedItem   : { opacity : 1 },
-    bringToFront        : false
-};
-
-// The resolved colour of a CSS custom property on an element, after `light-dark()` and `color-mix()`
+// The resolved colour of a CSS custom property, as `rgba()`. The browser computes `light-dark()` and `color-mix()` to
+// `color(srgb …)`, which AG Charts does not read, so the colour is painted on a one pixel canvas and read back
 function cssColor(element, name) {
     const probe = document.createElement('span');
 
@@ -31,18 +34,8 @@ function cssColor(element, name) {
     const { color } = getComputedStyle(probe);
 
     probe.remove();
-
-    return toRgba(color);
-}
-
-let pixel;
-
-// A colour as `rgba()`. The browser computes `color-mix()` to `color(srgb …)`, which AG Charts does not read, so the
-// colour is painted on a one pixel canvas and read back
-function toRgba(color) {
     pixel ??= Object.assign(document.createElement('canvas'), { width : 1, height : 1 })
         .getContext('2d', { willReadFrequently : true });
-
     pixel.clearRect(0, 0, 1, 1);
     pixel.fillStyle = color;
     pixel.fillRect(0, 0, 1, 1);
@@ -55,11 +48,13 @@ function toRgba(color) {
 /**
  * The wave height row of the time axis, an AG Charts Community area chart. Not a widget: it draws into the element it
  * is given, which ForecastHeader moves into the header cell. Its x axis is the schedule's day in hours with no
- * padding, so each hour of the chart sits over the same hour of the trips. Colours are read from CSS custom
- * properties, so the chart is drawn again when the page switches between light and dark.
+ * padding, so each hour of the chart sits over the same hour of the trips. The limits and the window's close are axis
+ * cross lines. Colours are read from CSS custom properties, so the chart is drawn again when the page switches between
+ * light and dark.
  *
  * Learn more:
  * https://www.ag-grid.com/charts/javascript/area-series/
+ * https://www.ag-grid.com/charts/javascript/axes-cross-lines/
  */
 export default class WaveChart {
     /**
@@ -81,13 +76,7 @@ export default class WaveChart {
         me.media.addEventListener('change', me.onMedia);
         // AG Charts sizes itself to its container. A chart created while the container had no size (the header being
         // drawn, a hidden phone tab) stays empty, so it is drawn again once the container has a size
-        me.sized = new ResizeObserver(([entry]) => {
-            const { width, height } = entry.contentRect;
-
-            if (width && height) {
-                me.redraw();
-            }
-        });
+        me.sized = new ResizeObserver(([entry]) => entry.contentRect.width && entry.contentRect.height && me.redraw());
         me.sized.observe(element);
     }
 
@@ -112,15 +101,11 @@ export default class WaveChart {
             return Promise.resolve();
         }
 
-        const options = me.options();
-
-        // Another number of series (window lines) needs a new chart: AG Charts' update matches series by index
-        if (me.chart?.getOptions().series.length === options.series.length) {
-            me.chart.update(options);
+        if (me.chart) {
+            me.chart.update(me.options());
         }
         else {
-            me.chart?.destroy();
-            me.chart = AgCharts.create(options);
+            me.chart = AgCharts.create(me.options());
         }
 
         return me.chart.waitForUpdate();
@@ -133,164 +118,143 @@ export default class WaveChart {
         this.chart?.destroy();
     }
 
-    // The line is `calm` while the CTV window is open and `rough` from when it closes. The close is the dispatch
-    // state's (the start of the first hour over the limit), not where the line crosses 1.5 m, so the chart and the
-    // no-go ranges agree. The point at the close (`cross`) is in both halves so the line has no gap
+    // A point mid hour, the first and the last value held to the edges so the area spans the whole day. The line is
+    // `calm` until the CTV window closes and `rough` after. The close is the dispatch state's (the start of the first
+    // hour over the limit), not where the line crosses 1.5 m, so the chart and the no-go ranges agree; a point at the
+    // close (`cross`), on the line between its neighbours, is in both halves so the line has no gap
     data() {
         const
-            points = this.points(),
-            split  = this.closesHour,
-            cross  = points.find(point => point.split),
-            hours  = points.filter(point => !point.edge),
-            first  = hours[0],
-            last   = hours.at(-1);
+            { hs, closes }       = this.forecast,
+            { dayStart, dayEnd } = this.day,
+            hours                = hs.slice(0, dayEnd - dayStart),
+            split                = closes / 60,
+            points               = [
+                { t : dayStart, hs : hours[0], edge : true },
+                ...hours.map((value, i) => ({ t : dayStart + i + 0.5, hs : value, first : !i, last : !hours[i + 1] })),
+                { t : dayEnd, hs : hours.at(-1), edge : true }
+            ],
+            after                = points.findIndex(point => point.t >= split),
+            [before, next]       = [points[after - 1], points[after]];
+
+        if (split > dayStart && split < dayEnd && next.t !== split) {
+            points.splice(after, 0, {
+                t    : split,
+                hs   : before.hs + (next.hs - before.hs) * (split - before.t) / (next.t - before.t),
+                edge : true
+            });
+        }
 
         return points.map(point => ({
             ...point,
             calm  : point.t <= split ? point.hs : null,
             rough : point.t >= split ? point.hs : null,
-            cross : point === cross,
-            first : point === first,
-            last  : point === last
+            cross : point.t === split && split > dayStart && split < dayEnd
         }));
-    }
-
-    /**
-     * When the CTV window closes, in hours: `-Infinity` when it never opens, `Infinity` when it stays open
-     * @property {Number}
-     */
-    get closesHour() {
-        const
-            { dayStart, dayEnd } = this.day,
-            hour                 = this.forecast.closes / 60;
-
-        return hour <= dayStart ? -Infinity : hour >= dayEnd ? Infinity : hour;
-    }
-
-    get closesInDay() {
-        return Number.isFinite(this.closesHour);
-    }
-
-    // One point mid hour, the first and the last value held to the edges so the area spans the whole day
-    points() {
-        const
-            { hs }               = this.forecast,
-            { dayStart, dayEnd } = this.day,
-            hours                = hs.slice(0, dayEnd - dayStart),
-            split                = this.closesHour,
-            points               = [
-                { t : dayStart, hs : hours[0], edge : true },
-                ...hours.map((value, i) => ({ t : dayStart + i + 0.5, hs : value })),
-                { t : dayEnd, hs : hours.at(-1), edge : true }
-            ];
-
-        if (!this.closesInDay) {
-            return points;
-        }
-
-        // A point where the window closes, on the line between its neighbours
-        const
-            after  = points.findIndex(point => point.t >= split),
-            next   = points[after],
-            before = points[after - 1];
-
-        if (next.t === split) {
-            next.split = true;
-
-            return points;
-        }
-
-        points.splice(after, 0, {
-            t     : split,
-            hs    : before.hs + (next.hs - before.hs) * (split - before.t) / (next.t - before.t),
-            edge  : true,
-            split : true
-        });
-
-        return points;
-    }
-
-    /**
-     * The wave height axis, metres: the forecast and both limits with room around them for their labels. The room is
-     * in px and the metres per px depend on the range itself, so the range is solved by iteration
-     * @returns {{ bottom : Number, top : Number }}
-     */
-    range() {
-        const
-            { hs }         = this.forecast,
-            { ctv, swath } = this.limits,
-            // Not 0: drawn only once the container has a size (redraw)
-            height         = this.element.clientHeight,
-            above          = [[Math.max(...hs), room.label], [swath, room.limit], [ctv, room.limit]],
-            // The start value is named under its point (valueLabels)
-            below          = [[Math.min(...hs), room.point], [hs[0], room.under], [ctv, 0]];
-
-        let span = 3;
-
-        // Each pass uses the previous range's metres per px; it settles within a few
-        for (let i = 0; i < 30; i++) {
-            const
-                perPx  = span / height,
-                top    = Math.max(...above.map(([value, px]) => value + px * perPx)),
-                // Not under 0: the fill runs down to 0, it would stop short of the chart's bottom
-                bottom = Math.max(0, Math.min(...below.map(([value, px]) => value - px * perPx)));
-
-            span = top - bottom;
-        }
-
-        const
-            perPx = span / height,
-            top   = Math.max(...above.map(([value, px]) => value + px * perPx));
-
-        return { top, bottom : top - span };
     }
 
     options() {
         const
             me     = this,
-            color = name => cssColor(me.element, name),
+            color  = name => cssColor(me.element, name),
             colors = {
-                calm      : color('--ow-c-work'),
-                calmFill  : color('--ow-c-chart-fill'),
-                rough     : color('--ow-c-risk-line'),
-                roughFill : color('--ow-c-chart-risk'),
-                roughInk  : color('--ow-c-risk-ink'),
-                muted     : color('--b-neutral-40'),
-                surface   : color('--ow-surface')
+                muted    : color('--b-neutral-40'),
+                rough    : color('--ow-c-risk-line'),
+                roughInk : color('--ow-c-risk-ink'),
+                surface  : color('--ow-surface'),
+                grid     : color('--ow-tick')
             };
-
-        const range = me.range();
 
         return {
             container  : me.element,
             data       : me.data(),
             theme      : { baseTheme : 'ag-default', params : { fontFamily } },
             background : { visible : false },
-            padding    : { top : 0, right : 0, bottom : 0, left : 0 },
-            seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
-            animation  : { enabled : false },
-            legend     : { enabled : false },
-            // The window's lines and the limits are line series, not cross lines: AG Charts draws cross lines above
-            // the series, these are listed before the wave line so its ring at the crossing covers them
+            padding    : none,
+            seriesArea : { padding : none },
+            animation  : off,
+            legend     : off,
             series     : [
-                ...me.windowLines(colors, range),
-                me.limitLine('CTV', colors.muted),
-                me.limitLine('SWATH', colors.muted),
-                me.series('calm', colors.calm, colors.calmFill, colors.surface),
-                me.series('rough', colors.rough, colors.roughFill, colors.surface),
-                me.valueLabels(colors, 'first', 'bottom'),
-                me.valueLabels(colors, 'last', 'top')
+                me.series('calm', color('--ow-c-work'), color('--ow-c-chart-fill'), colors.surface, colors.muted),
+                me.series('rough', colors.rough, color('--ow-c-chart-risk'), colors.surface, colors.roughInk)
             ],
-            axes : {
-                x : me.timeAxis(color('--ow-tick')),
-                y : me.heightAxis(range)
-            }
+            axes : { x : me.timeAxis(colors), y : me.heightAxis(colors) }
         };
     }
 
-    // One half of the wave line, `calm` or `rough`. Markers only on the crossing (a ring) and the first and last hour
-    series(key, stroke, fill, surface) {
-        const { ctv, swath } = this.limits;
+    // The day in hours, with the window's close and, after a new forecast, the close before, dashed. Their labels
+    // face away from each other, the close's at the top, the one before's at the foot
+    timeAxis({ muted, rough, roughInk, grid }) {
+        const
+            { dayStart, dayEnd } = this.day,
+            { closes, was }      = this.forecast,
+            later                = was == null || closes > was;
+
+        return {
+            ...bare,
+            position   : 'bottom',
+            min        : dayStart,
+            max        : dayEnd,
+            interval   : { step : 1 },
+            gridLine   : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
+            crossLines : [
+                was != null && {
+                    id       : 'was',
+                    type     : 'line',
+                    value    : was / 60,
+                    stroke   : muted,
+                    lineDash : [2, 3],
+                    label    : label(`was ${hhmm(was)}`, later ? 'left-bottom' : 'right-bottom', muted)
+                },
+                closes > dayStart * 60 && closes < dayEnd * 60 && {
+                    id          : 'closes',
+                    type        : 'line',
+                    value       : closes / 60,
+                    stroke      : rough,
+                    strokeWidth : 1.5,
+                    label       : label(`${this.limits.ctv.toFixed(1)} m at ${hhmm(closes)}`,
+                        later ? 'right-top' : 'left-top', roughInk, { fontWeight : 600 })
+                }
+            ].filter(Boolean)
+        };
+    }
+
+    // The forecast and both limits, with room over and under them for the labels. A limit is named at its left end,
+    // over its line, or under it when the wave starts the day above it
+    heightAxis({ muted }) {
+        const
+            { ctv, swath } = this.limits,
+            { hs }         = this.forecast,
+            low            = Math.min(ctv, ...hs),
+            high           = Math.max(swath, ...hs),
+            room           = (high - low) / 2,
+            limit          = (name, value) => ({
+                id            : name,
+                type          : 'line',
+                value,
+                stroke        : muted,
+                strokeOpacity : 0.45,
+                lineDash      : [3, 3],
+                label         : label(`${name} limit ${value.toFixed(1)}`, hs[0] > value ? 'bottom-left' : 'top-left',
+                    muted, { fontSize : 9 })
+            });
+
+        return {
+            ...bare,
+            position   : 'left',
+            min        : low - room,
+            max        : high + room,
+            gridLine   : off,
+            crossLines : [limit('CTV', ctv), limit('SWATH', swath)]
+        };
+    }
+
+    // One half of the wave line, `calm` or `rough`. Markers only on the crossing (a ring) and the first and last hour,
+    // which are also labelled with their value: under the calm line, over the rough one
+    series(key, stroke, fill, surface, ink) {
+        const
+            me             = this,
+            { ctv, swath } = me.limits,
+            ends           = datum => datum.first || datum.last;
 
         return {
             type          : 'area',
@@ -309,19 +273,25 @@ export default class WaveChart {
                 enabled     : true,
                 size        : 6,
                 strokeWidth : 2,
-                itemStyler  : ({ datum }) => datum.cross ?
-                    { size : 8, fill : surface, stroke } :
-                    (key === 'calm' ? datum.first : datum.last) ? { fill : stroke, stroke } : { size : 0 }
+                itemStyler  : ({ datum }) => (datum.cross ? { size : 8, fill : surface, stroke } :
+                    ends(datum) ? { fill : stroke, stroke } : { size : 0 })
             },
-            // Labelled by valueLabels()
-            label   : { enabled : false },
+            label : {
+                enabled    : true,
+                placement  : key === 'calm' ? 'bottom' : 'top',
+                spacing    : 2,
+                fontSize   : 10,
+                fontWeight : 500,
+                color      : ink,
+                formatter  : ({ datum }) => (ends(datum) ? datum.hs.toFixed(1) : '')
+            },
             tooltip : {
                 // Hs is the mean of the highest third of the waves; the largest in a sea state reach about 1.9 × Hs.
                 // A point added at an edge or at the close reports its hour's value, not its own
                 renderer : ({ datum }) => {
                     const
                         hour = Math.floor(datum.t),
-                        hs   = datum.edge ? this.forecast.hs[hour - this.day.dayStart] ?? datum.hs : datum.hs;
+                        hs   = datum.edge ? me.forecast.hs[hour - me.day.dayStart] ?? datum.hs : datum.hs;
 
                     return {
                         heading : `${hhmm(hour * 60)} – ${hhmm((hour + 1) * 60)}`,
@@ -337,174 +307,6 @@ export default class WaveChart {
                     };
                 }
             }
-        };
-    }
-
-    // The value of the first or the last hour, as a line series of its own: an area series cannot place its labels.
-    // The first goes under its point, the last above, clear of the SWATH line
-    valueLabels(colors, which, placement) {
-        return {
-            type         : 'line',
-            xKey         : 't',
-            yKey         : 'hs',
-            yName        : 'Wave height',
-            strokeWidth  : 0,
-            marker       : { enabled : false },
-            highlight,
-            showInLegend : false,
-            tooltip      : { enabled : false },
-            label        : {
-                enabled    : true,
-                placement,
-                fontSize   : 10,
-                fontWeight : 500,
-                formatter  : ({ datum }) => (datum[which] ? datum.hs.toFixed(1) : ''),
-                itemStyler : ({ datum }) => ({
-                    color : datum.last && datum.rough != null ? colors.roughInk : colors.muted
-                })
-            }
-        };
-    }
-
-    // A vertical line at one time over the whole height, its label beside its foot
-    guide({ time, stroke, dash, width, text, color, weight = 500, placement }, { bottom, top }) {
-        const labelAt = bottom + room.guide * (top - bottom) / this.element.clientHeight;
-
-        return {
-            type : 'line',
-            xKey : 't',
-            yKey : 'v',
-            data : [
-                { t : time, v : bottom },
-                { t : time, v : labelAt, text },
-                { t : time, v : top }
-            ],
-            stroke,
-            strokeWidth  : width,
-            lineDash     : dash,
-            marker       : { enabled : false },
-            highlight,
-            showInLegend : false,
-            tooltip      : { enabled : false },
-            label        : {
-                enabled    : true,
-                placement,
-                padding    : 4,
-                fontSize   : 10,
-                fontWeight : weight,
-                color,
-                formatter  : ({ datum }) => datum.text ?? ''
-            }
-        };
-    }
-
-    // The CTV close, "1.5 m at 14:00", and after a new forecast the one before, dashed. Labels face away from each
-    // other
-    windowLines(colors, range) {
-        const
-            { closes, was } = this.forecast,
-            { ctv }         = this.limits;
-
-        return [
-            was == null ? null : this.guide({
-                time      : was / 60,
-                stroke    : colors.muted,
-                dash      : [2, 3],
-                width     : 1,
-                text      : `was ${hhmm(was)}`,
-                color     : colors.muted,
-                placement : was > closes ? 'left' : 'right'
-            }, range),
-            !this.closesInDay ? null : this.guide({
-                time      : closes / 60,
-                stroke    : colors.rough,
-                dash      : [],
-                width     : 1.5,
-                text      : `${ctv.toFixed(1)} m at ${hhmm(closes)}`,
-                color     : colors.roughInk,
-                weight    : 600,
-                placement : was == null || closes > was ? 'right' : 'left'
-            }, range)
-        ].filter(Boolean);
-    }
-
-    // A limit, a faded dashed line named at its left end: the line starts after the name, which is the label of its
-    // first point
-    limitLine(name, ink) {
-        const
-            { dayStart, dayEnd } = this.day,
-            value                = this.limits[name.toLowerCase()],
-            text                 = `${name} limit ${value.toFixed(1)}`;
-
-        return {
-            type : 'line',
-            xKey : 't',
-            yKey : 'v',
-            data : [
-                { t : dayStart + this.textHours(text), v : value, text },
-                { t : dayEnd, v : value }
-            ],
-            stroke        : ink,
-            strokeOpacity : 0.45,
-            strokeWidth   : 1,
-            lineDash      : [3, 3],
-            marker        : { enabled : false },
-            highlight,
-            showInLegend  : false,
-            tooltip       : { enabled : false },
-            label         : {
-                enabled   : true,
-                placement : 'left',
-                color     : ink,
-                ...limitFont,
-                formatter : ({ datum }) => datum.text ?? ''
-            }
-        };
-    }
-
-    // Hours, no labels: the schedule's own header has them
-    timeAxis(grid) {
-        const { dayStart, dayEnd } = this.day;
-
-        return {
-            type      : 'number',
-            position  : 'bottom',
-            min       : dayStart,
-            max       : dayEnd,
-            nice      : false,
-            thickness : 0,
-            interval  : { step : 1 },
-            label     : { enabled : false },
-            line      : { enabled : false },
-            tick      : { enabled : false },
-            gridLine  : { enabled : true, style : [{ stroke : grid, lineDash : [] }] }
-        };
-    }
-
-    // How wide a limit's name and its padding are, in hours (the x axis' unit)
-    textHours(text) {
-        const
-            me      = this,
-            context = (me.measure ??= document.createElement('canvas').getContext('2d')),
-            perHour = (me.element.clientWidth || 1) / (me.day.dayEnd - me.day.dayStart);
-
-        context.font = `${limitFont.fontWeight} ${limitFont.fontSize}px ${fontFamily}`;
-
-        return (limitFont.padding * 2 + context.measureText(text).width) / perHour;
-    }
-
-    heightAxis({ bottom, top }) {
-        return {
-            type      : 'number',
-            position  : 'left',
-            min       : bottom,
-            max       : top,
-            nice      : false,
-            thickness : 0,
-            label     : { enabled : false },
-            line      : { enabled : false },
-            tick      : { enabled : false },
-            gridLine  : { enabled : false }
         };
     }
 }
