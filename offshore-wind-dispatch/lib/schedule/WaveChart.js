@@ -7,8 +7,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const
     fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
     // A limit's name, on its line at the left end: small, with air before it and before the dashes
-    limitFont  = { fontSize : 9, fontWeight : 500, padding : 6 },
-    limitText  = (name, value) => `${name} limit ${value.toFixed(1)}`;
+    limitFont  = { fontSize : 9, fontWeight : 500, padding : 6 };
 
 // Room the wave height axis keeps, px: above the roughest hour for its point and value label, under the calmest one for
 // its point, under the start value for its label, about a limit for its name. No label is cut at the chart's edges
@@ -63,9 +62,6 @@ function toRgba(color) {
     return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
 }
 
-// How strongly the dashed limit lines are drawn, their names keep full ink
-const limitFade = 0.45;
-
 /**
  * The wave height row of the time axis (ForecastHeader), an AG Charts Community area chart: the hourly significant
  * wave height against the CTV and SWATH limits, and the time the CTV window closes. Its x axis is the schedule's own
@@ -77,7 +73,7 @@ const limitFade = 0.45;
  *
  * Learn more:
  * https://www.ag-grid.com/charts/javascript/area-series/
- * https://www.ag-grid.com/charts/javascript/axes-cross-lines/
+ * https://www.ag-grid.com/charts/javascript/line-series/
  * https://www.ag-grid.com/charts/javascript/themes-api/
  */
 export default class WaveChart {
@@ -284,7 +280,7 @@ export default class WaveChart {
                 surface   : color('--ow-surface')
             };
 
-        me.heightRange = me.range();
+        const range = me.range();
 
         return {
             container  : me.element,
@@ -295,12 +291,12 @@ export default class WaveChart {
             seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
             animation  : { enabled : false },
             legend     : { enabled : false },
-            // The lines come first: AG Charts draws cross lines above the series, markers included, so the window's
-            // lines and the CTV limit are series listed before the wave line, and the ring of the crossing covers them
+            // The window's lines and the limits are line series, not cross lines: AG Charts draws cross lines above the
+            // series, these are listed before the wave line, so the ring where it crosses the CTV limit covers them
             series     : [
-                ...me.windowLines(colors),
-                me.limitLine(me.limits.ctv, colors.muted, 'CTV'),
-                me.limitLine(me.limits.swath, colors.muted, 'SWATH'),
+                ...me.windowLines(colors, range),
+                me.limitLine('CTV', colors.muted),
+                me.limitLine('SWATH', colors.muted),
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
                 // The start value under its point: the limits' names are at the left end, on their lines
@@ -309,7 +305,7 @@ export default class WaveChart {
             ],
             axes : {
                 x : me.timeAxis(color('--ow-tick')),
-                y : me.heightAxis(colors.muted)
+                y : me.heightAxis(range)
             }
         };
     }
@@ -370,7 +366,7 @@ export default class WaveChart {
 
     // The value of the first hour or the last one, above its point: under the last one it would sit on the SWATH line,
     // under the first one it would be cut at the chart's foot. One series each, so each can be placed on its own; an
-    // area series cannot place its labels, a line series can. The crossing is named on the window's line (timeAxis)
+    // area series cannot place its labels, a line series can. The crossing is named on the window's line (guide)
     valueLabels(colors, which, placement) {
         return {
             type         : 'line',
@@ -398,10 +394,8 @@ export default class WaveChart {
 
     // A vertical line series over the whole height at one time, with a label beside its lower end: the window's close
     // where the waves cross the CTV limit, named "1.5 m at 14:00", and after a new forecast the old close, dashed
-    guide({ time, stroke, dash, width, text, color, weight = 500, placement }) {
-        const
-            { bottom, top } = this.heightRange,
-            labelAt         = bottom + room.guide * (top - bottom) / this.element.clientHeight;
+    guide({ time, stroke, dash, width, text, color, weight = 500, placement }, { bottom, top }) {
+        const labelAt = bottom + room.guide * (top - bottom) / this.element.clientHeight;
 
         return {
             type : 'line',
@@ -431,10 +425,9 @@ export default class WaveChart {
         };
     }
 
-    // The close of the window, when it closes during the day, and, after a new forecast, the one before. Series listed
-    // before the wave line, so the ring of the crossing is drawn over them (cross lines are always above the series).
-    // The earlier of the two has its label on its left, the later one on its right, so they part
-    windowLines(colors) {
+    // The close of the window, when it closes during the day, and, after a new forecast, the one before, each named
+    // beside its foot
+    windowLines(colors, range) {
         const
             { closes, was } = this.forecast,
             { ctv }         = this.limits;
@@ -448,7 +441,7 @@ export default class WaveChart {
                 text      : `was ${hhmm(was)}`,
                 color     : colors.muted,
                 placement : was > closes ? 'left' : 'right'
-            }),
+            }, range),
             !this.closesInDay ? null : this.guide({
                 time      : closes / 60,
                 stroke    : colors.rough,
@@ -458,33 +451,42 @@ export default class WaveChart {
                 color     : colors.roughInk,
                 weight    : 600,
                 placement : was == null || closes > was ? 'right' : 'left'
-            })
+            }, range)
         ].filter(Boolean);
     }
 
-    // The CTV limit, a thin dashed line over the whole day. A series for the same reason as the window's lines: it runs
-    // under the ring where the waves cross it. Its name is the label of an invisible cross line (heightAxis), on the
-    // line at its left end: the dashes start after the name
-    limitLine(value, ink, name) {
-        const { dayStart, dayEnd } = this.day;
+    // A limit, a faded dashed line over the day, named at its left end: the dashes start after the name, which is the
+    // label of the line's first point
+    limitLine(name, ink) {
+        const
+            { dayStart, dayEnd } = this.day,
+            value                = this.limits[name.toLowerCase()],
+            text                 = `${name} limit ${value.toFixed(1)}`;
 
         return {
             type : 'line',
             xKey : 't',
             yKey : 'v',
             data : [
-                { t : dayStart + this.limitNameWidth(name), v : value },
+                { t : dayStart + this.textHours(text), v : value, text },
                 { t : dayEnd, v : value }
             ],
             stroke        : ink,
             // Faded: the limits guide the eye, the wave line carries the story (the names keep full ink)
-            strokeOpacity : limitFade,
+            strokeOpacity : 0.45,
             strokeWidth   : 1,
             lineDash      : [3, 3],
             marker        : { enabled : false },
             highlight,
             showInLegend  : false,
-            tooltip       : { enabled : false }
+            tooltip       : { enabled : false },
+            label         : {
+                enabled   : true,
+                placement : 'left',
+                color     : ink,
+                ...limitFont,
+                formatter : ({ datum }) => datum.text ?? ''
+            }
         };
     }
 
@@ -507,9 +509,8 @@ export default class WaveChart {
         };
     }
 
-    // Where a limit's dashes start, in hours (the x axis' unit): after its name at the left end, with air on both
-    // sides
-    limitNameWidth(name) {
+    // How wide a limit's name is with the air around it, in hours (the x axis' unit)
+    textHours(text) {
         const
             me      = this,
             context = (me.measure ??= document.createElement('canvas').getContext('2d')),
@@ -517,44 +518,22 @@ export default class WaveChart {
 
         context.font = `${limitFont.fontWeight} ${limitFont.fontSize}px ${fontFamily}`;
 
-        const text = context.measureText(limitText(name, me.limits[name.toLowerCase()])).width;
-
-        return (limitFont.padding * 2 + text) / perHour;
+        return (limitFont.padding * 2 + context.measureText(text).width) / perHour;
     }
 
-    // A limit's name at the left end, on its line: the label of a cross line with no stroke of its own, the dashed line
-    // is a series that starts after the name (limitLine)
-    limitName(value, name, ink) {
+    // Metres
+    heightAxis({ bottom, top }) {
         return {
-            type   : 'line',
-            value,
-            stroke : 'transparent',
-            label  : { text : limitText(name, value), color : ink, placement : 'inside-left', ...limitFont }
-        };
-    }
-
-    // Metres. Both limits are named at the left end, each on its own line (limitName, limitLine)
-    heightAxis(ink) {
-        const
-            me              = this,
-            { ctv, swath }  = me.limits,
-            { bottom, top } = me.heightRange;
-
-        return {
-            type       : 'number',
-            position   : 'left',
-            min        : bottom,
-            max        : top,
-            nice       : false,
-            thickness  : 0,
-            label      : { enabled : false },
-            line       : { enabled : false },
-            tick       : { enabled : false },
-            gridLine   : { enabled : false },
-            crossLines : [
-                me.limitName(swath, 'SWATH', ink),
-                me.limitName(ctv, 'CTV', ink)
-            ]
+            type      : 'number',
+            position  : 'left',
+            min       : bottom,
+            max       : top,
+            nice      : false,
+            thickness : 0,
+            label     : { enabled : false },
+            line      : { enabled : false },
+            tick      : { enabled : false },
+            gridLine  : { enabled : false }
         };
     }
 }
