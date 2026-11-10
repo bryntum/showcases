@@ -190,6 +190,7 @@ export default class WaveChart {
                     segmentation : split(at, [c.work, c.work], [c.rough, c.rough])
                 },
                 ...me.limitLines(c, series, range),
+                me.closing(at, range, c, series),
                 me.wave(at, c, series)
             ].filter(Boolean),
             axes : { x : me.timeAxis(c), y : me.heightAxis(range) }
@@ -224,7 +225,7 @@ export default class WaveChart {
 
     // The day in hours, with a crosshair naming the time and the wave height under the pointer. After a new forecast,
     // the close before is a dashed line, named at its foot on the side away from the close
-    timeAxis({ muted, ink, surface, grid, rough, roughInk }) {
+    timeAxis({ muted, ink, surface, grid }) {
         const
             { dayStart, dayEnd } = this.day,
             { closes, was, hs }  = this.forecast,
@@ -256,13 +257,6 @@ export default class WaveChart {
                 }
             },
             crossLines : [
-                closes > dayStart * 60 && closes < dayEnd * 60 && {
-                    type        : 'line',
-                    value       : closes / 60,
-                    stroke      : rough,
-                    strokeWidth : 1.5,
-                    label       : label('right-top', roughInk, { text : `CTV closes ${hhmm(closes)}`, fontWeight : 600 })
-                },
                 was != null && {
                     type     : 'line',
                     value    : was / 60,
@@ -309,6 +303,27 @@ export default class WaveChart {
             }),
             tooltip : off
         }));
+    }
+
+    // The window's close, a line series listed before the wave, so the wave's ring is drawn over it (a cross line would
+    // be drawn over every series, through the ring); the wave's fill is translucent, so the line shows under it too
+    closing(at, [min, max], { rough, roughInk }, series) {
+        const { dayStart, dayEnd } = this.day;
+
+        return at > dayStart && at < dayEnd && {
+            ...series,
+            type        : 'line',
+            data        : [{ t : at, y : min }, { t : at, y : max, top : true }],
+            yKey        : 'y',
+            stroke      : rough,
+            strokeWidth : 1.5,
+            marker      : off,
+            label       : label('bottom-right', roughInk, {
+                fontWeight : 600,
+                formatter  : ({ datum }) => (datum.top ? `CTV closes ${hhmm(at * 60)}` : '')
+            }),
+            tooltip : off
+        };
     }
 
     // The forecast, its likely range and both limits, with room over and under them for the labels, a little more under
