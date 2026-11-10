@@ -18,35 +18,36 @@ function fleetCount(vessels) {
     return [...counts].map(([type, count]) => `${count} ${type}`).join(' · ');
 }
 
-const link = (href, text) => ({ tag : 'a', href, target : '_blank', rel : 'noopener', text });
+const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
 
-// The footer under the rows: what the marks mean, and the products the page is built with. Swatches in scheduler.css,
-// the work and risk ones in frame.css
-function legendHtml(view) {
+// The footer under the rows, the panel's bbar: what the marks mean, a swatch and a name each (scheduler.css; the work
+// and risk swatches in frame.css), and the products the page is built with
+function legendItems(view) {
     const item = (kind, text, mark = '') => ({
-        tag      : 'span',
-        class    : `ow-l ow-l-${kind}`,
-        children : [{ tag : 'i', class : mark && `ow-mark-${mark}` }, text]
+        type : 'widget',
+        cls  : `ow-l ow-l-${kind}`,
+        html : `<i class="${mark && `ow-mark-${mark}`}"></i>${text}`
     });
 
     return view === 'week' ? [
         item('cell', 'Trips: times, seats, turbines; bar = seats used', 'work'),
         item('free', 'Workable, free'),
         item('nogo', 'No-go'),
-        { tag : 'span', class : 'ow-legend-credit', text : 'Drag a crew onto a free cell to plan it' }
+        '->',
+        { type : 'widget', cls : 'ow-legend-credit', html : 'Drag a crew onto a free cell to plan it' }
     ] : [
         item('work', 'Work', 'work'),
         item('transit', 'Transit'),
         item('dependency', 'Must finish first'),
         item('risk', 'At risk', 'risk'),
         item('nogo', 'Weather no-go'),
+        '->',
         {
-            tag      : 'span',
-            class    : 'ow-legend-credit',
-            children : [
-                'Schedule: ', link('https://bryntum.com/products/scheduler/', 'Bryntum Scheduler'),
-                ' · Wave height: ', link('https://www.ag-grid.com/charts/', 'AG Charts')
-            ]
+            type : 'widget',
+            cls  : 'ow-legend-credit',
+            // In a span: the widget's flex box would drop the spaces round the links
+            html : `<span>Schedule: ${link('https://bryntum.com/products/scheduler/', 'Bryntum Scheduler')} · Wave ` +
+                `height: ${link('https://www.ag-grid.com/charts/', 'AG Charts')}</span>`
         }
     ];
 }
@@ -144,21 +145,20 @@ export default class SchedulePanel extends Panel {
                     project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) },
                         index => dispatch.dateOf(index))
                 },
-                board  : { type : 'weekboard', flex : 1, hidden : true, dispatch },
-                legend : { type : 'widget', cls : 'ow-legend' }
-            }
+                board : { type : 'weekboard', flex : 1, hidden : true, dispatch }
+            },
+            bbar : { cls : 'ow-legend', items : legendItems('day') }
         });
 
         const
-            { board, scheduler, legend } = this.widgetMap,
-            { view }                     = this.tools;
+            { board, scheduler } = this.widgetMap,
+            { view }             = this.tools;
 
         // A header tool is rendered on its own, without its children: the toggle's buttons are rendered into it
         view.items.forEach(button => button.render(view.contentElement));
 
         // The Week view follows the trips of the Day view's project
-        board.plan  = scheduler.project;
-        legend.html = legendHtml('day');
+        board.plan = scheduler.project;
     }
 
     onForecastClick() {
@@ -176,7 +176,7 @@ export default class SchedulePanel extends Panel {
      */
     showView(view) {
         const
-            { scheduler, board, legend } = this.widgetMap,
+            { scheduler, board }         = this.widgetMap,
             { day, week }                = this.tools.view.widgetMap,
             isWeek                       = view === 'week',
             button                       = isWeek ? week : day;
@@ -190,7 +190,8 @@ export default class SchedulePanel extends Panel {
 
         scheduler.hidden = isWeek;
         board.hidden     = !isWeek;
-        legend.html      = legendHtml(view);
+        this.bbar.removeAll();
+        this.bbar.add(legendItems(view));
         this.refreshBar();
     }
 
@@ -227,7 +228,7 @@ export default class SchedulePanel extends Panel {
         view.hidden     = phone;
         // On a phone the header holds the forecast's button alone, and goes without one
         me.element.classList.toggle('ow-bar-empty', phone && !next);
-        me.widgetMap.legend.hidden = phone;
+        me.bbar.hidden = phone;
 
         if (next) {
             // A Button's text takes DomConfigs. One span keeps the space before the bold part

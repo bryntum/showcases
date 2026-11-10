@@ -74,9 +74,9 @@ dropped.
     the waiting teams' store, a card per team, the drag sources)
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
     button and a `ButtonGroup` for the Day / Week views as `tools`; it holds the forecast notice, the scheduler, the
-    Week view and the legend), `MapPanel` (the site's card, a Panel with the map and its legend, and the turbine
-    card, drawn by `draw()`, which also fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel`
-    with the arrow keys)
+    Week view, and the legend as its bbar, a Toolbar), `MapPanel` (the site's card, a Panel with the map and its
+    legend, and the turbine card, drawn by `draw()`, which also fits the map to the selection when it changed) and
+    `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (with `DragHelper`) and `DropTooltip` (the tooltip of the trip
     under the team). The chip that follows the pointer is `createChip` in `TeamDrag.js`
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the trips (`Planner`), the state
