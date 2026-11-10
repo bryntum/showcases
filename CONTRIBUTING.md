@@ -22,8 +22,9 @@ URL, for example `/ev-operations/`. Edit any file and the page reloads.
 You don't need any to explore:
 
 * **Bryntum**: without a licence key the components run in trial mode and show a watermark
-* **AG Grid Enterprise** (Logistics Control Tower): without a key it shows its watermark and logs a licence notice in
-  the console. If you have a key, put it in a `.env.local` file at the repository root, which git ignores:
+* **AG Grid Enterprise** (Logistics Control Tower) and **AG Charts Enterprise** (Offshore Wind Dispatch): without a
+  key they show their watermark and log a licence notice in the console. If you have a key, put it in a `.env.local`
+  file at the repository root, which git ignores:
 
   ```shell
   VITE_AG_LICENSE_KEY=your-key

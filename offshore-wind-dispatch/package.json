@@ -8,7 +8,7 @@
     "dependencies": {
         "@phosphor-icons/core": "^2.1.1",
         "@showcases/shared": "*",
-        "ag-charts-community": "14.3.0"
+        "ag-charts-enterprise": "14.3.0"
     },
     "peerDependencies": {
         "@bryntum/core-enterprise": "8.0.0",

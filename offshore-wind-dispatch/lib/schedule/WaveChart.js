@@ -1,5 +1,13 @@
-import { AgCharts, AllCommunityModule, ModuleRegistry } from 'ag-charts-community';
+import { AgCharts, AllCommunityModule, LicenseManager, ModuleRegistry } from 'ag-charts-enterprise';
 import { hhmm } from '../util/Time.js';
+
+// AG Charts Enterprise is licensed separately. The key is read at build time from `VITE_AG_LICENSE_KEY` (a gitignored
+// `.env.local` at the repository root); without it the chart shows a watermark and logs a licence notice
+const licenseKey = import.meta.env.VITE_AG_LICENSE_KEY;
+
+if (licenseKey) {
+    LicenseManager.setLicenseKey(licenseKey);
+}
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -46,7 +54,7 @@ function cssColor(element, name) {
 }
 
 /**
- * The wave height row of the time axis, an AG Charts Community area chart. Not a widget: it draws into the element it
+ * The wave height row of the time axis, an AG Charts Enterprise area chart. Not a widget: it draws into the element it
  * is given, which ForecastHeader moves into the header cell. Its x axis is the schedule's day in hours with no
  * padding, so each hour of the chart sits over the same hour of the trips. The limits and the window's close are axis
  * cross lines. Colours are read from CSS custom properties, so the chart is drawn again when the page switches between

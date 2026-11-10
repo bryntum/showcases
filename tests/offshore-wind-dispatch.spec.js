@@ -8,7 +8,7 @@ const ctvClose = page => page.evaluate(() => {
 
     return { closes : hhmm(dispatch.windows.ctv), was : hhmm(dispatch.previousWindows?.ctv) };
 });
-import { collectErrors } from './errors.js';
+import { agChartsLicenseNotice, collectErrors } from './errors.js';
 
 const
     url       = './offshore-wind-dispatch/',
@@ -26,7 +26,7 @@ let errors;
 
 // Every test fails on a console or page error
 test.beforeEach(({ page }) => {
-    errors = collectErrors(page);
+    errors = collectErrors(page, { ignore : agChartsLicenseNotice });
 });
 
 test.afterEach(() => {

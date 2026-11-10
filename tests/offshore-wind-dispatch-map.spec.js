@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { collectErrors } from './errors.js';
+import { agChartsLicenseNotice, collectErrors } from './errors.js';
 
 // The turbine map of Offshore Wind Dispatch: selection, hover and keyboard, linked with the Scheduler both ways
 
@@ -21,7 +21,7 @@ const
 let errors;
 
 test.beforeEach(({ page }) => {
-    errors = collectErrors(page);
+    errors = collectErrors(page, { ignore : agChartsLicenseNotice });
 });
 
 test.afterEach(() => {

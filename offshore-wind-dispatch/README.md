@@ -117,4 +117,5 @@ dropped.
 The generic icons are [Phosphor Icons](https://phosphoricons.com) (MIT), Light weight, from `@phosphor-icons/core`.
 The vessels, the helicopter and the crews are [Tabler Icons](https://tabler.io/icons) (MIT), outline;
 `lib/util/Icons.js` draws the turbine in Phosphor's grid and line weight, and the map draws the substation from
-Phosphor's lightning. The wave height chart is AG Charts Community (`ag-charts-community`), MIT licensed.
+Phosphor's lightning. The wave height chart is AG Charts Enterprise (`ag-charts-enterprise`), commercially licensed: see the licence keys in
+the [getting started guide](../CONTRIBUTING.md#licence-keys).
