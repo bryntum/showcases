@@ -189,7 +189,7 @@ export default class WaveChart {
     }
 
     // The wave, blue for work until the CTV window closes, orange for risk after; the close is the dispatch state's, so
-    // chart and no-go ranges agree. The first and last hour are marked and labelled, on a chip no limit runs through
+    // chart and no-go ranges agree. The first and last hour are marked and labelled
     wave(at, c, series) {
         return {
             ...series,
@@ -206,9 +206,7 @@ export default class WaveChart {
             },
             // Away from the limits' names: under the line when they are over it
             label : label(this.forecast.hs[0] > this.limits.ctv ? ['top', 'bottom'] : ['bottom', 'top'], c.muted, {
-                spacing    : 0,
-                fill       : c.surface,
-                padding    : { top : 0, bottom : 0, left : 2, right : 2 },
+                spacing    : 2,
                 formatter  : ({ datum }) => (datum.end ? datum.hs.toFixed(1) : ''),
                 itemStyler : ({ datum }) => ({ color : datum.t < at ? c.muted : c.roughInk })
             })
@@ -261,9 +259,8 @@ export default class WaveChart {
     }
 
     // The CTV and SWATH limits, dashed line series listed before the wave and the close, so their markers and the
-    // ring are drawn over them (AG Charts draws cross lines over every series). Each is named at its left end, over
-    // its line or under it when the day starts above it, on a chip of the surface so the other limit's dashes don't
-    // run through the name
+    // ring are drawn over them (AG Charts draws cross lines over every series). Each is named on its line at the left
+    // end, on a chip of the surface the dashes stop at
     limitLines({ muted, surface }, series) {
         const { dayStart, dayEnd } = this.day;
 
@@ -277,8 +274,9 @@ export default class WaveChart {
             strokeWidth   : 1,
             lineDash      : [3, 3],
             marker        : off,
-            label         : label(this.forecast.hs[0] > value ? 'bottom-right' : 'top-right', muted, {
+            label         : label('right', muted, {
                 fontSize  : 9,
+                spacing   : 2,
                 fill      : surface,
                 padding   : { top : 1, bottom : 1, left : 3, right : 3 },
                 formatter : ({ datum }) => (datum.name ? `${name} limit ${value.toFixed(1)}` : '')
