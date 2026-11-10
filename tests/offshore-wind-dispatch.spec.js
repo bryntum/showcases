@@ -616,16 +616,25 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
     test('a click on a day\'s header or cell opens the Day view on that date', async({ page }) => {
         await open(page, '?view=week');
 
-        // Thursday's header: its trips on its hours, its forecast, its date in the page's header
+        // The week starts today: a day's date as the page's header shows it, "Thu 12", from the board's own tick
+        const dayLabel = index => page.evaluate(index => {
+            const date = globalThis.bryntum.query('dispatchapp').widgetMap.board.timeAxis.getAt(index).startDate;
+
+            return `${date.toLocaleDateString('en-US', { weekday : 'short' })} ${date.getDate()}`;
+        }, index);
+
+        const [today, fourth] = [await dayLabel(0), await dayLabel(3)];
+
+        // The fourth day's header: its trips on its hours, its forecast, its date in the page's header
         await board(page).locator('.b-sch-header-time-axis-cell[data-tick-index="3"]').click();
 
         await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
         await expect(board(page)).toBeHidden();
         await expect(scheduler(page)).toBeVisible();
-        await expect(page.locator('.ow-clock')).toContainText('Thu 12');
+        await expect(page.locator('.ow-clock')).toContainText(fourth);
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('18:00');
 
-        const thursday = await page.evaluate(() => {
+        const shown = await page.evaluate(() => {
             const
                 app   = globalThis.bryntum.query('dispatchapp'),
                 start = app.scheduler.startDate,
@@ -639,16 +648,16 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
             };
         });
 
-        expect(thursday.hour).toBe(6);
-        expect(thursday.day).toBe(3);
-        expect(thursday.trips).toEqual(thursday.cells);
-        await expect(trip(page, thursday.trips[0])).toBeVisible();
+        expect(shown.hour).toBe(6);
+        expect(shown.day).toBe(3);
+        expect(shown.trips).toEqual(shown.cells);
+        await expect(trip(page, shown.trips[0])).toBeVisible();
 
-        // Back to the week, a click on Sea Puffin's Monday opens today again
+        // Back to the week, a click on Sea Puffin's first day opens today again
         await bar(page).getByRole('button', { name : 'Week' }).click();
         await cell(page, 'sp', 0).click();
 
-        await expect(page.locator('.ow-clock')).toContainText('Mon 9');
+        await expect(page.locator('.ow-clock')).toContainText(today);
         await expect(trip(page, 'SP-1')).toBeVisible();
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('14:00');
     });
