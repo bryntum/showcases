@@ -6,14 +6,24 @@ import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
 import '../week/WeekBoard.js';
 
+// The fleet in a few words, "4 CTV · 1 SWATH · 3 heli": the vessels by their type (the first part of their `kind`),
+// then the helicopters
+function fleetCount(vessels) {
+    const counts = new Map();
+
+    vessels.forEach(({ mode, kind }) => {
+        const type = mode === 'heli' ? 'heli' : kind.split(' · ')[0];
+
+        counts.set(type, (counts.get(type) ?? 0) + 1);
+    });
+
+    return [...counts].map(([type, count]) => `${count} ${type}`).join(' · ');
+}
+
 /**
  * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the Day | Week
- * toggle, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler) or the week
- * as a day board (WeekBoard), and its footer with the legend. The crews waiting at the port sit under it, on the page
- * (DispatchApp). On a phone it is the Schedule tab.
- *
- * The scheduler runs from 06:00 to 18:00 of the day shown, today first, over the vessels, the trips of the week with
- * their legs nested in them and the dependencies of the farm data.
+ * toggle, over the forecast notice, the Day view (DispatchScheduler) or the Week view (WeekBoard), and the legend.
+ * On a phone it is the Schedule tab.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
@@ -53,8 +63,7 @@ export default class SchedulePanel extends Panel {
         const
             { dispatch, data } = config,
             { day }            = dispatch,
-            me                 = this,
-            boats              = dispatch.vessels.filter(vessel => vessel.mode === 'vessel').length;
+            me                 = this;
 
         super.construct({
             ...config,
@@ -68,7 +77,7 @@ export default class SchedulePanel extends Panel {
                     count : {
                         type : 'widget',
                         cls  : 'ow-panel-count',
-                        html : `${boats} CTV · ${dispatch.vessels.length - boats} heli`
+                        html : fleetCount(dispatch.vessels)
                     },
                     spacer   : '->',
                     // The next forecast, in: the one action that changes the plan, quiet and blue

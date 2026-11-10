@@ -3,13 +3,11 @@ import { Container, StringHelper } from '@bryntum/core-enterprise';
 import './TeamChip.js';
 
 /**
- * The crews waiting at the port with no trip yet, a slim tray in the header (KpiBar): its title with their count,
- * then a small card per team (TeamChip). Cards are dragged onto a trip, or held over one from the keyboard with Enter,
- * see TeamDrag.
+ * The crews waiting at the port with no trip yet, in the header (KpiBar): the title with their count over a hint on
+ * how to book one, then a card per team (TeamChip), dragged onto a trip or held over one with Enter (TeamDrag).
  *
- * It shows a Store of the teams waiting (DispatchState#waitingStore, WaitingTeamModel): a chip per record, in the
- * store's order, kept in step by the store's `add`, `remove` and `refresh` events. A team booked is removed from the
- * store, and its chip from the tray; the chip of a team still waiting stays, DragHelper holds on to the chip it drags.
+ * A chip per record of the teams' Store (DispatchState#waitingStore), in its order, kept in step by its `add`,
+ * `remove` and `refresh` events. A booked team's chip goes; DragHelper holds on to the chip it drags.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
@@ -42,7 +40,16 @@ export default class TeamTray extends Container {
         cls    : 'ow-tray',
         layout : { type : 'hbox', align : 'center' },
         items  : {
-            title : { type : 'widget', cls : 'ow-tray-title' },
+            // The title, and under it how a team is booked
+            head : {
+                type   : 'container',
+                cls    : 'ow-tray-head',
+                layout : 'vbox',
+                items  : {
+                    title : { type : 'widget', cls : 'ow-tray-title' },
+                    hint  : { type : 'widget', cls : 'ow-tray-hint', html : 'Drag onto a trip, or press Enter' }
+                }
+            },
             empty : { type : 'widget', cls : 'ow-tray-empty', html : 'Every team has a trip' }
         }
     };
@@ -101,15 +108,16 @@ export default class TeamTray extends Container {
         this.updateCount();
     }
 
-    // The title's count and the note shown when no team waits
+    // The title's count, and the note shown when no team waits in place of the hint
     updateCount() {
         const
-            { title, empty } = this.widgetMap ?? {},
-            count            = this.store?.count ?? 0;
+            { title, hint, empty } = this.widgetMap ?? {},
+            count                  = this.store?.count ?? 0;
 
         if (title) {
             title.html   = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
             empty.hidden = Boolean(count);
+            hint.hidden  = !count;
         }
     }
 
