@@ -129,11 +129,15 @@ export default class WaveChart {
             return Promise.resolve();
         }
 
-        if (me.chart) {
-            me.chart.update(me.options());
+        const options = me.options();
+
+        // A day with another number of window lines is a new chart: AG Charts' update cannot match the series by index
+        if (me.chart?.getOptions().series.length === options.series.length) {
+            me.chart.update(options);
         }
         else {
-            me.chart = AgCharts.create(me.options());
+            me.chart?.destroy();
+            me.chart = AgCharts.create(options);
         }
 
         return me.chart.waitForUpdate();
