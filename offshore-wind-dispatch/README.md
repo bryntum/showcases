@@ -128,7 +128,7 @@ The app holds three observable sources and wires them to the views, it pushes no
 
 * the project (the plan), its `dataReady`
 * `DispatchState` (the day shown, the forecast and its windows, the clock), its `change`; the teams waiting are its
-  `waitingStore`, which the team tray shows a chip per record of
+  `waitingStore`, which the team tray shows as a List, a card per record
 * `AppState` (the turbine selected, whether the map follows it, the team lifted and the team held with its check),
   its `change`; the trip selected is the Scheduler's own selection
 
@@ -184,15 +184,15 @@ engine places each changed trip before the next one on the vessel is planned.
     and the phone tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
     the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
     of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
-    `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
-    drag sources, one per record of the waiting teams' store)
+    `TeamTray.js` is the team tray in the header (a Container with a `List` of the waiting teams' store, a card
+    per team, the drag sources)
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
     button and a `ButtonGroup` for the Day / Week views as `tools`; it holds the forecast notice, the scheduler, the
     Week view and the legend), `MapPanel` (the site's card, a Panel with the map and its legend, and the turbine card, drawn by `draw()`, which also
     fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (with `DragHelper`) and `DropTooltip` (the tooltip of the trip
     under the team). The chip that follows
-    the pointer is `createChip` in `TeamChip.js`
+    the pointer is `createChip` in `TeamDrag.js`
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the trips (`Planner`), the state
     apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts and the weather windows they
     give, the day's counts, the waiting teams' store) and the re-planning on a new forecast (`ForecastPlanner`)

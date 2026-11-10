@@ -1,4 +1,4 @@
-/* A team being dragged (drag/TeamDrag.js): DragHelper's proxy chip in the page's body (createChip in TeamChip.js), and
+/* A team being dragged (drag/TeamDrag.js): DragHelper's proxy chip in the page's body (createChip), and
  * the Tooltip of the trip under it (drag/DropTooltip.js). The pointer passes through both */
 
 /* Over the app, under Bryntum's floating widgets, so the tooltip stays on top of the chip */
@@ -40,7 +40,7 @@
     gap         : 0.5834em;
 }
 
-/* The team's certificates (TeamChip#teamChipContent, compact) */
+/* The team's certificates (createChip, compact) */
 .ow-certs {
     display : flex;
     gap     : 0.3334em;

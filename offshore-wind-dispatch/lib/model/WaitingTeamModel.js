@@ -16,7 +16,9 @@ export default class WaitingTeamModel extends Model {
         // Its job, `{ turbine, job, type, minutes, certs }`
         { name : 'job', type : 'object' },
         // The turbine is stopped
-        { name : 'fault', type : 'boolean' }
+        { name : 'fault', type : 'boolean' },
+        // What the tray's List reads out for it
+        { name : 'text', calculate : ({ team, job }) => `${team.name}, ${job.turbine} ${job.job}` }
     ];
 }
 

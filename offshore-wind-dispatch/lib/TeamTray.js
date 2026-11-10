@@ -1,13 +1,17 @@
 import { Container, StringHelper } from '@bryntum/core-enterprise';
-// Also registers the widget types used below
-import './TeamChip.js';
+import { icon } from './util/Icons.js';
+import { duration } from './util/Time.js';
+
+// "T-34 fault", "T-02 annual service"
+const jobText = ({ turbine, job, short }, fault) => `${turbine} ${fault ? 'fault' : (short ?? job).toLowerCase()}`;
 
 /**
- * The crews waiting at the port, in the header: a TeamChip per record of DispatchState#waitingStore, in its order,
- * kept in step by the store's `add`, `remove` and `refresh` events.
+ * The crews waiting at the port, in the header: a title over a List of DispatchState#waitingStore, a card per team.
+ * Each card is a drag source of TeamDrag, which finds it by its `data-team`. Its certificates and full job are in its
+ * tooltip, so the card stays two short lines.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/data/Store#event-change
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/List
  */
 export default class TeamTray extends Container {
     static $name = 'TeamTray';
@@ -20,7 +24,7 @@ export default class TeamTray extends Container {
         // WaitingTeamModel records
         store : null,
 
-        // The ID of the team dragged: its chip is dimmed
+        // The ID of the team dragged: its card stays in the tray, dimmed
         lifted : null,
 
         cls    : 'ow-tray',
@@ -35,73 +39,62 @@ export default class TeamTray extends Container {
                     hint  : { type : 'widget', cls : 'ow-tray-hint', html : 'Drag onto a trip' }
                 }
             },
-            empty : { type : 'widget', cls : 'ow-tray-empty', html : 'Every team has a trip' }
+            empty : { type : 'widget', cls : 'ow-tray-empty', html : 'Every team has a trip' },
+            // Only shown: no selection, no keyboard navigation, no scrolling of its own
+            list  : {
+                type            : 'list',
+                cls             : 'ow-crews',
+                itemCls         : 'ow-crew',
+                navigator       : false,
+                itemsFocusable  : false,
+                scrollable      : null,
+                isSelectable    : () => false,
+                itemTpl         : 'up.cardHtml',
+                tooltipTemplate : ({ team, job }) =>
+                    `${team.techs} technicians, ${team.certs.join(', ')} · ${job.turbine} ${job.job}`
+            }
         }
     };
 
-    get chips() {
-        return this.items.filter(item => item.isTeamChip);
+    // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
+    cardHtml({ id, team, job, fault }) {
+        const cls = `ow-team${fault ? ' ow-team-fault' : ''}${id === this.lifted ? ' ow-team-lifted' : ''}`;
+
+        return StringHelper.xss`<div class="${cls}" data-team="${id}"><span class="ow-team-crew">` +
+            `${icon('users')}</span>` + StringHelper.xss`<span class="ow-team-text">
+                <span class="ow-team-name"><b>${team.name}</b> · ${team.techs}</span>
+                <span class="ow-team-job">${jobText(job, fault)} · ${duration(job.minutes)}</span>
+            </span></div>`;
     }
 
     updateStore(store) {
         const me = this;
 
+        me.widgetMap.list.store = store;
         me.detachListeners('store');
-        store?.on({ name : 'store', add : 'onStoreAdd', remove : 'onStoreRemove', refresh : 'fill', thisObj : me });
-        me.fill();
+        store?.ion({ name : 'store', change : 'updatePort', thisObj : me });
+        me.updatePort();
     }
 
+    // The title counts the teams
     updatePort() {
-        this.updateCount();
-    }
-
-    updateLifted(lifted) {
-        this.chips.forEach(chip => chip.lifted = chip.waitingId === lifted);
-    }
-
-    fill() {
-        const me = this;
-
-        me.chips.forEach(chip => chip.destroy());
-        me.onStoreAdd({ records : me.store?.records ?? [], index : 0 });
-    }
-
-    // Chips go after the title and the empty note
-    onStoreAdd({ records, index }) {
-        const
-            me    = this,
-            first = me.items.indexOf(me.widgetMap.empty) + 1;
-
-        records.forEach(({ id, team, job, fault }, i) => me.insert({
-            type      : 'teamchip',
-            waitingId : id,
-            lifted    : id === me.lifted,
-            team,
-            job,
-            fault
-        }, first + index + i));
-        me.updateCount();
-    }
-
-    onStoreRemove({ records }) {
-        records.forEach(({ id }) => this.chipOf(id)?.destroy());
-        this.updateCount();
-    }
-
-    updateCount() {
         const
             { title, hint, empty } = this.widgetMap ?? {},
             count                  = this.store?.count ?? 0;
 
-        if (title) {
-            title.html   = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
-            empty.hidden = Boolean(count);
-            hint.hidden  = !count;
+        if (!title) {
+            return;
         }
+
+        title.html   = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
+        hint.hidden  = !count;
+        empty.hidden = Boolean(count);
     }
 
-    chipOf(id) {
-        return this.chips.find(chip => chip.waitingId === id);
+    // On the card itself, not by redrawing the list: the drag holds the card's element
+    updateLifted(lifted) {
+        this.element?.querySelectorAll('.ow-team[data-team]').forEach(card =>
+            card.classList.toggle('ow-team-lifted', card.dataset.team === lifted));
     }
 }
 

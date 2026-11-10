@@ -1,7 +1,47 @@
 import { DateHelper, DomHelper, DragHelper, Widget } from '@bryntum/core-enterprise';
-import { createChip, showOnChip } from '../TeamChip.js';
 // Also registers the tooltip type used below
 import './DropTooltip.js';
+
+// The drag proxy. Every technician has the GWO basics, only a certificate that limits where a team can go is shown
+function createChip(team) {
+    return DomHelper.createElement({
+        class    : 'ow-drag-chip',
+        dataset  : { state : 'neutral' },
+        children : [
+            {
+                tag      : 'span',
+                class    : 'ow-drag-team',
+                children : [
+                    { tag : 'b', text : team.name },
+                    {
+                        tag      : 'span',
+                        class    : 'ow-certs',
+                        children : team.certs.filter(cert => cert !== 'GWO')
+                            .map(cert => ({ tag : 'span', class : `ow-cert ow-cert-${cert.toLowerCase()}`, text : cert }))
+                    }
+                ]
+            },
+            { tag : 'span', class : 'ow-pill ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
+        ]
+    });
+}
+
+// The proxy's status from the same check as the tooltip (DropController#previewDrop). Only touched when it changes,
+// so it does not flicker
+function showOnChip(chip, drop) {
+    const
+        state  = drop ? (drop.result.valid ? 'valid' : 'invalid') : 'neutral',
+        text   = drop?.result.short ?? '',
+        status = chip?.querySelector('.ow-drag-status');
+
+    if (!status || (chip.dataset.state === state && status.textContent === text)) {
+        return;
+    }
+
+    chip.dataset.state = state;
+    status.textContent = text;
+    status.hidden      = !text;
+}
 
 /**
  * Dragging a team from the tray onto a vessel, run by Bryntum's DragHelper. The pointer side only: the handler

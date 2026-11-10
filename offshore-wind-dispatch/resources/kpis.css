@@ -1,4 +1,4 @@
-/* The KPI header (KpiBar.js), the team tray (TeamTray.js, TeamChip.js) and the counts, as wide as the map's card
+/* The KPI header (KpiBar.js), the team tray (TeamTray.js) and the counts, as wide as the map's card
  * below them (MapPanel's width) */
 
 .ow-kpis {
@@ -142,6 +142,18 @@
     white-space : nowrap;
 }
 
+/* The List of the teams, a row of cards, their shadows outside it; none when no team waits */
+.ow-crews {
+    flex-direction : row;
+    gap            : 1rem;
+    overflow       : visible;
+    list-style     : none;
+
+    &.b-empty {
+        display : none;
+    }
+}
+
 .ow-tray-hint, .ow-tray-empty {
     font-size   : var(--ow-size-sm);
     color       : var(--b-neutral-40);
@@ -150,6 +162,7 @@
 
 /* A team's card, never squeezed narrower than its two lines. Pointer events drive the drag on touch too (TeamDrag) */
 .ow-team {
+    display          : flex;
     flex             : none;
     align-items      : center;
     gap              : 0.9231em;
