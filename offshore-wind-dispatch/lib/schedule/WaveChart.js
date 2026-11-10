@@ -223,39 +223,25 @@ export default class WaveChart {
         };
     }
 
-    // The day in hours, with a crosshair naming the time and the wave height under the pointer. After a new forecast,
+    // The day in hours, with a crosshair under the pointer. After a new forecast,
     // the close before is a dashed line, named at its foot on the side away from the close
-    timeAxis({ muted, ink, surface, grid }) {
+    timeAxis({ muted, grid }) {
         const
             { dayStart, dayEnd } = this.day,
-            { closes, was, hs }  = this.forecast,
+            { closes, was }      = this.forecast,
             nudge                = (dayEnd - dayStart) / this.element.clientWidth / 2;
 
         return {
             ...bare,
-            position  : 'bottom',
+            position   : 'bottom',
             // Half a pixel later: AG Charts snaps its grid lines down to the pixel, Bryntum its hour lines to the
             // nearest one, so this puts them on the same pixels
-            min       : dayStart - nudge,
-            max       : dayEnd - nudge,
-            interval  : { step : 1 },
-            gridLine  : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
-            crosshair : {
-                snap     : false,
-                stroke   : muted,
-                lineDash : [2, 2],
-                // Lifted to the foot of the chart: under it, the header cell would clip it
-                label    : {
-                    yOffset  : -27,
-                    // The hour clamped at both ends: the axis starts half a pixel before the day (`min`)
-                    renderer : ({ value }) => ({
-                        text : `${hhmm(Math.max(value, dayStart) * 60)} · ${(hs[Math.max(0, Math.min(Math.floor(value),
-                            dayEnd - 1) - dayStart)] ?? hs.at(-1)).toFixed(1)} m`,
-                        color           : surface,
-                        backgroundColor : ink
-                    })
-                }
-            },
+            min        : dayStart - nudge,
+            max        : dayEnd - nudge,
+            interval   : { step : 1 },
+            gridLine   : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
+            // A dashed line under the pointer; the tooltip names the hour and its wave height
+            crosshair  : { snap : false, stroke : muted, lineDash : [2, 2], label : off },
             crossLines : [
                 was != null && {
                     type     : 'line',
