@@ -1,7 +1,7 @@
 // The Group feature is a Grid feature, importing the package registers it
 import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
-import { DateHelper, StringHelper } from '@bryntum/core-enterprise';
+import { AsyncHelper, DateHelper, StringHelper } from '@bryntum/core-enterprise';
 import DispatchProject from '../model/DispatchProject.js';
 import ForecastHeader from '../feature/ForecastHeader.js';
 // Also register the features enabled below
@@ -314,6 +314,28 @@ export default class DispatchScheduler extends Scheduler {
 
         me.setTimeSpan(DateHelper.add(midnight, day.dayStart, 'hour'), DateHelper.add(midnight, day.dayEnd, 'hour'));
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
+    }
+
+    /**
+     * Selects a trip and scrolls its return into the middle of the view.
+     * Workaround for Bryntum 8.0: a Scheduler just shown scrolls nowhere until its `timelineViewportResize`.
+     * Shown again (a phone's Schedule), its time axis is 0 wide until then, a moment later: the scroll waits for it
+     * @param {TripModel} trip
+     * @returns {Promise} Resolves once scrolled
+     */
+    async showReturn(trip) {
+        const me = this;
+
+        if (!me.timeAxisSubGrid.width) {
+            await Promise.race([
+                new Promise(resolve => me.ion({ timelineViewportResize : resolve, once : true })),
+                AsyncHelper.sleep(500)
+            ]);
+        }
+
+        me.selectEvent(trip);
+        await me.scrollRowIntoView(trip.resource, { block : 'center' });
+        await me.scrollToDate(trip.outerEndDate, { block : 'center', animate : 300 });
     }
 
     updatePhone(phone) {

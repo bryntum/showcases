@@ -4,26 +4,20 @@ import ForecastPlanner from './plan/ForecastPlanner.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import { tripsOf } from './feature/MapLink.js';
-import PhoneLayout from './PhoneLayout.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
 // Also registers the widget types used below
-import './TeamTray.js';
+import './KpiBar.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
-import './panel/PhoneTabs.js';
 
 // The turbine the page opens on: the one the weather puts at risk
-const
-    openingTurbine = 'T-41',
-    hbox           = { type : 'hbox', align : 'center' },
-    // One of the day's counts, the figure over its label; drawn by refreshPlan
-    kpi            = { type : 'widget', cls : 'ow-kpi' };
+const openingTurbine = 'T-41';
 
 /**
  * The app: the header, the schedule and the map, wired to the plan (the Scheduler's project), the dispatch state and
  * its own view state (the turbine selected, the team held). Every change of the plan goes through `replan()`, which
  * lets the engine place it; the views redraw from the project's `dataReady`, never by hand. Below 760px wide it is a
- * `phone` (the Responsive mixin).
+ * `phone` (the Responsive mixin), which shows the schedule or the map, picked with a ButtonGroup.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
@@ -81,18 +75,10 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        // The app's parts by ref, kept from here on: moving the halves into the tab panel and back (PhoneLayout) takes
-        // their widgets out of the container's own widgetMap
-        me.parts = { ...me.widgetMap };
+        // The app's parts by ref
+        me.parts = me.widgetMap;
 
-        const { scheduler, board, map, tray, schedulePane, main, tabs, column, side } = me.parts;
-
-        me.phoneLayout     = new PhoneLayout({
-            main,
-            tabs,
-            halves : [column, side],
-            views  : [scheduler, board, schedulePane, side]
-        });
+        const { scheduler, board, map, tray, schedulePane } = me.parts;
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, project : scheduler.project, trips : () => me.trips });
         me.dropController  = new DropController({
@@ -134,12 +120,29 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const me = this;
 
         return {
-            kpis : me.kpisConfig(site),
-            // On a phone the schedule and the map are its tabs (updatePhone)
+            kpis : { type : 'kpibar', site },
+            // On a phone the schedule and the map are shown one at a time, picked here (updatePhone). Its value is the
+            // half shown
             tabs : {
-                type : 'phonetabs',
-                onTabChange({ activeItem }) {
-                    me.tab = me.phoneLayout.tabOf(activeItem);
+                type        : 'buttongroup',
+                cls         : 'ow-view-toggle ow-phone-switch',
+                rendition   : 'padded',
+                toggleGroup : true,
+                hidden      : true,
+                margin      : '8 12',
+                // Workaround for Bryntum 8.0: a ButtonGroup has no config to fill its container's width.
+                // As wide as the phone, a half each: `columns` fills the group with its buttons, their flex keeps them
+                // on one row inside its padding, and the vbox stretches the group within its margin (`auto`, not the
+                // columned group's 100%)
+                columns     : 2,
+                width       : 'auto',
+                defaults    : { flex : 1 },
+                items       : [
+                    { value : 'schedule', text : 'Schedule', pressed : true },
+                    { value : 'map', text : 'Map' }
+                ],
+                onChange({ value }) {
+                    me.tab = value;
                 }
             },
             main : {
@@ -148,11 +151,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
                 flex   : 1,
                 layout : 'hbox',
                 items  : {
-                    // On a phone this is the Schedule tab
                     column : {
                         type   : 'container',
                         cls    : 'ow-left',
-                        title  : 'Schedule',
                         flex   : 1,
                         layout : 'vbox',
                         items  : {
@@ -163,40 +164,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
                         type       : 'mappanel',
                         site,
                         tipContent : turbine => me.turbineTip(turbine)
-                    }
-                }
-            }
-        };
-    }
-
-    // Over the schedule the site, the day and the crews waiting; over the map the day's counts, what needs acting on
-    // after a divider
-    kpisConfig(site) {
-        return {
-            type   : 'container',
-            cls    : 'ow-kpis',
-            layout : hbox,
-            items  : {
-                lead : {
-                    type   : 'container',
-                    cls    : 'ow-kpis-lead',
-                    flex   : 1,
-                    layout : { ...hbox, justify : 'space-between' },
-                    items  : {
-                        clock : { type : 'widget', cls : 'ow-clock' },
-                        tray  : { type : 'teamtray', port : site.portShort ?? site.port }
-                    }
-                },
-                counts : {
-                    type   : 'container',
-                    cls    : 'ow-kpis-counts',
-                    layout : { ...hbox, justify : 'end' },
-                    items  : {
-                        kpi0  : { ...kpi },
-                        kpi1  : { ...kpi },
-                        split : { type : 'widget', cls : 'ow-kpi-split', ariaHidden : true },
-                        kpi2  : { ...kpi },
-                        kpi3  : { ...kpi }
                     }
                 }
             }
@@ -403,27 +370,27 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     // The header's counts, the schedule and the map. `weather` also the time axis rows and the no-go ranges
     refreshPlan(weather = false) {
         const
-            me                    = this,
-            { dispatch }          = me,
-            { clock, scheduler }  = me.parts ?? {};
+            me                   = this,
+            { dispatch }         = me,
+            { kpis, scheduler }  = me.parts ?? {};
 
-        if (me.isDestroyed || !clock) {
+        if (me.isDestroyed || !kpis) {
             return;
         }
 
-        clock.html = [{ tag : 'b', text : dispatch.site.name }, { tag : 'small', text : dispatch.dayShort }];
-        dispatch.kpis(me.trips).forEach(({ label, value, tone }, index) => {
-            const widget = me.parts[`kpi${index}`];
-
-            widget.html = [{ tag : 'b', text : String(value) }, { tag : 'small', text : label }];
-            // `warn` past the window, `stop` stopped: tinted while above zero
-            tone && widget.element.classList.toggle(`ow-kpi-${tone}`, value > 0);
-        });
+        kpis.draw(dispatch, me.trips, me.phone);
         // The forecast's notice is about the day it re-planned
         me.parts.notice.hidden = !me.forecastPlanner?.changes.length || me.forecastPlanner.day !== dispatch.dayIndex;
         weather ? scheduler.refreshDispatch() : scheduler.refreshPlan();
         me.parts.schedulePane.refreshBar();
         me.refreshSide();
+    }
+
+    // RiskNote's Show: the trip on the schedule, the schedule shown first on a phone
+    showRisk({ trip }) {
+        this.tab = 'schedule';
+
+        return this.scheduler.showReturn(trip);
     }
 
     // The map and the turbine card
@@ -486,6 +453,20 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         me.parts.notice.hidden = true;
 
         return me.replan(() => me.forecastPlanner.undo());
+    }
+
+    // The notice's "Show on Wednesday": the next day, the trip the forecast's cut work went to selected
+    async showCarried() {
+        const
+            me   = this,
+            trip = me.forecastPlanner.changes.find(change => change.carried)?.carried;
+
+        if (trip?.eventStore) {
+            await me.openDay(trip.day);
+            me.selectedTurbine = trip.turbines[0];
+            me.scheduler.selectEvent(trip);
+            await me.scheduler.scrollEventIntoView(trip, { block : 'center', highlight : true });
+        }
     }
 
     reviewNext() {
@@ -562,16 +543,34 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     //region The responsive layout
 
+    // Side by side, or on a phone one half at a time (updateTab). The halves stay where they are, only their size and
+    // visibility change. Applied again once the halves exist, see construct
     updatePhone(phone) {
-        // Applied again once the halves exist, see construct
-        this.phoneLayout?.apply(phone);
+        const { parts } = this;
+
         this.element?.classList.toggle('ow-phone', phone);
-        this.updateTab(this.tab);
+
+        if (parts) {
+            const { scheduler, board, schedulePane, side, tabs, kpis } = parts;
+
+            [scheduler, board, schedulePane, side].forEach(view => view.phone = phone);
+            side.flex   = phone ? 1 : null;
+            side.width  = phone ? null : 400;
+            tabs.hidden = !phone;
+            this.updateTab(this.tab);
+            // On a phone the counts give way to the trips back late
+            kpis.draw(this.dispatch, this.trips, phone);
+        }
     }
 
+    // `schedule` or `map`: the half shown on a phone
     updateTab(tab) {
-        if (this.phone) {
-            this.phoneLayout?.showTab(tab);
+        const { parts, phone } = this;
+
+        if (parts) {
+            parts.column.hidden = phone && tab === 'map';
+            parts.side.hidden   = phone && tab !== 'map';
+            parts.tabs.value    = tab;
         }
     }
 

@@ -22,14 +22,15 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
    trips not yet gone are brought forward, trimmed or taken off the day. The stops cut go to tomorrow as a trip of the
    same vessel if they fit its window and the vessel's other trips, else their teams wait at the port again, a chip
-   per stop. Sea Puffin's trip moves to tomorrow 06:30, in the morning window before the waves rise again. The notice
-   lists each change, on today only
-4. **Undo** in the notice puts every trip back and takes tomorrow's trips and any waiting chips away, in one step
+   per stop. Sea Puffin's trip moves to tomorrow 06:30, in the morning window before the waves rise again. The notice,
+   on today only, says in two lines what changed today, where the cut work went and which trips already under way stay
+   at risk; **Show on Wednesday** opens tomorrow on the trip carried there
+4. **Undo** (the arrow) in the notice puts every trip back and takes tomorrow's trips and any waiting chips away, in one step
 5. **Open Week**: the week as a day board, a cell per vessel per day. A free cell takes a team too, as a new trip on
    that day; a click on a day opens it in the Day view
 
 `?state=drag` opens with Team F held over Northern Tern's trip, `?state=forecast` with the 08:00 forecast applied,
-`?view=week` on the Week view, `?tab=map` on the map tab at phone widths.
+`?view=week` on the Week view, `?tab=map` on the map at phone widths.
 
 ## What it demonstrates
 
@@ -66,17 +67,18 @@ dropped.
   wind), the vessels, the teams and their jobs, the trips and the dependency of today, and under `week` the forecast,
   trips and jobs of the six days after it
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
-    the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
-    and the phone tabs. It wires the plan, the dispatch state and its own view state to the views.
-    `DropController.js` checks and books a dropped team (TeamDrag's handler), `PhoneLayout.js` moves the schedule and
-    the map into the phone tabs and back, `TeamTray.js` is the team tray in the header (a Container with a `List` of
-    the waiting teams' store, a card per team, the drag sources)
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container
+    of the site and the day, the team tray and the day's four counts; on a phone `RiskNote.js` in place of the counts,
+    the trips back after their window with a Show button), the schedule panel and the map panel (`panel/`),
+    and the phone's Schedule | Map switch (a `ButtonGroup`). It wires the plan, the dispatch state and its own view
+    state to the views; on a phone it shows one half or the other by their `hidden`, nothing is moved.
+    `DropController.js` checks and books a dropped team (TeamDrag's handler), `TeamTray.js` is the team tray in the
+    header (a Container with a `List` of the waiting teams' store, a card per team, the drag sources)
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
-    button and a `ButtonGroup` for the Day / Week views as `tools`; it holds the forecast notice, the scheduler, the
-    Week view, and the legend as its bbar, a Toolbar), `MapPanel` (the site's card, a Panel with the map and its
-    legend, and the turbine card, drawn by `draw()`, which also fits the map to the selection when it changed) and
-    `PhoneTabs` (a `TabPanel` with the arrow keys)
+    button and a `ButtonGroup` for the Day / Week views as header `strips` (`dock : 'header'`); it holds the forecast
+    notice, the scheduler, the Week view, and the legend as its bbar, a Toolbar) and `MapPanel` (the site's card, a
+    Panel with the map and its legend, and the turbine card, drawn by `draw()`, which also fits the map to the
+    selection when it changed)
   * `drag/` dragging a team onto a trip: `TeamDrag` (with `DragHelper`) and `DropTooltip` (the tooltip of the trip
     under the team). The chip that follows the pointer is `createChip` in `TeamDrag.js`
   * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the trips (`Planner`), the state

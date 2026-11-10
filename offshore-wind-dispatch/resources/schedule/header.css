@@ -191,6 +191,7 @@
         border-start-start-radius : var(--b-time-range-line-header-border-radius);
         border-end-start-radius   : var(--b-time-range-line-header-border-radius);
 
+        /* Workaround for Bryntum 8.0: Bryntum draws a time range's line in the rows only */
         &::before {
             content             : '';
             position            : absolute;

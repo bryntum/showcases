@@ -30,6 +30,7 @@ export default class ForecastHeader extends SchedulerFeature {
                 unit     : 'day',
                 renderer : (startDate, endDate, config) => {
                     config.headerCellCls = 'ow-sea-cell ow-sea-today';
+                    // Workaround for Bryntum 8.0: a header renderer returns markup only, the chart goes in afterwards
                     // The cell is in the page once the header is drawn
                     queueMicrotask(() => feature().mount());
 
@@ -52,6 +53,7 @@ export default class ForecastHeader extends SchedulerFeature {
         super.construct(config);
 
         this.chartHost = DomHelper.createElement({ class : 'ow-wave-chart' });
+        // Workaround for Bryntum 8.0: no API hosts an element in a header cell, `retainElement` is DomSync-internal
         // Not the header's own content: DomSync leaves it where it is mounted instead of releasing (hiding) it
         this.chartHost.retainElement = true;
 

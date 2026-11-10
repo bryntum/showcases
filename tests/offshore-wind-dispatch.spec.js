@@ -58,6 +58,21 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(tray(page).locator('.ow-team')).toHaveCount(3);
     });
 
+    test('a stop names its turbine, and its hours on station where they fit beside it', async({ page }) => {
+        await page.setViewportSize({ width : 1600, height : 960 });
+        await open(page);
+
+        // The stop of a leg by its turbine, on a trip
+        const stop = (id, turbine) => trip(page, id).locator('.ow-seg-stop', { hasText : turbine });
+
+        // 2.5 h on station: room for both
+        await expect(stop('SP-1', 'T-31').locator('.ow-seg-hours')).toBeVisible();
+        await expect(stop('SP-1', 'T-31').locator('.ow-seg-hours')).toHaveText('2.5 h');
+        // 20 minutes: the turbine alone, the hours hidden by the container query
+        await expect(stop('H1-1', 'T-58').locator('b')).toHaveText('T-58');
+        await expect(stop('H1-1', 'T-58').locator('.ow-seg-hours')).toBeHidden();
+    });
+
     test('at 1600 x 960 the page and the schedule do not scroll, the frame is aligned to its corner, the status line is one line', async({ page }) => {
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
@@ -772,6 +787,31 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(board(page).locator('.b-time-axis-summary-value').nth(1)).toHaveText('3 / 8');
     });
 
+    test('the forecast\'s notice says what changed today, what went to tomorrow and what stays at risk', async({ page }) => {
+        await open(page);
+        await page.locator('.ow-forecast-button').click();
+
+        const notice = page.locator('.ow-notice');
+
+        // Two lines: the forecast and today's change; where the cut work went and the trips under way still at risk
+        await expect(notice.locator('.ow-notice-line')).toHaveText([
+            'Forecast 08:00: Hs passes 1.5 m at 12:00, 2 h earlier. Heli 1\'s pickup brought forward',
+            /^Sea Puffin's trip moved to \w+ 06:30 · 3 trips under way stay at risk$/
+        ]);
+        await expect(notice.getByRole('button', { name : 'Review 1 change today' })).toBeVisible();
+
+        // Show on <tomorrow> opens that day, the carried trip selected
+        await notice.getByRole('button', { name : /^Show on \w+$/ }).click();
+
+        await expect(trip(page, 'SP-5')).toContainText('carried over');
+        await expect(trip(page, 'SP-5')).toHaveClass(/\bb-selected\b/);
+        expect(await page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return [app.dispatch.dayIndex, app.selectedTrip?.id];
+        })).toEqual([1, 'SP-5']);
+    });
+
     test('a trip the forecast takes off today that does not fit tomorrow leaves its teams waiting', async({ page }) => {
         await open(page);
         await closeTomorrow(page);
@@ -1381,33 +1421,29 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
 test.describe('Offshore Wind Dispatch on a phone', () => {
     test.use({ viewport : { width : 390, height : 844 } });
 
-    test('shows the schedule and the map as tabs, without horizontal scroll', async({ page }) => {
+    test('shows the schedule or the map, picked by a ButtonGroup, without horizontal scroll', async({ page }) => {
         await open(page);
 
-        // The map half, not its tab, which carries the half's class too
         const
-            side = page.locator('.b-container.ow-side'),
-            tabs = page.locator('.ow-tabs [role="tablist"]').getByRole('tab');
+            side    = page.locator('.b-container.ow-side'),
+            buttons = page.locator('.ow-phone-switch').getByRole('button');
 
         await expect(page.locator('.ow-app')).toHaveClass(/\bow-phone\b/);
         await expect(scheduler(page)).toBeVisible();
         await expect(side).toBeHidden();
 
-        // A Bryntum TabPanel: a tab list, the selected tab marked
-        await expect(tabs).toHaveText(['Schedule', 'Map']);
-        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        // A toggle group, the half shown pressed
+        await expect(buttons).toHaveText(['Schedule', 'Map']);
+        await expect(buttons.first()).toHaveAttribute('aria-pressed', 'true');
 
-        await tabs.nth(1).click();
+        await buttons.nth(1).click();
 
         await expect(side).toBeVisible();
         await expect(scheduler(page)).toBeHidden();
-        await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+        await expect(buttons.nth(1)).toHaveAttribute('aria-pressed', 'true');
 
-        // The arrow keys move along the tab list and show the tab
-        await tabs.nth(1).focus();
-        await page.keyboard.press('ArrowLeft');
-        await expect(tabs.first()).toBeFocused();
-        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        await buttons.first().click();
+
         await expect(scheduler(page)).toBeVisible();
         await expect(side).toBeHidden();
 
@@ -1418,5 +1454,35 @@ test.describe('Offshore Wind Dispatch on a phone', () => {
         });
 
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+
+    test('says which trip is back after its window, and Show scrolls the schedule to its return', async({ page }) => {
+        await open(page, '?tab=map');
+
+        const
+            risk = page.locator('.ow-risk'),
+            // The time axis' scroll, and the trip selected
+            view = () => page.evaluate(() => {
+                const { scheduler } = globalThis.bryntum.query('dispatchapp');
+
+                return {
+                    x        : scheduler.timeAxisSubGrid.scrollable.x,
+                    selected : scheduler.selectedEvents.map(trip => trip.id)
+                };
+            });
+
+        // From the data: Sea Puffin is due back 14:17, the CTV window closes 14:00
+        await expect(risk).toBeVisible();
+        await expect(risk.locator('.ow-risk-text')).toHaveText('Sea Puffin back 17 min after the window closes');
+        // The counts give way to it
+        await expect(page.locator('.ow-kpis .ow-kpi').first()).toBeHidden();
+
+        await risk.getByRole('button', { name : 'Show' }).click();
+
+        // The schedule shown, the trip selected, its late return in view
+        await expect(scheduler(page)).toBeVisible();
+        await expect.poll(async() => (await view()).x).toBeGreaterThan(0);
+        expect((await view()).selected).toEqual(['SP-1']);
+        await expect(trip(page, 'SP-1').locator('.ow-transit-late')).toBeInViewport();
     });
 });

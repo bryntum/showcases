@@ -54,11 +54,11 @@ function legendItems(view) {
 
 /**
  * The schedule half of the app: the forecast notice, the Day view or the Week view, and the legend. Its header holds
- * the title and the fleet, the next forecast's button and the Day | Week toggle (header `tools`). The notice's buttons
+ * the title and the fleet, the next forecast's button and the Day | Week toggle (header `strips`). The notice's buttons
  * call the app's `undoForecast` and `reviewNext` (`up.`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-tools
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-strips
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
  */
 export default class SchedulePanel extends Panel {
@@ -72,15 +72,18 @@ export default class SchedulePanel extends Panel {
         // The parsed data/farm.json
         data : null,
 
-        // Set by PhoneLayout. The header then holds only the next forecast's button, the legend goes
+        // Set by DispatchApp on a phone. The header then holds only the next forecast's button, the legend goes
         phone : false,
 
         cls    : 'ow-schedule',
         flex   : 1,
         layout : 'vbox',
-        tools  : {
+        // Header strips (`dock : 'header'`), after the title: the higher the weight, the closer to it
+        strips : {
             forecast : {
                 type      : 'button',
+                dock      : 'header',
+                weight    : 2,
                 rendition : 'tonal',
                 cls       : 'ow-forecast-button',
                 hidden    : true,
@@ -89,6 +92,8 @@ export default class SchedulePanel extends Panel {
             // The pressed button's ref is the view it shows
             view : {
                 type        : 'buttongroup',
+                dock        : 'header',
+                weight      : 1,
                 cls         : 'ow-view-toggle',
                 rendition   : 'padded',
                 toggleGroup : true,
@@ -117,13 +122,22 @@ export default class SchedulePanel extends Panel {
                     layout : { type : 'hbox', align : 'center' },
                     items  : {
                         text : { type : 'widget', cls : 'ow-notice-text' },
-                        // A Button's text takes DomConfigs: the showcase's SVG icon goes in with the word
+                        // A Button's text takes DomConfigs: the showcase's SVG icon, named by its label and tooltip
                         undo : {
                             type      : 'button',
                             rendition : 'text',
                             cls       : 'ow-notice-undo',
-                            text      : [iconConfig('arrow-undo'), 'Undo'],
+                            text      : [iconConfig('arrow-undo')],
+                            ariaLabel : 'Undo',
+                            tooltip   : 'Undo the re-plan',
                             onClick   : 'up.undoForecast'
+                        },
+                        // Opens the next day on the trip the cut work went to
+                        carry : {
+                            type      : 'button',
+                            rendition : 'tonal',
+                            cls       : 'ow-notice-carry',
+                            onClick   : 'up.showCarried'
                         },
                         review : {
                             type      : 'button',
@@ -150,12 +164,7 @@ export default class SchedulePanel extends Panel {
             bbar : { cls : 'ow-legend', items : legendItems('day') }
         });
 
-        const
-            { board, scheduler } = this.widgetMap,
-            { view }             = this.tools;
-
-        // A header tool is rendered on its own, without its children: the toggle's buttons are rendered into it
-        view.items.forEach(button => button.render(view.contentElement));
+        const { board, scheduler } = this.widgetMap;
 
         // The Week view follows the trips of the Day view's project
         board.plan = scheduler.project;
@@ -177,7 +186,7 @@ export default class SchedulePanel extends Panel {
     showView(view) {
         const
             { scheduler, board }         = this.widgetMap,
-            { day, week }                = this.tools.view.widgetMap,
+            { day, week }                = this.strips.view.widgetMap,
             isWeek                       = view === 'week',
             button                       = isWeek ? week : day;
 
@@ -196,23 +205,33 @@ export default class SchedulePanel extends Panel {
     }
 
     /**
-     * Shows the notice of a forecast that changed the plan
+     * Shows the notice of a forecast that changed the plan, two lines: the forecast, and what the re-plan did
      * @param {Object} options
-     * @param {String} options.headline
-     * @param {String} options.detail
+     * @param {String} options.headline The forecast
+     * @param {String} options.today What changed on the day, after the headline
+     * @param {String} options.later Where the work cut went, what stays at risk; the second line
+     * @param {TripModel|null} options.carried The trip of the next day the cut work went to
      * @param {Number} options.changes The trips changed that are still on the day, to review
      */
-    showNotice({ headline, detail, changes }) {
-        const { notice, text, review, undo } = this.widgetMap;
+    showNotice({ headline, today, later, carried, changes }) {
+        const { notice, text, review, carry, undo } = this.widgetMap;
 
-        text.html     = [iconConfig('warning'), { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }];
-        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        text.html     = [iconConfig('warning'), {
+            tag      : 'span',
+            children : [
+                { class : 'ow-notice-line', children : [{ tag : 'b', class : 'ow-notice-head', text : headline }, today && ` ${today}`] },
+                later ? { class : 'ow-notice-line', text : later } : null
+            ]
+        }];
+        carry.text    = carried ? `Show on ${DateHelper.format(this.dispatch.dateOf(carried.day), 'dddd')}` : '';
+        carry.hidden  = !carried;
+        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'} today`;
         review.hidden = !changes;
         undo.hidden   = notice.hidden = false;
     }
 
     updatePhone() {
-        if (this.tools) {
+        if (this.strips) {
             this.refreshBar();
         }
     }
@@ -221,7 +240,7 @@ export default class SchedulePanel extends Panel {
         const
             me                 = this,
             phone              = Boolean(me.phone),
-            { forecast, view } = me.tools,
+            { forecast, view } = me.strips,
             next               = me.dispatch.nextForecast;
 
         forecast.hidden = !next;

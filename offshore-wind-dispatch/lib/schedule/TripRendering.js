@@ -16,6 +16,11 @@ import { clock, duration } from '../util/Time.js';
 // dot before it: the time goes after the dot. Keep it in step with trips.css
 const edgeRoom = 44;
 
+// A stop's time on station: "1.5 h", "1.25 h", "3 h"
+function hoursText(minutes) {
+    return `${Number((minutes / 60).toFixed(2))} h`;
+}
+
 /**
  * The teams on board: "Team B", "Teams D, E"
  * @param {TripModel} trip
@@ -40,13 +45,14 @@ function changeText(trip) {
 }
 
 /**
- * A leg, a nested event: a stop is a work block named by its turbine (its job and hours are in the trip's tooltip), a
- * hop is empty so the trip's line shows through. A stop is at risk when the vessel cannot get back to port from it
- * before its window closes
+ * A leg, a nested event: a stop is a work block, its turbine and, right-aligned, its hours on station (its job is in
+ * the trip's tooltip); a hop is empty so the trip's line shows through. The hours sit in a box of the room the turbine
+ * leaves, which trips.css hides by a container query when they do not fit: nothing is measured here. A stop is at risk
+ * when the vessel cannot get back to port from it before its window closes
  * @param {TripModel} leg
  * @param {Object} renderData
  * @param {Number} close When the trip's window closes, minutes since midnight
- * @returns {Object|String} DomConfig
+ * @returns {Object[]|String} DomConfigs
  */
 function renderLeg(leg, renderData, close) {
     const
@@ -68,7 +74,14 @@ function renderLeg(leg, renderData, close) {
     renderData.eventStyle = 'tonal';
     renderData.eventColor = risk ? 'var(--ow-c-risk-line)' : 'var(--ow-c-work)';
 
-    return { tag : 'b', text : leg.turbine };
+    return [
+        { tag : 'b', text : leg.turbine },
+        {
+            tag      : 'span',
+            class    : 'ow-seg-room',
+            children : [{ tag : 'span', class : 'ow-seg-hours', text : hoursText(leg.duration) }]
+        }
+    ];
 }
 
 /**
@@ -99,9 +112,8 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFi
     renderData.cls['ow-trip-drop']           = held;
     renderData.cls['ow-trip-fits']           = dropFit;
 
-    // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
-    // the trip's start: trips.css shifts the legs' container back by the sail out's width, and starts the label over
-    // the departure
+    // Workaround for Bryntum 8.0: NestedEvents ignores EventBuffer, it places the legs from the departure.
+    // trips.css shifts the legs' container back by the sail out's width, and starts the label over the departure
     renderData.wrapperStyle += `--ow-pre:${sailOut}px;`;
 
     return {
@@ -182,7 +194,7 @@ export function renderVessel(vessel, { day, close, limit }) {
             {
                 class       : `ow-resource-ring${risk ? ' ow-resource-ring-risk' : ''}`,
                 style       : `--ow-use:${used}%`,
-                'data-btip' : `${vessel.kind} · ${limit.hs == null ? `wind up to ${limit.wind} m/s` :
+                'data-btip' : `${vessel.name}, ${vessel.kind} · ${limit.hs == null ? `wind up to ${limit.wind} m/s` :
                     `waves up to Hs ${limit.hs.toFixed(1)} m`} · ${pax} of ${vessel.seats} seats taken`,
                 children : [iconConfig(vessel.glyph, 'ow-resource-icon')]
             },
