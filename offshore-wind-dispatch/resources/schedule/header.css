@@ -194,7 +194,8 @@
         &::before {
             content             : '';
             position            : absolute;
-            inset               : 100% auto auto 50%;
+            /* Bryntum pulls the line in the rows back by its width, this one follows */
+            inset               : 100% auto auto calc(50% - var(--b-time-range-line-width));
             height              : calc(var(--ow-row-sea) + var(--ow-row-wind) + var(--ow-row-hours) / 2);
             border-inline-start : var(--b-time-range-line-width) solid var(--b-color-blue);
         }
