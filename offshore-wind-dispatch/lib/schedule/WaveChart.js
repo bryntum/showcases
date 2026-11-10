@@ -218,13 +218,16 @@ export default class WaveChart {
     timeAxis({ muted, ink, surface, grid }) {
         const
             { dayStart, dayEnd } = this.day,
-            { closes, was, hs }  = this.forecast;
+            { closes, was, hs }  = this.forecast,
+            nudge                = (dayEnd - dayStart) / this.element.clientWidth / 2;
 
         return {
             ...bare,
             position  : 'bottom',
-            min       : dayStart,
-            max       : dayEnd,
+            // Half a pixel later: AG Charts snaps its grid lines down to the pixel, Bryntum its hour lines to the
+            // nearest one, so this puts them on the same pixels
+            min       : dayStart - nudge,
+            max       : dayEnd - nudge,
             interval  : { step : 1 },
             gridLine  : { enabled : true, style : [{ stroke : grid, lineDash : [] }] },
             crosshair : {

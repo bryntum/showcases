@@ -5,6 +5,8 @@
     --ow-column-inset          : var(--ow-inset);
     --b-grid-row-border-color  : var(--ow-tick);
     --b-grid-cell-border-color : var(--ow-tick);
+    /* The line between the vessel column and the timeline in the rows' colour; Bryntum's hover colour stays */
+    --b-region-resize-splitter-color : var(--ow-tick);
     /* Opaque, so the vessel cell takes the same tint as the rest of a selected row */
     --b-grid-cell-selected-background       : color-mix(in srgb, var(--ow-c-work) 7%, var(--ow-surface));
     --b-grid-cell-hover-selected-background : var(--b-grid-cell-selected-background);
