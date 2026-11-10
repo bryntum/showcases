@@ -160,7 +160,7 @@ engine places each changed trip before the next one on the vessel is planned.
 |-----------|---------|
 | The farm, vessels, teams, jobs, trips, the two forecasts and the limits | `data/farm.json` |
 | Transit times, the layout of the farm and the map | `lib/plan/Farm.js` |
-| When a window closes | `lib/plan/Weather.js` |
+| When a window closes | `lib/plan/DispatchState.js` |
 | Whether a team fits on a trip, what a new forecast does to a trip, what a trip can still reach | `lib/plan/Planner.js` |
 | Whether a trip may be dragged or edited to a new time | `lib/schedule/TripValidator.js` |
 | How a trip bar, the vessel column and the no-go areas look | `lib/schedule/TripRendering.js`, `resources/schedule/` |
@@ -188,11 +188,11 @@ engine places each changed trip before the next one on the vessel is planned.
     footer), `MapPanel` (the map with its title bar and legend, and the turbine card, drawn by `draw()`, which also
     fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (the mouse, with `DragHelper`), `KeyboardDrag` (holding a team
-    over a trip from the keyboard), `DropTooltip` (the tooltip of the trip under the team) and `DragChip` (the chip
-    that follows the pointer)
-  * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the weather windows (`Weather`),
-    the trips (`Planner`), the state apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts,
-    the waiting teams' store) and the re-planning on a new forecast (`ForecastPlanner`)
+    over a trip from the keyboard) and `DropTooltip` (the tooltip of the trip under the team). The chip that follows
+    the pointer is `createChip` in `TeamChip.js`
+  * `plan/` the dispatch rules as plain functions on plain values: the farm (`Farm`), the trips (`Planner`), the state
+    apart from the trips (`DispatchState`: the day shown and its Dates, the forecasts and the weather windows they
+    give, the day's counts, the waiting teams' store) and the re-planning on a new forecast (`ForecastPlanner`)
   * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
     ResourceTimeRanges and Summary features, redrawn from the Day view's project while it shows) and `WeekCells` (one
     derived cell per vessel per day)
@@ -214,7 +214,7 @@ engine places each changed trip before the next one on the vessel is planned.
 
 ### Weather windows as resource time ranges: `lib/schedule/DispatchSync.js`
 
-Each vessel's window closes at the start of the first hour its limit is crossed (`Weather#closingTimes`). `syncRanges()`
+Each vessel's window closes at the start of the first hour its limit is crossed (`closingTimes` in `DispatchState.js`). `syncRanges()`
 turns that into one resource time range per vessel, from the close to the end of the day, drawn hatched by
 `renderRange`. They are rebuilt when the forecast changes, so the no-go area of each row moves with the forecast. A trip
 brought forward by the forecast leaves a faint ghost at its old place, a resource time range too. The shaded past and

@@ -2,7 +2,6 @@ import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise
 import AppState from './AppState.js';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
-import { dayKpis } from './plan/Kpis.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
@@ -435,7 +434,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             return;
         }
 
-        kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dayKpis(me.trips, dispatch) });
+        kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dispatch.kpis(me.trips) });
         scheduler.refreshDispatch();
         me.parts.schedulePane.refreshBar();
         me.refreshSide();

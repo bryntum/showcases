@@ -27,6 +27,9 @@ const
  * one, so the tooltip says why it does not fit. A vessel with no trip left to join gets a new trip from port at its
  * next sailing, a draft trip shown until the team is booked or moves on.
  *
+ * The check runs on the planner's plain values (Planner#previewDrop), synchronously: the scheduling engine is too slow
+ * to calculate a preview on every pointer move. Once a team is booked, the engine places its stop.
+ *
  * DispatchApp creates it with what it needs, and is told through a callback when a team was booked (the plan
  * changed).
  *

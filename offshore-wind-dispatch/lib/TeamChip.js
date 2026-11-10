@@ -1,41 +1,6 @@
-import { Widget } from '@bryntum/core-enterprise';
+import { DomHelper, Widget } from '@bryntum/core-enterprise';
 import { iconConfig } from './util/Icons.js';
 import { duration } from './util/Time.js';
-
-/**
- * A team's chip as DomConfigs, also the content of the one following the pointer while it is dragged
- * @param {Object} team `{ id, name, techs, certs }`
- * @param {Object} job `{ turbine, job, short, minutes }`
- * @param {Boolean} [compact] Its name and certificates only, for the one dragged
- * @param {Boolean} [fault] Its turbine is stopped
- * @returns {Object[]} DomConfig
- */
-export function teamChipContent(team, job, compact = false, fault = false) {
-    // Every technician has the GWO basics, only a certificate that limits where a team can go is worth a word
-    const name = { tag : 'b', text : team.name };
-
-    if (compact) {
-        return [name, {
-            tag      : 'span',
-            class    : 'ow-certs',
-            children : team.certs.filter(cert => cert !== 'GWO')
-                .map(cert => ({ tag : 'span', class : `ow-cert ow-cert-${cert.toLowerCase()}`, text : cert }))
-        }];
-    }
-
-    // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
-    return [
-        { tag : 'span', class : 'ow-team-crew', ariaHidden : true, children : [iconConfig('users')] },
-        {
-            tag      : 'span',
-            class    : 'ow-team-text',
-            children : [
-                { tag : 'span', class : 'ow-team-name', children : [name, ` · ${team.techs}`] },
-                { tag : 'span', class : 'ow-team-job', text : `${jobText(job, fault)} · ${duration(job.minutes)}` }
-            ]
-        }
-    ];
-}
 
 /**
  * A job in a word or two after its turbine: "T-34 fault", "T-02 annual service"
@@ -112,7 +77,18 @@ export default class TeamChip extends Widget {
         me.element.dataset.team = team.id;
         me.tooltip              = `${team.techs} technicians, ${team.certs.join(', ')} · ${job.turbine} ${job.job}`;
         me.ariaLabel            = `${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`;
-        me.html                 = teamChipContent(team, job, false, me.fault);
+        // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
+        me.html                 = [
+            { tag : 'span', class : 'ow-team-crew', ariaHidden : true, children : [iconConfig('users')] },
+            {
+                tag      : 'span',
+                class    : 'ow-team-text',
+                children : [
+                    { tag : 'span', class : 'ow-team-name', children : [{ tag : 'b', text : team.name }, ` · ${team.techs}`] },
+                    { tag : 'span', class : 'ow-team-job', text : `${jobText(job, me.fault)} · ${duration(job.minutes)}` }
+                ]
+            }
+        ];
         me.element.classList.toggle('ow-team-fault', Boolean(me.fault));
     }
 
@@ -122,3 +98,55 @@ export default class TeamChip extends Widget {
 }
 
 TeamChip.initClass();
+
+/**
+ * The chip that follows the pointer while a team is dragged, or sits on the trip when the team is held from the
+ * keyboard (TeamDrag, KeyboardDrag): the team's name and its certificates, and a status line that says what the trip
+ * under it gives (showOnChip). Every technician has the GWO basics, only a certificate that limits where a team can go
+ * is worth a word
+ * @param {Object} team `{ id, name, techs, certs }`
+ * @returns {HTMLElement}
+ */
+export function createChip(team) {
+    return DomHelper.createElement({
+        class    : 'ow-drag-chip',
+        dataset  : { state : 'neutral' },
+        children : [
+            {
+                tag      : 'span',
+                class    : 'ow-drag-team',
+                children : [
+                    { tag : 'b', text : team.name },
+                    {
+                        tag      : 'span',
+                        class    : 'ow-certs',
+                        children : team.certs.filter(cert => cert !== 'GWO')
+                            .map(cert => ({ tag : 'span', class : `ow-cert ow-cert-${cert.toLowerCase()}`, text : cert }))
+                    }
+                ]
+            },
+            { tag : 'span', class : 'ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
+        ]
+    });
+}
+
+/**
+ * Shows on the drag proxy what the team held gives, from the same check as the tooltip: green and "Fits SR-1, back
+ * 12:40", red and the short reason, or neutral over empty space. Only touched when it changes, so it does not flicker
+ * @param {HTMLElement} chip The proxy, or the chip held from the keyboard
+ * @param {Object|null} drop See DropController#previewDrop
+ */
+export function showOnChip(chip, drop) {
+    const
+        state  = drop ? (drop.result.valid ? 'valid' : 'invalid') : 'neutral',
+        text   = drop?.result.short ?? '',
+        status = chip?.querySelector('.ow-drag-status');
+
+    if (!status || (chip.dataset.state === state && status.textContent === text)) {
+        return;
+    }
+
+    chip.dataset.state = state;
+    status.textContent = text;
+    status.hidden      = !text;
+}

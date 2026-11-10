@@ -1,7 +1,7 @@
 // The Group feature is a Grid feature, importing the package registers it
 import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
-import { StringHelper } from '@bryntum/core-enterprise';
+import { DateHelper, StringHelper } from '@bryntum/core-enterprise';
 import DispatchProject from '../model/DispatchProject.js';
 import PlanDependencyModel from '../model/PlanDependencyModel.js';
 import TripModel from '../model/TripModel.js';
@@ -364,10 +364,9 @@ export default class DispatchScheduler extends Scheduler {
     showDay() {
         const
             me           = this,
-            { dispatch } = me,
-            { day }      = dispatch;
+            { midnight, day } = me.dispatch;
 
-        me.setTimeSpan(dispatch.toDate(day.dayStart * 60), dispatch.toDate(day.dayEnd * 60));
+        me.setTimeSpan(DateHelper.add(midnight, day.dayStart, 'hour'), DateHelper.add(midnight, day.dayEnd, 'hour'));
         me.scrollToDate(me.startDate, { block : 'start', animate : false });
     }
 

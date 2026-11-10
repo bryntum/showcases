@@ -148,8 +148,8 @@ export default class WaveChart {
 
     // The data: one point mid hour, the first and the last value held to the edges so the area spans the whole day.
     // The line is `calm` while the CTV window is open and `rough` from when it closes: the closing time is the
-    // planner's (Weather#closingTimes, the start of the first hour over the limit), so the chart and the no-go ranges
-    // tell the same story. A point on the line marks that time (`cross`), both halves have it. A window closed from the
+    // dispatch state's (the start of the first hour over the limit), so the chart and the no-go ranges tell the same
+    // story. A point on the line marks that time (`cross`), both halves have it. A window closed from the
     // start of the day is rough all through, one open all day calm. Labelled are the first hour, the crossing and the
     // last hour only
     data() {

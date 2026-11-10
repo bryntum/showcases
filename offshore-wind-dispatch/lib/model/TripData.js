@@ -72,7 +72,7 @@ export function legsData({ id, departs, midnight }, stops, mode) {
  * @returns {Object} The trip's data, its legs at sea as `children`, the sail out and back as its buffer. The trip
  * starts at its first stop, it has no duration of its own, the engine rolls it up from its legs
  */
-export function tripData({ departs, midnight, ...trip }, stops, mode) {
+function tripData({ departs, midnight, ...trip }, stops, mode) {
     const
         transits = transitsOf(stops, mode),
         start    = at(midnight, departs + transits.out);

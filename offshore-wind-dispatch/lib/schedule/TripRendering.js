@@ -48,7 +48,7 @@ function textWidth(text) {
  * @param {String} [type] The short job type, "Service"
  * @returns {Object} `{ turbine, type, hours }` booleans
  */
-export function blockText({ turbine, minutes }, width, type = '') {
+function blockText({ turbine, minutes }, width, type = '') {
     const
         room     = width - 2 * blockFont.padding,
         name     = textWidth(turbine),
@@ -67,7 +67,7 @@ export function blockText({ turbine, minutes }, width, type = '') {
  * @param {Number} minutes
  * @returns {String}
  */
-export function hoursText(minutes) {
+function hoursText(minutes) {
     return `${Number((minutes / 60).toFixed(2))} h`;
 }
 

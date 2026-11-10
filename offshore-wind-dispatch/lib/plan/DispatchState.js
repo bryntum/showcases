@@ -1,8 +1,38 @@
 import { Base, DateHelper, Events, Store } from '@bryntum/core-enterprise';
 import WaitingTeamModel from '../model/WaitingTeamModel.js';
-import { closingTimes, valueAt } from './Weather.js';
 import { firstSailing, substation } from './Farm.js';
 import { parseTime } from '../util/Time.js';
+
+/**
+ * The hourly value of a forecast at a time, the last one past its end. A forecast holds one value per hour from
+ * `dayStart`: the significant wave height (Hs, metres) and the wind at hub height (m/s)
+ * @param {Number[]} series Hourly values from `dayStart`
+ * @param {Number} minutes Minutes since midnight
+ * @param {Number} dayStart Hour of the first value
+ * @returns {Number}
+ */
+function valueAt(series, minutes, dayStart) {
+    const index = Math.floor(minutes / 60) - dayStart;
+
+    return series[Math.min(Math.max(index, 0), series.length - 1)];
+}
+
+/**
+ * When each weather window closes, minutes since midnight: at the start of the first hour over its limit, at the end
+ * of the day when it stays open. A crew transfer vessel pushes on to a boat landing up to Hs 1.5 m, a SWATH up to
+ * 2.0 m, a helicopter hoists up to 20 m/s wind (data/farm.json `limits`)
+ * @param {Object} forecast `{ hs, wind }`
+ * @param {Object} limits By window: `ctv`, `swath`, `heli`, each `{ hs }` or `{ wind }`
+ * @param {Object} day `{ dayStart, dayEnd }`, hours
+ * @returns {Object} By window, minutes
+ */
+function closingTimes(forecast, limits, { dayStart, dayEnd }) {
+    return Object.fromEntries(Object.entries(limits).map(([key, limit]) => {
+        const index = forecast.hs.findIndex((hs, i) => (limit.hs ? hs > limit.hs : forecast.wind[i] > limit.wind));
+
+        return [key, (index < 0 || dayStart + index > dayEnd ? dayEnd : dayStart + index) * 60];
+    }));
+}
 
 /**
  * What the dispatcher knows apart from the trips: the site, the forecasts and the weather windows they give, the
@@ -17,9 +47,9 @@ import { parseTime } from '../util/Time.js';
  * at a time (`dayIndex`, `showDay`): the forecast, the windows, the clock and the dependencies are that day's. A later
  * day is planned before it starts, its clock stands at the start of the day.
  *
- * The planner counts the times of the day shown in minutes since its midnight (Planner), the records and the
- * Scheduler in Dates: `toDate` and `toMinutes` convert between the two for the day shown, `dateOf` gives a day's
- * midnight, the day's labels (`dayShort`, `nextDay`, `nextLong`) are formatted by DateHelper.
+ * The planner counts the times of the day shown in minutes since its `midnight` (Planner), the records and the
+ * Scheduler in Dates, DateHelper converts between the two. `dateOf` gives a day's midnight, the day's labels
+ * (`dayShort`, `nextDay`, `nextLong`) are formatted by DateHelper.
  *
  * The teams waiting at the port are a Store (`waitingStore`, WaitingTeamModel), the team tray follows it. The state
  * fires `change` when the day shown or the forecast changes, the views follow it.
@@ -107,24 +137,6 @@ export default class DispatchState extends Base.mixin(Events) {
      */
     get midnight() {
         return this.dateOf(this.dayIndex);
-    }
-
-    /**
-     * A time of the day shown as a Date
-     * @param {Number} minutes Minutes since midnight
-     * @returns {Date}
-     */
-    toDate(minutes) {
-        return DateHelper.add(this.midnight, minutes, 'minute');
-    }
-
-    /**
-     * A Date as minutes since midnight of the day shown
-     * @param {Date} date
-     * @returns {Number}
-     */
-    toMinutes(date) {
-        return DateHelper.diff(this.midnight, date, 'minute');
     }
 
     /**
@@ -358,6 +370,29 @@ export default class DispatchState extends Base.mixin(Events) {
      */
     get dueTurbines() {
         return this.dueOn(this.dayIndex);
+    }
+
+    /**
+     * The day's counts of the KPI header (KpiBar): turbines due, turbines on a trip, either the trips past their window
+     * (when any) or the turbines a forecast moved to the next day, and the turbines stopped
+     * @param {TripModel[]} trips The trips of the day shown
+     * @returns {Object[]} `{ label, value, tone }`
+     */
+    kpis(trips) {
+        const
+            assigned = new Set(trips.filter(trip => trip.status !== 'moved').flatMap(trip => trip.turbines)),
+            moved    = new Set(trips.flatMap(trip => trip.status === 'moved' ? trip.turbines : trip.removed ?? [])),
+            atRisk   = trips.filter(trip => trip.status === 'at-risk').length;
+
+        return [
+            { label : this.isToday ? 'Due today' : 'Due', value : this.dueTurbines.length },
+            { label : 'Assigned', value : assigned.size },
+            // One slot: trips past their window need acting on now, so they win over what a forecast already moved
+            atRisk || !moved.size ?
+                { label : 'At risk', value : atRisk, tone : 'warn' } :
+                { label : `Moved to ${this.nextDay}`, value : moved.size, tone : 'alert' },
+            { label : 'Stopped', value : this.faults.size, tone : 'stop' }
+        ];
     }
 
     /**

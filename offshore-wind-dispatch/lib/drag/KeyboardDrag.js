@@ -1,5 +1,5 @@
 import { DomHelper } from '@bryntum/core-enterprise';
-import { createChip } from './DragChip.js';
+import { createChip } from '../TeamChip.js';
 
 export const chipSelector = '.ow-team[data-team]';
 
@@ -160,11 +160,11 @@ export default class KeyboardDrag {
      */
     showHeld(teamId, trip) {
         const
-            me           = this,
-            { team, job } = me.drag.handler.waitingTeam(teamId);
+            me       = this,
+            { team } = me.drag.handler.waitingTeam(teamId);
 
         me.drag.lift(teamId);
-        me.heldChip = createChip(team, job);
+        me.heldChip = createChip(team);
         document.body.appendChild(me.heldChip);
         document.addEventListener('keydown', me.onHeldKey, true);
         me.holdOver(trip);

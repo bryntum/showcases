@@ -19,7 +19,7 @@ const dayCount = 7;
  * @param {TripModel} trip
  * @returns {Number}
  */
-export function workDayOf(trip) {
+function workDayOf(trip) {
     return trip.change === 'moved' ? trip.day + 1 : trip.day;
 }
 
@@ -39,7 +39,7 @@ export function dayOf(state, date) {
  * @param {Object} day `{ dayStart, dayEnd }`
  * @returns {Object} `{ text, tone }`, tone `go`, `short` or `none`
  */
-export function seaState(close, { dayStart, dayEnd }) {
+function seaState(close, { dayStart, dayEnd }) {
     if (close <= dayStart * 60) {
         return { text : 'No CTV', tone : 'none' };
     }

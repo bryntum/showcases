@@ -32,7 +32,7 @@ export const
  * @param {Number} n 1 to 60
  * @returns {String}
  */
-export function turbineId(n) {
+function turbineId(n) {
     return `T-${String(n).padStart(2, '0')}`;
 }
 
@@ -47,7 +47,7 @@ export const turbineIds = Array.from({ length : rows * cols }, (_, i) => turbine
  * @param {String} id
  * @returns {{r: Number, c: Number}}
  */
-export function gridOf(id) {
+function gridOf(id) {
     if (id === substation) {
         return { r : 2.5, c : 4.5 };
     }

@@ -3,7 +3,7 @@ import WaveChart from './WaveChart.js';
 
 /**
  * The weather in the time axis. The Scheduler's header has three rows, defined by its view preset (the day shown is
- * in the page's header, KpiClock):
+ * in the page's header, KpiBar):
  *
  * 1. The hours, the ticks of the schedule
  * 2. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
@@ -78,7 +78,7 @@ export default class ForecastHeader {
             { forecast, limits, day } = this.state,
             wind                      = forecast.wind[hour - day.dayStart];
 
-        // Above the limit, as Weather.js closes the window
+        // Above the limit, as DispatchState closes the window
         return { wind, over : wind > limits.heli.wind };
     }
 

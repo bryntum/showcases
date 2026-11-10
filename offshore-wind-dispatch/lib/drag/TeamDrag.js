@@ -1,5 +1,5 @@
-import { DragHelper, Widget } from '@bryntum/core-enterprise';
-import { createChip, showOnChip } from './DragChip.js';
+import { DateHelper, DragHelper, Widget } from '@bryntum/core-enterprise';
+import { createChip, showOnChip } from '../TeamChip.js';
 import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
 // Also registers the tooltip type used below
 import './DropTooltip.js';
@@ -29,7 +29,7 @@ import './DropTooltip.js';
  * trip shows it, the map rings the turbines the trip can still reach, and a Bryntum Tooltip (DropTooltip), shown by
  * the point the team is held at, says when the trip is back against the window. The dispatch check is the drag's
  * validation: a team that does not fit marks the drag invalid (`context.valid`), and released there the app says why.
- * The proxy says it too (DragChip), as it moves, from the same check: "Fits SR-1, back 12:40" or "35 min after
+ * The proxy says it too (createChip), as it moves, from the same check: "Fits SR-1, back 12:40" or "35 min after
  * window", neutral over empty space. Released where it fits, the app books it.
  *
  * The keyboard drag is KeyboardDrag, which works through this class.
@@ -102,9 +102,7 @@ export default class TeamDrag {
 
     // The proxy DragHelper drags, the team's compact chip
     createProxy(teamId) {
-        const { team, job } = this.handler.waitingTeam(teamId);
-
-        return createChip(team, job);
+        return createChip(this.handler.waitingTeam(teamId).team);
     }
 
     onDragStart(context) {
@@ -154,7 +152,7 @@ export default class TeamDrag {
             date = !target || target.isWeekCell || me.keys.keyboard ? null :
                 me.scheduler.getDateFromCoordinate(point.x, null, false);
 
-        return date ? me.scheduler.dispatch.toMinutes(date) : null;
+        return date ? DateHelper.diff(me.scheduler.dispatch.midnight, date, 'minute') : null;
     }
 
     /**

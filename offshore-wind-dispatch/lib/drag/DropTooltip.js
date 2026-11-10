@@ -8,7 +8,7 @@ import { hhmm } from '../util/Time.js';
  * @param {Boolean} [keyboard] Held from the keyboard, the tooltip lists the keys
  * @returns {Object[]} DomConfig
  */
-export function dropTipContent({ trip, team, job, result, reach, close }, keyboard = false) {
+function dropTipContent({ trip, team, job, result, reach, close }, keyboard = false) {
     const
         // A vessel with no trip left to join gets a new one
         name  = trip.draft ? `a new trip, ${trip.id} from port at ${hhmm(trip.departs)}` : trip.id,

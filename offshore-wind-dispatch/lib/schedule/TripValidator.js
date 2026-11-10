@@ -33,7 +33,7 @@ export function busyOf(trips, vessel, except) {
  * @param {Number} departs The trip's new departure, minutes since midnight
  * @returns {String|null}
  */
-export function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
+function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
     const delta = departs - trip.departs;
 
     for (const dependency of dependencyStore.records.filter(each => !each.isChain)) {

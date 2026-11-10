@@ -60,13 +60,14 @@ export default class DispatchSync {
         const
             { scheduler } = this,
             state         = scheduler.dispatch,
-            end           = state.toDate(state.day.dayEnd * 60),
+            at            = minutes => DateHelper.add(state.midnight, minutes, 'minute'),
+            end           = at(state.day.dayEnd * 60),
             // The Group feature's header rows are records of the store too
             nogo          = scheduler.resourceStore.allRecords.filter(vessel => !vessel.isGroupHeader).map(vessel => ({
                 id         : `nogo-${vessel.id}`,
                 kind       : 'nogo',
                 resourceId : vessel.id,
-                startDate  : state.toDate(state.closeOf(vessel)),
+                startDate  : at(state.closeOf(vessel)),
                 endDate    : end,
                 name       : state.limits[vessel.window].noGo
             })),
@@ -108,7 +109,7 @@ export default class DispatchSync {
         const
             { scheduler } = this,
             state         = scheduler.dispatch,
-            now           = state.toDate(state.now);
+            now           = DateHelper.add(state.midnight, state.now, 'minute');
 
         DispatchSync.syncStore(scheduler.project.timeRangeStore, !state.isToday ? [] : [
             { id : 'past', startDate : scheduler.startDate, endDate : now, cls : 'ow-past' },

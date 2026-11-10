@@ -1,8 +1,7 @@
 /**
  * Times of day as the dispatch planner counts them, in minutes since midnight of the day a trip is on: formatting and
- * parsing only, no state. The records hold Dates, the scheduling engine calculates them; the day shown and the
- * conversion between its Dates and its minutes is the dispatch state's (DispatchState#toDate, #toMinutes), formatting
- * a Date is DateHelper's.
+ * parsing only, no state. The records hold Dates, the scheduling engine calculates them; DateHelper converts between
+ * those and these minutes, from the day's midnight (DispatchState#midnight), and formats Dates.
  */
 
 /**

@@ -1,4 +1,4 @@
-import { Panel } from '@bryntum/core-enterprise';
+import { DateHelper, Panel } from '@bryntum/core-enterprise';
 import { projectData } from '../model/TripData.js';
 // Also registers the widget types used below
 import '../ForecastNotice.js';
@@ -114,8 +114,8 @@ export default class SchedulePanel extends Panel {
                     flex      : 1,
                     listeners : { paint : 'up.refreshBar' },
                     dispatch,
-                    startDate : dispatch.toDate(day.dayStart * 60),
-                    endDate   : dispatch.toDate(day.dayEnd * 60),
+                    startDate : DateHelper.add(dispatch.midnight, day.dayStart, 'hour'),
+                    endDate   : DateHelper.add(dispatch.midnight, day.dayEnd, 'hour'),
                     // The trips of the whole week, the Day view shows one day's
                     project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) },
                         index => dispatch.dateOf(index))

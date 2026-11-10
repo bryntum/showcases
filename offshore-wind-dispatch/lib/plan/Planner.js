@@ -28,7 +28,7 @@ const
  * @param {Object} job `{ certs }`
  * @returns {String[]}
  */
-export function requiredCerts(job) {
+function requiredCerts(job) {
     return [...new Set([...(job.certs ?? []), ...baseline])];
 }
 
@@ -66,7 +66,7 @@ export function buildLegs(stops, mode) {
  * @param {String} mode
  * @returns {Number} Minutes
  */
-export function tripMinutes(stops, mode) {
+function tripMinutes(stops, mode) {
     return buildLegs(stops, mode).reduce((sum, leg) => sum + leg.minutes, 0);
 }
 
@@ -86,15 +86,6 @@ export function timeLegs(start, legs) {
 
         return { ...leg, from, to : time };
     });
-}
-
-/**
- * When a trip is back at port: its start, its legs and the time it waits on station for another trip
- * @param {Object} trip `{ start, stops, mode, wait }`
- * @returns {Number} Minutes since midnight
- */
-export function tripEnd({ start, stops, mode, wait = 0 }) {
-    return start + wait + tripMinutes(stops, mode);
 }
 
 /**
@@ -186,7 +177,7 @@ export function clashText(vessel, clash) {
  * @param {Object} limit `{ hs }` or `{ wind }`
  * @returns {String}
  */
-export function weatherText(limit) {
+function weatherText(limit) {
     return limit.hs ? `waves over ${limit.hs.toFixed(1)} m` : `wind over ${limit.wind} m/s`;
 }
 
