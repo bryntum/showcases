@@ -361,7 +361,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             me            = this,
             { scheduler } = me,
             trip          = eventRecords?.[0],
-            before        = me.dragStartPlan;
+            // The plan as the drag found it; a drop without a drag start (from code) compares with the plan now
+            before        = me.dragStartPlan ?? planSnapshot(scheduler.weekTrips);
 
         return valid && trip && scheduler.project.runChange(async() => {
             await me.replan(() => trip.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
