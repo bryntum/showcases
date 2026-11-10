@@ -56,9 +56,10 @@ function visitOf({ trips, turbine, drop, selectedTrip, held }) {
 
     const
         serves = each => each.turbines.includes(turbine),
-        trip   = selectedTrip && serves(selectedTrip) ? selectedTrip : trips.find(serves);
+        trip   = selectedTrip && serves(selectedTrip) ? selectedTrip : trips.find(serves),
+        record = trip?.stopRecords.find(leg => leg.turbine === turbine);
 
-    return { trip, stop : trip?.legs.find(leg => leg.type === 'stop' && leg.turbine === turbine) };
+    return { trip, stop : record && { from : trip.minutesOf(record.startDate), to : trip.minutesOf(record.endDate) } };
 }
 
 function describe(state, turbine) {
@@ -123,7 +124,7 @@ export function reachOf({ state, trips, turbine }) {
         minutes = state.jobAt(turbine)?.minutes ?? 60,
         options = trips
             .filter(trip => trip.mode === 'vessel' && trip.departs > state.now &&
-                trip.stops.length && !trip.turbines.includes(turbine))
+                trip.stopRecords.length && !trip.turbines.includes(turbine))
             .map(trip => {
                 const { stop, back } = appendStop(trip.plan, { turbine, minutes });
 

@@ -719,7 +719,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await app.replan(() => trip.layout({ departs : 8.5 * 60 }));
         await app.replan(() => {
             app.dispatch.waitingStore.remove('G');
-            trip.layout({ stops : [...trip.stops, { turbine : 'T-49', minutes : 180, team : 'G' }] });
+            trip.layout({ stops : [...trip.plan.stops, { turbine : 'T-49', minutes : 180, team : 'G' }] });
         });
     });
 
@@ -872,8 +872,8 @@ test.describe('Offshore Wind Dispatch trips', () => {
         expect(await page.evaluate(() => {
             const trip = globalThis.bryntum.query('dispatchapp').trips.find(each => each.id === 'NT-1');
 
-            return [trip.departs, trip.legs[0].type, trip.legs.at(-1).type, trip.preamble.magnitude > 0];
-        })).toEqual([7 * 60 + 45, 'transit', 'transit', true]);
+            return [trip.departs, trip.children[0].kind, trip.children.at(-1).kind, trip.preamble.magnitude > 0];
+        })).toEqual([7 * 60 + 45, 'stop', 'stop', true]);
 
         // SP-1 is back after the CTV window: its sail back ends in the time and how late it is
         await expect(trip(page, 'SP-1').locator('.b-sch-event-buffer-after.ow-transit-late')).toHaveText('14:17 · +17 min');
@@ -1368,10 +1368,11 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
             const
                 app  = globalThis.bryntum.query('dispatchapp'),
                 trip = app.trips.find(each => each.id === 'NT-1'),
-                // The legs run on from the departure: the first stop starts when the sail out ends
-                legs = trip.legs;
+                // The engine moved the legs with it: the first stop starts when the sail out ends
+                legs = trip.children;
 
-            return [app.scheduler.features.taskEdit.editor.isVisible, trip.departs, legs[1].from === legs[0].to,
+            return [app.scheduler.features.taskEdit.editor.isVisible, trip.departs,
+                legs[0].startDate.getTime() === trip.startDate.getTime(),
                 trip.minutesOf(trip.constraintDate) === trip.minutesOf(trip.startDate)];
         })).toEqual([false, before + 30, true, true]);
     });

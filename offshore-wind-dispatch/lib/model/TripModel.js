@@ -7,12 +7,14 @@ import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
  * A trip, one run of a vessel or helicopter from the port and back, or one of its legs: one tree event store holds
  * both. The trip is a parent event from its first stop to its last, its children the stops and the hops between them.
  * The sail out and back are not children but the trip's buffer (`preamble`, `postamble`), so the departure and the
- * return are `outerStartDate` and `outerEndDate`; `legs` adds them back as transits so the planner reads the whole run.
+ * return are `outerStartDate` and `outerEndDate`.
  *
- * The times are the engine's, read after `await project.commitAsync()`: a `startnoearlierthan` constraint holds the
- * trip's first stop, `chain` dependencies keep the legs in order, and a gap between two legs is a wait on station for
- * another trip. The planner counts in minutes since the trip's midnight, which `departs`, `endMinute` and `legs` give.
- * A stop's ID is `<trip>:<turbine>` so a dependency can point at it; change the stops through `layout()` only.
+ * The records are the plan: the views read their dates, durations, kinds and teams. The times are the engine's, read
+ * after `await project.commitAsync()`: a `startnoearlierthan` constraint holds the trip's first stop, `chain`
+ * dependencies keep the legs in order, and a gap between two legs is a wait on station for another trip. The planner
+ * counts in minutes since the trip's midnight: `plan` is the one snapshot it gets, `departs` and `endMinute` the trip's
+ * ends in its minutes. A stop's ID is `<trip>:<turbine>` so a dependency can point at it; change the stops through
+ * `layout()` only.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
@@ -36,10 +38,9 @@ export default class TripModel extends EventModelEnterprise {
 
         // The legs (child events): `transit` or `stop`
         'kind',
-        // A stop: the turbine, the team and how long they work there. A transit: how long it takes
+        // A stop: the turbine and the team, its `duration` how long they work there (minutes)
         'turbine',
         'team',
-        { name : 'minutes', type : 'number' },
         // A transit between two turbines, not to or from the port
         { name : 'hop', type : 'boolean' }
     ];
@@ -103,43 +104,8 @@ export default class TripModel extends EventModelEnterprise {
         return this.children?.length ? this.children : [];
     }
 
-    get stops() {
-        return this.legRecords
-            .filter(leg => leg.kind === 'stop')
-            .map(({ turbine, minutes, team }) => ({ turbine, minutes, team }));
-    }
-
-    /**
-     * The whole run in minutes as the engine placed it, the buffer added as a transit at each end
-     * @property {Object[]} `{ type, minutes, from, to, turbine, team, hop }`
-     */
-    get legs() {
-        const
-            me            = this,
-            records       = me.legRecords,
-            { out, back } = me.transits;
-
-        if (!records.length) {
-            return [];
-        }
-
-        const
-            first = me.minutesOf(records[0].startDate),
-            last  = me.minutesOf(records.at(-1).endDate);
-
-        return [
-            { type : 'transit', minutes : out, from : first - out, to : first },
-            ...records.map(leg => ({
-                type    : leg.kind,
-                minutes : leg.minutes,
-                from    : me.minutesOf(leg.startDate),
-                to      : me.minutesOf(leg.endDate),
-                turbine : leg.turbine,
-                team    : leg.team,
-                hop     : leg.hop
-            })),
-            { type : 'transit', minutes : back, from : last, to : last + back }
-        ];
+    get stopRecords() {
+        return this.legRecords.filter(leg => leg.kind === 'stop');
     }
 
     /**
@@ -181,11 +147,11 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     get turbines() {
-        return turbinesOf(this.stops);
+        return turbinesOf(this.stopRecords);
     }
 
     get teamIds() {
-        return [...new Set(this.stops.map(stop => stop.team))];
+        return [...new Set(this.stopRecords.map(stop => stop.team))];
     }
 
     // People on board: what the seats are checked against
@@ -193,14 +159,18 @@ export default class TripModel extends EventModelEnterprise {
         return this.teamIds.reduce((sum, id) => sum + (this.project?.teams?.get(id)?.techs ?? 0), 0);
     }
 
-    // The trip as Planner reads it
+    /**
+     * The trip as the planner reads it: a snapshot of the records in minutes since the trip's midnight, its stops
+     * `{ turbine, minutes, team }`. The planner is synchronous, fast enough for every pointer move; the engine is not
+     * @property {Object}
+     */
     get plan() {
         const me = this;
 
         return {
             id    : me.id,
             start : me.departs,
-            stops : me.stops,
+            stops : me.stopRecords.map(({ turbine, duration, team }) => ({ turbine, minutes : duration, team })),
             mode  : me.mode,
             wait  : me.wait,
             pax   : me.pax,
@@ -209,17 +179,21 @@ export default class TripModel extends EventModelEnterprise {
     }
 
     /**
-     * Lays the trip out from its stops and departure, the transits between the stops from the farm's geography. The
-     * engine then places it: read the times after `project.commitAsync()`
+     * Lays the trip out from its departure and, when they change, its stops, the transits between them from the farm's
+     * geography. A new departure alone only moves the constraint: the engine moves the legs with it. Read the times
+     * after `project.commitAsync()`
      * @param {Object} [options]
      * @param {Number} [options.departs] The new departure, minutes since midnight
      * @param {Object[]} [options.stops] The new stops, `{ turbine, minutes, team }`
      */
-    layout({ departs = this.departs, stops = this.stops } = {}) {
+    layout({ departs = this.departs, stops } = {}) {
         const me = this;
 
-        me.placeLegs(legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode));
-        me.placeStart(departs, transitsOf(stops, me.mode));
+        if (stops) {
+            me.placeLegs(legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode));
+        }
+
+        me.placeStart(departs, stops ? transitsOf(stops, me.mode) : me.transits);
     }
 
     // A leg that stays is updated, not replaced, so a dependency into a stop stays attached. The chain is laid again

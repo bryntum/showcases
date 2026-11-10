@@ -3,6 +3,11 @@
  * hold Dates; DispatchState#midnight is the zero these minutes count from.
  */
 
+import { DateHelper } from '@bryntum/core-enterprise';
+
+// A record's date as "07:40"
+export const clock = date => DateHelper.format(date, 'HH:mm');
+
 /**
  * "07:40" as minutes since midnight
  */

@@ -93,7 +93,8 @@ export default class ForecastPlanner {
                         change            : result.change,
                         previousDeparture : result.change === 'pulled' ? trip.outerStartDate : null
                     });
-                    trip.layout({ departs : result.start, stops : result.stops });
+                    // Brought forward, the stops stay: only the departure moves
+                    trip.layout({ departs : result.start, stops : result.later.length ? result.stops : undefined });
                 }
                 else {
                     trip.remove();

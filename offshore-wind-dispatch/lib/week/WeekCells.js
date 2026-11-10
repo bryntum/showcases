@@ -1,6 +1,6 @@
 import { substation } from '../plan/Farm.js';
 import { DateHelper } from '@bryntum/core-enterprise';
-import { duration, hhmm } from '../util/Time.js';
+import { clock, duration, hhmm } from '../util/Time.js';
 
 /**
  * The Week view's data, plain functions from the week's trips and the dispatch state. A vessel's day with trips is ONE
@@ -92,26 +92,27 @@ export function weekCells(state, vessels, trips) {
 
             if (own.length) {
                 const
-                    departs  = Math.min(...own.map(trip => trip.departs)),
-                    back     = Math.max(...own.map(trip => trip.endMinute)),
+                    startDate = new Date(Math.min(...own.map(trip => trip.outerStartDate))),
+                    endDate   = new Date(Math.max(...own.map(trip => trip.outerEndDate))),
                     // Each turbine once, the substation by its name: a helicopter's drop-off and pick-up are one visit
-                    turbines = [...new Set(own.flatMap(trip => trip.stops.map(stop => stop.turbine)))],
-                    pax      = Math.max(...own.map(trip => trip.pax));
+                    turbines  = [...new Set(own.flatMap(trip => trip.stopRecords.map(stop => stop.turbine)))],
+                    pax       = Math.max(...own.map(trip => trip.pax));
 
                 events.push({
                     id,
-                    resourceId  : vessel.id,
-                    day         : index,
-                    startDate   : DateHelper.add(state.dateOf(index), departs, 'minute'),
-                    endDate     : DateHelper.add(state.dateOf(index), back, 'minute'),
-                    name        : `${hhmm(departs)}–${hhmm(back)}`,
-                    trips       : own.map(trip => trip.id).join(' '),
+                    resourceId : vessel.id,
+                    day        : index,
+                    startDate,
+                    endDate,
+                    name       : `${clock(startDate)}–${clock(endDate)}`,
+                    trips      : own.map(trip => trip.id).join(' '),
                     // Has a trip carried over: made by a forecast of the stops it cut from the day before
-                    carried     : own.some(trip => trip.change === 'carried'),
-                    turbines    : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
+                    carried    : own.some(trip => trip.change === 'carried'),
+                    turbines   : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
                     pax,
-                    seats       : vessel.seats,
-                    late        : Math.max(0, back - close),
+                    seats      : vessel.seats,
+                    late       : Math.max(0, DateHelper.diff(DateHelper.add(state.dateOf(index), close, 'minute'),
+                        endDate, 'minute')),
                     // The seats bar, the PercentBar feature's value
                     percentDone : Math.round(pax / vessel.seats * 100)
                 });

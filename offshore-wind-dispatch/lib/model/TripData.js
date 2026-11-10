@@ -43,7 +43,6 @@ export function legsData({ id, departs, midnight }, stops, mode) {
         kind         : type,
         turbine      : leg.turbine ?? null,
         team         : leg.team ?? null,
-        minutes      : leg.minutes,
         hop          : Boolean(leg.hop),
         startDate    : at(midnight, from),
         duration     : to - from,

@@ -1,6 +1,6 @@
 import { portMinutes } from '../plan/Farm.js';
 import { iconConfig } from '../util/Icons.js';
-import { duration, hhmm } from '../util/Time.js';
+import { clock, duration } from '../util/Time.js';
 
 /**
  * The Day view's renderers: plain functions that fill in the renderer arguments and return DomConfigs, styled in
@@ -29,12 +29,12 @@ function textWidth(text) {
 /**
  * What a work block of a width has room for: short of room, the hours are dropped first, then the job type. The text
  * never wraps nor is cut
- * @param {Object} stop `{ turbine, minutes }`
+ * @param {TripModel} stop The stop's record, `turbine` and `duration` in minutes
  * @param {Number} width px
  * @param {String} [type] The short job type, "Service"
  * @returns {Object} `{ turbine, type, hours }` booleans
  */
-function blockText({ turbine, minutes }, width, type = '') {
+function blockText({ turbine, duration : minutes }, width, type = '') {
     const
         room     = width - 2 * blockFont.padding,
         name     = textWidth(turbine),
@@ -72,7 +72,7 @@ function changeText(trip) {
     return {
         trimmed : () => 'trimmed',
         carried : () => 'carried over',
-        pulled  : () => `${duration(trip.minutesOf(trip.previousDeparture) - trip.departs)} earlier`
+        pulled  : () => `${duration((trip.previousDeparture - trip.outerStartDate) / 60_000)} earlier`
     }[trip.status]?.() ?? null;
 }
 
@@ -114,7 +114,7 @@ function renderLeg(leg, renderData, close, typeOf) {
     return [
         { tag : 'b', text : leg.turbine },
         fits.type ? { tag : 'span', class : 'ow-seg-type', text : type } : null,
-        fits.hours ? { tag : 'span', class : 'ow-seg-hours', text : hoursText(leg.minutes) } : null
+        fits.hours ? { tag : 'span', class : 'ow-seg-hours', text : hoursText(leg.duration) } : null
     ];
 }
 
@@ -174,15 +174,14 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFi
  */
 export function renderBuffers({ eventRecord : trip, preambleConfig, postambleConfig }, close, { dayStart, perMinute }) {
     const
-        back = trip.endMinute,
-        late = back - close,
+        late = trip.endMinute - close,
         edge = (trip.departs - dayStart) * perMinute < edgeRoom;
 
     preambleConfig.cls  = `ow-transit ow-transit-out${edge ? ' ow-transit-edge' : ''}`;
-    preambleConfig.text = hhmm(trip.departs);
+    preambleConfig.text = clock(trip.outerStartDate);
 
     postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 ? ' ow-transit-late' : ''}`;
-    postambleConfig.text = late > 0 ? `${hhmm(back)} · +${duration(late)}` : hhmm(back);
+    postambleConfig.text = late > 0 ? `${clock(trip.outerEndDate)} · +${duration(late)}` : clock(trip.outerEndDate);
 }
 
 /**

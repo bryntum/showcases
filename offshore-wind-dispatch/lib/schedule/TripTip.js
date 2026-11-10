@@ -1,6 +1,7 @@
+import { DateHelper } from '@bryntum/core-enterprise';
 import { portMinutes } from '../plan/Farm.js';
 import { iconConfig } from '../util/Icons.js';
-import { duration, hhmm } from '../util/Time.js';
+import { clock, duration, hhmm } from '../util/Time.js';
 
 /**
  * The content of a trip's tooltip (the `eventTooltip` feature's template), styled like the map's turbine tooltip in
@@ -11,22 +12,25 @@ import { duration, hhmm } from '../util/Time.js';
  */
 export function tripTipContent(trip, state) {
     const
-        close  = state.closeOf(trip.resource),
-        start  = trip.departs,
-        back   = trip.endMinute,
-        late   = back - close,
-        stops  = trip.legs.filter(leg => leg.type === 'stop'),
-        share  = minutes => `${((minutes - start) / Math.max(1, back - start) * 100).toFixed(2)}%`,
+        close   = state.closeOf(trip.resource),
+        closeAt = trip.dateOf(close),
+        start   = trip.outerStartDate,
+        back    = trip.outerEndDate,
+        span    = Math.max(1, back - start),
+        late    = DateHelper.diff(closeAt, back, 'minute'),
+        stops   = trip.stopRecords,
+        share   = date => `${((date - start) / span * 100).toFixed(2)}%`,
         // As TripRendering#renderLeg marks a stop at risk
-        risky  = leg => trip.status === 'at-risk' && leg.to + portMinutes(leg.turbine, trip.mode) > close,
-        fact   = (term, value) => [{ tag : 'dt', text : term }, { tag : 'dd', text : value }],
-        facts  = [
-            ...start <= state.now ? fact('Under way since', hhmm(start)) : fact('Leaves', hhmm(start)),
+        risky   = leg => trip.status === 'at-risk' &&
+            DateHelper.add(leg.endDate, portMinutes(leg.turbine, trip.mode), 'minute') > closeAt,
+        fact    = (term, value) => [{ tag : 'dt', text : term }, { tag : 'dd', text : value }],
+        facts   = [
+            ...fact(trip.departs <= state.now ? 'Under way since' : 'Leaves', clock(start)),
             ...stops.flatMap(leg => fact(`${leg.turbine} on station`,
-                `${hhmm(leg.from)}–${hhmm(leg.to)} (${duration(leg.minutes)})`)),
+                `${clock(leg.startDate)}–${clock(leg.endDate)} (${duration(leg.duration)})`)),
             ...trip.waits.flatMap(({ turbine, minutes, after }) =>
                 fact('Waits', `${duration(minutes)} at ${turbine}${after ? ` for ${after}` : ''}`)),
-            ...fact('Back in port', hhmm(back)),
+            ...fact('Back in port', clock(back)),
             ...fact('Window closes', hhmm(close))
         ];
 
@@ -56,12 +60,12 @@ export function tripTipContent(trip, state) {
                 children : [
                     ...stops.map(leg => ({
                         class : `ow-tip-block ow-mark-${risky(leg) ? 'risk' : 'work'}`,
-                        style : `inset-inline-start:${share(leg.from)};inline-size:${((leg.to - leg.from) /
-                            Math.max(1, back - start) * 100).toFixed(2)}%`
+                        style : `inset-inline-start:${share(leg.startDate)};inline-size:${((leg.endDate - leg.startDate) /
+                            span * 100).toFixed(2)}%`
                     })),
-                    close > start && close < back ? {
+                    closeAt > start && closeAt < back ? {
                         class : 'ow-tip-close',
-                        style : `inset-inline-start:${share(close)}`
+                        style : `inset-inline-start:${share(closeAt)}`
                     } : null
                 ]
             },

@@ -90,7 +90,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Window | The time until the forecast Hs crosses a vessel's limit. After it, the vessel's row is a hatched no-go area |
 | Trip | One run of a vessel or a helicopter from the port and back. A parent event in the Scheduler |
 | Leg | A child event of a trip, drawn inside it by the NestedEvents feature: a stop or a hop |
-| Stop | A turbine a team works at on a trip, `{ turbine, minutes, team }`, the solid blue work block |
+| Stop | A turbine a team works at on a trip, a leg with its `turbine`, `team` and `duration`, the solid blue work block |
 | Transit | Time at sea between two places. The sail out from the port and back to it are the trip's buffer time, its `preamble` and `postamble` (the EventBuffer feature) |
 | Hop | A transit between two turbines, a leg of the trip |
 | Held team | A team dragged from the tray over a trip or a vessel's row: an outline shows where its stop would go, nothing is in the plan until it is dropped |
@@ -227,18 +227,20 @@ the now line are time ranges (the TimeRanges feature).
 ### Trips with their legs nested inside: `lib/model/TripModel.js`, `lib/model/TripData.js`, `lib/schedule/TripRendering.js`
 
 The Scheduler runs on the Enterprise tier with the NestedEvents feature, and its event store is a tree. A trip is a
-parent event from its first stop to its last, its legs are its children: the turbine stops (`kind : 'stop'`,
-`{ turbine, minutes, team }`) with the hops between them. The sail out and back are the trip's `preamble` and
-`postamble`, drawn by the EventBuffer feature (`renderBuffers`); `TripModel#departs` is the trip's start less the sail
-out, and `TripModel#legs` still lists both as transits, so the planner reads the whole run. Each trip and each leg is
+parent event from its first stop to its last, its legs are its children: the turbine stops (`kind : 'stop'`, with
+`turbine`, `team` and their `duration`) with the hops between them. The sail out and back are the trip's `preamble` and
+`postamble`, drawn by the EventBuffer feature (`renderBuffers`), so a trip runs port to port from `outerStartDate` to
+`outerEndDate`. The renderers, the tooltips, the map and the Week view read these records; the planner gets one
+snapshot of them in minutes (`TripModel#plan`). Each trip and each leg is
 assigned to the vessel, a nested event shows only where it and its parent are both assigned (`projectData` in
 `TripData.js`).
 
-The trip's stops are read from its stop children. Changing them, or the departure, goes through `TripModel#layout`:
-`Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and each leg gets its
+Changing the stops goes through `TripModel#layout({ stops })`: `Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and each leg gets its
 duration; the engine then places them in order from the departure (see [Who works out the times](#who-works-out-the-times)).
 Legs that stay keep their record (a stop's ID is `<trip>:<turbine>`), new ones are added and assigned, gone ones
-removed. The stop of a team held over a trip is not a leg: it is outlined by a resource time range (`kind : 'drop'`), dashed in teal, until the team is dropped.
+removed. A new departure alone (a drag, the editor, a forecast bringing the trip forward) moves only the trip's
+constraint, the engine moves the legs with it. The stop of a team held over a trip is not a leg: it is outlined by a
+resource time range (`kind : 'drop'`), dashed in teal, until the team is dropped.
 
 The event renderer draws the trip's label above its line (the feature's `headerHeight`), and each stop at its own
 time on it, solid with the turbine and the hours as far as its width has room. NestedEvents places nested events from

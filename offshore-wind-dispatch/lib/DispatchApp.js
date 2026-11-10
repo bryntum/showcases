@@ -510,8 +510,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         this.mapFollows = true;
 
-        if (trip && !trip.stops.some(stop => stop.turbine === this.selectedTurbine)) {
-            this.selectedTurbine = trip.stops[0]?.turbine;
+        if (trip && !trip.stopRecords.some(stop => stop.turbine === this.selectedTurbine)) {
+            this.selectedTurbine = trip.stopRecords[0]?.turbine;
         }
     }
 
@@ -520,9 +520,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     onTripClick({ eventRecord, event }) {
         const
             { trip } = eventRecord,
-            minute   = event && trip.minutesOf(this.scheduler.getDateFromDomEvent(event)),
-            stop     = minute != null && trip.legs.find(leg => leg.type === 'stop' && leg.from <= minute &&
-                minute < leg.to);
+            date     = event && this.scheduler.getDateFromDomEvent(event),
+            stop     = date && trip.stopRecords.find(leg => leg.startDate <= date && date < leg.endDate);
 
         if (stop) {
             this.mapFollows      = true;

@@ -319,7 +319,7 @@ export default class DropController {
             fresh                   = trip.draft && { id : trip.id, departs : trip.departs, day },
             midnight                = me.dispatch.dateOf(day),
             booked                  = fresh ? addTrip(eventStore, vessel, { ...fresh, midnight }, [stop]) : trip,
-            before                  = !fresh && trip.stops,
+            before                  = !fresh && trip.plan.stops,
             // When each trip that waits for this one is back without the team
             waits                   = me.waitingOn(booked).map(link => ({ link, back : link.toEvent.trip.endMinute }));
 
