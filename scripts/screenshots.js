@@ -1,5 +1,6 @@
 /**
- * The gallery screenshots of every showcase, light and dark: `npm run screenshots`.
+ * The gallery screenshots of every showcase, light and dark: `npm run screenshots`, or of some of them by name:
+ * `npm run screenshots -- offshore-wind-dispatch`.
  *
  * Starts the Vite dev server, opens each showcase in Chromium (Playwright), brings it to its screenshot state, hides
  * the Bryntum trial badge and captures the app panel. From one 2x capture per mode it writes, in gallery/, the webp
@@ -11,6 +12,7 @@
 import { Buffer } from 'node:buffer';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -83,7 +85,7 @@ async function encode(page, png, { width : outWidth, crop, type, quality }) {
 }
 
 const
-    server  = await createServer({ root, logLevel : 'warn', server : { port : 0 } }),
+    server  = await createServer({ root, logLevel : 'warn', server : { port : 0, open : false } }),
     browser = await chromium.launch();
 
 try {
@@ -93,7 +95,10 @@ try {
         base   = server.resolvedUrls.local[0],
         drawer = await browser.newPage();
 
-    for (const { name, ogMode, prepare } of showcases) {
+    // The showcases named on the command line, else all
+    const only = process.argv.slice(2);
+
+    for (const { name, ogMode, prepare } of showcases.filter(({ name }) => !only.length || only.includes(name))) {
         for (const mode of ['light', 'dark']) {
             const page = await browser.newPage({
                 viewport          : { width : width + 200, height : height + 300 },

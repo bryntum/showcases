@@ -1,43 +1,32 @@
 import { substation } from '../plan/Farm.js';
-import { dayDate, duration, hhmm, minutesOn } from '../util/Time.js';
+import { DateHelper } from '@bryntum/core-enterprise';
+import { clock, duration, hhmm } from '../util/Time.js';
 
 /**
- * The week as a day board, plain functions from the week's trips and the dispatch state to the Week view's data
- * (WeekBoard): one cell per vessel per day. A day a vessel has trips is ONE derived event over them, from the earliest
- * departure to the latest return, so cells never stack; a day without is a whole-day resource time range, `No-go` when
- * its window never opens, else `Free` until its window closes.
+ * The Week view's data, plain functions from the week's trips and the dispatch state. A vessel's day with trips is ONE
+ * derived event over them, from the earliest departure to the latest return, so cells never stack; a day without is a
+ * whole-day resource time range, which a held team can be dropped on when it is `free`.
  */
 
-const
-    minuteMs = 60_000,
-    dayCount = 7;
-
-/**
- * A time of a day of the week as a date
- * @param {Number} index 0 is today
- * @param {Number} minutes Minutes since that day's midnight
- * @returns {Date}
- */
-export function dateOn(index, minutes) {
-    return new Date(dayDate(index).getTime() + minutes * minuteMs);
-}
+const dayCount = 7;
 
 /**
  * The day of the week a date is on
+ * @param {DispatchState} state
  * @param {Date} date
  * @returns {Number} 0 is today, -1 or 7 outside the week
  */
-export function dayOf(date) {
-    return Math.max(-1, Math.min(dayCount, Math.floor(minutesOn(date, 0) / (24 * 60))));
+export function dayOf(state, date) {
+    return Math.max(-1, Math.min(dayCount, Math.floor(DateHelper.diff(state.dateOf(0), date, 'day', true))));
 }
 
 /**
- * "Go until 14", "No CTV", "Go · all day": the crew transfer vessels' window of a day
+ * "Go until 14", "No CTV", "Go · all day": the CTVs' window of a day
  * @param {Number} close When it closes, minutes since midnight
  * @param {Object} day `{ dayStart, dayEnd }`
  * @returns {Object} `{ text, tone }`, tone `go`, `short` or `none`
  */
-export function seaState(close, { dayStart, dayEnd }) {
+function seaState(close, { dayStart, dayEnd }) {
     if (close <= dayStart * 60) {
         return { text : 'No CTV', tone : 'none' };
     }
@@ -55,18 +44,6 @@ function hourText(minutes) {
 }
 
 /**
- * A trip of the week on its own day: when it leaves port and is back, minutes since that day's midnight
- * @param {TripModel} trip
- * @returns {Object} `{ departs, back }`
- */
-function timesOf(trip) {
-    const departs = minutesOn(trip.startDate, trip.day) - trip.transits.out;
-
-    // The trip's length does not depend on the day shown
-    return { departs, back : departs + trip.endMinute - trip.departs };
-}
-
-/**
  * The days of the week, for the header and the summary
  * @param {DispatchState} state
  * @param {TripModel[]} trips The trips of the whole week
@@ -75,24 +52,22 @@ function timesOf(trip) {
 export function weekDays(state, trips) {
     return Array.from({ length : dayCount }, (_, index) => {
         const
-            { hs, wind } = state.forecastOf(index),
-            planned      = new Set(trips.filter(trip => trip.day === index && trip.change !== 'moved' && !trip.draft)
-                .flatMap(trip => trip.turbines));
+            { hs, wind }     = state.forecastOf(index),
+            { due, planned } = state.daySummary(index, trips.filter(trip => trip.day === index));
 
         return {
             index,
-            date    : dayDate(index),
-            sea     : seaState(state.windowsOf(index).ctv, state.day),
-            hs      : [Math.min(...hs), Math.max(...hs)],
-            wind    : Math.max(...wind),
-            due     : state.dueOn(index).length,
-            planned : planned.size
+            date : state.dateOf(index),
+            sea  : seaState(state.windowsOf(index).ctv, state.day),
+            hs   : [Math.min(...hs), Math.max(...hs)],
+            wind : Math.max(...wind),
+            due,
+            planned
         };
     });
 }
 
 /**
- * The Week view's data: a cell event per vessel and day with trips, a resource time range per vessel and day without
  * @param {DispatchState} state
  * @param {Object[]} vessels `{ id, window, seats }`
  * @param {TripModel[]} trips The trips of the whole week
@@ -112,31 +87,32 @@ export function weekCells(state, vessels, trips) {
         for (const vessel of vessels) {
             const
                 close = windows[vessel.window],
-                own   = trips.filter(trip => trip.day === index && trip.resource?.id === vessel.id &&
-                    trip.change !== 'moved' && !trip.draft),
+                own   = trips.filter(trip => trip.day === index && trip.resource?.id === vessel.id),
                 id    = `${vessel.id}:${index}`;
 
             if (own.length) {
                 const
-                    times    = own.map(timesOf),
-                    departs  = Math.min(...times.map(time => time.departs)),
-                    back     = Math.max(...times.map(time => time.back)),
+                    startDate = new Date(Math.min(...own.map(trip => trip.outerStartDate))),
+                    endDate   = new Date(Math.max(...own.map(trip => trip.outerEndDate))),
                     // Each turbine once, the substation by its name: a helicopter's drop-off and pick-up are one visit
-                    turbines = [...new Set(own.flatMap(trip => trip.stops.map(stop => stop.turbine)))],
-                    pax      = Math.max(...own.map(trip => trip.pax));
+                    turbines  = [...new Set(own.flatMap(trip => trip.stopRecords.map(stop => stop.turbine)))],
+                    pax       = Math.max(...own.map(trip => trip.pax));
 
                 events.push({
                     id,
-                    resourceId  : vessel.id,
-                    day         : index,
-                    startDate   : dateOn(index, departs),
-                    endDate     : dateOn(index, back),
-                    name        : `${hhmm(departs)}–${hhmm(back)}`,
-                    trips       : own.map(trip => trip.id).join(' '),
-                    turbines    : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
+                    resourceId : vessel.id,
+                    day        : index,
+                    startDate,
+                    endDate,
+                    name       : `${clock(startDate)}–${clock(endDate)}`,
+                    trips      : own.map(trip => trip.id).join(' '),
+                    // Has a trip carried over: made by a forecast of the stops it cut from the day before
+                    carried    : own.some(trip => trip.change === 'carried'),
+                    turbines   : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
                     pax,
-                    seats       : vessel.seats,
-                    late        : Math.max(0, back - close),
+                    seats      : vessel.seats,
+                    late       : Math.max(0, DateHelper.diff(DateHelper.add(state.dateOf(index), close, 'minute'),
+                        endDate, 'minute')),
                     // The seats bar, the PercentBar feature's value
                     percentDone : Math.round(pax / vessel.seats * 100)
                 });
@@ -148,8 +124,8 @@ export function weekCells(state, vessels, trips) {
                     id,
                     resourceId : vessel.id,
                     day        : index,
-                    startDate  : dateOn(index, 0),
-                    endDate    : dateOn(index + 1, 0),
+                    startDate  : state.dateOf(index),
+                    endDate    : state.dateOf(index + 1),
                     kind       : free ? 'free' : 'nogo',
                     name       : free ? `Free · ${close >= end ? 'all day' : `until ${hourText(close)}`}` : 'No-go'
                 });
@@ -160,11 +136,7 @@ export function weekCells(state, vessels, trips) {
     return { events, ranges };
 }
 
-/**
- * How late a cell's last return is, "+17 min"
- * @param {Number} late Minutes
- * @returns {String}
- */
+// How late a cell's last return is, "+17 min"
 export function lateText(late) {
     return `+${duration(late)}`;
 }

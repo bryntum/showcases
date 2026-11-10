@@ -1,38 +1,21 @@
-/* Design tokens of the showcase, mapped onto the Svalbard palette through light-dark(), so light and dark come from one
- * set of rules. On the root, as the drag chip, its tooltip and the Scheduler's tooltips render outside the app */
+/* The showcase's own colours and sizes. On the root, not the app, as the drag chip and the tooltips render outside
+ * the app's element */
 
 :root {
-    /* Trips on plan, helicopters, past the window, moved, and what a dragged team can reach */
-    --ow-plan    : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
-    --ow-heli    : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
-        color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
-    --ow-risk    : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
-    --ow-cancel  : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+    --ow-plan : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
+    --ow-risk : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
+    --ow-stop    : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
-    --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
-    /* The calm sea */
-    --ow-sea-ok  : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
-    --ow-now     : var(--b-color-blue);
+    --ow-reach : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
+    --ow-wait  : light-dark(#5b6878, #9aa6b4);
+    --ow-surface : light-dark(var(--b-neutral-100), #1e1e1e);
+    /* The hour lines, lighter than the row lines (also read by WaveChart.js) */
+    --ow-tick : color-mix(in srgb, var(--b-border-7) 45%, transparent);
 
-    /* Neutrals */
-    /* Cards sit a step lighter than the page behind them, in dark too */
-    --ow-surface   : light-dark(var(--b-neutral-100), #1e1e1e);
-    --ow-page      : light-dark(#f4f5f7, #141414);
-    --ow-border    : var(--b-border-7);
-    --ow-grid      : color-mix(in srgb, var(--b-border-7) 70%, transparent);
-    /* The hour lines, a step lighter than the row lines: they guide the eye, the trips lead */
-    --ow-tick      : color-mix(in srgb, var(--b-border-7) 45%, transparent);
-    --ow-ink       : var(--b-text-1);
-    --ow-ink-sub   : var(--b-text-2);
-    --ow-ink-faint : var(--b-neutral-55);
+    --ow-sea-map : light-dark(#eaf3f9, #0e1c29);
+    --ow-marker  : light-dark(#fff, #253141);
 
-    /* The map */
-    --ow-sea-map     : light-dark(#eaf3f9, #0e1c29);
-    --ow-contour     : light-dark(rgb(42 127 176 / 18%), rgb(127 196 224 / 10%));
-    --ow-marker      : light-dark(#fff, #253141);
-    --ow-marker-line : light-dark(#9aa8b8, #607086);
-
-    /* The turbine illustration */
+    /* The turbine illustration (map/Turbine.js) */
     --ow-steel        : light-dark(#f7f9fb, #d6dce3);
     --ow-steel-shade  : light-dark(#bcc5cf, #8793a1);
     --ow-yellow       : #f2c12e;
@@ -41,71 +24,53 @@
     --ow-sea-deep     : light-dark(#1f6f9e, #0b3149);
     --ow-sea-foam     : light-dark(#fff, #a6dcef);
     --ow-beacon       : #e5322d;
-    --ow-limit        : var(--ow-risk);
 
-    /* The schedule, the header and the tray: neutrals and blue carry the plan, orange only what is past the window,
-       red only what is stopped. Exact values of the calm redesign, each with its dark counterpart */
-    --ow-c-work        : light-dark(#1f6fb8, #2a6db0);
-    /* The tonal work block, as Bryntum's tonal event style makes it from the work blue: a tint and a hairline */
+    /* The work blue is also the trips' eventColor (TripRendering.js); WaveChart.js reads the chart colours */
+    --ow-c-work : light-dark(#1f6fb8, #2a6db0);
+    --ow-c-work-ink : light-dark(#1a5f9e, #8bbcef);
+    /* Mixed the way Bryntum's tonal event style mixes its tint and hairline */
     --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 86%),
         color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%));
-    --ow-c-work-line   : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%);
-    /* A selected row's tint: opaque, so it reads the same over the white vessel cell and the timeline */
-    --ow-c-row-selected : color-mix(in srgb, var(--ow-c-work) 7%, var(--ow-surface));
-    /* The hours already gone today, in the rows: a light shade */
-    --ow-c-past        : light-dark(rgb(16 24 40 / 4%), rgb(255 255 255 / 3%));
-    --ow-c-risk-tint   : light-dark(#fff3e0, #3a2810);
-    --ow-c-risk-line   : light-dark(#e07b00, #f0962e);
-    --ow-c-risk-ink    : light-dark(#8a4500, #ffb766);
-    --ow-c-stop-ink    : light-dark(#b71c1c, #ff8f86);
-    --ow-c-stop-tint   : light-dark(#fdecea, #3b1a1a);
-    --ow-c-transit     : light-dark(#b8c0c8, #5e6975);
-    --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
+    --ow-c-work-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%);
+    --ow-c-risk-tint : light-dark(#fff3e0, #3a2810);
+    --ow-c-risk-line : light-dark(#e07b00, #f0962e);
+    --ow-c-risk-ink  : light-dark(#8a4500, #ffb766);
+    --ow-c-stop-ink  : light-dark(#b71c1c, #ff8f86);
+    --ow-c-transit   : light-dark(#b8c0c8, #7b8794);
+    --ow-c-dependency  : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%), #5f8fc4);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
-    --ow-c-nogo        : light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%));
-    --ow-c-nogo-heli   : light-dark(rgb(110 70 170 / 12%), rgb(190 160 240 / 12%));
     --ow-c-neutral-bg  : light-dark(#eef0f3, #2a313b);
     --ow-c-button-tint : light-dark(#e8f1fb, #1c3550);
     --ow-c-chart-fill  : light-dark(rgb(31 111 184 / 10%), rgb(90 160 230 / 14%));
     --ow-c-chart-risk  : light-dark(rgb(224 123 0 / 12%), rgb(240 150 46 / 14%));
 
-    /* Sizes */
-    --ow-c-block        : 28px;
-    /* The transit line and the rings of its end dots, the hollow dot's outer size and the solid one's */
-    --ow-transit-w      : 1px;
-    --ow-dot-out        : 8px;
-    --ow-dot-back       : 6px;
-    --ow-size-kpi       : 19px;
-    --ow-bar-control    : 30px;
-    /* A card's inner inset: its title bar, its left column, and the header and crews tray lined up with them */
-    --ow-inset          : 16px;
-    --ow-bar-inset      : 12px;
-    /* The outer frame (the shell's app panel): its inner padding is its corner radius, so what sits in it starts where
-       the corner curve ends. A card concentric with it would have that radius less the padding, none at all: the
-       cards keep a radius of their own */
-    --ow-frame-radius   : 24px;
-    --ow-gutter         : var(--ow-frame-radius);
-    --ow-card-radius    : 8px;
-    /* One soft, diffuse shadow, no ring: a ring with an offset shadow read as a second, darker edge. In dark the cards
-       are a step lighter than the frame, which already sets them off */
-    --ow-card-shadow    : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
-    --ow-c-radius       : 4px;
+    --ow-size-xs   : 0.6875rem;
+    --ow-size-sm   : 0.75rem;
+    --ow-size-base : 0.8125rem;
+    --ow-size-md   : 0.875rem;
 
-    /* Shadows: the pressed segment of a segmented control, a crew's card in the tray, the card following the pointer
-       in a drag and the tooltip beside it */
-    --ow-shadow-raised  : 0 1px 2px rgb(0 0 0 / 12%);
-    --ow-shadow-chip    : 0 1px 3px rgb(0 0 0 / 8%);
-    --ow-shadow-lifted  : 0 10px 24px rgb(0 0 0 / 22%);
-    --ow-shadow-float   : 0 10px 30px rgb(0 0 0 / 20%);
-    /* Shared by the Day and the Week view: the weather no-go hatch (a helicopter's purple tinted), and the drop target of
-       a crew held over a trip or a free day, a subtle blue tint with a thin blue outline */
-    --ow-hatch             : repeating-linear-gradient(135deg, var(--ow-c-nogo) 0 2px, transparent 2px 9px);
-    --ow-hatch-heli        : repeating-linear-gradient(135deg, var(--ow-c-nogo-heli) 0 2px, transparent 2px 9px);
-    --ow-drop-outline      : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
-    --ow-drop-tint         : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
-    /* A trip under the pointer: its work blocks a step stronger, tint and hairline, the at-risk one in orange */
-    --ow-c-work-hover-tint : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%),
-        color-mix(in srgb, var(--ow-c-work), var(--b-mix) 72%));
-    --ow-c-work-hover-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 35%);
-    --ow-c-risk-hover-tint : color-mix(in srgb, var(--ow-c-risk-line) 16%, var(--ow-c-risk-tint));
+    /* px, as the rows, ticks and margins DispatchScheduler.js sets */
+    --ow-transit-w   : 1px;
+    --ow-dot-out     : 8px;
+    --ow-dot-back    : 6px;
+    --ow-bar-control : 1.875rem;
+    /* The map's margin is px, as MapPanel.js sets it */
+    --ow-inset      : 1rem;
+    --ow-bar-inset  : 0.75rem;
+    --ow-map-margin : 16px;
+    --ow-gutter        : 1.5rem;
+    --ow-card-radius   : 0.5rem;
+    --ow-card-shadow   : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
+    --ow-c-radius      : 0.25rem;
+    --ow-shadow-raised : 0 1px 2px rgb(0 0 0 / 12%);
+    --ow-shadow-chip   : 0 1px 3px rgb(0 0 0 / 8%);
+    --ow-shadow-lifted : 0 10px 24px rgb(0 0 0 / 22%);
+
+    /* Shared by the Day and the Week view */
+    --ow-hatch        : repeating-linear-gradient(135deg, light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%)) 0 2px,
+        transparent 2px 9px);
+    /* A workable day left free, its cell and its swatch */
+    --ow-free-line    : 1px dashed var(--ow-c-transit);
+    --ow-drop-outline : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
+    --ow-drop-tint    : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
 }

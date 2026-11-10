@@ -1,14 +1,7 @@
 /**
- * The offshore wind turbine illustration, front view: monopile, the yellow transition piece with its boat landing and
- * ladder, the tapered tower, nacelle with its aviation light, and three blades that turn. The sea at its foot shows the
- * wave height against the vessel limit, the reason a technician can or cannot step across.
- *
- * Colours come from CSS custom properties (see resources/tokens.css), so one drawing works in light and dark.
- *
- * The rotors turn at the speed the wind of the hour gives an 8 MW turbine (rotorRpm). Each drawing carries how long a
- * revolution takes in a CSS custom property, `--ow-rotor-period` on its rotor, so it follows the clock and the forecast
- * wherever it is shown (the card, the map's tooltip). A stopped turbine (a fault, or a team working on it) does not
- * turn.
+ * The turbine illustration (the card, the map's tooltip) and the map markers, as SVG markup. The sea at the
+ * turbine's foot is drawn at the wave height against the vessel limit. The rotor turns at the speed the wind of the
+ * hour gives an 8 MW turbine, carried as `--ow-rotor-period` on the rotor so the CSS animation needs no script.
  */
 import { iconPath } from '../util/Icons.js';
 
@@ -21,8 +14,7 @@ const
     ratedRpm = 10.5;
 
 /**
- * The rotor speed of a turbine at a wind speed at hub height
- * @param {Number} wind m/s
+ * @param {Number} wind m/s at hub height
  * @returns {Number} Revolutions per minute, 0 when still
  */
 export function rotorRpm(wind) {
@@ -37,7 +29,6 @@ export function rotorRpm(wind) {
  * The rotor in words, for the map's tooltip
  * @param {Number} wind m/s
  * @param {String|null} stopped `repair`, `fault` or none
- * @returns {String}
  */
 export function rotorText(wind, stopped) {
     if (stopped) {
@@ -54,7 +45,7 @@ export function rotorText(wind, stopped) {
 }
 
 /**
- * How long a revolution of a turning rotor takes at a wind speed at hub height, for `--ow-rotor-period`
+ * How long a revolution takes, for `--ow-rotor-period`
  * @param {Number} wind m/s
  * @returns {String} A CSS time, `0s` when still
  */
@@ -64,11 +55,7 @@ export function rotorPeriod(wind) {
     return rpm ? `${(60 / rpm).toFixed(2)}s` : '0s';
 }
 
-/**
- * The wrench badge of a turbine under repair: a disc with Phosphor's wrench, centred on 0 0
- * @param {Number} r The disc's radius
- * @returns {String} SVG markup
- */
+// The wrench badge of a turbine under repair, centred on 0 0
 export function wrenchBadge(r) {
     const scale = (r * 1.45 / 256).toFixed(4);
 
@@ -79,8 +66,8 @@ export function wrenchBadge(r) {
 // One blade pointing up from the hub: a slim root, the widest chord a third out, a fine tip. Leading edge on the left
 const blade = 'M -2.6 -4 C -4.6 -14 -4.2 -30 -1.4 -58 L 0.2 -59.5 C 1.6 -36 2.6 -16 2.6 -4 Z';
 
-// The gradients, and the clip below the still water line (y 196, see turbineSvg). Their IDs start with `id`, so two
-// drawings on one page (the card and the map's tooltip) each use their own
+// The gradients, and the clip below the still water line (y 196, see turbineSvg). Their IDs start with `id`: the card
+// and the map's tooltip can be on the page at once, and SVG IDs are global to the document
 const defs = id => `
     <defs>
         <linearGradient id="${id}-tower" x1="0" x2="1">
@@ -101,11 +88,11 @@ const defs = id => `
 
 /**
  * @param {Object} [options]
- * @param {Number} [options.hs] The wave height to draw, in metres (0.5 to 2.5)
- * @param {Number} [options.limit] The vessel limit, drawn as a dashed line on the transition piece
- * @param {Boolean} [options.spin] Turn the blades
- * @param {Number} [options.wind] The wind at hub height in m/s, sets how fast the blades turn
- * @param {Boolean} [options.repair] Under repair, the wrench badge by the transition piece
+ * @param {Number} [options.hs] Metres (0.5 to 2.5)
+ * @param {Number} [options.limit] The vessel limit in metres, a dashed line on the transition piece
+ * @param {Boolean} [options.spin]
+ * @param {Number} [options.wind] m/s at hub height
+ * @param {Boolean} [options.repair] Adds the wrench badge
  * @param {String} [options.id] Prefix of the IDs of its gradients, unique per drawing on the page
  * @returns {String} SVG markup
  */
@@ -117,7 +104,7 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
         crest  = sea - hs * scale / 2,
         trough = sea + hs * scale / 2,
         mark   = sea - limit * scale / 2,
-        // One wavelength every 20 px, crest then trough
+        // A wavelength every 20 px
         waves  = Array.from({ length : 9 }, (_, i) => {
             const x = i * 20 - 10;
 
@@ -135,13 +122,13 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
     <rect x="71" y="164" width="18" height="32" rx="1" fill="var(--ow-yellow)"/>
     <rect x="64" y="162" width="32" height="3" rx="1" fill="var(--ow-yellow-shade)"/>
     <path d="M64 162 v-5 M96 162 v-5 M64 157.5 h32" stroke="var(--ow-yellow-shade)" stroke-width="1.2" fill="none"/>
-    <g stroke="var(--ow-ink)" stroke-width="1" opacity="0.75">
+    <g stroke="var(--b-text-1)" stroke-width="1" opacity="0.75">
         <path d="M90 166 V205 M94 166 V205"/>
         <path d="M90 170 h4 M90 175 h4 M90 180 h4 M90 185 h4 M90 190 h4 M90 195 h4 M90 200 h4"/>
     </g>
 
     <!-- The vessel limit on the boat landing: above this wave height a crew transfer vessel cannot push on -->
-    <path d="M58 ${mark} H102" stroke="var(--ow-limit)" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <path d="M58 ${mark} H102" stroke="var(--ow-risk)" stroke-width="1.2" stroke-dasharray="3 2"/>
     <text x="104" y="${mark + 3}" class="ow-turbine-label">${limit.toFixed(1)} m</text>
 
     <!-- Tower: tapered, lit from the left -->
@@ -170,11 +157,8 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
 </svg>`;
 }
 
-/**
- * The parts of a map marker, centred on 0 0: a disc in the status colour with a three blade glyph (the rotor, it turns
- * when hovered if the turbine runs), and the wrench a turbine in work shows in its place (resources/map/turbines.css)
- * @returns {String} SVG markup
- */
+// A map marker's parts, centred on 0 0. The CSS shows the glyph or, for a turbine in work, the wrench
+// (resources/map/map.css)
 export function markerParts() {
     return `
     <circle class="ow-marker-disc" r="6.5"/>
@@ -182,15 +166,7 @@ export function markerParts() {
     <path class="ow-marker-wrench" d="${iconPath('wrench-fill')}" transform="scale(0.044) translate(-128 -128)"/>`;
 }
 
-/**
- * The small map marker. An option of the map's listbox, which moves the focus between them (TurbineMap); the map's
- * tooltip describes it
- * @param {Number} x
- * @param {Number} y
- * @param {String} cls Status class
- * @param {String} id Turbine ID
- * @returns {String}
- */
+// An option of the map's listbox; TurbineMap moves the focus between them and keeps the ARIA state current
 export function turbineMarker(x, y, cls, id) {
     return `
 <g class="ow-marker ${cls}" transform="translate(${x} ${y})" data-turbine="${id}" role="option" tabindex="-1"

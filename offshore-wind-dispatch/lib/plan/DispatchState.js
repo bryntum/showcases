@@ -1,79 +1,145 @@
-import { closingTimes, valueAt } from './Weather.js';
-import { firstSailing } from './Farm.js';
-import { weekPlan } from './WeekPlan.js';
+import { Base, DateHelper, Events, Store } from '@bryntum/core-enterprise';
+import WaitingTeamModel from '../model/WaitingTeamModel.js';
+import { firstSailing, substation } from './Farm.js';
 import { parseTime } from '../util/Time.js';
 
+// A forecast series holds one value per hour from the hour `dayStart`; past its end the last one holds
+function valueAt(series, minutes, dayStart) {
+    const index = Math.floor(minutes / 60) - dayStart;
+
+    return series[Math.min(Math.max(index, 0), series.length - 1)];
+}
+
 /**
- * What the dispatcher knows apart from the trips: the site, the forecasts and the weather windows they give, the
- * teams and their jobs, and the clock. The trips live in the Scheduler's event store, the views read both.
- *
- * The page opens at 07:40 with the 06:00 forecast. When the 08:00 forecast comes in (`applyForecast`), the clock
- * moves to when it was received and the windows close where the new forecast says, the previous closing times are
- * kept to show what changed.
- *
- * The week (WeekPlan) gives each of the next six days a forecast of its own. The Day view shows one day at a time
- * (`showDay`): the forecast, the windows, the clock and the dependencies are that day's. A later day is planned
- * before it starts, its clock stands at the start of the day.
+ * When each weather window closes, minutes since midnight: at the start of the first hour over its limit, at the end
+ * of the day when it stays open
+ * @param {Object} forecast `{ hs, wind }`, hourly Hs in metres and wind in m/s
+ * @param {Object} limits By window: `ctv`, `swath`, `heli`, each `{ hs }` or `{ wind }`
+ * @param {Object} day `{ dayStart, dayEnd }`, hours
+ * @returns {Object} By window, minutes
  */
-export default class DispatchState {
-    /**
-     * @param {Object} data The parsed data/farm.json
-     */
-    constructor(data) {
+function closingTimes(forecast, limits, { dayStart, dayEnd }) {
+    return Object.fromEntries(Object.entries(limits).map(([key, limit]) => {
+        const index = forecast.hs.findIndex((hs, i) => (limit.hs ? hs > limit.hs : forecast.wind[i] > limit.wind));
+
+        return [key, (index < 0 || dayStart + index > dayEnd ? dayEnd : dayStart + index) * 60];
+    }));
+}
+
+/**
+ * What the dispatcher knows apart from the trips: the site, the forecasts and their weather windows, the teams waiting
+ * and the clock, for each day of the week (today and the six after it, from the real current date). Most getters read
+ * the day shown (`dayIndex`); times are minutes since that day's `midnight`. On a later day the clock stands at the
+ * start of the day. Fires `change` with `name` `day` or `forecast`.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
+ */
+export default class DispatchState extends Base.mixin(Events) {
+    static $name = 'DispatchState';
+
+    // `data` is the parsed data/farm.json
+    construct(data) {
         const me = this;
+
+        super.construct();
 
         me.site     = data.site;
         me.limits   = data.limits;
         me.vessels  = data.vessels;
         me.teams    = new Map(data.teams.map(team => [team.id, team]));
-        me.week     = weekPlan(data);
-        // Today's jobs, and with them the rest of the week's on a later day
+        // data/farm.json holds today at its top level, the six days after it under `week`
+        me.week     = {
+            jobs : data.week.jobs,
+            days : [
+                {
+                    forecasts : data.forecasts,
+                    trips     : data.trips,
+                    due       : Object.keys(data.jobs).filter(turbine => turbine !== substation)
+                },
+                ...data.week.days
+            ]
+        };
         me.dayJobs  = data.jobs;
         me.allJobs  = { ...me.week.jobs, ...data.jobs };
         me.faults   = new Set(data.faults);
-        // The turbines whose team waits at the port for a trip
-        me.waiting  = [...data.waiting];
         me.day      = { dayStart : data.site.dayStart, dayEnd : data.site.dayEnd };
-        // Each day's own: its forecasts and the one in use, its windows, its clock, the dependencies of its plan
+        // Each day's own state, read through the getters below for the day shown
         me.days     = me.week.days.map(({ forecasts }, index) => ({
             forecasts,
             forecastIndex   : 0,
             now             : index ? me.day.dayStart * 60 : parseTime(data.site.now),
             windows         : closingTimes(forecasts[0], me.limits, me.day),
-            previousWindows : null,
-            dependencies    : index ? [] : data.dependencies
+            previousWindows : null
         }));
         me.dayIndex = 0;
+        // Tracked by the project's STM during a forecast's re-plan (ForecastPlanner), so its Undo restores it too
+        me.waitingStore = new Store({
+            modelClass : WaitingTeamModel,
+            data       : data.waiting.map(turbine => me.waitingOf(turbine))
+        });
+        me.weekStart = DateHelper.clearTime(new Date());
     }
 
-    /**
-     * Shows a day of the week, 0 is today
-     * @param {Number} index
-     */
+    // Midnight of a day of the week, 0 is today
+    dateOf(index) {
+        return DateHelper.add(this.weekStart, index, 'day');
+    }
+
+    // Minute 0 of the planner's times
+    get midnight() {
+        return this.dateOf(this.dayIndex);
+    }
+
+    // Minutes since midnight of the day shown as a Date
+    dateAt(minutes) {
+        return DateHelper.add(this.midnight, minutes, 'minute');
+    }
+
+    get dayShort() {
+        return DateHelper.format(this.midnight, 'ddd D MMM');
+    }
+
+    get nextDay() {
+        return DateHelper.format(this.dateOf(this.dayIndex + 1), 'ddd');
+    }
+
+    get nextLong() {
+        return DateHelper.format(this.dateOf(this.dayIndex + 1), 'dddd');
+    }
+
     showDay(index) {
         this.dayIndex = index;
+        this.trigger('change', { name : 'day' });
     }
 
     /**
-     * The first sailing of a day, minutes since midnight: the start of the working day and the farm's `firstSailing`
-     * @property {Number}
+     * The data of a waiting store record for the team of a turbine's job
+     * @param {String} turbine
+     * @param {Object} [options] `{ id, minutes }`: the record's ID (the team's by default), and the job's minutes
+     * when a cut stop has them
+     * @returns {Object} `{ id, team, job, fault }`
      */
+    waitingOf(turbine, { id, minutes } = {}) {
+        const job = { turbine, minutes : 60, ...this.allJobs[turbine], ...(minutes && { minutes }) };
+
+        return { id : id ?? job.team, team : this.teams.get(job.team), job, fault : this.faults.has(turbine) };
+    }
+
+    get waiting() {
+        return this.waitingStore.map(record => record.job.turbine);
+    }
+
+    // Minutes since midnight
     get firstSailing() {
         return this.day.dayStart * 60 + firstSailing;
     }
 
-    /**
-     * Today is the day shown
-     * @property {Boolean}
-     */
     get isToday() {
         return this.dayIndex === 0;
     }
 
-    /**
-     * The jobs by turbine: today's, and the week's on a later day
-     * @property {Object}
-     */
+    // By turbine. A later day sees the week's jobs as well as today's
     get jobs() {
         return this.isToday ? this.dayJobs : this.allJobs;
     }
@@ -95,10 +161,6 @@ export default class DispatchState {
         this.current.forecastIndex = value;
     }
 
-    /**
-     * The time, minutes since midnight. The start of the day on a later day
-     * @property {Number}
-     */
     get now() {
         return this.current.now;
     }
@@ -107,10 +169,7 @@ export default class DispatchState {
         this.current.now = value;
     }
 
-    /**
-     * When each window closes, by window: `ctv`, `swath`, `heli`, minutes since midnight
-     * @property {Object}
-     */
+    // By window, `ctv`, `swath`, `heli`, minutes since midnight
     get windows() {
         return this.current.windows;
     }
@@ -127,61 +186,31 @@ export default class DispatchState {
         this.current.previousWindows = value;
     }
 
-    /**
-     * The dependencies of the plan of the day shown
-     * @property {Object[]}
-     */
-    get dependencies() {
-        return this.current.dependencies;
-    }
-
-    /**
-     * The forecast in use, `{ issued, hs, wind }`
-     * @property {Object}
-     */
+    // `{ issued, received, hs, wind }`
     get forecast() {
         return this.forecastOf(this.dayIndex);
     }
 
-    /**
-     * The forecast in use on a day of the week
-     * @param {Number} index 0 is today
-     * @returns {Object} `{ issued, hs, wind }`
-     */
     forecastOf(index) {
         const { forecasts, forecastIndex } = this.days[index];
 
         return forecasts[forecastIndex];
     }
 
-    /**
-     * When each window closes on a day of the week
-     * @param {Number} index 0 is today
-     * @returns {Object} By window, minutes since midnight
-     */
     windowsOf(index) {
         return this.days[index].windows;
     }
 
-    /**
-     * A newer forecast is waiting to be applied
-     * @property {Object|null}
-     */
     get nextForecast() {
         return this.forecasts[this.forecastIndex + 1] ?? null;
     }
 
-    /**
-     * The forecast in use replaced the one the day was planned on
-     * @property {Boolean}
-     */
+    // The forecast in use replaced the one the day was planned on
     get isUpdated() {
         return this.forecastIndex > 0;
     }
 
-    /**
-     * Takes the next forecast: the windows close where it says, the clock moves to when it was received
-     */
+    // The clock moves to when the forecast was received; the old windows are kept to show what changed
     applyForecast() {
         const me = this;
 
@@ -189,72 +218,70 @@ export default class DispatchState {
         me.forecastIndex++;
         me.windows = closingTimes(me.forecast, me.limits, me.day);
         me.now     = parseTime(me.forecast.received ?? me.forecast.issued);
+        me.trigger('change', { name : 'forecast' });
     }
 
-    /**
-     * When the window of a vessel closes
-     * @param {VesselModel|Object} vessel
-     * @returns {Number} Minutes since midnight
-     */
+    // Minutes since midnight
     closeOf(vessel) {
         return this.windows[vessel?.window ?? 'ctv'];
     }
 
-    /**
-     * The wave height at a time
-     * @param {Number} minutes
-     * @returns {Number}
-     */
     hsAt(minutes) {
         return valueAt(this.forecast.hs, minutes, this.day.dayStart);
     }
 
-    /**
-     * The wind at hub height at a time, now by default
-     * @param {Number} [minutes]
-     * @returns {Number} m/s
-     */
+    // Metres per second, at hub height
     windAt(minutes = this.now) {
         return valueAt(this.forecast.wind, minutes, this.day.dayStart);
     }
 
-    /**
-     * The job at a turbine, with the turbine and the minutes it takes
-     * @param {String} turbine
-     * @returns {Object|null} `{ turbine, job, team, certs, minutes }`
-     */
+    // `{ turbine, job, team, certs, minutes }`
     jobAt(turbine) {
         const job = this.jobs[turbine];
 
         return job ? { turbine, minutes : 60, ...job } : null;
     }
 
-    /**
-     * The teams waiting at the port with their job, and whether its turbine is stopped
-     * @property {Object[]} `{ team, job, fault }`
-     */
     get waitingTeams() {
-        return this.waiting.map(turbine => {
-            const job = this.jobAt(turbine);
-
-            return { team : this.teams.get(job.team), job, fault : this.faults.has(turbine) };
-        });
+        return this.waitingStore.records;
     }
 
     /**
-     * The turbines with work due on the day shown
-     * @property {String[]}
-     */
-    get dueTurbines() {
-        return this.dueOn(this.dayIndex);
-    }
-
-    /**
-     * The turbines with work due on a day of the week
+     * A day's work, counted the same for the KPI header and the Week view: the turbines due, the ones its trips visit
+     * (`planned`) and its trips past their window. Work booked or carried over onto the day is due on it too
      * @param {Number} index 0 is today
-     * @returns {String[]}
+     * @param {TripModel[]} trips The trips of that day
+     * @returns {Object} `{ due, planned, atRisk }`
      */
+    daySummary(index, trips) {
+        const planned = new Set(trips.flatMap(trip => trip.turbines));
+
+        return {
+            due     : new Set([...this.dueOn(index), ...planned]).size,
+            planned : planned.size,
+            atRisk  : trips.filter(trip => trip.status === 'at-risk').length
+        };
+    }
+
+    /**
+     * The counts of the KPI header
+     * @param {TripModel[]} trips The trips of the day shown
+     * @returns {Object[]} `{ label, value, tone }`
+     */
+    kpis(trips) {
+        const { due, planned, atRisk } = this.daySummary(this.dayIndex, trips);
+
+        return [
+            { label : this.isToday ? 'Due today' : 'Due', value : due },
+            { label : 'Assigned', value : planned },
+            { label : 'At risk', value : atRisk, tone : 'warn' },
+            { label : 'Stopped', value : this.faults.size, tone : 'stop' }
+        ];
+    }
+
     dueOn(index) {
         return this.week.days[index].due;
     }
 }
+
+DispatchState.initClass();

@@ -4,13 +4,13 @@ import { icon } from '../util/Icons.js';
 import { turbineMarker } from './Turbine.js';
 
 /**
- * The SVG of the map as strings: the parts that do not change (the sea, the cable, the port, the substation and the
- * markers), and the routes and labels the map draws again whenever the plan changes (TurbineMap#draw)
+ * The map's SVG as strings: the static farm (mapSvg), and the routes and labels TurbineMap#draw redraws on each change
+ * of the plan.
  */
 
 /**
- * The SVG of the farm and the strip above it that holds the callout and the Show all button. The routes, the labels
- * and the callout are empty, TurbineMap#draw fills them
+ * The farm with empty route, label and callout containers for TurbineMap#draw, and the strip above it for the callout
+ * and the Show all button
  * @param {Object} site `{ port, portKm, name }`
  * @returns {String} HTML
  */
@@ -34,11 +34,11 @@ export function mapSvg(site) {
     <path class="ow-cable" d="M${oss.x.toFixed(1)} ${oss.y.toFixed(1)} C 120 230, 40 270, -10 300"/>
     <g class="ow-routes" aria-hidden="true"></g>
     <g class="ow-port" transform="translate(14 300)">
-        <circle r="9"/>${placed('anchor', 12)}<text x="14" y="4">${text(`${site.port} · ${site.portKm} km`)}</text>
+        <circle r="9"/>${placed('anchor', 14)}<text x="14" y="4">${text(`${site.port} · ${site.portKm} km`)}</text>
     </g>
     <g class="ow-oss" transform="translate(${oss.x.toFixed(1)} ${oss.y.toFixed(1)})">
         <title>Offshore substation</title>
-        <rect x="-9" y="-9" width="18" height="18" rx="2.5"/>${placed('substation', 12)}
+        <rect x="-9" y="-9" width="18" height="18" rx="2.5"/>${placed('lightning', 15)}
     </g>
     <g class="ow-markers" role="listbox" aria-label="The ${turbineIds.length} turbines, arrow keys move, Enter selects">
         ${turbineIds.map(id => {
@@ -53,7 +53,6 @@ export function mapSvg(site) {
 }
 
 /**
- * A route from the port to each stop
  * @param {Object} route `{ stops, kind }`, kind `selected`, `preview` or none
  * @returns {String} SVG
  */
@@ -69,11 +68,10 @@ export function routeSvg({ stops, kind }) {
 
 /**
  * The label above a turbine, below it where above would sit on the substation
- * @param {Object} label `{ id, text, tone }`, tone `fault`, `risk`, `moved`, `target` or none
+ * @param {Object} label `{ id, text, tone }`, tone `fault`, `risk`, `target` or none
  * @returns {String} SVG
  */
 export function labelSvg({ id, text, tone }) {
-    // The substation is not a turbine, it carries no label
     if (id === substation) {
         return '';
     }

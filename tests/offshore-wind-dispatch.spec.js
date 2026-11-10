@@ -8,7 +8,7 @@ const ctvClose = page => page.evaluate(() => {
 
     return { closes : hhmm(dispatch.windows.ctv), was : hhmm(dispatch.previousWindows?.ctv) };
 });
-import { collectErrors } from './errors.js';
+import { agChartsLicenseNotice, collectErrors } from './errors.js';
 
 const
     url       = './offshore-wind-dispatch/',
@@ -20,19 +20,13 @@ const
     open      = async(page, query = '') => {
         await page.goto(`${url}${query}`);
         await expect(page.locator('html')).toHaveAttribute('data-ready', 'true');
-    },
-    // Selects a trip, as a click on it does
-    selectTrip = (page, id) => page.evaluate(id => {
-        const app = globalThis.bryntum.query('dispatchapp');
-
-        app.scheduler.selectEvent(app.trips.find(each => each.id === id));
-    }, id);
+    };
 
 let errors;
 
 // Every test fails on a console or page error
 test.beforeEach(({ page }) => {
-    errors = collectErrors(page);
+    errors = collectErrors(page, { ignore : agChartsLicenseNotice });
 });
 
 test.afterEach(() => {
@@ -46,18 +40,18 @@ test.describe('Offshore Wind Dispatch', () => {
     });
 
     test('renders the vessels, their trips, the weather window and the map', async({ page }) => {
-        // Tall enough for every row: the cards, the header and the tray under the schedule take their space
+        // Tall enough for every row: the cards and the header, with the crews in it, take their space
         await page.setViewportSize({ width : 1280, height : 860 });
         await open(page);
 
         await expect(scheduler(page)).toHaveClass(/\bb-scheduler\b/);
-        // Five vessels, the standby Kittiwake among them, and two helicopters
-        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(7);
-        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('5 CTV · 2 heli');
-        await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 2']);
+        // Five vessels, the standby Kittiwake among them, and three helicopters, Heli 3 on standby
+        await expect(scheduler(page).locator('.ow-resource')).toHaveCount(8);
+        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('4 CTV · 1 SWATH · 3 heli');
+        await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 3']);
         await expect(trip(page, 'NT-1')).toBeVisible();
         // The weather no-go of every vessel is a resource time range
-        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(7);
+        await expect(scheduler(page).locator('.ow-nogo')).toHaveCount(8);
         expect((await ctvClose(page)).closes).toBe('14:00');
         await expect(page.locator('.ow-side .ow-turbine')).toBeVisible();
         await expect(page.locator('.ow-side [data-turbine]')).not.toHaveCount(0);
@@ -67,46 +61,50 @@ test.describe('Offshore Wind Dispatch', () => {
     test('at 1600 x 960 the page and the schedule do not scroll, the frame is aligned to its corner, the status line is one line', async({ page }) => {
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
+        // The rows settle once the time axis and the forecast rows have their final heights
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.scrollable.maxY)).toBe(0);
 
         const m = await page.evaluate(() => {
             const
                 left   = selector => document.querySelector(selector).getBoundingClientRect().left,
                 right  = selector => document.querySelector(selector).getBoundingClientRect().right,
                 app    = document.querySelector('.ow-app'),
-                kpis   = [...document.querySelectorAll('.ow-kpis > *')].at(-1),
+                kpis   = [...document.querySelectorAll('.ow-kpis .ow-kpi')].at(-1),
                 note   = document.querySelector('.ow-side .ow-card-note > span:last-child'),
                 { scheduler } = globalThis.bryntum.query('dispatchapp'),
                 radius = parseFloat(getComputedStyle(app).borderTopLeftRadius),
                 border = parseFloat(getComputedStyle(app).borderLeftWidth);
 
             return {
-                body     : [document.body.scrollHeight, document.body.clientHeight],
-                scroll   : scheduler.scrollable.maxY,
-                clock    : left('.ow-clock'),
-                schedule : left('.ow-schedule'),
-                tray     : left('.ow-tray > :first-child'),
-                kpis     : kpis.getBoundingClientRect().right,
-                side     : right('.ow-side'),
-                inset    : left('.ow-clock') - app.getBoundingClientRect().left - border,
+                body        : [document.body.scrollHeight, document.body.clientHeight],
+                scroll      : scheduler.scrollable.maxY,
+                clock       : left('.ow-clock'),
+                schedule    : left('.ow-schedule'),
+                scheduleEnd : right('.ow-schedule'),
+                tray        : [...document.querySelectorAll('.ow-tray .ow-team')].at(-1).getBoundingClientRect().right,
+                kpis        : kpis.getBoundingClientRect().right,
+                side        : right('.ow-side'),
+                inset       : left('.ow-clock') - app.getBoundingClientRect().left - border,
                 radius,
-                noteCut  : note.scrollWidth > note.clientWidth,
-                noteRows : note.getBoundingClientRect().height < 20
+                noteCut     : note.scrollWidth > note.clientWidth,
+                noteRows    : note.getBoundingClientRect().height < 20
             };
         });
 
         expect(m.body[0]).toBe(m.body[1]);
         expect(m.scroll).toBe(0);
-        // The header text and the crews tray start where the cards' content does, one inset (16px) in from the schedule
-        // card's edge, and the KPIs end one inset in from the rail card's; the frame's padding is its corner radius
+        // The header in two parts as the cards under it: the site starts one inset (16px) in from the schedule card's
+        // edge and the crews end one inset in from its other edge, the KPIs end one inset in from the rail card's; the
+        // frame's padding is its corner radius
         expect(Math.abs(m.clock - m.schedule - 16)).toBeLessThanOrEqual(1);
-        expect(Math.abs(m.tray - m.clock)).toBeLessThanOrEqual(1);
+        expect(Math.abs(m.scheduleEnd - m.tray - 16)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.side - m.kpis - 16)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.inset - m.radius - 16)).toBeLessThanOrEqual(1);
         expect(m.noteCut).toBe(false);
         expect(m.noteRows).toBe(true);
     });
 
-    test('dragging a team onto a trip previews the stop, then books it', async({ page }) => {
+    test('dragging a team onto a trip outlines where its stop would go, then books it', async({ page }) => {
         await open(page);
 
         const
@@ -127,8 +125,9 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
         await expect(page.locator('.ow-drop-tip')).toContainText('window closes 14:00');
 
-        // The stop it would get is previewed as a leg of the trip
-        await expect(trip(page, 'NT-1').locator('.b-nested-event .ow-seg-preview')).toContainText('T-34');
+        // Where the stop would go is outlined on the trip's row, nothing is in the plan until the drop
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(1);
+        await expect(trip(page, 'NT-1').locator('.b-nested-event[data-event-id="NT-1:T-34"]')).toHaveCount(0);
 
         await page.mouse.up();
 
@@ -142,43 +141,6 @@ test.describe('Offshore Wind Dispatch', () => {
 });
 
 test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
-    test('a team can be held over a trip and booked from the keyboard', async({ page }) => {
-        await open(page);
-        // The page opens on SP-1, past its window: NT-1 is selected first
-        await selectTrip(page, 'NT-1');
-
-        const tip = page.locator('.ow-drop-tip');
-
-        await tray(page).locator('.ow-team[data-team="F"]').focus();
-        await page.keyboard.press('Enter');
-
-        // Held over the selected trip, NT-1, with the stop it would get previewed
-        await expect(tip).toContainText('T-34 fits on NT-1');
-        await expect(tip).toHaveAttribute('aria-live', 'polite');
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toContainText('T-34');
-
-        // The arrows move it to another trip, and back
-        await page.keyboard.press('ArrowRight');
-        await expect(tip).not.toContainText('on NT-1');
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
-        await page.keyboard.press('ArrowLeft');
-        await expect(tip).toContainText('T-34 fits on NT-1');
-
-        // Escape puts it back, the chip keeps the focus
-        await page.keyboard.press('Escape');
-        await expect(tip).toHaveCount(0);
-        await expect(tray(page).locator('.ow-team[data-team="F"]')).toBeFocused();
-
-        // Space holds it again, Enter books it
-        await page.keyboard.press(' ');
-        await expect(tip).toContainText('T-34 fits on NT-1');
-        await page.keyboard.press('Enter');
-
-        await expect(tip).toHaveCount(0);
-        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(0);
-        await expect(trip(page, 'NT-1').locator('.b-nested-event[data-event-id="NT-1:T-34"]')).toBeVisible();
-    });
-
     test('while a team is held over a trip, the map dims every turbine it cannot reach', async({ page }) => {
         await open(page, '?state=drag');
 
@@ -189,11 +151,11 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
         const statuses = await page.evaluate(() => {
             const
                 app   = globalThis.bryntum.query('dispatchapp'),
-                own   = new Set(app.drop.trip.turbines),
-                reach = app.drop.reach;
+                own   = new Set(app.held.trip.turbines),
+                reach = app.held.reach;
 
             // Turbines on other trips, outside the reach of the held trip
-            return app.trips.filter(each => each !== app.drop.trip).flatMap(each => each.turbines)
+            return app.trips.filter(each => each !== app.held.trip).flatMap(each => each.turbines)
                 .filter(id => !reach.has(id) && !own.has(id));
         });
 
@@ -204,7 +166,7 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
         }
 
         // The held trip's own stops and the turbines it can reach are not dimmed
-        for (const id of await page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop.trip.turbines)) {
+        for (const id of await page.evaluate(() => globalThis.bryntum.query('dispatchapp').held.trip.turbines)) {
             await expect(marker(id)).not.toHaveClass(/\bow-m-dim\b/);
         }
 
@@ -217,43 +179,40 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
 
         await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
         await expect(page.locator('.ow-drag-chip')).toHaveCount(1);
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(1);
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(1);
 
         await page.keyboard.press('Escape');
 
         await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
         await expect(page.locator('.ow-drag-chip')).toHaveCount(0);
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(0);
         await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
     });
 });
 
 // A team held over a trip is checked again whenever the plan or the forecast changes, never left showing an old check.
-// heldState: the held team's check against a fresh one, the window close it shows against the trip's window now, and
-// the trip's status against the one the plan alone gives, with the previewed stop taken off and put back where the
-// team is held (a trip, or a vessel's row, which may give a new trip from port)
+// heldState: the held team's check against a fresh one, the window close it shows against the trip's window now, the
+// outline (the `drop` resource time range) against the stop the check gives, and the team's stop not in the plan
 const heldState = page => page.evaluate(() => {
     const
         app                         = globalThis.bryntum.query('dispatchapp'),
-        { trip, team, job, target } = app.drop,
-        close               = app.dispatch.closeOf(trip.resource),
-        pad                 = value => String(value).padStart(2, '0'),
-        state               = {
-            held      : app.drop.result,
-            fresh     : app.checkDrop(trip, team, job),
-            heldClose : app.drop.close,
-            close,
-            closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
-            previews  : trip.children.filter(leg => leg.preview).length,
-            status    : trip.status
-        };
+        { trip, team, job, target } = app.held,
+        close                       = app.dispatch.closeOf(trip.resource),
+        pad                         = value => String(value).padStart(2, '0'),
+        minutes                     = date => (date - app.dispatch.midnight) / 60000,
+        outline                     = app.scheduler.resourceTimeRangeStore.getById('drop');
 
-    app.clearPreview();
-    app.evaluate();
-    state.planStatus = trip.status;
-    app.holdPreview(team.id, target);
-
-    return state;
+    return {
+        held      : app.held.result,
+        // The trip held over, or the new trip from port once it cannot be joined
+        fresh     : app.dropController.check(team.id, target, app.held.at).result,
+        heldClose : app.held.close,
+        close,
+        closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
+        outline   : outline && [minutes(outline.startDate), minutes(outline.endDate)],
+        stop      : [app.held.result.stop.from, app.held.result.stop.to],
+        inPlan    : app.scheduler.eventStore.query(leg => leg.turbine === job.turbine).length > 0
+    };
 });
 
 test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => {
@@ -265,6 +224,9 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await expect(tip).toContainText('window closes 14:00');
 
         await page.locator('.ow-forecast-button').click();
+        // The engine places each trip the forecast changes, then the team is held again
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').held?.close))
+            .toBeLessThan(14 * 60);
 
         const state = await heldState(page);
 
@@ -272,18 +234,18 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         expect(state.close).toBeLessThan(14 * 60);
         expect(state.heldClose).toBe(state.close);
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
-        expect(state.status).toBe(state.planStatus);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
         await expect(tip).toContainText(`window closes ${state.closeText}`);
         await expect(tip).toContainText(state.fresh.valid ? 'fits on' : 'does not fit on');
         await expect(page.locator('.ow-drag-chip')).toHaveCount(1);
     });
 
-    test('Undo of the forecast checks the held team again, the plan comes back without the previewed stop', async({ page }) => {
+    test('Undo of the forecast checks the held team again, the plan comes back as it was', async({ page }) => {
         await open(page);
 
         const legsOf = () => page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips.map(each =>
-            `${each.id} ${each.departs} ${each.children.filter(leg => !leg.preview).map(leg => leg.id).join(',')}`));
+            `${each.id} ${each.departs} ${each.children.map(leg => leg.id).join(',')}`));
 
         const before = await legsOf();
 
@@ -291,17 +253,24 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         await page.evaluate(() => {
             const app = globalThis.bryntum.query('dispatchapp');
 
-            app.drag.showHeld('F', app.dropTargets()[0]);
+            return app.drag.showHeld('F', app.trips.find(each => each.id === 'NT-1'));
         });
         await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
         await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        // The project's STM undoes the re-plan, the engine places it, then the team is held again
+        await expect.poll(() => page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return Boolean(app.held) && app.trips.every(each => !each.change);
+        })).toBe(true);
 
         const state = await heldState(page);
 
         expect(state.heldClose).toBe(state.close);
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
         await expect(page.locator('.ow-drop-tip')).toContainText(`window closes ${state.closeText}`);
 
         // Put back, the trips are as before the forecast
@@ -377,8 +346,8 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
         const [departs, wanted] = await page.evaluate(async() => {
             const
                 app  = globalThis.bryntum.query('dispatchapp'),
-                trip = app.drop.trip,
-                // An hour later, late enough for the previewed stop to bring it back after the window
+                trip = app.held.trip,
+                // An hour later, late enough for the held team's stop to bring it back after the window
                 to   = trip.departs + 60;
 
             // As EventDrag leaves it, then the app's afterEventDrop listener, which lets the engine place it
@@ -392,46 +361,17 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
 
         const state = await heldState(page);
 
-        // Checked from the new departure, the trip's status from the plan, not from the stop previewed on it
+        // Checked from the new departure, the outline moved with it
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
-        expect(state.status).toBe(state.planStatus);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
     });
 
-    test('held from the keyboard over a trip the forecast moves away, the arrows step through the trips left', async({ page }) => {
-        await open(page);
-        await selectTrip(page, 'NT-1');
-
-        await tray(page).locator('.ow-team[data-team="F"]').focus();
-        await page.keyboard.press('Enter');
-        await expect(page.locator('.ow-drop-tip')).toContainText('on NT-1');
-
-        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').applyForecast());
-
-        const targets = await page.evaluate(() => {
-            const app = globalThis.bryntum.query('dispatchapp');
-
-            return {
-                stepped : app.drag.keys.keyboard.trips.map(each => each.id),
-                fresh   : app.dropTargets().map(each => each.id)
-            };
-        });
-
-        // The trips the keys step through are those still on the day after the forecast
-        expect(targets.stepped).toEqual(targets.fresh);
-
-        await page.keyboard.press('ArrowRight');
-
-        const state = await heldState(page);
-
-        expect(state.held).toEqual(state.fresh);
-        expect(targets.fresh).toContain(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop.target.id));
-    });
 });
 
 test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
     const
-        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        bar   = page => page.locator('.ow-schedule > .b-panel-header'),
         axis  = page => page.evaluate(() => {
             const { scheduler } = globalThis.bryntum.query('dispatchapp');
 
@@ -466,7 +406,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
 
     const
         board = page => page.locator('.ow-week-board'),
-        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        bar   = page => page.locator('.ow-schedule > .b-panel-header'),
         // The cell of a vessel's day: its event, or its resource time range when it has no trip
         cell  = (page, vessel, day) => board(page)
             .locator(`[data-event-id="${vessel}:${day}"], [data-event-id="resourcetimerange-${vessel}:${day}"]`),
@@ -492,28 +432,31 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         const days = board(page).locator('.b-sch-header-time-axis-cell.ow-week-day');
 
         await expect(days).toHaveCount(7);
-        await expect(days.first()).toContainText('· today');
-        await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'No CTV', 'Go until 15', 'Go · all day',
+        // Today first, its date in the pill
+        await expect(days.first()).toHaveClass(/ow-week-today/);
+        await expect(board(page).locator('.ow-week-today')).toHaveCount(1);
+        await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'Go until 13', 'Go until 15', 'Go · all day',
             'Go · all day', 'Go until 11', 'No CTV']);
         await expect(days.first().locator('small')).toHaveText('Hs 0.9–2.2 m · wind 24');
 
         // Every vessel's day is one cell: a trip, free or no-go, never two
         const all = await cells(page);
 
-        expect(Object.keys(all)).toHaveLength(49);
+        expect(Object.keys(all)).toHaveLength(56);
 
         const
-            vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'],
+            vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2', 'h3'],
             kinds   = day => vessels.map(vessel => all[`${vessel}:${day}`].kind);
 
-        // Tuesday: no crew transfer vessel, no helicopter, the SWATH until 13
-        expect(kinds(1)).toEqual(['nogo', 'nogo', 'nogo', 'nogo', 'trip', 'nogo', 'nogo']);
+        // Tomorrow: a morning window for all until 13, the SWATH's trip
+        expect(kinds(1)).toEqual(['free', 'free', 'free', 'free', 'trip', 'free', 'free', 'free']);
         // Sunday: no-go for all
         expect(kinds(6)).toEqual(vessels.map(() => 'nogo'));
-        // Thursday and Friday, the best days: no no-go, the standby vessel free all day
+        // Thursday and Friday, the best days: no no-go, the standby vessel and helicopter free all day
         for (const day of [3, 4]) {
             expect(kinds(day)).not.toContain('nogo');
             expect(all[`kw:${day}`]).toEqual({ kind : 'free', name : 'Free · all day' });
+            expect(all[`h3:${day}`].kind).toBe('free');
         }
 
         // Saturday the crew transfer vessels go until 11: a free one says so
@@ -536,6 +479,9 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         // The Summary feature's row: the jobs planned against the jobs due, per day
         await expect(board(page).locator('.b-time-axis-summary-value')).toHaveCount(7);
         await expect(board(page).locator('.b-time-axis-summary-value').first()).toHaveText('11 / 14');
+        // Every turbine a day's trips visit is due that day: never more planned than due
+        await expect(board(page).locator('.b-time-axis-summary-value'))
+            .toHaveText(['11 / 14', '1 / 6', '9 / 11', '11 / 15', '11 / 16', '2 / 8', '0 / 6']);
     });
 
     test('Monday is today: the same trips, Sea Puffin late', async({ page }) => {
@@ -544,7 +490,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         const all = await cells(page);
 
         expect(['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2'].map(vessel => all[`${vessel}:0`])).toEqual([
-            { kind : 'trip', name : '06:30–13:04', turbines : 'T-07 T-08 T-17', late : 0, pax : 3, seats : 12 },
+            { kind : 'trip', name : '06:50–13:24', turbines : 'T-07 T-08 T-17', late : 0, pax : 3, seats : 12 },
             { kind : 'trip', name : '07:45–12:11', turbines : 'T-22 T-23', late : 0, pax : 3, seats : 12 },
             { kind : 'trip', name : '08:15–14:17', turbines : 'T-31 T-41', late : 17, pax : 4, seats : 12 },
             { kind : 'free', name : 'Free · until 14' },
@@ -600,16 +546,25 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
     test('a click on a day\'s header or cell opens the Day view on that date', async({ page }) => {
         await open(page, '?view=week');
 
-        // Thursday's header: its trips on its hours, its forecast, no Today
+        // The week starts today: a day's date as the page's header shows it, "Thu 12", from the board's own tick
+        const dayLabel = index => page.evaluate(index => {
+            const date = globalThis.bryntum.query('dispatchapp').widgetMap.board.timeAxis.getAt(index).startDate;
+
+            return `${date.toLocaleDateString('en-US', { weekday : 'short' })} ${date.getDate()}`;
+        }, index);
+
+        const [today, fourth] = [await dayLabel(0), await dayLabel(3)];
+
+        // The fourth day's header: its trips on its hours, its forecast, its date in the page's header
         await board(page).locator('.b-sch-header-time-axis-cell[data-tick-index="3"]').click();
 
         await expect(bar(page).getByRole('button', { name : 'Day' })).toHaveClass(/b-pressed/);
         await expect(board(page)).toBeHidden();
         await expect(scheduler(page)).toBeVisible();
-        await expect(scheduler(page).locator('.ow-day')).not.toContainText('Today');
+        await expect(page.locator('.ow-clock')).toContainText(fourth);
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('18:00');
 
-        const thursday = await page.evaluate(() => {
+        const shown = await page.evaluate(() => {
             const
                 app   = globalThis.bryntum.query('dispatchapp'),
                 start = app.scheduler.startDate,
@@ -623,16 +578,16 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
             };
         });
 
-        expect(thursday.hour).toBe(6);
-        expect(thursday.day).toBe(3);
-        expect(thursday.trips).toEqual(thursday.cells);
-        await expect(trip(page, thursday.trips[0])).toBeVisible();
+        expect(shown.hour).toBe(6);
+        expect(shown.day).toBe(3);
+        expect(shown.trips).toEqual(shown.cells);
+        await expect(trip(page, shown.trips[0])).toBeVisible();
 
-        // Back to the week, a click on Sea Puffin's Monday opens today again
+        // Back to the week, a click on Sea Puffin's first day opens today again
         await bar(page).getByRole('button', { name : 'Week' }).click();
         await cell(page, 'sp', 0).click();
 
-        await expect(scheduler(page).locator('.ow-day')).toContainText('Today');
+        await expect(page.locator('.ow-clock')).toContainText(today);
         await expect(trip(page, 'SP-1')).toBeVisible();
         await expect.poll(async() => (await ctvClose(page)).closes).toBe('14:00');
     });
@@ -662,7 +617,7 @@ test.describe('Offshore Wind Dispatch weather windows', () => {
             // The hour before is within the limit, the hour it starts is over it
             expect(dayStart + first).toBe(hour);
             expect(wind[first - 1]).toBeLessThanOrEqual(20);
-            expect(starts).toEqual([hour, hour]);
+            expect(starts).toEqual([hour, hour, hour]);
         });
     }
 });
@@ -696,7 +651,8 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await notice.getByRole('button', { name : 'Undo' }).click();
 
         await expect(notice).toBeHidden();
-        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips
+        // The project's STM undoes the re-plan
+        await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips
             .filter(each => each.change).map(each => each.id))).toEqual([]);
         expect(await legsOf()).toEqual(before);
         // Undo brought the dependencies back with their stops
@@ -705,14 +661,167 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             .toEqual(['hv-t45', 'pickup-t58']);
     });
 
+    test('Undo of the forecast brings back a dependency into a stop the forecast took off today', async({ page }) => {
+        await open(page);
+
+        // Sea Puffin's T-41 waits for the HV isolation: the forecast moves the whole trip to tomorrow
+        const into = () => page.evaluate(async() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            await app.scheduler.project.commitAsync();
+
+            return app.scheduler.dependencyStore.getById('hv-t41')?.toEvent?.id ?? null;
+        });
+
+        await page.evaluate(() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            return app.replan(() => app.scheduler.dependencyStore.add({
+                id : 'hv-t41', kind : 'plan', fromEvent : 'H2-1', toEvent : 'SP-1:T-41', lag : 0, lagUnit : 'minute'
+            }));
+        });
+        expect(await into()).toBe('SP-1:T-41');
+
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toBeVisible();
+        expect(await into()).toBeNull();
+
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        await expect(page.locator('.ow-notice')).toBeHidden();
+        expect(await into()).toBe('SP-1:T-41');
+    });
+
+    const board = page => page.locator('.ow-week-board');
+
+    // What the forecast left on a day: each trip with its stops and how it changed, the teams waiting
+    const planOf = (page, day) => page.evaluate(day => {
+        const app = globalThis.bryntum.query('dispatchapp');
+
+        const trips = app.scheduler.weekTrips.filter(each => each.day === day);
+
+        return {
+            trips   : trips.map(each => `${each.id} ${each.resource.id} ${each.turbines.join(',')} ${each.change ?? ''}`.trim()),
+            waiting : app.dispatch.waitingStore.map(each => each.id)
+        };
+    }, day);
+
+    // Kittiwake out at 08:30, after the new forecast comes in, with Team F for T-34, then Team G for T-49: back after
+    // 14:00, the new forecast trims it
+    const trimmedSetup = page => page.evaluate(async() => {
+        const
+            app    = globalThis.bryntum.query('dispatchapp'),
+            vessel = app.scheduler.resourceStore.getById('kw');
+
+        await app.dropController.dropTeam('F', vessel);
+
+        const trip = app.trips.find(each => each.resource === vessel);
+
+        await app.replan(() => trip.layout({ departs : 8.5 * 60 }));
+        await app.replan(() => {
+            app.dispatch.waitingStore.remove('G');
+            trip.layout({ stops : [...trip.plan.stops, { turbine : 'T-49', minutes : 180, team : 'G' }] });
+        });
+    });
+
+    // Tomorrow's crew transfer window closed from the start of the day
+    const closeTomorrow = page => page.evaluate(() => {
+        const { dispatch } = globalThis.bryntum.query('dispatchapp');
+
+        dispatch.days[1].windows.ctv = dispatch.day.dayStart * 60;
+    });
+
+    test('stops a forecast cuts go to tomorrow as a trip of the vessel when they fit there', async({ page }) => {
+        await open(page);
+        await trimmedSetup(page);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText('1 trip trimmed');
+
+        // Today Kittiwake keeps T-34, tomorrow it has a trip of its own for T-49, from the first sailing
+        expect((await planOf(page, 0)).trips).toContain('KW-1 kw T-34 trimmed');
+        expect((await planOf(page, 1)).trips).toContain('KW-2 kw T-49 carried');
+        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.eventStore.getById('KW-2')
+            .departs)).toBe(6 * 60 + 30);
+
+        // The week shows it on its own day, dashed
+        await page.locator('.ow-schedule > .b-panel-header').getByRole('button', { name : 'Week' }).click();
+        await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell-jobs')).toHaveText('T-49');
+        await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell')).toHaveClass(/\bow-cell-carried\b/);
+
+        // The Day view of that day shows it, a trip like any other
+        await board(page).locator('[data-event-id="kw:1"]').click();
+        await expect(trip(page, 'KW-2')).toContainText('carried over');
+    });
+
+    test('the forecast moves Sea Puffin\'s trip to tomorrow morning, no crew goes back to the tray', async({ page }) => {
+        await open(page);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText(/Sea Puffin's trip moved to \w+ 06:30/);
+
+        expect((await planOf(page, 1)).trips).toContain('SP-5 sp T-31,T-41 carried');
+        await expect(tray(page).locator('.ow-team')).toHaveCount(3);
+
+        // The notice is today's: gone on tomorrow, back on today
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').openDay(1));
+        await expect(page.locator('.ow-notice')).toBeHidden();
+        await expect(trip(page, 'SP-5')).toContainText('carried over');
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').openDay(0));
+        await expect(page.locator('.ow-notice')).toBeVisible();
+
+        // Tomorrow's jobs count the work carried over as due
+        await page.locator('.ow-schedule > .b-panel-header').getByRole('button', { name : 'Week' }).click();
+        await expect(board(page).locator('.b-time-axis-summary-value').nth(1)).toHaveText('3 / 8');
+    });
+
+    test('a trip the forecast takes off today that does not fit tomorrow leaves its teams waiting', async({ page }) => {
+        await open(page);
+        await closeTomorrow(page);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText('Sea Puffin\'s trip off today');
+        await expect(page.locator('.ow-notice')).toContainText('2 stops wait at the port');
+
+        // No crew transfer vessel goes out tomorrow: Sea Puffin's trip is gone from today, nowhere tomorrow, and Team C
+        // waits for each of its stops
+        const [today, tomorrow] = [await planOf(page, 0), await planOf(page, 1)];
+
+        expect(today.trips.some(each => each.startsWith('SP-'))).toBe(false);
+        expect(tomorrow.trips.some(each => each.includes(' sp '))).toBe(false);
+        expect(today.waiting).toEqual(['F', 'G', 'H', 'C:T-31', 'C:T-41']);
+        await expect(tray(page).locator('.ow-team[data-team="C:T-31"]')).toContainText('2 h 30 min');
+        await expect(tray(page).locator('.ow-team[data-team="C:T-41"]')).toContainText('T-41');
+
+        // Undo takes them off the tray again
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        await expect(tray(page).locator('.ow-team')).toHaveCount(3);
+    });
+
+    test('Undo of the forecast puts back the trips, takes tomorrow\'s trip and the waiting teams away', async({ page }) => {
+        await open(page);
+        await trimmedSetup(page);
+
+        const before = [await planOf(page, 0), await planOf(page, 1)];
+
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toBeVisible();
+        // Today trimmed, tomorrow two trips more: Kittiwake's and Sea Puffin's
+        expect((await planOf(page, 0)).trips).toContain('KW-1 kw T-34 trimmed');
+        expect((await planOf(page, 1)).trips).toHaveLength(before[1].trips.length + 2);
+
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+
+        await expect.poll(() => planOf(page, 0)).toEqual(before[0]);
+        expect(await planOf(page, 1)).toEqual(before[1]);
+        await expect(tray(page).locator('.ow-team')).toHaveCount(before[0].waiting.length);
+    });
+
     test('a trip the forecast brought forward, dragged past its window, is at risk', async({ page }) => {
         await open(page, '?state=forecast');
 
         const third = page.locator('.ow-kpis .ow-kpi').nth(2);
 
-        // Right after the forecast nothing is past its window, the third count is what it moved to tomorrow
-        await expect(third).toContainText('Moved to');
-        await expect(third).toHaveClass(/\bow-kpi-alert\b/);
+        // The trips already at sea when the forecast came in are not re-planned: they stay as they are, past their
+        // window, and the third count is theirs
+        await expect(third).toContainText('At risk');
+        await expect(third.locator('b')).toHaveText('3');
 
         const id = await page.evaluate(async() => {
             const
@@ -738,7 +847,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(page.locator('.ow-map-label-risk')).not.toHaveCount(0);
         // One slot for the third count: a trip past its window wins over the turbines moved to tomorrow
         await expect(third).toContainText('At risk');
-        await expect(third.locator('b')).toHaveText('1');
+        await expect(third.locator('b')).toHaveText('4');
         await expect(third).toHaveClass(/\bow-kpi-warn\b/);
     });
 
@@ -763,8 +872,8 @@ test.describe('Offshore Wind Dispatch trips', () => {
         expect(await page.evaluate(() => {
             const trip = globalThis.bryntum.query('dispatchapp').trips.find(each => each.id === 'NT-1');
 
-            return [trip.departs, trip.legs[0].type, trip.legs.at(-1).type, trip.preamble.magnitude > 0];
-        })).toEqual([7 * 60 + 45, 'transit', 'transit', true]);
+            return [trip.departs, trip.children[0].kind, trip.children.at(-1).kind, trip.preamble.magnitude > 0];
+        })).toEqual([7 * 60 + 45, 'stop', 'stop', true]);
 
         // SP-1 is back after the CTV window: its sail back ends in the time and how late it is
         await expect(trip(page, 'SP-1').locator('.b-sch-event-buffer-after.ow-transit-late')).toHaveText('14:17 · +17 min');
@@ -924,7 +1033,7 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
             results = [];
 
         expect(teams).toEqual(['F', 'G', 'H']);
-        expect(vessels).toHaveLength(7);
+        expect(vessels).toHaveLength(8);
 
         // Half past twelve: inside every weather window, on a stretch of each row that holds no trip
         const noon = await page.evaluate(() => {
@@ -944,15 +1053,15 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
                     point  = { x : axisBox.x + noon, y : rowBox.y + rowBox.height / 2 };
 
                 await holdAt(page, teamId, point);
-                await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').drop?.target.id),
+                await expect.poll(() => page.evaluate(() => globalThis.bryntum.query('dispatchapp').held?.target.id),
                     { message : `${teamId} held over ${name}` }).toBeTruthy();
                 await expect(page.locator('.ow-drop-tip')).toBeVisible();
 
                 const held = await page.evaluate(() => {
-                    const { drop } = globalThis.bryntum.query('dispatchapp');
+                    const { held } = globalThis.bryntum.query('dispatchapp');
 
-                    return { trip   : drop.trip.id, valid  : drop.result.valid, reason : drop.result.reason,
-                        short  : drop.result.short };
+                    return { trip   : held.trip.id, valid  : held.result.valid, reason : held.result.reason,
+                        short  : held.result.short };
                 });
 
                 // The proxy says the same as the check, in short
@@ -1035,7 +1144,7 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
     test('the trip tooltip: the vessel, a status pill, the trip drawn to scale and a grid of facts', async({ page }) => {
         await open(page);
 
-        for (const [id, pill] of [['SR-1', '56 min to spare'], ['SP-1', '+17 min late']]) {
+        for (const [id, pill] of [['SR-1', '36 min to spare'], ['SP-1', '+17 min late']]) {
             const box = await trip(page, id).boundingBox();
 
             await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.7, { steps : 3 });
@@ -1086,6 +1195,186 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         await expect(page.locator('.ow-drop-tip')).toBeHidden();
 
         await page.mouse.up();
+    });
+});
+
+test.describe('Offshore Wind Dispatch, dispatch rules', () => {
+    test('every job needs GWO: a team without it is refused, and the certificates shown are the ones checked', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app    = globalThis.bryntum.query('dispatchapp'),
+                vessel = app.scheduler.resourceStore.getById('kw'),
+                plan   = { id : 'KW-9', start : 540, stops : [], mode : 'vessel', wait : 0, pax : 0, seats : vessel.seats },
+                // A job that asks for no certificate of its own
+                job    = { turbine : 'T-07', minutes : 60 },
+                check  = certs => app.dropController.rawCheck(plan, vessel,
+                    { id : 'Z', name : 'Team Z', techs : 3, certs }, job);
+
+            return { without : check([]), with : check(['GWO']) };
+        });
+
+        expect(result.without.valid).toBe(false);
+        expect(result.without.reason).toBe('Team Z lacks GWO');
+        expect(result.without.certs).toEqual(['GWO']);
+        expect(result.with.reason).toBe(null);
+    });
+
+    test('a vessel is on one trip at a time: a drag or a booking that runs into its other trip is refused', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app             = globalThis.bryntum.query('dispatchapp'),
+                [first, second] = ['H1-1', 'H1-2'].map(id => app.trips.find(each => each.id === id)),
+                // The pick-up dragged to leave while the drop-off is still out
+                departs         = first.departs + 15,
+                drag            = app.scheduler.validateTripDrag({
+                    eventRecords : [second],
+                    startDate    : second.dateOf(departs + second.transits.out)
+                }),
+                // A new trip of Northern Tern's planned to leave while its first trip is out
+                trip            = app.trips.find(each => each.id === 'NT-1'),
+                vessel          = trip.resource,
+                plan            = {
+                    id    : 'NT-9',
+                    start : trip.departs + 15,
+                    stops : [],
+                    mode  : 'vessel',
+                    wait  : 0,
+                    pax   : 0,
+                    seats : vessel.seats
+                },
+                booked          = app.dropController.rawCheck(plan, vessel,
+                    { id : 'Z', name : 'Team Z', techs : 3, certs : ['GWO'] }, { turbine : 'T-07', minutes : 60 });
+
+            return { drag, booked : booked.reason, name : vessel.name };
+        });
+
+        expect(result.drag.valid).toBe(false);
+        expect(result.drag.message).toContain('is out on H1-1');
+        expect(result.booked).toContain(`${result.name} is out on NT-1`);
+    });
+
+    test('a helicopter row with no trip to join refuses the team without adding a trip to the plan', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app    = globalThis.bryntum.query('dispatchapp'),
+                count  = () => app.scheduler.eventStore.count,
+                before = count(),
+                heli   = app.scheduler.resourceStore.getById('h3'),
+                team   = app.dispatch.waitingStore.first.id,
+                drop   = app.dropController.previewDrop(team, heli);
+
+            return { valid : drop.result.valid, short : drop.result.short, added : count() - before };
+        });
+
+        expect(result).toEqual({ valid : false, short : 'Vessels only', added : 0 });
+    });
+
+    test('a booking that pushes a trip waiting for it past its window is taken back once the engine has placed it', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(async() => {
+            const
+                app   = globalThis.bryntum.query('dispatchapp'),
+                trip  = id => app.trips.find(each => each.id === id),
+                stop  = app.scheduler.eventStore.getById('BP-1:T-55'),
+                // BP-1's last stop waits for Northern Tern's work, with a lag that leaves no wait today
+                lag   = (stop.startDate - trip('NT-1').endDate) / 60000,
+                back  = trip('BP-1').endMinute;
+
+            app.scheduler.dependencyStore.add({
+                id        : 'test',
+                kind      : 'plan',
+                text      : 'Test link',
+                fromEvent : 'NT-1',
+                toEvent   : 'BP-1:T-55',
+                lag,
+                lagUnit   : 'minute'
+            });
+            await app.replan();
+
+            const wasBack = trip('BP-1').endMinute;
+
+            // Team F fits on NT-1 by the planner's check, the engine then pushes T-55 and BP-1 past 17:00
+            const booked = await app.dropController.dropTeam('F', trip('NT-1'));
+
+            return {
+                booked,
+                unchanged : wasBack === back && trip('BP-1').endMinute === back,
+                turbines  : trip('NT-1').turbines,
+                waiting   : app.dispatch.waitingStore.map(each => each.id)
+            };
+        });
+
+        expect(result).toEqual({ booked : false, unchanged : true, turbines : ['T-22', 'T-23'], waiting : ['F', 'G', 'H'] });
+        await expect(page.locator('.b-toast')).toContainText('Test link: BP-1 would be back');
+        await expect(page.locator('.b-toast')).not.toContainText('booked');
+        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
+    });
+
+    test('a drag cancelled while the plan is being placed does not get its outline back', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(async() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            await app.drag.showHeld(app.dispatch.waitingStore.first.id, app.trips.find(each => each.id === 'NT-1'));
+            // Escape while the change is awaited
+            await app.replan(() => app.drag.end());
+
+            return {
+                held    : app.held,
+                outline : Boolean(app.scheduler.resourceTimeRangeStore.getById('drop')),
+                chips   : document.querySelectorAll('.ow-drag-chip').length
+            };
+        });
+
+        expect(result).toEqual({ held : null, outline : false, chips : 0 });
+    });
+
+    test('the trip editor saves a new time on station: the trip leaves later, its legs with it', async({ page }) => {
+        await open(page);
+
+        const before = await page.evaluate(async() => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.id === 'NT-1');
+
+            await app.scheduler.features.taskEdit.editEvent(trip);
+
+            return trip.departs;
+        });
+
+        await expect.poll(() => page.evaluate(() =>
+            Boolean(globalThis.bryntum.query('dispatchapp').scheduler.features.taskEdit.editor?.isVisible))).toBe(true);
+
+        await page.evaluate(() => {
+            const
+                { editor } = globalThis.bryntum.query('dispatchapp').scheduler.features.taskEdit,
+                field      = editor.widgetMap.startDateField,
+                value      = new Date(field.value);
+
+            value.setMinutes(value.getMinutes() + 30);
+            field.value = value;
+            editor.widgetMap.saveButton.element.click();
+        });
+
+        await expect.poll(() => page.evaluate(() => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.id === 'NT-1'),
+                // The engine moved the legs with it: the first stop starts when the sail out ends
+                legs = trip.children;
+
+            return [app.scheduler.features.taskEdit.editor.isVisible, trip.departs,
+                legs[0].startDate.getTime() === trip.startDate.getTime(),
+                trip.minutesOf(trip.constraintDate) === trip.minutesOf(trip.startDate)];
+        })).toEqual([false, before + 30, true, true]);
     });
 });
 

@@ -939,20 +939,20 @@ a {
             mask-size          : contain;
             mask-repeat        : no-repeat;
 
-            &[data-icon="truck"] {
-                mask-image : url('./gallery/icons/truck.svg');
+            &[data-icon="wind"] {
+                mask-image : url('./gallery/icons/wind.svg');
             }
 
-            &[data-icon="warehouse"] {
-                mask-image : url('./gallery/icons/warehouse.svg');
+            &[data-icon="users-three"] {
+                mask-image : url('./gallery/icons/users-three.svg');
             }
 
-            &[data-icon="chart-bar"] {
-                mask-image : url('./gallery/icons/chart-bar.svg');
+            &[data-icon="map-trifold"] {
+                mask-image : url('./gallery/icons/map-trifold.svg');
             }
 
-            &[data-icon="clock-countdown"] {
-                mask-image : url('./gallery/icons/clock-countdown.svg');
+            &[data-icon="calendar-dots"] {
+                mask-image : url('./gallery/icons/calendar-dots.svg');
             }
         }
 

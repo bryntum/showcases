@@ -1,11 +1,9 @@
 /**
- * The geography of Skarv Bank: 60 turbines in six staggered rows of ten, the offshore substation between them, and the
- * port to the south west. Transit times follow from it, so the trips, a stop added by a drop and the turbines a trip
- * can still reach all come from one model:
+ * The geography of Skarv Bank: 60 turbines in six staggered rows of ten (A in the north to F in the south), the
+ * substation between them and the port south of row F, west of column 1. All transit times come from it:
  *
- * - From the port to a turbine and back: a base time plus a step per row and column away from the port. Rows run from
- *   A in the north to F in the south, the port is south of row F and west of column 1
- * - Between two turbines: a step per row and column apart, moving and pushing on included
+ * - Port to turbine, the same back: a base time plus a step per row and column away from the port
+ * - Turbine to turbine: a step per row and column apart, moving and pushing on included
  *
  * Helicopters fly the same geography faster.
  */
@@ -27,27 +25,15 @@ export const
     mapCentre   = { x : 232, y : 160 },
     mapPort     = { x : -6, y : 290 };
 
-/**
- * The ID of the n-th turbine, "T-07"
- * @param {Number} n 1 to 60
- * @returns {String}
- */
-export function turbineId(n) {
+// The n-th turbine (1 based), "T-07"
+function turbineId(n) {
     return `T-${String(n).padStart(2, '0')}`;
 }
 
-/**
- * All turbine IDs, T-01 to T-60
- * @type {String[]}
- */
 export const turbineIds = Array.from({ length : rows * cols }, (_, i) => turbineId(i + 1));
 
-/**
- * The row and column of a turbine (0 based). The substation sits between rows C and D, columns 5 and 6
- * @param {String} id
- * @returns {{r: Number, c: Number}}
- */
-export function gridOf(id) {
+// The row and column of a turbine (0 based). The substation sits between rows C and D, columns 5 and 6
+function gridOf(id) {
     if (id === substation) {
         return { r : 2.5, c : 4.5 };
     }
@@ -57,34 +43,18 @@ export function gridOf(id) {
     return { r : Math.floor(n / cols), c : n % cols };
 }
 
-/**
- * "Row C" for a turbine
- * @param {String} id
- * @returns {String}
- */
 export function rowName(id) {
     return `Row ${rowLetters[Math.floor(gridOf(id).r)]}`;
 }
 
-/**
- * Minutes from the port to a turbine, the same back
- * @param {String} id
- * @param {String} mode `vessel` or `heli`
- * @returns {Number}
- */
+// Minutes from the port to a turbine, the same back, `mode` is `vessel` or `heli`
 export function portMinutes(id, mode) {
     const { r, c } = gridOf(id);
 
     return Math.round(portBase[mode] + portStep[mode] * (c - r + rows - 1));
 }
 
-/**
- * Minutes from one turbine to the next
- * @param {String} from
- * @param {String} to
- * @param {String} mode `vessel` or `heli`
- * @returns {Number}
- */
+// Minutes from one turbine to the next, `mode` is `vessel` or `heli`
 export function hopMinutes(from, to, mode) {
     const
         a = gridOf(from),
@@ -93,11 +63,7 @@ export function hopMinutes(from, to, mode) {
     return Math.round(hopStep[mode] * (Math.abs(a.r - b.r) + Math.abs(a.c - b.c)));
 }
 
-/**
- * Map position of a turbine or the substation, in the map's SVG units
- * @param {String} id
- * @returns {{x: Number, y: Number}}
- */
+// `{ x, y }` of a turbine or the substation, in the map's SVG units
 export function mapXY(id) {
     const
         { r, c } = gridOf(id),

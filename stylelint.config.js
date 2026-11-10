@@ -13,5 +13,5 @@ export default {
         // Nested rules read in their own order, the rule misreads them
         'no-descending-specificity'                  : null
     },
-    ignoreFiles : ['dist/**', 'node_modules/**']
+    ignoreFiles : ['dist/**', 'node_modules/**', '.worktrees/**']
 };

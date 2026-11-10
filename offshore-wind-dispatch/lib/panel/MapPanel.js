@@ -1,18 +1,22 @@
-import { Panel, StringHelper } from '@bryntum/core-enterprise';
+import { Panel } from '@bryntum/core-enterprise';
 import { turbineIds } from '../plan/Farm.js';
-import { iconConfig } from '../util/Icons.js';
 // Also registers the widget types used below
 import '../map/TurbineMap.js';
-import '../map/TurbineCard.js';
+import { markerParts } from '../map/Turbine.js';
+import { mapModel } from '../map/MapModel.js';
+import { cardInfo } from '../map/TurbineCard.js';
+
+// A turbine's map marker, small: the legend's swatches and the title's count
+const
+    mark     = status => `<svg class="ow-legend-mark${status ? ` ow-m-${status}` : ''}" viewBox="-8 -8 16 16" ` +
+        `aria-hidden="true">${markerParts()}</svg>`,
+    // The statuses of a turbine (TurbineModel#status) the legend names
+    statuses = [['work', 'In work'], ['planned', 'Planned'], ['waiting', 'Waiting'], ['risk', 'At risk'],
+        ['fault', 'Stopped']];
 
 /**
- * The map half of the app: a column of two cards. The site's card has a title bar with the site's name and the
- * Status / Access switch, the map of the farm (TurbineMap) inset, and its legend. The selected turbine's card
- * (TurbineCard) is under it. On a phone it is the Map tab.
- *
- * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
+ * The map half of the app: the site's card (title bar, TurbineMap, legend) over the selected turbine's card.
+ * `draw()` redraws both on every change, but moves the map only when the selection changed (see fit).
  */
 export default class MapPanel extends Panel {
     static $name = 'MapPanel';
@@ -20,28 +24,13 @@ export default class MapPanel extends Panel {
     static type = 'mappanel';
 
     static configurable = {
-        /**
-         * The site, for the map's port label and the title: `{ port, portKm, name }`
-         * @config {Object}
-         */
+        // `{ port, portKm, name }`
         site : null,
 
-        /**
-         * Returns the content (a DomConfig) of a turbine's tooltip on the map, see TurbineMap#tipContent
-         * @config {Function}
-         */
+        // See TurbineMap#tipContent
         tipContent : null,
 
-        /**
-         * The map's view, `status` or `access`. The switch changes it, the `mapViewChange` event tells
-         * @prp {String}
-         */
-        mapView : 'status',
-
-        /**
-         * At phone widths the map is its own tab, the site's title bar goes. Set by DispatchApp#updatePhone
-         * @prp {Boolean}
-         */
+        // Set by PhoneLayout. The site's title bar goes
         phone : false,
 
         cls    : 'ow-side',
@@ -50,14 +39,7 @@ export default class MapPanel extends Panel {
     };
 
     construct(config) {
-        const
-            me                         = this,
-            { site, tipContent, mapView } = config,
-            show                          = name => ({
-                text     : name[0].toUpperCase() + name.slice(1),
-                pressed  : mapView === name,
-                onToggle : ({ pressed }) => pressed && me.trigger('mapViewChange', { mapView : name })
-            });
+        const { site, tipContent } = config;
 
         super.construct({
             ...config,
@@ -65,65 +47,76 @@ export default class MapPanel extends Panel {
             title  : 'Map',
             header : false,
             items  : {
-                // The site's card: the title bar, the map inset with the card's padding, the legend on the card
+                // The site's card, its title and the turbine count in its header
                 place : {
-                    type   : 'container',
+                    type   : 'panel',
                     cls    : 'ow-side-card',
                     flex   : 1,
                     layout : 'vbox',
-                    items  : {
-                        bar : {
-                            type  : 'toolbar',
-                            cls   : 'ow-panel-bar',
-                            items : {
-                                title : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
-                                count : {
-                                    type    : 'widget',
-                                    cls     : 'ow-panel-count',
-                                    tooltip : `${turbineIds.length} turbines`
-                                },
-                                spacer : '->',
-                                // A segmented control, as the schedule's Day | Week
-                                view   : {
-                                    type        : 'buttongroup',
-                                    rendition   : 'padded',
-                                    toggleGroup : true,
-                                    items       : { status : show('status'), access : show('access') }
-                                }
-                            }
-                        },
-                        map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '4 16 0' },
-                        legend : { type : 'maplegend' }
+                    title  : site.name,
+                    tools  : {
+                        count : {
+                            type    : 'widget',
+                            cls     : 'ow-panel-count',
+                            tooltip : `${turbineIds.length} turbines`,
+                            html    : `${mark()}<span>${turbineIds.length}</span>`
+                        }
+                    },
+                    items : {
+                        map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '0 16' },
+                        legend : {
+                            type : 'widget',
+                            cls  : 'ow-map-legend',
+                            html : statuses.map(([status, label]) => `<span>${mark(status)}${label}</span>`).join('')
+                        }
                     }
                 },
-                // The selected turbine, a card of its own
                 card : { type : 'turbinecard' }
             }
         });
     }
 
-    afterConstruct() {
-        super.afterConstruct();
+    /**
+     * @param {Object} options
+     * @param {DispatchState} options.state
+     * @param {TripModel[]} options.trips The trips of the day shown
+     * @param {TripModel|null} options.selectedTrip
+     * @param {String|null} options.turbine The held team's turbine, else the selected one
+     * @param {Object|null} options.held See DropController#previewDrop
+     * @param {Boolean} options.follow DispatchApp#mapFollows
+     */
+    draw({ state, trips, selectedTrip, turbine, held, follow }) {
+        const
+            { map, card }         = this.widgetMap,
+            model                 = mapModel({ state, trips, selectedTrip, selectedTurbine : turbine, drop : held });
 
-        // The turbine count, with the turbine's icon
-        this.widgetMap.bar.widgetMap.count.html = [iconConfig('turbine'), { tag : 'span', text : String(turbineIds.length) }];
-        this.updatePhone(this.phone);
-    }
+        map.draw(model);
+        this.fit(selectedTrip, turbine, follow && !held, Boolean(held));
 
-    updatePhone(phone) {
-        const { bar } = this.widgetMap ?? {};
-
-        if (bar) {
-            bar.hidden = phone;
+        if (turbine) {
+            card.draw(cardInfo({ state, trips, turbine, drop : held, selectedTrip }));
         }
     }
 
-    updateMapView(mapView) {
-        const { status, access } = this.widgetMap?.bar?.widgetMap ?? {};
+    // Only a change of what is shown moves the map (another trip or turbine, following or not, a team held or not): a
+    // redraw of the same selection (the plan, the clock, a hover) must not undo the user's pan or zoom
+    fit(trip, turbine, follow, held) {
+        const
+            me       = this,
+            key      = [trip?.id, turbine, follow, held].join('|'),
+            turbines = trip?.turbines ?? [],
+            fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
 
-        if (status) {
-            (mapView === 'access' ? access : status).pressed = true;
+        if (key !== me.fitKey) {
+            me.fitKey = key;
+            me.widgetMap.map.fitTo(follow ? fit : null);
         }
+    }
+
+    // For a selection made on the map itself, or Show all: the map is already where it should be. The next change of
+    // the selection fits it again
+    keepView(trip, turbine, follow) {
+        this.fitKey = [trip?.id, turbine, follow, false].join('|');
     }
 }
 

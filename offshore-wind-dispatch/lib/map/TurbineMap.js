@@ -1,14 +1,11 @@
-import { Collection, DomSync, EventHelper, Store, Widget } from '@bryntum/core-enterprise';
+import { DomSync, EventHelper, Store, Widget } from '@bryntum/core-enterprise';
 import { mapXY, rowName, turbineIds } from '../plan/Farm.js';
 import { labelSvg, mapSvg, routeSvg } from './MapDrawing.js';
 import TurbineModel from './TurbineModel.js';
 import MapViewport from './MapViewport.js';
 // Also registers the widget types used below
-import './MapLegend.js';
-import './ShowAllButton.js';
 import './TurbineTooltip.js';
 
-// The arrow keys, as a direction on the map
 const directions = {
     ArrowRight : { x : 1, y : 0 },
     ArrowLeft  : { x : -1, y : 0 },
@@ -17,29 +14,14 @@ const directions = {
 };
 
 /**
- * The map of Skarv Bank: the 60 turbines in their staggered rows, the substation and its export cable, the port, the
- * routes of the vessel trips, and the status of every turbine (MapModel). While a team is dragged over a trip it rings
- * the turbines the trip can still reach before its window closes and dims the rest.
- *
- * The turbines are records of a Store (`turbines`), each drawn once as a marker of an SVG listbox, then updated in
- * place as its record changes, so the focus, the hover and the tooltip stay on it while the plan changes under it.
- *
- * - `selected` is a Collection of the selected turbine records, a click or Enter or Space selects one, and its change
- *   fires `selectionChange`. Each marker carries `aria-selected`
- * - Hovering a turbine fires `turbineHover`, `ring()` rings the turbines of a trip
- * - The map is one tab stop: the arrow keys move the focus to the nearest turbine in that direction
- * - The tooltip is a TurbineTooltip on the markers, its content from the `tipContent` function, shown on hover and on
- *   keyboard focus
- * - It zooms like a map (MapViewport): the wheel and a trackpad or finger pinch zoom around the pointer, a drag or a
- *   two finger scroll pans. `fitTo()` fits it to a trip, the Show all button (ShowAllButton) goes back to the whole
- *   farm. The view the user chose stays until the app fits it again (DispatchApp#fitMap)
- *
- * Drawn in `currentColor` and CSS custom properties, so it follows light and dark.
+ * The SVG map of the farm, drawn from a MapModel by `draw()`. Its turbines are records of a Store (`turbines`), each
+ * drawn once as a marker of an SVG listbox and then updated in place as its record changes, so the focus, the hover
+ * and the tooltip stay on a marker while the plan changes under it. The selected turbine is the app's, set by `draw()`
+ * (`selected`); a click or Enter on a turbine asks for it (`turbineSelect`).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
  * https://bryntum.com/products/scheduler/docs/api/Core/data/Store
- * https://bryntum.com/products/scheduler/docs/api/Core/util/Collection
  */
 export default class TurbineMap extends Widget {
     static $name = 'TurbineMap';
@@ -54,10 +36,8 @@ export default class TurbineMap extends Widget {
         site : null,
 
         /**
-         * Returns the content of a turbine's tooltip
+         * Returns the DomConfig of a turbine's tooltip, called with the turbine's ID
          * @config {Function}
-         * @param {String} turbine The turbine's ID
-         * @returns {Object} DomConfig
          */
         tipContent : null,
 
@@ -65,16 +45,13 @@ export default class TurbineMap extends Widget {
     };
 
     /**
-     * Fired when the selected turbines change, by a click, the keyboard or `draw()`
-     * @event selectionChange
-     * @param {TurbineModel[]} selection The selected turbines
-     * @param {TurbineModel[]} selected The turbines selected by the change
-     * @param {TurbineModel[]} deselected The turbines no longer selected
-     * @param {Boolean} user `true` when the user selected it, `false` when the app did (`draw()`)
+     * Fired when the user picks a turbine, by a click or the keyboard. The app selects it through `draw()`
+     * @event turbineSelect
+     * @param {String} turbine
      */
 
     /**
-     * Fired when the pointer enters a turbine, or leaves the turbines
+     * Fired when the pointer enters a turbine, or leaves the turbines (`null`)
      * @event turbineHover
      * @param {String|null} turbine
      */
@@ -95,10 +72,9 @@ export default class TurbineMap extends Widget {
         });
         me.turbines.on({ update : ({ record }) => me.syncMarker(record), thisObj : me });
 
-        me.selected = new Collection();
-        me.selected.on({ change : 'onSelectedChange', thisObj : me });
-
-        me.ringed  = new Set();
+        // The ID of the selected turbine
+        me.selected = null;
+        me.ringed   = new Set();
         me.hovered = null;
 
         me.html = mapSvg(me.site);
@@ -120,12 +96,16 @@ export default class TurbineMap extends Widget {
         });
 
         me.svgElement = me.element.querySelector('.ow-map-svg');
-        // Back to the whole farm, shown only while the map is fitted to a trip
+        // Shown only while the map is fitted to a trip
         me.wholeFarmButton = Widget.create({
-            type     : 'showallbutton',
+            type      : 'button',
+            cls       : 'ow-map-whole',
+            rendition : 'elevated',
+            text      : 'Show all',
+            hidden    : true,
             // In one row with the callout, so the two never overlap
-            appendTo : me.element.querySelector('.ow-map-top'),
-            onClick  : () => {
+            appendTo  : me.element.querySelector('.ow-map-top'),
+            onClick   : () => {
                 me.fitTo(null);
                 me.trigger('wholeFarm');
             }
@@ -162,9 +142,9 @@ export default class TurbineMap extends Widget {
     }
 
     /**
-     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. The app calls it
-     * when the selection changes (DispatchApp#fitMap), so a view the user panned or zoomed to stays until then
-     * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
+     * Animates the viewBox to fit the turbines and the port, or the whole farm for `null`. Only the app calls it, when
+     * the selection changes (MapPanel#fit), so a view the user panned or zoomed to stays until then
+     * @param {String[]|null} ids
      */
     fitTo(ids) {
         this.viewport.fitTo(ids);
@@ -173,19 +153,23 @@ export default class TurbineMap extends Widget {
     //region Drawing
 
     /**
-     * Shows the plan: each turbine's status, the routes, the labels, the callout and the selected turbine
      * @param {Object} model See MapModel#mapModel
      */
-    draw({ markers, labels, routes, callout, selected }) {
+    draw({ markerOf, labels, routes, callout, selected }) {
         const
             me        = this,
-            { parts } = me;
+            { parts } = me,
+            was       = me.selected;
 
-        me.turbines.forEach(record => {
-            const { status = '', dimmed = false } = markers.get(record.id) ?? {};
+        me.selected = selected;
+        me.turbines.forEach(record => record.set(markerOf(record.id)));
 
-            record.set({ status, dimmed });
-        });
+        if (selected !== was) {
+            // The substation is no turbine
+            [was, selected].map(id => me.turbines.getById(id)).forEach(record => record && me.syncMarker(record));
+            // The tab stop follows the selection
+            selected && me.setFocusable(selected);
+        }
 
         parts.routes.innerHTML = routes.map(route => routeSvg(route)).join('');
         parts.labels.innerHTML = labels.map(label => labelSvg(label)).join('');
@@ -194,24 +178,14 @@ export default class TurbineMap extends Widget {
             domConfig     : { className : 'ow-map-callout', hidden : callout ? null : true, children : callout ?? [] }
         });
 
-        // The app's selection, not the user's
-        me.drawing = true;
-        me.select(selected);
-        me.drawing = false;
-
         me.markerTip.refresh();
     }
 
-    /**
-     * Brings a marker in line with its record and the view: its status and dimmed as classes, selected, ringed,
-     * hovered, its accessible name
-     * @param {TurbineModel} record
-     */
     syncMarker(record) {
         const
             me       = this,
             el       = me.markers?.get(record.id),
-            selected = me.selected?.includes(record);
+            selected = me.selected === record.id;
 
         if (!el) {
             return;
@@ -231,38 +205,6 @@ export default class TurbineMap extends Widget {
 
     //region Selection
 
-    /**
-     * Selects a turbine, or none
-     * @param {String|null} id
-     */
-    select(id) {
-        const
-            { selected } = this,
-            record       = id ? this.turbines.getById(id) : null;
-
-        if (selected.count !== (record ? 1 : 0) || (record && !selected.includes(record))) {
-            selected.splice(0, selected.count, ...(record ? [record] : []));
-        }
-    }
-
-    onSelectedChange({ added = [], removed = [] }) {
-        const me = this;
-
-        [...removed, ...added].forEach(record => me.syncMarker(record));
-
-        // The tab stop follows the selection
-        if (added[0]) {
-            me.setFocusable(added[0].id);
-        }
-
-        me.trigger('selectionChange', {
-            selection  : me.selected.values.slice(),
-            selected   : added,
-            deselected : removed,
-            user       : !me.drawing
-        });
-    }
-
     // The click that ends a pan selects nothing, even where the pan started on a turbine: it stops on its way down
     onMapClickCapture(event) {
         if (this.viewport.panned) {
@@ -270,9 +212,8 @@ export default class TurbineMap extends Widget {
         }
     }
 
-    // A press and release without a move selects the turbine
     onMarkerClick(event) {
-        this.select(event.currentTarget.dataset.turbine);
+        this.trigger('turbineSelect', { turbine : event.currentTarget.dataset.turbine });
     }
 
     //endregion
@@ -295,10 +236,7 @@ export default class TurbineMap extends Widget {
         }
     }
 
-    /**
-     * Rings turbines, the stops of the trip selected or hovered in the schedule
-     * @param {String[]} ids
-     */
+    // Rings the stops of the trip selected or hovered in the schedule
     ring(ids = []) {
         const
             me     = this,
@@ -345,7 +283,7 @@ export default class TurbineMap extends Widget {
             }
         }
         else if (event.key === 'Enter' || event.key === ' ') {
-            me.select(from);
+            me.trigger('turbineSelect', { turbine : from });
         }
         else if (event.key === 'Escape' && me.markerTip.isVisible) {
             me.markerTip.hide();
@@ -357,12 +295,7 @@ export default class TurbineMap extends Widget {
         event.preventDefault();
     }
 
-    /**
-     * The nearest turbine from another in a direction: within 45° of it, closest along it, then least off it
-     * @param {String} id
-     * @param {{x: Number, y: Number}} direction
-     * @returns {String|null}
-     */
+    // The nearest turbine in a direction: within 45° of it, closest along it, then least off it
     nearest(id, direction) {
         const from = this.turbines.getById(id);
 

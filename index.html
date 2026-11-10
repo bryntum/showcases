@@ -13,10 +13,10 @@
     <meta property="og:title" content="Bryntum Showcases · Real-world use cases">
     <meta property="og:description" content="Realistic, fully front-end apps for real-world use cases, built on the public Bryntum and AG Grid npm packages, with the source on GitHub.">
     <!-- Absolute URL, the image is copied as is from public/gallery/ -->
-    <meta property="og:image" content="https://showcase.bryntum.com/gallery/og-logistics-control-tower.png">
+    <meta property="og:image" content="https://showcase.bryntum.com/gallery/og-offshore-wind-dispatch.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="The Logistics Control Tower showcase: live inbound shipments in AG Grid next to a Bryntum dock schedule">
+    <meta property="og:image:alt" content="The Offshore Wind Dispatch showcase: crew transfer vessels and helicopters on a Bryntum Scheduler under an AG Charts wave forecast, next to a map of the wind farm">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="./shared/logo-round.svg" type="image/svg+xml">
     <!-- vite.config.js injects the theme colour and the head script applying the stored light / dark choice -->
@@ -75,7 +75,7 @@
                         Browse showcases
                         <svg class="icon" aria-hidden="true"><use href="#icon-arrow-down"/></svg>
                     </a>
-                    <a class="button" href="./logistics-control-tower/">
+                    <a class="button" href="./offshore-wind-dispatch/">
                         <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
                         Try the latest demo
                     </a>
@@ -188,71 +188,70 @@
         <section class="featured wrap" aria-labelledby="featured-title">
             <div class="featured-grid">
                 <figure class="frame">
-                    <a href="./logistics-control-tower/" tabindex="-1" aria-hidden="true">
+                    <a href="./offshore-wind-dispatch/" tabindex="-1" aria-hidden="true">
                         <!-- Light or dark screenshot: the system setting by the media queries, the viewer's choice by
                              gallery.js, which rewrites the media of the data-scheme sources -->
                         <picture>
                             <source type="image/webp" media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/logistics-control-tower-light-800.webp 800w, ./gallery/logistics-control-tower-light-1600.webp 1600w"
+                                srcset="./gallery/offshore-wind-dispatch-light-800.webp 800w, ./gallery/offshore-wind-dispatch-light-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source type="image/webp"
-                                srcset="./gallery/logistics-control-tower-dark-800.webp 800w, ./gallery/logistics-control-tower-dark-1600.webp 1600w"
+                                srcset="./gallery/offshore-wind-dispatch-dark-800.webp 800w, ./gallery/offshore-wind-dispatch-dark-1600.webp 1600w"
                                 sizes="(max-width: 56rem) 100vw, 44rem">
                             <source media="(prefers-color-scheme: light)" data-scheme="light"
-                                srcset="./gallery/logistics-control-tower-light-1200.png">
-                            <img src="./gallery/logistics-control-tower-dark-1200.png" width="1200" height="741" fetchpriority="high"
-                                alt="Logistics Control Tower: inbound shipments grouped by carrier in AG Grid, next to the dock doors of a distribution centre with their unloading slots on a timeline">
+                                srcset="./gallery/offshore-wind-dispatch-light-1200.png">
+                            <img src="./gallery/offshore-wind-dispatch-dark-1200.png" width="1200" height="741" fetchpriority="high"
+                                alt="Offshore Wind Dispatch: vessel and helicopter trips on a Bryntum Scheduler under an AG Charts wave height forecast, the crews waiting in the header, and a map of the wind farm with the selected turbine">
                         </picture>
                     </a>
                 </figure>
 
                 <div>
-                    <h2 id="featured-title">Logistics Control Tower</h2>
+                    <h2 id="featured-title">Offshore Wind Dispatch</h2>
                     <ul class="tags" aria-label="Built with">
                         <li><a href="https://bryntum.com/products/scheduler/">Scheduler</a></li>
-                        <li><a href="https://www.ag-grid.com/">AG Grid</a></li>
                         <li><a href="https://www.ag-grid.com/charts/">AG Charts</a></li>
                     </ul>
                     <p class="summary">
-                        Bryntum Scheduler and AG Grid in one app: shipments stream live into the grid while the
-                        engine keeps the dock doors of a distribution centre scheduled.
+                        Bryntum Scheduler and AG Charts for wind farm maintenance: crews go out on vessels and
+                        helicopters, planned against a wave forecast that keeps changing the plan.
                     </p>
                     <ul class="views" aria-label="Features">
                         <li>
-                            <span class="view-icon" data-icon="truck" aria-hidden="true"></span>
+                            <span class="view-icon" data-icon="wind" aria-hidden="true"></span>
                             <span>
-                                <strong>Live shipments</strong>
-                                <span>2,000 inbound trucks in AG Grid, grouped by carrier</span>
+                                <strong>Weather window</strong>
+                                <span>The wave forecast in the time axis, no-go hours hatched per vessel</span>
                             </span>
                         </li>
                         <li>
-                            <span class="view-icon" data-icon="warehouse" aria-hidden="true"></span>
+                            <span class="view-icon" data-icon="users-three" aria-hidden="true"></span>
                             <span>
-                                <strong>Dock schedule</strong>
-                                <span>12 doors, unloading slots chained by the engine</span>
+                                <strong>Drag a crew onto a trip</strong>
+                                <span>See what it can still reach before the window closes</span>
                             </span>
                         </li>
                         <li>
-                            <span class="view-icon" data-icon="chart-bar" aria-hidden="true"></span>
+                            <span class="view-icon" data-icon="map-trifold" aria-hidden="true"></span>
                             <span>
-                                <strong>Utilization &amp; conflicts</strong>
-                                <span>Door load per hour, late slots flagged, expedite in a click</span>
+                                <strong>Wind farm map</strong>
+                                <span>60 turbines, linked to the schedule, with pan and zoom</span>
                             </span>
                         </li>
                         <li>
-                            <span class="view-icon" data-icon="clock-countdown" aria-hidden="true"></span>
+                            <span class="view-icon" data-icon="calendar-dots" aria-hidden="true"></span>
                             <span>
-                                <strong>Simulate delay</strong>
-                                <span>Make a truck run late, the slots behind it move</span>
+                                <strong>Day and week</strong>
+                                <span>Trips with their stops and sailing time, and a week board to plan ahead</span>
                             </span>
                         </li>
                     </ul>
                     <div class="button-row">
-                        <a class="button primary" href="./logistics-control-tower/">
+                        <a class="button primary" href="./offshore-wind-dispatch/">
                             <svg class="icon" aria-hidden="true"><use href="#icon-play"/></svg>
                             Live demo
                         </a>
-                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/logistics-control-tower">
+                        <a class="button" href="https://github.com/bryntum/showcases/tree/main/offshore-wind-dispatch">
                             <svg class="icon" aria-hidden="true"><use href="#icon-code"/></svg>
                             Source
                         </a>
@@ -273,6 +272,14 @@
                 <p class="visually-hidden" aria-live="polite" data-filter-status hidden></p>
                 <!-- Rendered by gallery.js from its showcase list -->
                 <ul class="cards" data-cards>
+                    <li>
+                        <noscript>
+                            <p>
+                                <a href="./offshore-wind-dispatch/">Offshore Wind Dispatch</a>: crew transfer
+                                vessels and helicopters for a wind farm, planned against the wave forecast.
+                            </p>
+                        </noscript>
+                    </li>
                     <li>
                         <noscript>
                             <p>

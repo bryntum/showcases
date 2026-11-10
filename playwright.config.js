@@ -24,7 +24,8 @@ export default defineConfig({
         reuseExistingServer : !CI,
         timeout             : 180_000,
         // The tests never load Google Analytics, even with SHOWCASES_GA4_ID set in the shell (see vite.config.js). They
-        // run AG Grid without a licence key, as CI does, even with one in .env.local (the variable wins over a file)
+        // run AG Grid and AG Charts without a licence key, as CI does, even with one in .env.local (the variable wins
+        // over a file)
         env                 : { SHOWCASES_GA4_ID : '', VITE_AG_LICENSE_KEY : '' }
     }
 });

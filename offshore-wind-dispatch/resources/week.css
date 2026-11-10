@@ -1,0 +1,230 @@
+/* The Week view (week/WeekBoard.js) */
+
+.ow-week-board {
+    --b-grid-row-border-color    : var(--ow-tick);
+    --b-grid-cell-border-color   : var(--ow-tick);
+    --b-column-lines-tick-color  : var(--b-border-7);
+    --b-column-lines-major-color : var(--b-border-7);
+
+    /* The vessel column keeps the card's surface when hovered or selected */
+    .ow-week-vessel.b-grid-cell, .ow-week-axis.b-grid-header {
+        flex-direction  : column;
+        align-items     : flex-start;
+        justify-content : center;
+        gap             : 0.154em;
+    }
+
+    .ow-week-vessel.b-grid-cell {
+        --b-grid-cell-background                : var(--ow-surface);
+        --b-grid-cell-hover-background          : var(--ow-surface);
+        --b-grid-cell-selected-background       : var(--ow-surface);
+        --b-grid-cell-hover-selected-background : var(--ow-surface);
+        --b-grid-cell-padding-inline            : var(--ow-inset) 0.5rem;
+    }
+
+    .ow-week-vessel, .ow-week-axis .b-grid-header-text-content {
+        b {
+            font-size   : var(--ow-size-md);
+            font-weight : 600;
+            color       : var(--b-text-1);
+        }
+
+        small {
+            font-size : var(--ow-size-sm);
+            color     : var(--b-neutral-40);
+        }
+    }
+
+    /* Bryntum's `width: 0`, `flex: 1` header content would get no width in this column. The inline padding is set
+       directly, as the header's padding variable sets its block padding too */
+    .ow-week-axis {
+        .b-grid-header-text {
+            align-self : stretch;
+        }
+
+        .b-grid-header-text-content {
+            display        : flex;
+            flex-direction : column;
+            gap            : 0.154em;
+        }
+
+        &.b-grid-header {
+            padding-inline : 1.5rem 0.5rem;
+            min-height     : 5.5rem;
+        }
+    }
+
+    .b-sch-header-time-axis-cell.ow-week-day {
+        align-items : stretch;
+        padding     : 0.5rem 0.625rem;
+
+        &:hover {
+            background-color : var(--ow-c-footer);
+        }
+
+        .b-sch-header-text {
+            display        : flex;
+            flex-direction : column;
+            align-items    : flex-start;
+            gap            : 0.364em;
+            font-size      : var(--ow-size-xs);
+            font-weight    : 400;
+            line-height    : 1.3;
+            white-space    : normal;
+            color          : var(--b-neutral-40);
+        }
+
+        .ow-week-date {
+            font-size   : var(--ow-size-base);
+            font-weight : 600;
+            white-space : nowrap;
+            color       : var(--b-text-1);
+        }
+
+        small {
+            font-size : var(--ow-size-xs);
+
+            span {
+                white-space : nowrap;
+            }
+        }
+
+        &.ow-week-today .ow-week-date {
+            padding          : 0.077em 0.6154em;
+            border-radius    : 999px;
+            color            : var(--b-color-white);
+            background-color : var(--b-primary);
+        }
+    }
+
+    /* Inset as far as a free day's placeholder (below), px as the board's resourceMargin */
+    .b-sch-event-wrap.ow-cell-wrap {
+        padding-inline : 5px;
+    }
+
+    .b-sch-event-wrap .b-sch-event.ow-cell {
+        --b-sch-event-background     : var(--ow-c-work-tint);
+        --b-sch-event-color          : var(--b-text-1);
+        --b-sch-event-border-width   : 0;
+        --b-sch-event-border-radius  : var(--ow-c-radius);
+        --b-sch-event-font-size      : var(--ow-size-sm);
+        --b-sch-event-padding-inline : 0.4375rem;
+        --b-sch-event-padding-block  : 0.3125rem 0.5625rem;
+
+        align-items : flex-start;
+
+        > .b-sch-event-content {
+            container-type : inline-size;
+            flex-direction : column;
+            align-items    : stretch;
+            gap            : 0.25em;
+            overflow       : hidden;
+        }
+    }
+
+    /* A narrow day drops the seat count, the percent bar still shows it */
+    @container (width < 120px) {
+        .ow-cell-head span {
+            display : none;
+        }
+    }
+
+    .ow-cell-head {
+        display         : flex;
+        justify-content : space-between;
+        gap             : 0.3334em;
+        color           : var(--ow-c-work-ink);
+
+        b {
+            font-weight : 600;
+        }
+    }
+
+    .ow-cell-jobs {
+        overflow      : hidden;
+        text-overflow : ellipsis;
+        color         : var(--b-text-2);
+    }
+
+    /* Carried over by a forecast. When also late, the late rule below wins */
+    .b-sch-event-wrap .b-sch-event.ow-cell-carried {
+        outline        : 1px dashed var(--ow-plan);
+        outline-offset : -1px;
+
+        .ow-cell-jobs {
+            color : var(--ow-c-work-ink);
+        }
+    }
+
+    .b-sch-event-wrap .b-sch-event.ow-cell-late {
+        --b-sch-event-background : var(--ow-c-risk-tint);
+
+        .ow-cell-head, .ow-cell-jobs {
+            color : var(--ow-c-risk-ink);
+        }
+
+        .b-task-percent-bar {
+            --b-percent-bar-background : var(--ow-c-risk-line);
+        }
+    }
+
+    /* The seats bar (PercentBar). Not blended with the card, which darkens it in dark */
+    .ow-cell {
+        --b-percent-bar-blend-mode : normal;
+
+        .b-task-percent-bar-outer {
+            position      : absolute;
+            inset         : auto 0.4375rem 0.25rem;
+            width         : auto;
+            height        : 3px;
+            border-radius : 2px;
+            background    : color-mix(in srgb, var(--ow-c-transit) 35%, transparent);
+        }
+
+        /* The feature declares its colour on the bar itself */
+        .b-task-percent-bar {
+            --b-percent-bar-background : var(--b-primary);
+
+            height        : 100%;
+            border-radius : 2px;
+            opacity       : 1;
+        }
+    }
+
+    /* A vessel's day without trips (WeekBoard#renderFree): free, no-go, or the drop target of a held team */
+    .b-sch-resource-time-range {
+        --b-resource-time-range-background  : none;
+        --b-resource-time-range-color       : var(--b-neutral-40);
+        --b-resource-time-range-align-items : center;
+
+        font-size : var(--ow-size-sm);
+
+        .b-sch-event-content {
+            justify-content : center;
+            margin          : 0;
+        }
+
+        &:is(.ow-week-free, .ow-week-drop)::before {
+            content       : '';
+            position      : absolute;
+            inset         : 5px;
+            border        : var(--ow-free-line);
+            border-radius : var(--ow-c-radius);
+        }
+
+        &.ow-week-drop::before {
+            border           : var(--ow-drop-outline);
+            background-color : var(--ow-drop-tint);
+        }
+
+        &.ow-week-nogo {
+            --b-resource-time-range-background : var(--ow-hatch);
+        }
+    }
+
+    /* The Summary row, the jobs per day */
+    .b-grid-footer-container {
+        font-size : var(--ow-size-sm);
+        color     : var(--b-neutral-40);
+    }
+}

@@ -1,9 +1,8 @@
 import { Tooltip } from '@bryntum/core-enterprise';
 
 /**
- * The tooltip of the map's turbines: a Bryntum Tooltip on the markers (`forSelector`), shown on hover and, with
- * `showForMarker()`, on keyboard focus. Its content comes from `contentOf`, which the map passes and which asks the app
- * for the turbine's card.
+ * The tooltip of the map's turbines, one Tooltip for all markers (`forSelector`). Shown on hover and, through
+ * `showForMarker()`, on keyboard focus, which the Tooltip does not do for a delegated target on its own.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-forSelector
@@ -16,39 +15,32 @@ export default class TurbineTooltip extends Tooltip {
 
     static configurable = {
         /**
-         * Returns the content of a turbine's tooltip
+         * Returns the DomConfig of a turbine's tooltip, called with the turbine's ID
          * @config {Function}
-         * @param {String} turbine The turbine's ID
-         * @returns {Object} DomConfig
          */
         contentOf : null,
 
         forSelector : '.ow-marker',
         getHtml     : 'this.markerHtml',
         cls         : 'ow-map-tip',
-        // The card's width (resources/map/tooltip.css) and the tooltip's padding, so its padding is the same on both
-        // sides
-        maxWidth    : 'min(26rem, calc(100vw - 16px))',
+        // The card inside brings its own width and padding (resources/map/card.css)
+        maxWidth    : 'min(24rem, calc(100vw - 2rem))',
         hoverDelay  : 250,
         hideDelay   : 100
     };
 
     /**
-     * The marker whose turbine the tooltip shows, hovered or focused
+     * The marker shown, hovered or focused
      * @member {Element} marker
      */
 
-    // The content for a hovered marker (`getHtml`)
     markerHtml({ activeTarget }) {
         this.marker = activeTarget;
 
         return this.contentOf?.(activeTarget.dataset.turbine) ?? '';
     }
 
-    /**
-     * Shows the tooltip of a marker, the one focused from the keyboard
-     * @param {Element} marker
-     */
+    // For a marker focused from the keyboard
     showForMarker(marker) {
         const me = this;
 
@@ -57,9 +49,7 @@ export default class TurbineTooltip extends Tooltip {
         me.showBy({ target : marker });
     }
 
-    /**
-     * Updates the tooltip shown, its turbine's plan may have changed
-     */
+    // The plan of the turbine shown may have changed
     refresh() {
         const { marker } = this;
 

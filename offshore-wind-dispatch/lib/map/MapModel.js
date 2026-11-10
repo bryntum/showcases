@@ -1,33 +1,22 @@
-import { turbineIds } from '../plan/Farm.js';
-import { duration, hhmm, nextDay } from '../util/Time.js';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
- * What the turbine map shows, worked out from the trips and the dispatcher's state: a status per turbine, the labels,
- * the vessel routes and, while a team is dragged or with the Access view on, the turbines a trip can still reach.
- * TurbineMap draws it.
+ * What the turbine map shows, as plain data worked out from the trips and the dispatch state (mapModel). TurbineMap
+ * draws it.
  */
 
 /**
- * Whether a turbine is stopped, and why: a team works on it (its trip has left port), or it has a fault. A stopped
- * turbine's rotor does not turn
- * @param {DispatchState} state
- * @param {TripModel[]} trips
- * @param {String} id
+ * A turbine is stopped while a team works on it (its trip has left port), or with a fault
  * @returns {String|null} `repair`, `fault` or `null` when it runs
  */
 export function stoppedOf(state, trips, id) {
-    if (trips.some(trip => trip.status !== 'moved' && trip.departs <= state.now && trip.turbines.includes(id))) {
+    if (trips.some(trip => trip.departs <= state.now && trip.turbines.includes(id))) {
         return 'repair';
     }
 
     return state.faults.has(id) ? 'fault' : null;
 }
 
-/**
- * The trip serving each turbine
- * @param {TripModel[]} trips
- * @returns {Map<String,TripModel>}
- */
 function tripsByTurbine(trips) {
     const map = new Map();
 
@@ -36,8 +25,7 @@ function tripsByTurbine(trips) {
     return map;
 }
 
-// How one turbine is shown: its status, and dimmed while a trip's reach is shown and it lies outside it (all but the
-// stops of that trip itself). TurbineMap#syncMarker turns it into the marker's classes
+// Dimmed while a trip's reach is shown and the turbine lies outside it, unless it is a stop of that trip
 function markerOf(id, context) {
     const { reach, target, focusTrip, byTurbine } = context;
 
@@ -47,14 +35,8 @@ function markerOf(id, context) {
     };
 }
 
-// The status of a turbine in the plan: served by a trip (`work`, `planned`, `risk`), `moved`, stopped (`fault`),
-// `waiting` for its team, or none
-function planStatusOf(id, { state, byTurbine, removed }) {
+function planStatusOf(id, { state, byTurbine }) {
     const trip = byTurbine.get(id);
-
-    if (trip?.status === 'moved' || removed.has(id)) {
-        return 'moved';
-    }
 
     if (trip) {
         return trip.status === 'at-risk' ? 'risk' : trip.departs <= state.now ? 'work' : 'planned';
@@ -67,7 +49,7 @@ function planStatusOf(id, { state, byTurbine, removed }) {
     return state.waiting.includes(id) ? 'waiting' : '';
 }
 
-// The labels of the plan: the selected turbine, faults, trips past the window, and what the forecast moved
+// Labels for the selected turbine, the faults and the last stop of each trip past the window
 function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     const
         labels = [],
@@ -84,59 +66,45 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     }
 
     trips.forEach(trip => {
-        // The selected turbine has its label already
-        if (trip.status === 'at-risk' && trip.turbines.length) {
-            if (trip.turbines.at(-1) === selectedTurbine && labels.some(label => label.id === selectedTurbine)) {
-                return;
-            }
+        const last = trip.turbines.at(-1);
 
-            labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), tone : 'risk' });
-        }
-        else if (trip.status === 'trimmed' && trip.removed.length) {
-            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${nextDay}`, tone : 'moved' });
-        }
-        else if (trip.status === 'moved' && trip.turbines.length) {
-            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${nextDay}`, tone : 'moved' });
+        // The selected turbine has its label already
+        if (trip.status === 'at-risk' && last && !(last === selectedTurbine && labels.some(label => label.id === last))) {
+            labels.push({ id : last, text : last, tone : 'risk' });
         }
     });
 
     return labels;
 }
 
-// The count that leads the callout, in bold
 const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
 
 /**
- * The map's content
  * @param {Object} options
  * @param {DispatchState} options.state
  * @param {TripModel[]} options.trips
  * @param {TripModel} [options.selectedTrip]
  * @param {String} [options.selectedTurbine]
- * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see DispatchApp#previewDrop
- * @param {Object} [options.access] The Access view: `{ trip, reach, minutes }`
- * @returns {Object} `{ markers, labels, routes, callout, selected }`: `markers` maps each turbine to
- * `{ status, dimmed }`, a label is `{ id, text, tone }`, a route `{ stops, kind }` (`selected`, `preview` or
- * none) and the callout the DomConfig children of its line, or `null`
+ * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see
+ * DropController#previewDrop
+ * @returns {Object} `{ markerOf, labels, routes, callout, selected }`: `markerOf(id)` gives a turbine's
+ * `{ status, dimmed }` (its TurbineModel fields), a label is `{ id, text, tone }`, a route `{ stops, kind }`
+ * (`selected`, `preview` or none) and the callout the DomConfig children of its line, or `null`
  */
-export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, access }) {
+export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) {
     const
         byTurbine = tripsByTurbine(trips),
-        removed   = new Set(trips.flatMap(trip => trip.removed ?? [])),
-        focus     = drop ?? access,
         context   = {
             state,
             trips,
             byTurbine,
-            removed,
-            reach     : focus?.reach ?? null,
+            reach     : drop?.reach ?? null,
             target    : drop?.job.turbine,
-            focusTrip : focus?.trip ?? null
+            focusTrip : drop?.trip ?? null
         },
-        markers   = new Map(turbineIds.map(id => [id, markerOf(id, context)])),
-        routes    = trips.filter(trip => trip.mode === 'vessel' && trip.status !== 'moved').map(trip => ({
+        routes    = trips.filter(trip => trip.mode === 'vessel').map(trip => ({
             stops : trip.turbines,
-            kind  : trip === (focus?.trip ?? selectedTrip) ? 'selected' : null
+            kind  : trip === (drop?.trip ?? selectedTrip) ? 'selected' : null
         }));
 
     let labels, callout = null;
@@ -148,19 +116,13 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop, ac
         labels = [{
             id   : job.turbine,
             text : result.valid ? `${job.turbine} · +${duration(job.minutes)} · back ${hhmm(result.back)}` : `${job.turbine} · ${result.short}`,
-            tone : result.valid ? 'target' : 'fault'
+            tone : result.valid ? 'target' : 'risk'
         }];
         callout = [turbineCount(drop.reach), ` within reach of ${trip.id} before the window closes at ${hhmm(drop.close)}`];
     }
     else {
         labels = planLabels({ state, trips, selectedTurbine, byTurbine });
-
-        if (access) {
-            callout = access.trip ?
-                [turbineCount(access.reach), ` where ${access.trip.id} could still add a ${duration(access.minutes)} stop before ${hhmm(access.close)}`] :
-                ['Select a trip to see where it can still go before its window closes'];
-        }
     }
 
-    return { markers, labels, routes, callout, selected : selectedTurbine };
+    return { markerOf : id => markerOf(id, context), labels, routes, callout, selected : selectedTurbine };
 }

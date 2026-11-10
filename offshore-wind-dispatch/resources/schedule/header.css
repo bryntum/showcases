@@ -1,0 +1,203 @@
+/* The time axis rows (schedule/ForecastHeader.js) and the vessel column's header naming them. Both sides draw the row
+ * lines the same way, inside the row above in one colour, so the rows line up; the line under it all is the header
+ * container's */
+
+.ow-scheduler {
+    --ow-row-hours : 2rem;
+    --ow-row-sea   : 4.1875rem;
+    --ow-row-wind  : 1.25rem;
+    --ow-row-line  : color-mix(in srgb, var(--b-border-7) 70%, transparent);
+
+    --b-grid-header-background                   : var(--ow-surface);
+    --b-horizontal-time-axis-cell-padding-inline : 0.375rem;
+
+    /* One line under the whole header */
+    .b-grid-header-container {
+        border-block-end : 1px solid var(--b-border-7);
+    }
+
+    .b-grid-header.ow-axis-header {
+        border-block-end : 0;
+    }
+
+    .b-horizontal-time-axis {
+        /* Rows of a fixed height, not shared out */
+        .b-sch-header-row {
+            flex             : none;
+            height           : var(--ow-row-hours);
+            border-block-end : 1px solid var(--ow-row-line);
+
+            &:has(.ow-sea-cell) {
+                height           : var(--ow-row-sea);
+                border-block-end : 0;
+            }
+
+            &:has(.ow-wind-cell) {
+                height             : var(--ow-row-wind);
+                border-block-start : 1px solid var(--ow-row-line);
+                border-block-end   : 0;
+            }
+        }
+
+        /* The rows own the horizontal lines */
+        .b-sch-header-time-axis-cell {
+            border-block-end     : 0;
+            font-size            : 0.71875rem;
+            font-weight          : 500;
+            color                : var(--b-text-2);
+            font-variant-numeric : tabular-nums;
+            border-inline-color  : var(--ow-tick);
+        }
+
+        /* On the now pill's middle line */
+        .ow-hour-cell {
+            line-height : 1;
+        }
+
+        /* The chart spans the row */
+        .ow-sea-cell {
+            padding  : 0;
+            border   : 0;
+            overflow : visible;
+        }
+
+        /* Each value centred in its hour */
+        .ow-wind-cell {
+            padding       : 0;
+            border-inline : 0;
+        }
+    }
+}
+
+/* The AG Charts wave height chart, over the whole day (WaveChart.js) */
+.ow-wave-chart {
+    position : absolute;
+    inset    : 0;
+
+    /* The crosshair's time and height, drawn by AG Charts as HTML, at the size of the chart's labels */
+    .ag-charts-crosshair-label-content {
+        padding     : 2px 6px;
+        font-size   : 10px;
+        line-height : 14px;
+    }
+}
+
+/* The size of the chart's value labels, px as WaveChart.js sets theirs */
+.ow-wind {
+    font-size   : 10px;
+    font-weight : 400;
+    line-height : 1;
+    color       : var(--b-neutral-40);
+}
+
+/* Over the helicopters' limit */
+.ow-wind-over {
+    font-weight : 700;
+    color       : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
+        color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
+}
+
+/* The vessel column's header: the names of the weather rows, edge to edge, at the height of each */
+.ow-axis-header.b-grid-header {
+    --b-grid-header-padding : 0;
+
+    min-height : 0;
+
+    .b-grid-header-text, .b-grid-header-text-content {
+        display : flex;
+        width   : 100%;
+        height  : 100%;
+    }
+
+    /* The theme gives the header text's last child an inline-end margin */
+    .b-grid-header-text-content > .ow-axis-label {
+        margin : 0;
+    }
+}
+
+.ow-axis-label {
+    display         : flex;
+    flex-direction  : column;
+    justify-content : flex-end;
+    width           : 100%;
+
+    .ow-axis-row {
+        display     : flex;
+        flex        : none;
+        align-items : center;
+        gap         : 0.5em;
+        padding     : 0 0.667em 0 var(--ow-inset);
+        font-size   : var(--ow-size-sm);
+        font-weight : 500;
+        color       : var(--b-text-1);
+
+        small {
+            font-size   : var(--ow-size-xs);
+            font-weight : 400;
+            color       : var(--b-neutral-40);
+        }
+
+        > span {
+            display        : flex;
+            flex-direction : column;
+            line-height    : 1.25;
+        }
+    }
+
+    .ow-axis-row-head {
+        height           : var(--ow-row-hours);
+        border-block-end : 1px solid var(--ow-row-line);
+    }
+
+    .ow-axis-row-sea {
+        height : var(--ow-row-sea);
+    }
+
+    .ow-axis-row-wind {
+        height             : var(--ow-row-wind);
+        border-block-start : 1px solid var(--ow-row-line);
+        line-height        : 1;
+
+        > span {
+            flex-direction : row;
+            align-items    : baseline;
+            gap            : 0.5em;
+        }
+    }
+}
+
+/* The now line's header element (TimeRanges, `showHeaderElements`) as a pill on the hours row, its line on down through
+   the chart. The shaded past is for the rows only */
+.ow-scheduler .b-grid-header {
+    .ow-past {
+        display : none;
+    }
+
+    .ow-now {
+        --ow-now-pill                             : 0.875rem;
+        --b-time-range-line-header-background     : var(--b-color-blue);
+        --b-time-range-line-header-padding-inline : 0;
+        --b-time-range-line-header-border-radius  : calc(var(--ow-now-pill) / 2);
+        --b-time-range-header-font-size           : 0.59375rem;
+        --b-time-range-header-font-weight         : 700;
+        --b-time-range-color                      : var(--b-color-white);
+
+        inset-block-start    : calc((var(--ow-row-hours) - var(--ow-now-pill)) / 2);
+        height               : var(--ow-now-pill);
+        /* Centred on the line by a fixed width, not a transform, so the line stays on whole pixels */
+        width                : 2.125rem;
+        margin-inline-start  : -1.0625rem;
+        /* Bryntum rounds the end corners only (a flag on the line), the pill rounds the start ones too */
+        border-start-start-radius : var(--b-time-range-line-header-border-radius);
+        border-end-start-radius   : var(--b-time-range-line-header-border-radius);
+
+        &::before {
+            content             : '';
+            position            : absolute;
+            /* Bryntum pulls the line in the rows back by its width, this one follows */
+            inset               : 100% auto auto calc(50% - var(--b-time-range-line-width));
+            height              : calc(var(--ow-row-sea) + var(--ow-row-wind) + var(--ow-row-hours) / 2);
+            border-inline-start : var(--b-time-range-line-width) solid var(--b-color-blue);
+        }
+    }
+}

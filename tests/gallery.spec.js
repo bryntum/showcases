@@ -16,18 +16,21 @@ test.describe('Gallery', () => {
         expect(errors).toEqual([]);
     });
 
-    test('features the Logistics Control Tower', async({ page }) => {
-        const featured = page.getByRole('region', { name : 'Logistics Control Tower' });
+    test('features the latest showcase, Offshore Wind Dispatch', async({ page }) => {
+        const featured = page.getByRole('region', { name : 'Offshore Wind Dispatch' });
 
-        await expect(featured.getByRole('heading', { level : 2, name : 'Logistics Control Tower' })).toBeVisible();
+        await expect(featured.getByRole('heading', { level : 2, name : 'Offshore Wind Dispatch' })).toBeVisible();
         await expect(featured.getByRole('list', { name : 'Built with' }).getByRole('listitem'))
-            .toHaveText(['Scheduler', 'AG Grid', 'AG Charts']);
+            .toHaveText(['Scheduler', 'AG Charts']);
         await expect(featured.getByRole('link', { name : 'Live demo' }))
-            .toHaveAttribute('href', './logistics-control-tower/');
+            .toHaveAttribute('href', './offshore-wind-dispatch/');
         await expect(featured.getByRole('link', { name : 'Source' }))
-            .toHaveAttribute('href', 'https://github.com/bryntum/showcases/tree/main/logistics-control-tower');
+            .toHaveAttribute('href', 'https://github.com/bryntum/showcases/tree/main/offshore-wind-dispatch');
         await expect(page.getByRole('link', { name : 'Try the latest demo' }))
-            .toHaveAttribute('href', './logistics-control-tower/');
+            .toHaveAttribute('href', './offshore-wind-dispatch/');
+        // Every showcase has its card, the latest first
+        await expect(page.locator('[data-cards] .card h3')).toHaveText(['Offshore Wind Dispatch', 'Logistics Control Tower',
+            'EV Operations']);
     });
 
     test('shows the EV Operations card', async({ page }) => {

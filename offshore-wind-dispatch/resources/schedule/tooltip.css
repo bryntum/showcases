@@ -1,62 +1,37 @@
-/* The trip tooltip (schedule/TripTip.js), in the style of the map's turbine tooltip: a header with a status pill, a mini
- * timeline of the trip, a two column grid of facts. Bryntum's EventTooltip is its container */
+/* The trip tooltip (schedule/TripTip.js) in Bryntum's EventTooltip. The facts' grid is in frame.css */
 
 .ow-tip {
-    --ow-tip-tone : var(--ow-c-work);
-
     min-width : 17rem;
-    font-size : 12px;
-    color     : var(--ow-ink);
+    font-size : var(--ow-size-sm);
 
     header {
-        display     : flex;
-        align-items : center;
-        gap         : 8px;
-        margin      : 0 0 10px;
+        display          : flex;
+        align-items      : center;
+        gap              : 0.667em;
+        margin-block-end : 0.8334em;
     }
 
     .ow-tip-vessel {
         display : inline-flex;
-        color   : var(--ow-ink-sub);
+        color   : var(--b-text-2);
 
         .ow-icon {
-            width  : 20px;
-            height : 20px;
+            width  : 1.667em;
+            height : 1.667em;
         }
     }
 
     .ow-tip-title {
         flex        : 1;
-        font-size   : 13px;
+        font-size   : var(--ow-size-base);
         white-space : nowrap;
-
-        b {
-            font-weight : 700;
-        }
     }
 
-    /* How the trip stands against its window: a quiet blue tint, orange when it is late */
-    .ow-tip-status {
-        padding          : 3px 10px;
-        border-radius    : 99px;
-        font-size        : 11px;
-        font-weight      : 600;
-        line-height      : 1;
-        white-space      : nowrap;
-        color            : light-dark(var(--ow-c-work), color-mix(in srgb, var(--ow-c-work), var(--b-color-white) 55%));
-        background-color : color-mix(in srgb, var(--ow-c-work) 12%, transparent);
-
-        &.ow-tip-late {
-            color            : var(--ow-c-risk-ink);
-            background-color : var(--ow-c-risk-tint);
-        }
-    }
-
-    /* The trip from departure to return: its line, the work on it in proportion, the window's close */
+    /* The trip from departure to return, the work on it in proportion, the window's close */
     .ow-tip-track {
         position         : relative;
-        height           : 14px;
-        margin-block     : 0 12px;
+        height           : 1.167em;
+        margin-block-end : 1em;
 
         &::before {
             content           : '';
@@ -64,47 +39,29 @@
             inset-inline      : 0;
             inset-block-start : calc(50% - 1px);
             height            : 2px;
-            background-color : var(--ow-c-transit);
+            background-color  : var(--ow-c-transit);
         }
     }
 
     .ow-tip-block {
-        position         : absolute;
-        inset-block      : 0;
-        box-sizing       : border-box;
-        min-inline-size  : 3px;
-        border           : 1px solid var(--ow-c-work-line);
-        border-radius    : 3px;
-        background-color : var(--ow-c-work-tint);
-        box-shadow       : 0 0 0 2px var(--ow-surface);
-
-        &.ow-tip-risk {
-            border-color     : var(--ow-c-risk-line);
-            background-color : var(--ow-c-risk-tint);
-        }
+        position        : absolute;
+        inset-block     : 0;
+        min-inline-size : 0.25em;
+        border-radius   : 0.25em;
+        box-shadow      : 0 0 0 2px var(--ow-surface);
     }
 
     .ow-tip-close {
-        position         : absolute;
-        inset-block      : -3px;
-        inline-size      : 0;
+        position            : absolute;
+        inset-block         : -0.25em;
         border-inline-start : 1.5px dashed var(--ow-c-risk-line);
     }
 
     dl {
-        display               : grid;
-        grid-template-columns : auto 1fr;
-        gap                   : 4px 14px;
-        margin                : 0;
-    }
-
-    dt {
-        margin : 0;
-        color  : var(--ow-ink-sub);
+        gap : 0.3334em 1.167em;
     }
 
     dd {
-        margin               : 0;
         font-weight          : 500;
         font-variant-numeric : tabular-nums;
         text-align           : end;

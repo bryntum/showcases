@@ -1,14 +1,20 @@
 /**
- * AG Grid Enterprise's notice when it runs without a licence key, as the tests do (see playwright.config.js): the
- * lines of its console banner, each matched in full. Nothing else from AG Grid is tolerated
+ * The notice of AG Grid Enterprise or AG Charts Enterprise when it runs without a licence key, as the tests do (see
+ * playwright.config.js): the lines of its console banner, each matched in full. Nothing else from it is tolerated
+ * @param {String} product `AG Grid` or `AG Charts`
+ * @returns {RegExp[]}
  */
-export const agGridLicenseNotice = [
+const agLicenseNotice = product => [
     /^\*+$/,
-    /^\*+ AG Grid Enterprise License \*+$/,
+    new RegExp(`^\\*+ ${product} Enterprise License \\*+$`),
     /^\*+ License Key Not Found \*+$/,
-    /^\* All AG Grid Enterprise features are unlocked for trial\. +\*$/,
+    new RegExp(`^\\* All ${product} Enterprise features are unlocked for trial\\. +\\*$`),
     /^\* If you want to hide the watermark please email info@ag-grid\.com for a trial license key\. +\*$/
 ];
+
+export const
+    agGridLicenseNotice   = agLicenseNotice('AG Grid'),
+    agChartsLicenseNotice = agLicenseNotice('AG Charts');
 
 /**
  * Collects the console errors and the uncaught page errors of a page, attach it before the page loads

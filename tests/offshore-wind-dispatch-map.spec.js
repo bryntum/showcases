@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { collectErrors } from './errors.js';
+import { agChartsLicenseNotice, collectErrors } from './errors.js';
 
 // The turbine map of Offshore Wind Dispatch: selection, hover and keyboard, linked with the Scheduler both ways
 
@@ -21,7 +21,7 @@ const
 let errors;
 
 test.beforeEach(({ page }) => {
-    errors = collectErrors(page);
+    errors = collectErrors(page, { ignore : agChartsLicenseNotice });
 });
 
 test.afterEach(() => {
@@ -29,15 +29,14 @@ test.afterEach(() => {
 });
 
 test.describe('Offshore Wind Dispatch map selection', () => {
-    test('the turbines are a store, the selection a collection, each turbine an option with aria-selected', async({ page }) => {
+    test('the turbines are a store, the selection one turbine, each turbine an option with aria-selected', async({ page }) => {
         await open(page);
 
         expect(await page.evaluate(() => {
             const map = globalThis.bryntum.query('turbinemap');
 
-            return [map.turbines.isStore, map.turbines.count, map.selected.isCollection,
-                map.selected.values.map(each => each.id)];
-        })).toEqual([true, 60, true, ['T-41']]);
+            return [map.turbines.isStore, map.turbines.count, map.selected];
+        })).toEqual([true, 60, 'T-41']);
 
         await expect(page.locator('.ow-side [role="listbox"] [role="option"]')).toHaveCount(60);
         await expect(page.locator('.ow-side .ow-marker[aria-selected="true"]')).toHaveCount(1);
@@ -51,18 +50,15 @@ test.describe('Offshore Wind Dispatch map selection', () => {
         await page.evaluate(() => {
             globalThis.mapChanges = [];
             globalThis.bryntum.query('turbinemap').on({
-                selectionChange : ({ selection, user }) => globalThis.mapChanges.push({
-                    selection : selection.map(each => each.id),
-                    user
-                })
+                turbineSelect : ({ turbine }) => globalThis.mapChanges.push(turbine)
             });
         });
 
         await marker(page, 'T-07').click();
 
-        // The first change is the click's, the app's own redraw follows without one
-        expect((await page.evaluate(() => globalThis.mapChanges))[0]).toEqual({ selection : ['T-07'], user : true });
+        // The click asks for the turbine, the app's redraw selects it without asking again
         await expect(marker(page, 'T-07')).toHaveAttribute('aria-selected', 'true');
+        expect(await page.evaluate(() => globalThis.mapChanges)).toEqual(['T-07']);
         await expect(marker(page, 'T-41')).toHaveAttribute('aria-selected', 'false');
         expect(await selectedTrip(page)).toEqual(['SR-1']);
         await expect(card(page)).toContainText('T-07');
@@ -172,7 +168,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         expect(panned).not.toEqual(before);
 
         // Everything that draws the map again, then longer than the fit's animation
-        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').refreshAll());
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').refreshPlan(true));
         await marker(page, 'T-60').hover();
         await page.waitForTimeout(1500);
 
@@ -229,7 +225,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         // SR-1 selected, with the stop clicked. The drag starts on another of its turbines
         const
             before   = await viewBox(page),
-            selected = await page.evaluate(() => globalThis.bryntum.query('turbinemap').selected.values[0].id),
+            selected = await page.evaluate(() => globalThis.bryntum.query('turbinemap').selected),
             other    = ['T-07', 'T-08', 'T-17'].find(id => id !== selected),
             from     = await marker(page, other).boundingBox();
 
@@ -333,7 +329,9 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         expect(await animation('T-07')).toBe('none');
     });
 
-    test('the legend fits one row: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
+    test('the legend fits two rows of three: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
+        // Tall enough for the legends, which give way on short screens
+        await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
 
         const entries = page.locator('.ow-side .ow-map-legend > span');
@@ -359,9 +357,12 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         expect(marks.every(mark => mark.inside)).toBe(true);
         expect(new Set(marks.map(mark => mark.width)).size).toBe(1);
 
+        // Three a row, the sixth place kept for Moved, which a forecast adds without changing the legend's height
         const tops = await entries.evaluateAll(spans => spans.map(span => span.getBoundingClientRect().top));
 
-        expect(new Set(tops).size).toBe(1);
+        expect(new Set(tops.slice(0, 3)).size).toBe(1);
+        expect(tops[3]).toBeGreaterThan(tops[0]);
+        expect(tops[4]).toBe(tops[3]);
     });
 
     test('of the trips serving a turbine, the card shows the selected trip\'s visit', async({ page }) => {

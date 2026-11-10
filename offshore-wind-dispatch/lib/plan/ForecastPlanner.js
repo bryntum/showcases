@@ -1,91 +1,163 @@
-import { replanTrip } from './Planner.js';
-import { duration, hhmm, nextLong } from '../util/Time.js';
+import { nextDayStart, replanTrip } from './Planner.js';
+import { addTrip, nextTripId } from '../model/TripData.js';
+import { busyOf } from '../schedule/TripValidator.js';
+import { duration, hhmm } from '../util/Time.js';
 
 /**
- * Re-plans the day when a new forecast comes in. Each trip that no longer gets back before its window closes is
- * changed by the rules of Planner#replanTrip: brought forward, trimmed, or moved to tomorrow. The trips as they were
- * are kept, so the change can be undone.
+ * Re-plans the day on a new forecast: Planner#replanTrip per trip, then `carry()` for the stops it cut.
+ *
+ * It owns the project's StateTrackingManager. The STM is enabled only for the re-plan's one transaction and its undo,
+ * so Undo puts back exactly the re-plan (the engine's own changes and the waiting store included) and nothing else is
+ * ever recorded. Any later change of the plan drops the Undo (`invalidateUndo`). A
+ * failed re-plan is rolled back. The forecast itself stays either way.
+ *
+ * Learn more:
+ * https://bryntum.com/products/scheduler/docs/api/Core/data/stm/StateTrackingManager
  */
 
-// The order the changes are reviewed in: what is lost first
+// Changes are reviewed lost work first
 const reviewOrder = { moved : 0, trimmed : 1, pulled : 2 };
 
 export default class ForecastPlanner {
-    /**
-     * @param {Object} options
-     * @param {DispatchState} options.dispatch
-     * @param {Function} options.trips Returns the trips, TripModel records
-     */
-    constructor({ dispatch, trips }) {
-        Object.assign(this, { dispatch, getTrips : trips, changes : [], snapshot : null });
+    // `trips` is a function returning the TripModel records
+    constructor({ dispatch, trips, project }) {
+        Object.assign(this, { dispatch, project, getTrips : trips, changes : [] });
+        project.stm.addStore(dispatch.waitingStore);
     }
 
     /**
-     * Takes the next forecast and re-plans the trips against it
-     * @param {String[]} waiting The turbines whose team waits at the port, kept for the undo
-     * @returns {Object[]} The changes, `{ trip, change, removed, was }`
+     * Takes the next forecast and re-plans the trips in departure order
+     * @returns {Promise<Object[]>} The changes, `{ trip, vessel, change, start, stops, later, carried }`
      */
-    apply(waiting) {
+    async apply() {
         const
-            me           = this,
-            { dispatch } = me,
-            // Not a new trip shown for a team held over a vessel
-            trips        = me.getTrips().filter(trip => !trip.draft).sort((a, b) => a.departs - b.departs),
-            ends         = new Map();
-
-        me.snapshot = {
-            waiting : [...waiting],
-            trips   : trips.map(trip => ({
-                trip,
-                departs : trip.departs,
-                stops   : trip.stops,
-                change  : trip.change,
-                // Never undefined: until the app evaluates the trips again, a trip put back may still render as trimmed
-                removed : [...(trip.removed ?? [])],
-                was     : trip.was
-            }))
-        };
+            me                    = this,
+            { dispatch, project } = me,
+            { stm }               = project,
+            trips                 = me.getTrips().sort((a, b) => a.departs - b.departs);
 
         dispatch.applyForecast();
 
+        // The notice shows on this day only
+        me.day     = dispatch.dayIndex;
         me.changes = [];
+        // Only the latest forecast's re-plan can be undone
+        stm.resetQueue();
+        stm.enable();
+        stm.startTransaction('Forecast');
+
+        try {
+            await me.replan(trips);
+            await project.commitAsync();
+            stm.stopTransaction();
+        }
+        catch(error) {
+            // The trips go back as they were, the new forecast stays: the trips past its window show as late
+            me.changes = [];
+            stm.rejectTransaction();
+            await project.commitAsync();
+            throw error;
+        }
+        finally {
+            // Nothing else is recorded
+            stm.disable();
+        }
+
+        me.changes.sort((a, b) => reviewOrder[a.change] - reviewOrder[b.change]);
+        me.reviewIndex = -1;
+
+        return me.changes;
+    }
+
+    // Each changed trip is committed before the next is planned: the next on the vessel may not leave before it is back
+    async replan(trips) {
+        const
+            me   = this,
+            ends = new Map();
 
         for (const trip of trips) {
             const
                 { resource } = trip,
                 result       = replanTrip(trip.plan, {
-                    close    : dispatch.closeOf(resource),
-                    now      : dispatch.now,
+                    close    : me.dispatch.closeOf(resource),
+                    now      : me.dispatch.now,
                     // Not before the trip before it on the vessel is back, nor before what its stops wait for is done
                     earliest : Math.max(ends.get(resource) ?? 0, trip.earliestDeparture)
                 });
 
             if (result) {
-                trip.set({
-                    change  : result.change,
-                    removed : result.removed,
-                    was     : result.was ?? null
-                });
-                // Its legs placed again: from the new departure, without the stops cut
-                trip.layout({ departs : result.start, stops : result.stops });
-                me.changes.push({ trip, ...result });
+                me.changes.push({ trip, vessel : resource, ...result, carried : me.carry(trip, result.later) });
+
+                if (result.stops.length) {
+                    trip.set({
+                        change            : result.change,
+                        previousDeparture : result.change === 'pulled' ? trip.outerStartDate : null
+                    });
+                    // Brought forward, the stops stay: only the departure moves
+                    trip.layout({ departs : result.start, stops : result.later.length ? result.stops : undefined });
+                }
+                else {
+                    trip.remove();
+                }
+
+                await me.project.commitAsync();
             }
 
-            if (trip.change !== 'moved') {
+            if (result?.stops.length !== 0) {
                 ends.set(resource, trip.endMinute);
             }
         }
-
-        me.changes.sort((a, b) => reviewOrder[a.change] - reviewOrder[b.change]);
-
-        return me.changes;
     }
 
     /**
-     * What the forecast says and what it changed, for the notice
-     * @param {Object[]} changes
-     * @returns {{headline: String, detail: String}}
+     * Moves the stops a forecast cut to the next day: a `carried` trip of the same vessel if they fit there, else each
+     * stop's team waits at the port again
+     * @returns {TripModel|null} The trip they were carried to
      */
+    carry(trip, stops) {
+        if (!stops.length) {
+            return null;
+        }
+
+        const
+            { dispatch, project } = this,
+            { eventStore }        = project,
+            vessel                = trip.resource,
+            day                   = trip.day + 1,
+            trips                 = eventStore.rootNode.children,
+            start                 = day < dispatch.days.length ? nextDayStart(stops, vessel, {
+                close        : dispatch.windowsOf(day)[vessel.window],
+                firstSailing : dispatch.firstSailing,
+                busy         : busyOf(trips.filter(each => each.day === day), vessel)
+            }) : null;
+
+        if (start == null) {
+            dispatch.waitingStore.add(stops.map(({ turbine, team, minutes }) =>
+                dispatch.waitingOf(turbine, { id : `${team}:${turbine}`, minutes })));
+
+            return null;
+        }
+
+        return addTrip(eventStore, vessel,
+            { id : nextTripId(trips, vessel), departs : start, midnight : dispatch.dateOf(day), day, change : 'carried' },
+            stops);
+    }
+
+    // The changed trips still on the day
+    get reviewable() {
+        return this.changes.filter(change => change.stops.length);
+    }
+
+    // The next change to review, cycling, the first after a new forecast
+    nextChange() {
+        const { reviewable } = this;
+
+        this.reviewIndex = ((this.reviewIndex ?? -1) + 1) % Math.max(1, reviewable.length);
+
+        return reviewable[this.reviewIndex];
+    }
+
+    // The notice's `{ headline, detail }`
     summary(changes) {
         const
             { dispatch }    = this,
@@ -94,10 +166,14 @@ export default class ForecastPlanner {
             was             = dispatch.previousWindows?.ctv,
             count           = kind => changes.filter(change => change.change === kind),
             trimmed         = count('trimmed'),
+            // The stops cut that found no trip tomorrow: their teams wait at the port
+            waiting         = changes.filter(change => !change.carried).flatMap(change => change.later).length,
             parts           = [
                 trimmed.length ? `${trimmed.length} ${trimmed.length === 1 ? 'trip' : 'trips'} trimmed` : null,
-                ...count('moved').map(({ trip }) => `${trip.resource.name} moved to ${nextLong}`),
-                ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`)
+                ...count('moved').map(({ vessel, carried }) =>
+                    `${vessel.name}'s trip ${carried ? `moved to ${dispatch.nextLong} ${hhmm(carried.departs)}` : 'off today'}`),
+                ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`),
+                waiting ? `${waiting} ${waiting === 1 ? 'stop waits' : 'stops wait'} at the port, ${dispatch.nextLong} has no room` : null
             ].filter(Boolean),
             earlier         = was != null && was > closes ? `, ${duration(was - closes)} earlier` : '';
 
@@ -107,23 +183,34 @@ export default class ForecastPlanner {
         };
     }
 
-    /**
-     * Puts the trips back as they were before the forecast
-     * @returns {String[]} The turbines waiting at the port then
-     */
-    undo() {
-        const { snapshot } = this;
+    get canUndo() {
+        // Not `stm.canUndo`: that is false while the STM is disabled, as it is between the forecast and its Undo
+        return this.project.stm.position > 0;
+    }
 
-        snapshot?.trips.forEach(({ trip, departs, stops, change, removed, was }) => {
-            if (!trip.isDestroyed) {
-                trip.set({ change, removed, was });
-                trip.layout({ departs, stops });
+    // Called when the plan changes after the forecast: undoing then would replay over records changed since
+    invalidateUndo() {
+        this.project.stm.resetQueue();
+    }
+
+    async undo() {
+        const
+            me      = this,
+            { stm } = me.project;
+
+        me.changes = [];
+
+        // A disabled STM can undo nothing
+        stm.enable();
+
+        try {
+            if (stm.canUndo) {
+                await stm.undo();
             }
-        });
-
-        this.changes  = [];
-        this.snapshot = null;
-
-        return snapshot?.waiting ?? this.dispatch.waiting;
+        }
+        finally {
+            stm.resetQueue();
+            stm.disable();
+        }
     }
 }

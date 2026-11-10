@@ -1,23 +1,64 @@
-import { Panel } from '@bryntum/core-enterprise';
+import { DateHelper, Panel, StringHelper } from '@bryntum/core-enterprise';
 import { projectData } from '../model/TripData.js';
-import { toDate } from '../util/Time.js';
+import { iconConfig } from '../util/Icons.js';
 // Also registers the widget types used below
-import '../ForecastNotice.js';
-import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
 import '../week/WeekBoard.js';
 
+// "4 CTV · 1 SWATH · 3 heli": a vessel's type is the first part of its `kind`
+function fleetCount(vessels) {
+    const counts = new Map();
+
+    vessels.forEach(({ mode, kind }) => {
+        const type = mode === 'heli' ? 'heli' : kind.split(' · ')[0];
+
+        counts.set(type, (counts.get(type) ?? 0) + 1);
+    });
+
+    return [...counts].map(([type, count]) => `${count} ${type}`).join(' · ');
+}
+
+const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+
+// The footer under the rows, the panel's bbar: what the marks mean, a swatch and a name each (scheduler.css; the work
+// and risk swatches in frame.css), and the products the page is built with
+function legendItems(view) {
+    const item = (kind, text, mark = '') => ({
+        type : 'widget',
+        cls  : `ow-l ow-l-${kind}`,
+        html : `<i class="${mark && `ow-mark-${mark}`}"></i>${text}`
+    });
+
+    return view === 'week' ? [
+        item('cell', 'Trips: times, seats, turbines; bar = seats used', 'work'),
+        item('free', 'Workable, free'),
+        item('nogo', 'No-go'),
+        '->',
+        { type : 'widget', cls : 'ow-legend-credit', html : 'Drag a crew onto a free cell to plan it' }
+    ] : [
+        item('work', 'Work', 'work'),
+        item('transit', 'Transit'),
+        item('dependency', 'Must finish first'),
+        item('risk', 'At risk', 'risk'),
+        item('nogo', 'Weather no-go'),
+        '->',
+        {
+            type : 'widget',
+            cls  : 'ow-legend-credit',
+            // In a span: the widget's flex box would drop the spaces round the links
+            html : `<span>Schedule: ${link('https://bryntum.com/products/scheduler/', 'Bryntum Scheduler')} · Wave ` +
+                `height: ${link('https://www.ag-grid.com/charts/', 'AG Charts')}</span>`
+        }
+    ];
+}
+
 /**
- * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the Day | Week
- * toggle, with the forecast notice, the vessels and helicopters on the day's timeline (DispatchScheduler) or the week
- * as a day board (WeekBoard), and its footer with the legend. The crews waiting at the port sit under it, on the page
- * (DispatchApp). On a phone it is the Schedule tab.
- *
- * The scheduler runs from 06:00 to 18:00 of the day shown, today first, over the vessels, the trips of the week with
- * their legs nested in them and the dependencies of the farm data.
+ * The schedule half of the app: the forecast notice, the Day view or the Week view, and the legend. Its header holds
+ * the title and the fleet, the next forecast's button and the Day | Week toggle (header `tools`). The notice's buttons
+ * call the app's `undoForecast` and `reviewNext` (`up.`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-tools
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
  */
 export default class SchedulePanel extends Panel {
@@ -26,110 +67,121 @@ export default class SchedulePanel extends Panel {
     static type = 'schedulepanel';
 
     static configurable = {
-        /**
-         * The dispatcher's state, the weather windows and the clock
-         * @config {DispatchState}
-         */
         dispatch : null,
 
-        /**
-         * The parsed data/farm.json
-         * @config {Object}
-         */
+        // The parsed data/farm.json
         data : null,
 
-        /**
-         * At phone widths the title bar holds the next forecast's button only, and goes when there is none; the
-         * legend goes too. Set by DispatchApp#updatePhone
-         * @prp {Boolean}
-         */
+        // Set by PhoneLayout. The header then holds only the next forecast's button, the legend goes
         phone : false,
 
         cls    : 'ow-schedule',
         flex   : 1,
-        layout : 'vbox'
+        layout : 'vbox',
+        tools  : {
+            forecast : {
+                type      : 'button',
+                rendition : 'tonal',
+                cls       : 'ow-forecast-button',
+                hidden    : true,
+                onClick   : 'up.onForecastClick'
+            },
+            // The pressed button's ref is the view it shows
+            view : {
+                type        : 'buttongroup',
+                cls         : 'ow-view-toggle',
+                rendition   : 'padded',
+                toggleGroup : true,
+                items       : [
+                    { ref : 'day', text : 'Day', pressed : true, onToggle : 'up.onViewToggle' },
+                    { ref : 'week', text : 'Week', onToggle : 'up.onViewToggle' }
+                ]
+            }
+        }
     };
 
     construct(config) {
         const
             { dispatch, data } = config,
-            { day }            = dispatch,
-            me                 = this,
-            boats              = dispatch.vessels.filter(vessel => vessel.mode === 'vessel').length;
+            { day, midnight }  = dispatch;
 
         super.construct({
             ...config,
-            // Its tab's text on a phone, the tbar is the title bar
-            title  : 'Schedule',
-            header : false,
-            tbar   : {
-                cls   : 'ow-panel-bar',
-                items : {
-                    title : { type : 'widget', cls : 'ow-panel-title', html : 'Vessels &amp; helicopters' },
-                    count : {
-                        type : 'widget',
-                        cls  : 'ow-panel-count',
-                        html : `${boats} CTV · ${dispatch.vessels.length - boats} heli`
-                    },
-                    spacer   : '->',
-                    // The next forecast, in: the one action that changes the plan, quiet and blue
-                    forecast : {
-                        type    : 'button',
-                        cls     : 'ow-forecast-button',
-                        hidden  : true,
-                        onClick : () => me.trigger('forecast')
-                    },
-                    // A segmented control: the pressed button is the raised one
-                    view : {
-                        type        : 'buttongroup',
-                        rendition   : 'padded',
-                        toggleGroup : true,
-                        items       : {
-                            day : {
-                                text     : 'Day',
-                                pressed  : true,
-                                onToggle : ({ pressed }) => pressed && me.showView('day')
-                            },
-                            week : {
-                                text     : 'Week',
-                                onToggle : ({ pressed }) => pressed && me.showView('week')
-                            }
+            title : `Vessels &amp; helicopters <span class="ow-panel-count">${StringHelper.encodeHtml(fleetCount(dispatch.vessels))}</span>`,
+            items : {
+                notice : {
+                    type   : 'container',
+                    cls    : 'ow-notice',
+                    hidden : true,
+                    role   : 'status',
+                    layout : { type : 'hbox', align : 'center' },
+                    items  : {
+                        text : { type : 'widget', cls : 'ow-notice-text' },
+                        // A Button's text takes DomConfigs: the showcase's SVG icon goes in with the word
+                        undo : {
+                            type      : 'button',
+                            rendition : 'text',
+                            cls       : 'ow-notice-undo',
+                            text      : [iconConfig('arrow-undo'), 'Undo'],
+                            onClick   : 'up.undoForecast'
+                        },
+                        review : {
+                            type      : 'button',
+                            rendition : 'filled',
+                            color     : 'b-blue',
+                            cls       : 'ow-notice-primary',
+                            onClick   : 'up.reviewNext'
                         }
                     }
-                }
-            },
-            items : {
-                notice    : { type : 'forecastnotice' },
+                },
                 scheduler : {
                     type      : 'dispatchscheduler',
                     flex      : 1,
                     listeners : { paint : 'up.refreshBar' },
                     dispatch,
-                    startDate : toDate(day.dayStart * 60),
-                    endDate   : toDate(day.dayEnd * 60),
+                    startDate : DateHelper.add(midnight, day.dayStart, 'hour'),
+                    endDate   : DateHelper.add(midnight, day.dayEnd, 'hour'),
                     // The trips of the whole week, the Day view shows one day's
-                    project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) })
+                    project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) },
+                        index => dispatch.dateOf(index))
                 },
-                // The Week view, a day board of the same trips
-                board  : { type : 'weekboard', flex : 1, hidden : true, dispatch },
-                // The schedule's footer
-                legend : { type : 'legend' }
-            }
+                board : { type : 'weekboard', flex : 1, hidden : true, dispatch }
+            },
+            bbar : { cls : 'ow-legend', items : legendItems('day') }
         });
+
+        const
+            { board, scheduler } = this.widgetMap,
+            { view }             = this.tools;
+
+        // A header tool is rendered on its own, without its children: the toggle's buttons are rendered into it
+        view.items.forEach(button => button.render(view.contentElement));
+
+        // The Week view follows the trips of the Day view's project
+        board.plan = scheduler.project;
+    }
+
+    onForecastClick() {
+        this.trigger('forecast');
+    }
+
+    onViewToggle({ source, pressed }) {
+        if (pressed) {
+            this.showView(source.ref);
+        }
     }
 
     /**
-     * Shows the Day or the Week view of the schedule
      * @param {'day'|'week'} view
      */
     showView(view) {
         const
-            { scheduler, board, legend } = this.widgetMap,
-            { day, week }                = this.tbar.widgetMap,
+            { scheduler, board }         = this.widgetMap,
+            { day, week }                = this.tools.view.widgetMap,
             isWeek                       = view === 'week',
             button                       = isWeek ? week : day;
 
-        // Opened otherwise, by a click on a day of the week: the toggle is pressed, which shows the view
+        // Called from code (a click on a day of the week): pressing the toggle shows the view through onViewToggle
         if (!button.pressed) {
             button.pressed = true;
 
@@ -138,35 +190,48 @@ export default class SchedulePanel extends Panel {
 
         scheduler.hidden = isWeek;
         board.hidden     = !isWeek;
-        legend.view      = view;
+        this.bbar.removeAll();
+        this.bbar.add(legendItems(view));
         this.refreshBar();
     }
 
+    /**
+     * Shows the notice of a forecast that changed the plan
+     * @param {Object} options
+     * @param {String} options.headline
+     * @param {String} options.detail
+     * @param {Number} options.changes The trips changed that are still on the day, to review
+     */
+    showNotice({ headline, detail, changes }) {
+        const { notice, text, review, undo } = this.widgetMap;
+
+        text.html     = [iconConfig('warning'), { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }];
+        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        review.hidden = !changes;
+        undo.hidden   = notice.hidden = false;
+    }
+
     updatePhone() {
-        if (this.tbar) {
+        if (this.tools) {
             this.refreshBar();
         }
     }
 
-    /**
-     * Updates the tbar: the next forecast's button, and on a phone only that
-     */
     refreshBar() {
         const
-            me                                       = this,
-            { dispatch, tbar }                       = me,
-            phone                                    = Boolean(me.phone),
-            { title, count, spacer, forecast, view } = tbar.widgetMap,
-            next                                     = dispatch.nextForecast;
+            me                 = this,
+            phone              = Boolean(me.phone),
+            { forecast, view } = me.tools,
+            next               = me.dispatch.nextForecast;
 
         forecast.hidden = !next;
-        tbar.hidden     = phone && !next;
-        title.hidden    = count.hidden = spacer.hidden = view.hidden = phone;
-
-        me.widgetMap.legend.hidden = phone;
+        view.hidden     = phone;
+        // On a phone the header holds the forecast's button alone, and goes without one
+        me.element.classList.toggle('ow-bar-empty', phone && !next);
+        me.bbar.hidden = phone;
 
         if (next) {
-            // The action in semibold: a Button's text takes DomConfigs. In one span, which keeps the space before it
+            // A Button's text takes DomConfigs. One span keeps the space before the bold part
             forecast.text = { tag : 'span', children : [`Forecast ${next.issued} is in · `, { tag : 'b', text : 'Re-plan' }] };
         }
     }

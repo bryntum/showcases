@@ -1,25 +1,52 @@
-import { DragHelper, Widget } from '@bryntum/core-enterprise';
-import { createChip, showOnChip } from './DragChip.js';
-import { toMinutes } from '../util/Time.js';
-import KeyboardDrag, { chipSelector } from './KeyboardDrag.js';
+import { DateHelper, DomHelper, DragHelper, Widget } from '@bryntum/core-enterprise';
 // Also registers the tooltip type used below
 import './DropTooltip.js';
 
+// The drag proxy. Every technician has the GWO basics, only a certificate that limits where a team can go is shown
+function createChip(team) {
+    return DomHelper.createElement({
+        class    : 'ow-drag-chip',
+        dataset  : { state : 'neutral' },
+        children : [
+            {
+                tag      : 'span',
+                class    : 'ow-drag-team',
+                children : [
+                    { tag : 'b', text : team.name },
+                    {
+                        tag      : 'span',
+                        class    : 'ow-certs',
+                        children : team.certs.filter(cert => cert !== 'GWO')
+                            .map(cert => ({ tag : 'span', class : `ow-cert ow-cert-${cert.toLowerCase()}`, text : cert }))
+                    }
+                ]
+            },
+            { tag : 'span', class : 'ow-pill ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
+        ]
+    });
+}
+
+// The proxy's status from the same check as the tooltip (DropController#previewDrop). Only touched when it changes,
+// so it does not flicker
+function showOnChip(chip, drop) {
+    const
+        state  = drop ? (drop.result.valid ? 'valid' : 'invalid') : 'neutral',
+        text   = drop?.result.short ?? '',
+        status = chip?.querySelector('.ow-drag-status');
+
+    if (!status || (chip.dataset.state === state && status.textContent === text)) {
+        return;
+    }
+
+    chip.dataset.state = state;
+    status.textContent = text;
+    status.hidden      = !text;
+}
+
 /**
- * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following
- * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop. The whole time axis
- * of the schedule is its drop target: over a trip bar, or anywhere on a vessel's row, the app previews the stop the
- * team would get (DispatchApp#previewDrop), on that trip or the vessel's best one, or on a new trip from port: the trip
- * shows it, the map rings the turbines the trip can still reach, and a Bryntum Tooltip (DropTooltip), shown by the
- * point the team is held at, says when the trip is back against the window. The dispatch check is the drag's
- * validation: a team that does not fit marks the drag invalid (`context.valid`), and released there the app says why.
- * The proxy says it too (DragChip), as it moves, from the same check: "Fits SR-1, back 12:40" or "35 min after
- * window", neutral over empty space. Released where it fits, the app books it.
- *
- * The keyboard drag is KeyboardDrag, which works through this class.
- *
- * The trip and the vessel under the pointer are resolved by the Scheduler itself (`resolveEventRecord`,
- * `resolveResourceRecord`) from the elements at the point in its time axis (`timeAxisSubGridElement`).
+ * Dragging a team from the tray onto a vessel, run by Bryntum's DragHelper. The pointer side only: the handler
+ * (DropController) checks and books, and that one check sets `context.valid`, the proxy's colour, the DropTooltip and
+ * the outline of where the stop would go.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -28,45 +55,36 @@ import './DropTooltip.js';
 export default class TeamDrag {
     /**
      * @param {Object} options
-     * @param {TeamTray} options.tray The crews waiting at the port, whose chips are dragged
+     * @param {TeamTray} options.tray
      * @param {Scheduler.view.Scheduler} options.scheduler
-     * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
-     * @param {Object} options.handler `{ liftTeam(id), previewDrop(id, trip), dropTeam(id, trip), endDrag(),
-     * dropTargets() }`
+     * @param {WeekBoard} options.board While it shows, its free cells are the drop targets
+     * @param {DropController} options.handler
      */
     constructor({ tray, scheduler, board, handler }) {
         const me = this;
 
         Object.assign(me, { tray, scheduler, board, handler });
 
-        me.keys = new KeyboardDrag({ drag : me });
-
         me.dragHelper = new DragHelper({
             callOnFunctions      : true,
             outerElement         : tray.element,
-            targetSelector       : chipSelector,
+            targetSelector       : '.ow-team[data-team]',
             // A small chip centred on the pointer, the team's place in the tray stays, dimmed
             cloneTarget          : true,
             autoSizeClonedTarget : false,
             constrain            : false,
-            createProxy          : element => me.createProxy(element.dataset.team),
-            // A team held from the keyboard goes back first
-            isElementDraggable   : () => {
-                me.keys.endHeld();
-
-                return true;
-            },
-            onDragStart : ({ context }) => me.onDragStart(context),
-            onDrag      : ({ context, event }) => me.onDrag(context, event),
-            onDrop      : ({ context }) => me.onDrop(context),
-            onReset     : () => me.end()
+            createProxy          : element => createChip(handler.waitingTeam(element.dataset.team).team),
+            onDragStart          : ({ context }) => me.onDragStart(context),
+            onDrag               : ({ context, event }) => me.onDrag(context, event),
+            onDrop               : () => me.onDrop(),
+            onReset              : () => me.end()
         });
     }
 
     destroy() {
         this.dragHelper.abort(true);
         this.dragHelper.destroy();
-        this.keys.destroy();
+        this.end();
     }
 
     get isDragging() {
@@ -74,158 +92,130 @@ export default class TeamDrag {
     }
 
     /**
-     * Shows a team held over a trip without a pointer (KeyboardDrag#showHeld)
+     * Only for the `?state=drag` URL state (the screenshots): holds a team over a trip as a pointer resting on the
+     * outline of its stop would, with no pointer. Escape puts it back
      * @param {String} teamId
      * @param {TripModel} trip
+     * @returns {Promise} Resolves once it is shown
      */
-    showHeld(teamId, trip) {
-        this.keys.showHeld(teamId, trip);
-    }
+    async showHeld(teamId, trip) {
+        const
+            me          = this,
+            { handler } = me,
+            outline     = () => me.scheduler.element.querySelector('.ow-drop-outline');
 
-    //region Pointer, DragHelper
+        me.lift(teamId);
+        me.target = trip;
+        me.proxy = document.body.appendChild(createChip(handler.waitingTeam(teamId).team));
+        me.onKey = event => event.key === 'Escape' && me.end();
+        document.addEventListener('keydown', me.onKey);
+        handler.previewDrop(teamId, trip);
 
-    // The proxy DragHelper drags, the team's compact chip
-    createProxy(teamId) {
-        const { team, job } = this.handler.waitingTeam(teamId);
+        // The outline is drawn a frame later
+        for (let frame = 0; frame < 30 && !outline(); frame++) {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
 
-        return createChip(team, job);
+        const rect = outline()?.getBoundingClientRect();
+
+        if (me.team === teamId) {
+            me.point = rect ? { x : rect.left + rect.width / 2, y : rect.top + rect.height / 2 } :
+                { x : innerWidth / 2, y : innerHeight / 2 };
+            DomHelper.setTranslateXY(me.proxy, me.point.x - 20, me.point.y + 8);
+            me.hover(trip, me.point);
+        }
     }
 
     onDragStart(context) {
-        this.proxy = context.element;
-        this.lift(context.grabbed.dataset.team);
+        const me = this;
+
+        // A team held by `?state=drag` goes back first
+        me.end();
+        me.proxy = context.element;
+        me.lift(context.grabbed.dataset.team);
     }
 
     onDrag(context, event) {
-        const
-            me    = this,
-            point = { x : event.clientX, y : event.clientY };
+        const me = this;
 
-        // Kept for refresh(), the plan may change under a still pointer
-        me.point = point;
-
-        // The dispatch check validates the drop: over a trip or a row where the team fits. Over anything else there is
-        // no target, the drop is invalid and the chip goes back
-        context.valid = Boolean(me.hover(me.targetAt(point), point)?.result.valid);
+        me.point = { x : event.clientX, y : event.clientY };
+        // Over anything but a trip or a row where the team fits, the drop is invalid and the chip goes back
+        context.valid = Boolean(me.hover(me.targetAt(me.point), me.point)?.result.valid);
     }
 
-    // Released over a trip or a row, booked if it fits, else the app says why (DropPreview#dropTeam). Booked before
-    // the drag ends, so a new trip previewed for the team is kept
     onDrop() {
         const
             me     = this,
-            // The preview redraws the trip under the pointer, its element then may not be the one of the last move
-            target = me.point ? me.targetAt(me.point) : null,
-            team   = me.team;
+            target = me.point ? me.targetAt(me.point) : null;
 
-        if (target && team) {
-            me.handler.dropTeam(team, target);
+        if (target && me.team) {
+            me.handler.dropTeam(me.team, target, me.minuteAt(target, me.point));
         }
 
         me.end();
     }
 
-    /**
-     * Checks the team again where it is held, after the plan or the forecast changed (DispatchApp#replan): the trip
-     * under the pointer, or the trip held over without one, previewed and its tooltip redrawn against the plan as it is
-     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have moved some to
-     * tomorrow
-     */
-    refresh() {
+    // Minutes since midnight on the Day view's time axis. None over a cell of the week, which is the whole day
+    minuteAt(target, point) {
         const
-            me   = this,
-            trip = me.handler.drop?.target;
+            { scheduler } = this,
+            date          = target && !target.isWeekCell ? scheduler.getDateFromCoordinate(point.x, null, false) : null;
 
-        if (!me.isDragging) {
-            return;
-        }
+        return date ? DateHelper.diff(scheduler.dispatch.midnight, date, 'minute') : null;
+    }
 
-        me.keys.refreshTrips(trip);
-
-        if (me.point) {
-            me.hover(me.targetAt(me.point), me.point);
-        }
-        else if (trip) {
-            me.keys.holdOver(trip);
-        }
-        // Held without a pointer, the team no longer waits: put it back
-        else {
-            me.end();
+    // Called by DispatchApp#replan: the pointer may be still while the trips move under it, checked again
+    refresh() {
+        if (this.isDragging && this.point) {
+            this.hover(this.target ?? this.targetAt(this.point), this.point, true);
         }
     }
 
-    /**
-     * What a team held at a point is over: a trip bar (a draft trip counts as its vessel's row), else a vessel's row in
-     * the time axis, else nothing. In the Week view, a vessel's day without a trip (WeekBoard#cellAt)
-     * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {TripModel|VesselModel|Object|null}
-     */
+    // A trip bar, else a vessel's row, else null. In the Week view, a free cell (WeekBoard#cellAt). `point` is in the
+    // viewport
     targetAt(point) {
         const { board } = this;
 
         return board && !board.hidden ? board.cellAt(point) : this.rowTargetAt(point);
     }
 
-    // What a team held at a point of the Day view is over, see targetAt: the Scheduler resolves the trip (or the leg,
-    // whose trip it is) and the vessel from the elements at the point in its time axis, top first
+    // The Scheduler resolves the trip (or the leg, whose trip it is) and the vessel from the elements at the point
     rowTargetAt({ x, y }) {
         const
             { scheduler } = this,
             axis          = scheduler.timeAxisSubGridElement,
             elements      = document.elementsFromPoint(x, y).filter(element => axis?.contains(element)),
-            event         = elements.map(element => scheduler.resolveEventRecord(element)).find(Boolean),
-            trip          = event?.trip,
+            trip          = elements.map(element => scheduler.resolveEventRecord(element)).find(Boolean)?.trip,
             vessel        = elements.map(element => scheduler.resolveResourceRecord(element, [x, y])).find(Boolean);
 
-        if (trip && !trip.draft) {
-            return trip;
-        }
-
         // Not a group header, which resolves to no resource
-        return vessel ?? trip?.resource ?? null;
+        return trip ?? vessel ?? null;
     }
 
-    //endregion
-
-    //region Shared with the keyboard drag
-
-    // Lifts the team from the tray, with the tooltip of the trip it is over
     lift(teamId) {
         const me = this;
 
         me.team = teamId;
-        // The trip's own tooltip stays away while a team is held: the drop tooltip speaks for the trip
+        // The drop tooltip speaks for the trip while a team is held
         me.scheduler.features.eventTooltip.disabled = true;
         me.handler.liftTeam(teamId);
         me.tip = Widget.create({ type : 'droptooltip' });
     }
 
-    /**
-     * Previews the team on a trip or a vessel, or none, and shows the tooltip below the point. The tooltip, the proxy
-     * and the trip's highlight all show this one check
-     * @param {TripModel|VesselModel|null} target
-     * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {Object|null} See DispatchApp#previewDrop
-     */
-    hover(target, point) {
+    // The tooltip, the proxy and the outline all show this one check, see DropController#previewDrop
+    hover(target, point, fresh = false) {
         const
             me   = this,
-            // Where on the Day view's time axis the team is held: the keyboard has no point, and a cell of the week is
-            // the whole day (the Day view is hidden then, it has no date at the point)
-            date = target?.isWeekCell || me.keys.keyboard ? null :
-                me.scheduler.getDateFromCoordinate(point.x, null, false),
-            drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
-                me.handler.previewDrop(me.team, target, date ? toMinutes(date) : null);
+            drop = me.handler.previewDrop(me.team, target, me.minuteAt(target, point), fresh);
 
-        showOnChip(me.keys.held ?? me.proxy, drop);
+        showOnChip(me.proxy, drop);
 
-        // The Week view tints the cell held over, as the Day view does the trip (TripRendering, `hasPreview`)
         if (me.board) {
             me.board.dropCell = target?.isWeekCell ? target : null;
         }
 
         if (drop) {
-            me.tip.showDrop(drop, point, Boolean(me.keys.keyboard));
+            me.tip.showDrop(drop, point);
         }
         else {
             me.tip.hide();
@@ -234,22 +224,27 @@ export default class TeamDrag {
         return drop;
     }
 
-    // The team goes back to the tray, or was booked, the preview ends
     end() {
         const me = this;
 
-        if (me.team) {
-            me.tip.destroy();
-
-            if (me.board) {
-                me.board.dropCell = null;
-            }
-
-            me.tip = me.team = me.point = me.proxy = null;
-            me.scheduler.features.eventTooltip.disabled = false;
-            me.handler.endDrag();
+        if (!me.team) {
+            return;
         }
-    }
 
-    //endregion
+        // The chip of a team held by `?state=drag` is ours, DragHelper removes its own proxy
+        if (me.onKey) {
+            document.removeEventListener('keydown', me.onKey);
+            me.proxy.remove();
+        }
+
+        me.tip.destroy();
+
+        if (me.board) {
+            me.board.dropCell = null;
+        }
+
+        me.tip = me.team = me.point = me.proxy = me.onKey = me.target = null;
+        me.scheduler.features.eventTooltip.disabled = false;
+        me.handler.endDrag();
+    }
 }
