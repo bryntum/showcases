@@ -237,9 +237,10 @@ export default class WaveChart {
                 // Lifted to the foot of the chart: under it, the header cell would clip it
                 label    : {
                     yOffset  : -27,
+                    // The hour clamped at both ends: the axis starts half a pixel before the day (`min`)
                     renderer : ({ value }) => ({
-                        text : `${hhmm(value * 60)} · ${hs[Math.min(Math.floor(value), dayEnd - 1) - dayStart]
-                            .toFixed(1)} m`,
+                        text : `${hhmm(Math.max(value, dayStart) * 60)} · ${(hs[Math.max(0, Math.min(Math.floor(value),
+                            dayEnd - 1) - dayStart)] ?? hs.at(-1)).toFixed(1)} m`,
                         color           : surface,
                         backgroundColor : ink
                     })
@@ -288,13 +289,13 @@ export default class WaveChart {
         }));
     }
 
-    // The forecast and both limits, with room over and under them for the labels, a little more under
+    // The forecast, its likely range and both limits, with room over and under them for the labels, a little more under
     range() {
         const
-            { ctv, swath } = this.limits,
-            { hs }         = this.forecast,
-            [low, high]    = [Math.min(ctv, ...hs), Math.max(swath, ...hs)],
-            room           = (high - low) / 2;
+            { ctv, swath }                     = this.limits,
+            { hs, low : lows = [], high : tops = [] } = this.forecast,
+            [low, high]                        = [Math.min(ctv, ...hs, ...lows), Math.max(swath, ...hs, ...tops)],
+            room                               = (high - low) / 2;
 
         return [low - room * 1.4, high + room];
     }

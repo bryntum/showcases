@@ -233,6 +233,14 @@
         inset-inline-start : calc(100% + var(--ow-dot) / 2 + 2px);
     }
 
+    /* Too close to the end of the timeline: before the dot. Wider than the sail back, it goes up into the trip's label
+       row, clear of the last stop: the line is about 12px under the legs' top (half the 30px legs of a 56px row) */
+    &.b-sch-horizontal .b-sch-event-wrap .ow-transit-back.ow-transit-edge .b-buffer-label {
+        inset-inline      : auto calc(var(--ow-dot) / 2 + 2px);
+        inset-block-start : 0;
+        translate         : 0 calc(-100% - 12px);
+    }
+
     /* The late return's tag */
     &.b-sch-horizontal .b-sch-event-wrap .ow-transit-late .b-buffer-label {
         padding          : 1px 6px;

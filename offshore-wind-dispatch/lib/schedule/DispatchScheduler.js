@@ -306,7 +306,11 @@ export default class DispatchScheduler extends Scheduler {
         const { dispatch, timeAxisViewModel } = this;
 
         renderBuffers(args, dispatch.closeOf(args.eventRecord.resource),
-            { dayStart : dispatch.day.dayStart * 60, perMinute : timeAxisViewModel.getDistanceForDuration(60_000) });
+            {
+                dayStart  : dispatch.day.dayStart * 60,
+                dayEnd    : dispatch.day.dayEnd * 60,
+                perMinute : timeAxisViewModel.getDistanceForDuration(60_000)
+            });
     }
 
     // The Group feature runs the column renderer for its header rows too, which have no vessel (renderGroup)

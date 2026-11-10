@@ -89,7 +89,8 @@ const defs = id => `
 /**
  * @param {Object} [options]
  * @param {Number} [options.hs] Metres (0.5 to 2.5)
- * @param {Number} [options.limit] The vessel limit in metres, a dashed line on the transition piece
+ * @param {Number|null} [options.limit] The vessel limit in metres, a dashed line on the transition piece. None for a
+ * helicopter, which is not limited by the sea
  * @param {Boolean} [options.spin]
  * @param {Number} [options.wind] m/s at hub height
  * @param {Boolean} [options.repair] Adds the wrench badge
@@ -103,7 +104,7 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
         scale  = 7,
         crest  = sea - hs * scale / 2,
         trough = sea + hs * scale / 2,
-        mark   = sea - limit * scale / 2,
+        mark   = sea - (limit ?? 0) * scale / 2,
         // A wavelength every 20 px
         waves  = Array.from({ length : 9 }, (_, i) => {
             const x = i * 20 - 10;
@@ -128,8 +129,8 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
     </g>
 
     <!-- The vessel limit on the boat landing: above this wave height a crew transfer vessel cannot push on -->
-    <path d="M58 ${mark} H102" stroke="var(--ow-risk)" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="104" y="${mark + 3}" class="ow-turbine-label">${limit.toFixed(1)} m</text>
+    ${limit == null ? '' : `<path d="M58 ${mark} H102" stroke="var(--ow-risk)" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <text x="104" y="${mark + 3}" class="ow-turbine-label">${limit.toFixed(1)} m</text>`}
 
     <!-- Tower: tapered, lit from the left -->
     <path d="M73.5 164 L76.6 54 H83.4 L86.5 164 Z" fill="url(#${id}-tower)"/>
