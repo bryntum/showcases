@@ -49,7 +49,7 @@ export default class SchedulePanel extends Panel {
 
         /**
          * At phone widths the title bar holds the next forecast's button only, and goes when there is none; the
-         * legend goes too. Set by DispatchApp#updatePhone
+         * legend goes too. Set by PhoneLayout
          * @prp {Boolean}
          */
         phone : false,

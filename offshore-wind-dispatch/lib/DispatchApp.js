@@ -6,6 +6,7 @@ import { dayKpis } from './plan/Kpis.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import MapLink, { tripsOf } from './MapLink.js';
+import PhoneLayout from './PhoneLayout.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
 // Also registers the widget types used below
 import './KpiBar.js';
@@ -89,11 +90,18 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         super.construct({ ...config, items : me.itemsConfig(config.data, site) });
 
-        // The app's parts by ref, kept from here on: on a phone the two halves move into the tab panel and back
-        // (updatePhone), which takes their widgets out of the container's own widgetMap
+        // The app's parts by ref, kept from here on: moving the halves into the tab panel and back (PhoneLayout) takes
+        // their widgets out of the container's own widgetMap
         me.parts = { ...me.widgetMap };
 
-        const { scheduler, board, map, tray, schedulePane, notice } = me.parts;
+        const { scheduler, board, map, tray, schedulePane, notice, main, tabs, column, side } = me.parts;
+
+        me.phoneLayout     = new PhoneLayout({
+            main,
+            tabs,
+            halves : [column, side],
+            views  : [scheduler, board, schedulePane, side]
+        });
 
         me.forecastPlanner = new ForecastPlanner({ dispatch, project : scheduler.project, trips : () => me.trips });
         me.dropController  = new DropController({
@@ -152,7 +160,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             tabs : {
                 type : 'phonetabs',
                 onTabChange({ activeItem }) {
-                    me.tab = activeItem && activeItem === me.parts.side ? 'map' : 'schedule';
+                    me.tab = me.phoneLayout.tabOf(activeItem);
                 }
             },
             main : {
@@ -594,49 +602,19 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     //endregion
 
-    //region Toolbar buttons, tabs and the responsive layout
+    //region The responsive layout
 
-    // On a phone the two halves move into the tab panel, back side by side on a wider screen
+    // On a phone the two halves are tabs, side by side on a wider screen
     updatePhone(phone) {
-        const { scheduler, board, column, schedulePane, side, main, tabs } = this.parts ?? {};
-
-        // Applied again once the items exist, see construct
-        if (!scheduler) {
-            return;
-        }
-
-        const home = phone ? tabs : main;
-
-        scheduler.phone = board.phone = schedulePane.phone = side.phone = phone;
-        side.flex       = phone ? 1 : null;
-        side.width      = phone ? null : 400;
-
-        // The halves' new home shown first: added to a hidden container, they would stay rendered where they were
-        tabs.hidden = !phone;
-        main.hidden = phone;
-
-        if (phone ? !tabs.includes(column) : column.element.parentElement !== main.contentElement) {
-            // Back side by side: the TabPanel that took them left them in this container's items, so they are removed
-            // and added again for the elements to move back
-            if (!phone) {
-                tabs.remove(column, side);
-                main.remove(column, side);
-            }
-
-            home.add([column, side]);
-            // A tab panel shows one of them, side by side both
-            column.hidden = side.hidden = false;
-        }
-
+        // Applied again once the halves exist, see construct
+        this.phoneLayout?.apply(phone);
         this.element?.classList.toggle('ow-phone', phone);
         this.updateTab(this.tab);
     }
 
     updateTab(tab) {
-        const { tabs } = this.parts ?? {};
-
-        if (tabs && this.phone) {
-            tabs.activeTab = tab === 'map' ? 1 : 0;
+        if (this.phone) {
+            this.phoneLayout?.showTab(tab);
         }
     }
 

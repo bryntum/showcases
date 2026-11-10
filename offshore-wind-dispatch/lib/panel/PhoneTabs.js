@@ -1,7 +1,7 @@
 import { TabPanel } from '@bryntum/core-enterprise';
 
 /**
- * The tabs of a phone, where the schedule and the map are one tab each (DispatchApp#updatePhone). The TabPanel gives
+ * The tabs of a phone, where the schedule and the map are one tab each (PhoneLayout). The TabPanel gives
  * the tab list, its roles and the switching, and this class adds the arrow keys through the tab bar's `keyMap`: the
  * TabBar has the tab roles but no arrow keys, the ARIA tabs pattern moves between the tabs with them.
  *

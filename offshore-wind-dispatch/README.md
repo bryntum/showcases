@@ -179,7 +179,8 @@ engine places each changed trip before the next one on the vessel is planned.
     the site and the day, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
     tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
     the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
-    of the map and the schedule, `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
+    of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
+    `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
     drag sources, one per record of the waiting teams' store), `ForecastNotice.js` the forecast notice (a Container
     with two Buttons) and `Legend.js` the schedule's footer
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose `tbar` is the title bar, with the next forecast's

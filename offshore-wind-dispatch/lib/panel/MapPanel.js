@@ -35,7 +35,7 @@ export default class MapPanel extends Panel {
         tipContent : null,
 
         /**
-         * At phone widths the map is its own tab, the site's title bar goes. Set by DispatchApp#updatePhone
+         * At phone widths the map is its own tab, the site's title bar goes. Set by PhoneLayout
          * @prp {Boolean}
          */
         phone : false,
