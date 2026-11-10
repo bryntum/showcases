@@ -1,5 +1,5 @@
 import { DateHelper, StringHelper, Toast } from '@bryntum/core-enterprise';
-import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
+import { nextSailing, noGoText, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
 import { busyOf } from './schedule/TripValidator.js';
 import { addTrip, nextTripId } from './model/TripData.js';
@@ -384,56 +384,117 @@ export default class DropController {
 
     /**
      * Released over a trip, a vessel's row or a free cell of the Week view: checked again there as the preview is
-     * (previewDrop) against the plan as it is now, booked when it fits, else the reason is shown
+     * (previewDrop) against the plan as it is now, then booked when it fits, else the reason is shown.
+     *
+     * The check is the planner's prediction; the booking is the engine's. So the stop is laid out and the engine
+     * places it (`commitAsync()`) before anything is told: only when the trip, and every trip with a stop that waits
+     * for it, is still back before its window does the team leave the tray and the booking get announced. Else the
+     * trip is put back as it was and the reason shown. The preview is taken off and placed first, so the trips that
+     * wait for this one are measured against the plan alone
      * @param {String} teamId
      * @param {TripModel|VesselModel|Object|null} target
      * @param {Number|null} [at] Minutes since midnight at the point released, see previewDrop
+     * @returns {Promise<Boolean>} Booked
      */
-    dropTeam(teamId, target, at = null) {
+    async dropTeam(teamId, target, at = null) {
         const
-            me   = this,
-            drop = me.previewDrop(teamId, target, at, true);
+            me           = this,
+            { dispatch } = me,
+            drop         = me.previewDrop(teamId, target, at, true);
 
         if (!drop?.result.valid) {
             tell(drop?.result.reason ?? 'The team is not waiting');
 
-            return;
+            return false;
         }
 
-        if (target.isWeekCell) {
-            me.bookCell(drop);
+        const
+            { team, job } = drop,
+            day           = drop.day ?? dispatch.dayIndex,
+            { trip, why } = await me.book(drop, day);
 
-            return;
+        if (why) {
+            tell(why);
+
+            return false;
         }
 
-        const { id, trip, team, job, result } = drop;
+        const on = target.isWeekCell ? `, ${DateHelper.format(dispatch.dateOf(day), 'ddd D')}` : '';
 
-        // Booked: the previewed stop becomes the trip's, a draft trip a trip of the plan
-        me.held    = null;
-        trip.draft = false;
-        trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
-        me.dispatch.waitingStore.remove(id);
-        me.onBooked({ trip, turbine : job.turbine });
+        dispatch.waitingStore.remove(drop.id);
+        tell(`${team.name} booked on ${trip.id}${on}, back in port by ${hhmm(trip.endMinute)}`);
+        await me.onBooked({ trip : target.isWeekCell ? null : trip, turbine : job.turbine });
 
-        tell(`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`);
+        return true;
     }
 
-    /**
-     * Books a team on a new trip on a vessel's free day of the week: the trip goes in the plan of that day
-     * @param {Object} drop See cellDrop
-     */
-    bookCell({ id, team, job, result, plan, vessel, day }) {
-        const me = this;
+    // Lays the team's stop out on its trip, or on a new trip from port (a draft, or a free cell of the Week view), and
+    // lets the engine place it. Taken back when the engine's result breaks a window, `why` then says how
+    async book({ trip, team, job, vessel = trip.resource }, day) {
+        const
+            me                      = this,
+            { project, eventStore } = me.scheduler,
+            stop                    = stopOf(team, job),
+            fresh                   = trip.draft && { id : trip.id, departs : trip.departs, day };
 
-        me.held = null;
-        // Its departure in minutes of that day
-        addTrip(me.scheduler.eventStore, vessel,
-            { id : plan.id, departs : plan.start, midnight : me.dispatch.dateOf(day), day }, [stopOf(team, job)]);
-        me.dispatch.waitingStore.remove(id);
-        me.onBooked({ trip : null, turbine : job.turbine });
+        me.clearPreview();
+        await project.commitAsync();
 
-        tell(`${team.name} booked on ${plan.id}, ${DateHelper.format(me.dispatch.dateOf(day), 'ddd D')}, ` +
-            `back in port by ${hhmm(result.back)}`);
+        const
+            midnight = me.dispatch.dateOf(day),
+            booked   = fresh ? addTrip(eventStore, vessel, { ...fresh, midnight }, [stop]) : trip,
+            before   = !fresh && trip.stops,
+            // The trips that wait for this one, and when each is back without the team
+            waits    = me.waitingOn(booked).map(link => ({ link, back : link.toEvent.trip.endMinute }));
+
+        before && trip.layout({ stops : [...before, stop] });
+        await project.commitAsync();
+
+        const why = me.lateAfterBooking(booked, waits);
+
+        if (why) {
+            if (before) {
+                trip.layout({ stops : before });
+            }
+            else {
+                eventStore.remove(booked);
+            }
+
+            await project.commitAsync();
+        }
+
+        return { trip : booked, why };
+    }
+
+    // The dependencies of the plan from a trip into a stop of another trip
+    waitingOn(trip) {
+        return this.scheduler.dependencyStore.records.filter(link => !link.isChain && link.fromEvent?.trip === trip &&
+            link.toEvent?.trip);
+    }
+
+    // Why a booking the engine has placed cannot stay: the trip is back after its window, or a trip that waits for it
+    // now is, later than it was
+    lateAfterBooking(trip, waits) {
+        const
+            { dispatch } = this,
+            closeOf      = each => dispatch.windowsOf(each.day)[each.resource.window];
+
+        if (trip.endMinute > closeOf(trip)) {
+            return noGoText(trip.endMinute, closeOf(trip), dispatch.limits[trip.resource.window]);
+        }
+
+        for (const { link, back } of waits) {
+            const
+                dependent = link.toEvent.trip,
+                close     = closeOf(dependent);
+
+            if (dependent.endMinute > Math.max(back, close)) {
+                return `${link.text}: ${dependent.id} would be back ${hhmm(dependent.endMinute)}, ` +
+                    `after its window closes ${hhmm(close)}`;
+            }
+        }
+
+        return null;
     }
 
     /**

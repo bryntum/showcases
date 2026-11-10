@@ -752,7 +752,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             app    = globalThis.bryntum.query('dispatchapp'),
             vessel = app.scheduler.resourceStore.getById('kw');
 
-        app.dropController.dropTeam('F', vessel);
+        await app.dropController.dropTeam('F', vessel);
 
         const trip = app.trips.find(each => each.resource === vessel);
 
@@ -1313,6 +1313,48 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
         });
 
         expect(result).toEqual({ valid : false, short : 'Vessels only', added : 0 });
+    });
+
+    test('a booking that pushes a trip waiting for it past its window is taken back once the engine has placed it', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(async() => {
+            const
+                app   = globalThis.bryntum.query('dispatchapp'),
+                trip  = id => app.trips.find(each => each.id === id),
+                stop  = app.scheduler.eventStore.getById('BP-1:T-55'),
+                // BP-1's last stop waits for Northern Tern's work, with a lag that leaves no wait today
+                lag   = (stop.startDate - trip('NT-1').endDate) / 60000,
+                back  = trip('BP-1').endMinute;
+
+            app.scheduler.dependencyStore.add({
+                id        : 'test',
+                kind      : 'plan',
+                text      : 'Test link',
+                fromEvent : 'NT-1',
+                toEvent   : 'BP-1:T-55',
+                lag,
+                lagUnit   : 'minute'
+            });
+            await app.replan();
+
+            const wasBack = trip('BP-1').endMinute;
+
+            // Team F fits on NT-1 by the planner's check, the engine then pushes T-55 and BP-1 past 17:00
+            const booked = await app.dropController.dropTeam('F', trip('NT-1'));
+
+            return {
+                booked,
+                unchanged : wasBack === back && trip('BP-1').endMinute === back,
+                turbines  : trip('NT-1').turbines,
+                waiting   : app.dispatch.waitingStore.map(each => each.id)
+            };
+        });
+
+        expect(result).toEqual({ booked : false, unchanged : true, turbines : ['T-22', 'T-23'], waiting : ['F', 'G', 'H'] });
+        await expect(page.locator('.b-toast')).toContainText('Test link: BP-1 would be back');
+        await expect(page.locator('.b-toast')).not.toContainText('booked');
+        await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
     });
 
     test('a drag cancelled while the plan is being placed does not get its preview back', async({ page }) => {
