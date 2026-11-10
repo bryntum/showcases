@@ -73,13 +73,6 @@
 .ow-wave-chart {
     position : absolute;
     inset    : 0;
-
-    /* The crosshair's time and height, drawn by AG Charts as HTML, at the size of the chart's labels */
-    .ag-charts-crosshair-label-content {
-        padding     : 2px 6px;
-        font-size   : 10px;
-        line-height : 14px;
-    }
 }
 
 /* The size of the chart's value labels, px as WaveChart.js sets theirs */
