@@ -30,7 +30,7 @@ export default class MapPanel extends Panel {
         // See TurbineMap#tipContent
         tipContent : null,
 
-        // Set by PhoneLayout. The site's title bar goes
+        // Set by DispatchApp on a phone. The site's title bar goes
         phone : false,
 
         cls    : 'ow-side',
@@ -43,8 +43,6 @@ export default class MapPanel extends Panel {
 
         super.construct({
             ...config,
-            // Its tab's text on a phone
-            title  : 'Map',
             header : false,
             items  : {
                 // The site's card, its title and the turbine count in its header

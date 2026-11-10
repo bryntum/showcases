@@ -72,7 +72,7 @@ export default class SchedulePanel extends Panel {
         // The parsed data/farm.json
         data : null,
 
-        // Set by PhoneLayout. The header then holds only the next forecast's button, the legend goes
+        // Set by DispatchApp on a phone. The header then holds only the next forecast's button, the legend goes
         phone : false,
 
         cls    : 'ow-schedule',

@@ -1381,33 +1381,29 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
 test.describe('Offshore Wind Dispatch on a phone', () => {
     test.use({ viewport : { width : 390, height : 844 } });
 
-    test('shows the schedule and the map as tabs, without horizontal scroll', async({ page }) => {
+    test('shows the schedule or the map, picked by a ButtonGroup, without horizontal scroll', async({ page }) => {
         await open(page);
 
-        // The map half, not its tab, which carries the half's class too
         const
-            side = page.locator('.b-container.ow-side'),
-            tabs = page.locator('.ow-tabs [role="tablist"]').getByRole('tab');
+            side    = page.locator('.b-container.ow-side'),
+            buttons = page.locator('.ow-phone-switch').getByRole('button');
 
         await expect(page.locator('.ow-app')).toHaveClass(/\bow-phone\b/);
         await expect(scheduler(page)).toBeVisible();
         await expect(side).toBeHidden();
 
-        // A Bryntum TabPanel: a tab list, the selected tab marked
-        await expect(tabs).toHaveText(['Schedule', 'Map']);
-        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        // A toggle group, the half shown pressed
+        await expect(buttons).toHaveText(['Schedule', 'Map']);
+        await expect(buttons.first()).toHaveAttribute('aria-pressed', 'true');
 
-        await tabs.nth(1).click();
+        await buttons.nth(1).click();
 
         await expect(side).toBeVisible();
         await expect(scheduler(page)).toBeHidden();
-        await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+        await expect(buttons.nth(1)).toHaveAttribute('aria-pressed', 'true');
 
-        // The arrow keys move along the tab list and show the tab
-        await tabs.nth(1).focus();
-        await page.keyboard.press('ArrowLeft');
-        await expect(tabs.first()).toBeFocused();
-        await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+        await buttons.first().click();
+
         await expect(scheduler(page)).toBeVisible();
         await expect(side).toBeHidden();
 
