@@ -54,8 +54,11 @@ export function weekDays(state, trips) {
     return Array.from({ length : dayCount }, (_, index) => {
         const
             { hs, wind } = state.forecastOf(index),
-            planned      = new Set(trips.filter(trip => trip.day === index && !trip.draft)
-                .flatMap(trip => trip.turbines));
+            own          = trips.filter(trip => trip.day === index && !trip.draft),
+            planned      = new Set(own.flatMap(trip => trip.turbines)),
+            // Work a forecast carried over to the day is due on it too
+            due          = new Set([...state.dueOn(index),
+                ...own.filter(trip => trip.change === 'carried').flatMap(trip => trip.turbines)]);
 
         return {
             index,
@@ -63,7 +66,7 @@ export function weekDays(state, trips) {
             sea     : seaState(state.windowsOf(index).ctv, state.day),
             hs      : [Math.min(...hs), Math.max(...hs)],
             wind    : Math.max(...wind),
-            due     : state.dueOn(index).length,
+            due     : due.size,
             planned : planned.size
         };
     });

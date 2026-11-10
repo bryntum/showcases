@@ -389,8 +389,12 @@ export default class DispatchState extends Base.mixin(Events) {
      * @returns {Object[]} `{ label, value, tone }`
      */
     kpis(trips) {
+        // Work a forecast carried over to the day is due on it too, as the Week view counts it
+        const due = new Set([...this.dueTurbines,
+            ...trips.filter(trip => trip.change === 'carried').flatMap(trip => trip.turbines)]);
+
         return [
-            { label : this.isToday ? 'Due today' : 'Due', value : this.dueTurbines.length },
+            { label : this.isToday ? 'Due today' : 'Due', value : due.size },
             { label : 'Assigned', value : new Set(trips.flatMap(trip => trip.turbines)).size },
             { label : 'At risk', value : trips.filter(trip => trip.status === 'at-risk').length, tone : 'warn' },
             { label : 'Stopped', value : this.faults.size, tone : 'stop' }

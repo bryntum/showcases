@@ -50,6 +50,8 @@ export default class ForecastPlanner {
 
         dispatch.applyForecast();
 
+        // The day it re-planned, the notice shows on that day only
+        me.day     = dispatch.dayIndex;
         me.changes = [];
         // An earlier forecast's re-plan is no longer undone
         stm.resetQueue();
@@ -195,7 +197,7 @@ export default class ForecastPlanner {
             parts           = [
                 trimmed.length ? `${trimmed.length} ${trimmed.length === 1 ? 'trip' : 'trips'} trimmed` : null,
                 ...count('moved').map(({ vessel, carried }) =>
-                    `${vessel.name}'s trip ${carried ? `moved to ${dispatch.nextLong}` : 'off today'}`),
+                    `${vessel.name}'s trip ${carried ? `moved to ${dispatch.nextLong} ${hhmm(carried.departs)}` : 'off today'}`),
                 ...count('pulled').map(({ trip }) => `${trip.resource.name}'s ${(trip.note ?? 'trip').toLowerCase()} brought forward`),
                 waiting ? `${waiting} ${waiting === 1 ? 'stop waits' : 'stops wait'} at the port, ${dispatch.nextLong} has no room` : null
             ].filter(Boolean),

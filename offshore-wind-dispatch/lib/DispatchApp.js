@@ -435,6 +435,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
 
         kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dispatch.kpis(me.trips) });
+        // The forecast's notice is about the day it re-planned
+        me.parts.notice.hidden = !me.forecastPlanner?.changes.length || me.forecastPlanner.day !== dispatch.dayIndex;
         scheduler.refreshDispatch();
         me.parts.schedulePane.refreshBar();
         me.refreshSide();

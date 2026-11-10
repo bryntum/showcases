@@ -21,9 +21,10 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
    the trip could still reach before the window closes. Drop it to book it
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
    trips not yet gone are brought forward, trimmed or taken off the day. The stops cut go to tomorrow as a trip of the
-   same vessel if they fit its window and the vessel's other trips; tomorrow no crew transfer vessel goes out, so
-   Sea Puffin's team waits at the port again, a chip per stop. The notice lists each change
-4. **Undo** in the notice puts every trip back and takes tomorrow's trips and the waiting chips away, in one step
+   same vessel if they fit its window and the vessel's other trips, else their teams wait at the port again, a chip
+   per stop. Sea Puffin's trip moves to tomorrow 06:30, in the morning window before the waves rise again. The notice
+   lists each change, on today only
+4. **Undo** in the notice puts every trip back and takes tomorrow's trips and any waiting chips away, in one step
 5. **Open Week**: the week as a day board, a cell per vessel per day. A free cell takes a team too, as a new trip on
    that day; a click on a day opens it in the Day view
 
@@ -292,7 +293,8 @@ planned. The stops cut go to the next day for real (`carry()`): a new trip of th
 the first sailing after its other trips that day, if it is back before that day's window closes and runs into none of
 them (`Planner#nextDayStart`, the same `clashOf` check a drag gets); else each stop's team waits at the port again, a
 record of the waiting store (`<team>:<turbine>`). Each trip then lives on its own day, the Day view, the Week view and
-the map show it there like any other. The changes are listed for the notice, lost work first. The STM also tracks the
+the map show it there like any other, and the Week view counts its work as due on that day. The changes are listed
+for the notice, lost work first, shown while the day it re-planned is. The STM also tracks the
 waiting store, so `undo()`, the STM's `undo()`, puts back the trips, their legs and dependencies, removes the trips
 carried over and the teams waiting again; the new forecast stays.
 

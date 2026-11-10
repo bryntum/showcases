@@ -508,7 +508,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         // Today first, its date in the pill
         await expect(days.first()).toHaveClass(/ow-week-today/);
         await expect(board(page).locator('.ow-week-today')).toHaveCount(1);
-        await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'No CTV', 'Go until 15', 'Go · all day',
+        await expect(days.locator('.ow-sea')).toHaveText(['Go until 14', 'Go until 13', 'Go until 15', 'Go · all day',
             'Go · all day', 'Go until 11', 'No CTV']);
         await expect(days.first().locator('small')).toHaveText('Hs 0.9–2.2 m · wind 24');
 
@@ -521,8 +521,8 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
             vessels = ['sr', 'nt', 'sp', 'kw', 'bp', 'h1', 'h2', 'h3'],
             kinds   = day => vessels.map(vessel => all[`${vessel}:${day}`].kind);
 
-        // Tuesday: no crew transfer vessel, no helicopter, the SWATH until 13
-        expect(kinds(1)).toEqual(['nogo', 'nogo', 'nogo', 'nogo', 'trip', 'nogo', 'nogo', 'nogo']);
+        // Tomorrow: a morning window for all until 13, the SWATH's trip
+        expect(kinds(1)).toEqual(['free', 'free', 'free', 'free', 'trip', 'free', 'free', 'free']);
         // Sunday: no-go for all
         expect(kinds(6)).toEqual(vessels.map(() => 'nogo'));
         // Thursday and Friday, the best days: no no-go, the standby vessel and helicopter free all day
@@ -746,15 +746,11 @@ test.describe('Offshore Wind Dispatch forecast', () => {
     }, day);
 
     // Kittiwake out at 08:30, after the new forecast comes in, with Team F for T-34, then Team G for T-49: back after
-    // 14:00, the new forecast trims it. `open` opens tomorrow's crew transfer window all day, else it has none
-    const trimmedSetup = (page, open) => page.evaluate(async open => {
+    // 14:00, the new forecast trims it
+    const trimmedSetup = page => page.evaluate(async() => {
         const
-            app     = globalThis.bryntum.query('dispatchapp'),
-            vessel  = app.scheduler.resourceStore.getById('kw');
-
-        if (open) {
-            app.dispatch.days[1].windows.ctv = app.dispatch.day.dayEnd * 60;
-        }
+            app    = globalThis.bryntum.query('dispatchapp'),
+            vessel = app.scheduler.resourceStore.getById('kw');
 
         app.dropController.dropTeam('F', vessel);
 
@@ -765,11 +761,18 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             app.dispatch.waitingStore.remove('G');
             trip.layout({ stops : [...trip.stops, { turbine : 'T-49', minutes : 180, team : 'G' }] });
         });
-    }, open);
+    });
+
+    // Tomorrow's crew transfer window closed from the start of the day
+    const closeTomorrow = page => page.evaluate(() => {
+        const { dispatch } = globalThis.bryntum.query('dispatchapp');
+
+        dispatch.days[1].windows.ctv = dispatch.day.dayStart * 60;
+    });
 
     test('stops a forecast cuts go to tomorrow as a trip of the vessel when they fit there', async({ page }) => {
         await open(page);
-        await trimmedSetup(page, true);
+        await trimmedSetup(page);
         await page.locator('.ow-forecast-button').click();
         await expect(page.locator('.ow-notice')).toContainText('1 trip trimmed');
 
@@ -789,8 +792,29 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(trip(page, 'KW-2')).toContainText('carried over');
     });
 
+    test('the forecast moves Sea Puffin\'s trip to tomorrow morning, no crew goes back to the tray', async({ page }) => {
+        await open(page);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText(/Sea Puffin's trip moved to \w+ 06:30/);
+
+        expect((await planOf(page, 1)).trips).toContain('SP-5 sp T-31,T-41 carried');
+        await expect(tray(page).locator('.ow-team')).toHaveCount(3);
+
+        // The notice is today's: gone on tomorrow, back on today
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').openDay(1));
+        await expect(page.locator('.ow-notice')).toBeHidden();
+        await expect(trip(page, 'SP-5')).toContainText('carried over');
+        await page.evaluate(() => globalThis.bryntum.query('dispatchapp').openDay(0));
+        await expect(page.locator('.ow-notice')).toBeVisible();
+
+        // Tomorrow's jobs count the work carried over as due
+        await page.locator('.ow-panel-bar').getByRole('button', { name : 'Week' }).click();
+        await expect(board(page).locator('.b-time-axis-summary-value').nth(1)).toHaveText('3 / 8');
+    });
+
     test('a trip the forecast takes off today that does not fit tomorrow leaves its teams waiting', async({ page }) => {
         await open(page);
+        await closeTomorrow(page);
         await page.locator('.ow-forecast-button').click();
         await expect(page.locator('.ow-notice')).toContainText('Sea Puffin\'s trip off today');
         await expect(page.locator('.ow-notice')).toContainText('2 stops wait at the port');
@@ -804,11 +828,15 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         expect(today.waiting).toEqual(['F', 'G', 'H', 'C:T-31', 'C:T-41']);
         await expect(tray(page).locator('.ow-team[data-team="C:T-31"]')).toContainText('2 h 30 min');
         await expect(tray(page).locator('.ow-team[data-team="C:T-41"]')).toContainText('T-41');
+
+        // Undo takes them off the tray again
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+        await expect(tray(page).locator('.ow-team')).toHaveCount(3);
     });
 
     test('Undo of the forecast puts back the trips, takes tomorrow\'s trip and the waiting teams away', async({ page }) => {
         await open(page);
-        await trimmedSetup(page, true);
+        await trimmedSetup(page);
 
         const before = [await planOf(page, 0), await planOf(page, 1)];
 
