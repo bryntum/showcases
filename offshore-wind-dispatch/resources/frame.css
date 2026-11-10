@@ -62,35 +62,32 @@
     }
 }
 
-/* The site card's title bar: no buttons, no line, the title lined up with the map's straight edges */
+/* The cards' title bars are Panel headers, on the card's own surface; the site card's has no line and lines its title
+   up with the map's straight edges */
+.ow-schedule, .ow-side-card {
+    --b-panel-header-background    : transparent;
+    --b-panel-header-padding       : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
+    --b-panel-header-gap           : 0.75rem;
+    --b-panel-header-font-size     : var(--ow-size-md);
+    --b-panel-header-font-weight   : 600;
+    --b-panel-header-border-bottom : 1px solid var(--b-border-7);
+    --b-panel-with-header-padding  : 0;
+}
+
 .ow-side-card {
-    .ow-panel-count {
-        font-size : var(--ow-size-base);
-    }
-
-    .ow-panel-bar.b-toolbar {
-        --b-toolbar-padding : var(--ow-inset) calc(var(--ow-map-margin) + var(--ow-card-radius));
-
-        border-block-end : 0;
-    }
+    --b-panel-gap                  : 0;
+    --b-panel-header-padding       : var(--ow-inset) calc(var(--ow-map-margin) + var(--ow-card-radius));
+    --b-panel-header-border-bottom : 0;
 }
 
-/* A Panel's tbar as the title bar: the title, a note, then the buttons, on the card's own surface */
-.ow-panel-bar.b-toolbar {
-    --b-toolbar-gap        : 0.75rem;
-    --b-toolbar-padding    : var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-bar-inset) var(--ow-inset);
-    --b-toolbar-background : transparent;
-
-    border-block-end : 1px solid var(--b-border-7);
-}
-
-.ow-panel-title {
-    font-size   : var(--ow-size-md);
-    font-weight : 600;
+.ow-panel-count {
+    gap         : 0.25rem;
+    font-weight : 400;
+    color       : var(--b-text-2);
     white-space : nowrap;
 }
 
-/* The schedule's title bar gives up the note under 640px and the title under 540px, so its buttons still fit */
+/* The schedule's header gives up the fleet under 640px and the title under 540px, so its buttons still fit */
 .ow-schedule {
     container : ow-schedule / inline-size;
 
@@ -101,17 +98,10 @@
     }
 
     @container ow-schedule (max-width: 540px) {
-        .ow-panel-title {
-            display : none;
+        > .b-panel-header .b-header-title {
+            visibility : hidden;
         }
     }
-}
-
-.ow-panel-count {
-    gap         : 0.25rem;
-    font-size   : var(--ow-size-md);
-    color       : var(--b-text-2);
-    white-space : nowrap;
 }
 
 /* The next forecast's button, through the `tonal` rendition's variables */
@@ -131,7 +121,7 @@
 
 /* The Day | Week toggle, the ButtonGroup's `padded` rendition. Its unpressed buttons at full opacity in the secondary
    text colour: at the rendition's half opacity they fell under 4.5:1 in dark */
-.ow-panel-bar .b-button-group {
+.ow-view-toggle.b-button-group {
     --b-button-height                                : var(--ow-bar-control);
     --b-button-group-border-radius                   : 0.4375rem;
     --b-button-group-padded-padding                  : 0.125rem;

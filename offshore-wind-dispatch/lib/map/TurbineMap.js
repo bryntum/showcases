@@ -4,7 +4,6 @@ import { labelSvg, mapSvg, routeSvg } from './MapDrawing.js';
 import TurbineModel from './TurbineModel.js';
 import MapViewport from './MapViewport.js';
 // Also registers the widget types used below
-import './MapLegend.js';
 import './TurbineTooltip.js';
 
 const directions = {

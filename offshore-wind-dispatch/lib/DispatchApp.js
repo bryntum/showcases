@@ -8,14 +8,17 @@ import MapLink, { tripsOf } from './MapLink.js';
 import PhoneLayout from './PhoneLayout.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
 // Also registers the widget types used below
-import './KpiBar.js';
 import './TeamTray.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
 import './panel/PhoneTabs.js';
 
 // The turbine the page opens on: the one the weather puts at risk
-const openingTurbine = 'T-41';
+const
+    openingTurbine = 'T-41',
+    hbox           = { type : 'hbox', align : 'center' },
+    // One of the day's counts, the figure over its label; drawn by refreshAll
+    kpi            = { type : 'widget', cls : 'ow-kpi' };
 
 /**
  * The app: the header, the schedule and the map, wired to the plan (the Scheduler's project), the dispatch state and
@@ -68,7 +71,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         // their widgets out of the container's own widgetMap
         me.parts = { ...me.widgetMap };
 
-        const { scheduler, board, map, tray, schedulePane, notice, main, tabs, column, side } = me.parts;
+        const { scheduler, board, map, tray, schedulePane, main, tabs, column, side } = me.parts;
 
         me.phoneLayout     = new PhoneLayout({
             main,
@@ -105,7 +108,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         });
         map.on({ selectionChange : 'onTurbineSelectionChange', wholeFarm : 'onWholeFarm', thisObj : me });
         schedulePane.on({ forecast : 'applyForecast', thisObj : me });
-        notice.on({ undo : 'undoForecast', review : 'reviewNext', thisObj : me });
 
         // The no-go ranges and the now line follow from the dispatch state alone, the rest of the views is drawn once
         // the engine has placed the plan (start)
@@ -118,7 +120,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const me = this;
 
         return {
-            kpis : { type : 'kpibar', port : site.portShort ?? site.port },
+            kpis : me.kpisConfig(site),
             // On a phone the schedule and the map are its tabs (updatePhone)
             tabs : {
                 type : 'phonetabs',
@@ -147,6 +149,40 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
                         type       : 'mappanel',
                         site,
                         tipContent : turbine => me.turbineTip(turbine)
+                    }
+                }
+            }
+        };
+    }
+
+    // Over the schedule the site, the day and the crews waiting; over the map the day's counts, what needs acting on
+    // after a divider
+    kpisConfig(site) {
+        return {
+            type   : 'container',
+            cls    : 'ow-kpis',
+            layout : hbox,
+            items  : {
+                lead : {
+                    type   : 'container',
+                    cls    : 'ow-kpis-lead',
+                    flex   : 1,
+                    layout : { ...hbox, justify : 'space-between' },
+                    items  : {
+                        clock : { type : 'widget', cls : 'ow-clock' },
+                        tray  : { type : 'teamtray', port : site.portShort ?? site.port }
+                    }
+                },
+                counts : {
+                    type   : 'container',
+                    cls    : 'ow-kpis-counts',
+                    layout : { ...hbox, justify : 'end' },
+                    items  : {
+                        kpi0  : { ...kpi },
+                        kpi1  : { ...kpi },
+                        split : { type : 'widget', cls : 'ow-kpi-split', ariaHidden : true },
+                        kpi2  : { ...kpi },
+                        kpi3  : { ...kpi }
                     }
                 }
             }
@@ -277,7 +313,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         if (forecastPlanner.canUndo) {
             forecastPlanner.invalidateUndo();
-            parts.notice.dropUndo();
+            parts.undo.hidden = true;
         }
     }
 
@@ -360,13 +396,20 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const
             me                    = this,
             { dispatch }          = me,
-            { kpis, scheduler }   = me.parts ?? {};
+            { clock, scheduler }  = me.parts ?? {};
 
-        if (me.isDestroyed || !kpis) {
+        if (me.isDestroyed || !clock) {
             return;
         }
 
-        kpis.draw({ site : dispatch.site.name, day : dispatch.dayShort, kpis : dispatch.kpis(me.trips) });
+        clock.html = [{ tag : 'b', text : dispatch.site.name }, { tag : 'small', text : dispatch.dayShort }];
+        dispatch.kpis(me.trips).forEach(({ label, value, tone }, index) => {
+            const widget = me.parts[`kpi${index}`];
+
+            widget.html = [{ tag : 'b', text : String(value) }, { tag : 'small', text : label }];
+            // `warn` past the window, `stop` stopped: tinted while above zero
+            tone && widget.element.classList.toggle(`ow-kpi-${tone}`, value > 0);
+        });
         // The forecast's notice is about the day it re-planned
         me.parts.notice.hidden = !me.forecastPlanner?.changes.length || me.forecastPlanner.day !== dispatch.dayIndex;
         scheduler.refreshDispatch();
@@ -428,7 +471,10 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         });
 
         if (changes.length) {
-            me.parts.notice.draw({ ...forecastPlanner.summary(changes), changes : forecastPlanner.reviewable.length });
+            me.parts.schedulePane.showNotice({
+                ...forecastPlanner.summary(changes),
+                changes : forecastPlanner.reviewable.length
+            });
             me.reviewNext();
         }
     }

@@ -372,7 +372,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
 
 test.describe('Offshore Wind Dispatch, the schedule\'s views', () => {
     const
-        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        bar   = page => page.locator('.ow-schedule > .b-panel-header'),
         axis  = page => page.evaluate(() => {
             const { scheduler } = globalThis.bryntum.query('dispatchapp');
 
@@ -407,7 +407,7 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
 
     const
         board = page => page.locator('.ow-week-board'),
-        bar   = page => page.locator('.ow-schedule .ow-panel-bar'),
+        bar   = page => page.locator('.ow-schedule > .b-panel-header'),
         // The cell of a vessel's day: its event, or its resource time range when it has no trip
         cell  = (page, vessel, day) => board(page)
             .locator(`[data-event-id="${vessel}:${day}"], [data-event-id="resourcetimerange-${vessel}:${day}"]`),
@@ -711,7 +711,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             .departs)).toBe(6 * 60 + 30);
 
         // The week shows it on its own day, dashed
-        await page.locator('.ow-panel-bar').getByRole('button', { name : 'Week' }).click();
+        await page.locator('.ow-schedule > .b-panel-header').getByRole('button', { name : 'Week' }).click();
         await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell-jobs')).toHaveText('T-49');
         await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell')).toHaveClass(/\bow-cell-carried\b/);
 
@@ -736,7 +736,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(page.locator('.ow-notice')).toBeVisible();
 
         // Tomorrow's jobs count the work carried over as due
-        await page.locator('.ow-panel-bar').getByRole('button', { name : 'Week' }).click();
+        await page.locator('.ow-schedule > .b-panel-header').getByRole('button', { name : 'Week' }).click();
         await expect(board(page).locator('.b-time-axis-summary-value').nth(1)).toHaveText('3 / 8');
     });
 

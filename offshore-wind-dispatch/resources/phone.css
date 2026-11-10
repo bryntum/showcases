@@ -64,9 +64,13 @@
         display : none;
     }
 
-    /* Only the next forecast's button stays in the schedule's title bar */
-    .ow-schedule .ow-panel-bar.b-toolbar {
-        --b-toolbar-padding : 0 calc(var(--ow-bar-inset) * 2);
+    /* The site card's header goes, the schedule's keeps only the next forecast's button, and goes without one */
+    .ow-side-card > .b-panel-header, .ow-schedule > .b-panel-header .b-header-title, .ow-bar-empty > .b-panel-header {
+        display : none;
+    }
+
+    .ow-schedule > .b-panel-header {
+        --b-panel-header-padding : 0 calc(var(--ow-bar-inset) * 2);
 
         min-height : 2.5rem;
 

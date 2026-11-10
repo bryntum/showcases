@@ -1,10 +1,18 @@
-import { Panel, StringHelper } from '@bryntum/core-enterprise';
+import { Panel } from '@bryntum/core-enterprise';
 import { turbineIds } from '../plan/Farm.js';
 // Also registers the widget types used below
 import '../map/TurbineMap.js';
 import { markerParts } from '../map/Turbine.js';
 import { mapModel } from '../map/MapModel.js';
 import { cardInfo } from '../map/TurbineCard.js';
+
+// A turbine's map marker, small: the legend's swatches and the title's count
+const
+    mark     = status => `<svg class="ow-legend-mark${status ? ` ow-m-${status}` : ''}" viewBox="-8 -8 16 16" ` +
+        `aria-hidden="true">${markerParts()}</svg>`,
+    // The statuses of a turbine (TurbineModel#status) the legend names
+    statuses = [['work', 'In work'], ['planned', 'Planned'], ['waiting', 'Waiting'], ['risk', 'At risk'],
+        ['fault', 'Stopped']];
 
 /**
  * The map half of the app: the site's card (title bar, TurbineMap, legend) over the selected turbine's card.
@@ -39,41 +47,33 @@ export default class MapPanel extends Panel {
             title  : 'Map',
             header : false,
             items  : {
+                // The site's card, its title and the turbine count in its header
                 place : {
-                    type   : 'container',
+                    type   : 'panel',
                     cls    : 'ow-side-card',
                     flex   : 1,
                     layout : 'vbox',
-                    items  : {
-                        bar : {
-                            type  : 'toolbar',
-                            cls   : 'ow-panel-bar',
-                            items : {
-                                title  : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
-                                spacer : '->',
-                                count  : {
-                                    type    : 'widget',
-                                    cls     : 'ow-panel-count',
-                                    tooltip : `${turbineIds.length} turbines`
-                                }
-                            }
-                        },
+                    title  : site.name,
+                    tools  : {
+                        count : {
+                            type    : 'widget',
+                            cls     : 'ow-panel-count',
+                            tooltip : `${turbineIds.length} turbines`,
+                            html    : `${mark()}<span>${turbineIds.length}</span>`
+                        }
+                    },
+                    items : {
                         map    : { type : 'turbinemap', flex : 1, site, tipContent, margin : '0 16' },
-                        legend : { type : 'maplegend' }
+                        legend : {
+                            type : 'widget',
+                            cls  : 'ow-map-legend',
+                            html : statuses.map(([status, label]) => `<span>${mark(status)}${label}</span>`).join('')
+                        }
                     }
                 },
                 card : { type : 'turbinecard' }
             }
         });
-    }
-
-    afterConstruct() {
-        super.afterConstruct();
-
-        // The turbine count, with the turbines' own mark on the map
-        this.widgetMap.bar.widgetMap.count.html = `<svg class="ow-legend-mark" viewBox="-8 -8 16 16" aria-hidden="true">${markerParts()}</svg>` +
-            `<span>${turbineIds.length}</span>`;
-        this.updatePhone(this.phone);
     }
 
     /**
@@ -117,14 +117,6 @@ export default class MapPanel extends Panel {
     // the selection fits it again
     keepView(trip, turbine, follow) {
         this.fitKey = [trip?.id, turbine, follow, false].join('|');
-    }
-
-    updatePhone(phone) {
-        const { bar } = this.widgetMap ?? {};
-
-        if (bar) {
-            bar.hidden = phone;
-        }
     }
 }
 

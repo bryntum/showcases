@@ -251,7 +251,7 @@ export default class DispatchState extends Base.mixin(Events) {
     }
 
     /**
-     * The counts of the KPI header (KpiBar)
+     * The counts of the KPI header
      * @param {TripModel[]} trips The trips of the day shown
      * @returns {Object[]} `{ label, value, tone }`
      */

@@ -46,7 +46,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | The drop preview: back when, does it fit, what it can reach | Plain synchronous functions | `lib/plan/Planner.js` |
 | A forecast's re-plan, and its Undo | `StateTrackingManager` (`project.stm`) | `lib/plan/ForecastPlanner.js` |
 | The Week view | A second Scheduler: `fillTicks`, `PercentBar`, `Summary` | `lib/week/` |
-| Header, panels, notice, tabs | `Panel`, `Container`, `Toolbar`, `ButtonGroup`, `TabPanel` | `lib/KpiBar.js`, `lib/panel/` |
+| Header, panels, notice, tabs | `Panel` (title, header `tools`), `Container`, `ButtonGroup`, `TabPanel` | `lib/DispatchApp.js`, `lib/panel/` |
 | The map of the farm | Custom SVG in a `Widget`, its turbines in a `Store` | `lib/map/` |
 
 ## What is on the screen
@@ -112,7 +112,7 @@ data/farm.json ──► DispatchState (site, forecasts, windows, the day shown,
                      │  dataReady
      ┌───────────────┼────────────────┬───────────────┬──────────────────┐
   Trip bars      No-go ranges     KPI bar       Week view          Map + turbine card
- (renderers)    (DispatchSync)    (KpiBar)     (WeekBoard,         (MapPanel: MapModel,
+ (renderers)    (DispatchSync)  (DispatchApp)  (WeekBoard,         (MapPanel: MapModel,
                                                 its own listener)   TurbineMap, TurbineCard)
                                                                          ▲ change
 AppState (selected turbine, map follows, team lifted / held) ────────────┘
@@ -179,17 +179,16 @@ engine places each changed trip before the next one on the vessel is planned.
 * `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
   dependency of today, and under `week` the forecast, trips and jobs of the six days after it
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container of
-    the site and the day, the team tray and four `Kpi` widgets), the schedule panel and the map panel (`panel/`), and the phone
-    tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
+    the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
+    and the phone tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
     the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
     of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
     `TeamTray.js` is the team tray in the header (a Container of `TeamChip` widgets, the
-    drag sources, one per record of the waiting teams' store), `ForecastNotice.js` the forecast notice (a Container
-    with two Buttons) and `Legend.js` the schedule's footer
-  * `panel/` the panels of the app: `SchedulePanel` (a Panel whose `tbar` is the title bar, with the next forecast's
-    button and a `ButtonGroup` for the Day / Week views; it holds the notice, the scheduler, the Week view and the
-    footer), `MapPanel` (the map with its title bar and legend, and the turbine card, drawn by `draw()`, which also
+    drag sources, one per record of the waiting teams' store)
+  * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
+    button and a `ButtonGroup` for the Day / Week views as `tools`; it holds the forecast notice, the scheduler, the
+    Week view and the legend), `MapPanel` (the site's card, a Panel with the map and its legend, and the turbine card, drawn by `draw()`, which also
     fits the map to the selection when it changed) and `PhoneTabs` (a `TabPanel` with the arrow keys)
   * `drag/` dragging a team onto a trip: `TeamDrag` (with `DragHelper`) and `DropTooltip` (the tooltip of the trip
     under the team). The chip that follows
@@ -208,7 +207,7 @@ engine places each changed trip before the next one on the vessel is planned.
     links between them as Scheduler data), `VesselModel` and `WaitingTeamModel` (a team waiting at the port)
   * `map/` the map (`TurbineMap`, a Widget with its turbines in a Store, `TurbineModel`, drawn from `MapModel` and
     `MapDrawing`), its viewport (`MapViewport` and the view arithmetic in `MapView`: zoom, pan and pinch), the
-    `TurbineTooltip`, the `MapLegend`, the selected turbine (`TurbineCard`) and the turbine
+    `TurbineTooltip`, the selected turbine (`TurbineCard`) and the turbine
     drawing (`Turbine`)
   * `util/` formatting the planner's times of day, and the icons
 * `resources/` the CSS: `app.css` imports the tokens, then one file per part of the app: the frame, the KPI header,
