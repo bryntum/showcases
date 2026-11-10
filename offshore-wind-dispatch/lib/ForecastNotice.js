@@ -49,14 +49,22 @@ export default class ForecastNotice extends Container {
      * @param {Number} options.changes How many trips changed
      */
     draw({ headline, detail, changes }) {
-        const { text, review } = this.widgetMap;
+        const { text, review, undo } = this.widgetMap;
 
         text.html = [
             iconConfig('warning'),
             { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }
         ];
         review.text = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        undo.hidden = false;
         this.hidden = false;
+    }
+
+    /**
+     * Takes the Undo away: the plan changed after the forecast, its re-plan can no longer be undone on its own
+     */
+    dropUndo() {
+        this.widgetMap.undo.hidden = true;
     }
 
     // Not named onUndo and onReview: trigger() calls such a method for the event

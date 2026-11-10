@@ -8,7 +8,8 @@ import { duration, hhmm } from '../util/Time.js';
  * The re-plan is one transaction of the project's StateTrackingManager, so Undo is the STM's `undo()`: every change to
  * the trips, their legs and their dependencies, the engine's own included, goes back. The STM records nothing else:
  * it is enabled for the forecast's transaction and its undo only, a team previewed on a trip is no change to undo. The
- * forecast itself is the dispatch state's and stays.
+ * forecast itself is the dispatch state's and stays. A change of the plan after the forecast drops its Undo
+ * (`invalidateUndo`), a failed re-plan is rolled back.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/data/stm/StateTrackingManager
@@ -51,10 +52,18 @@ export default class ForecastPlanner {
 
         try {
             await me.replan(trips);
-        }
-        finally {
             await project.commitAsync();
             stm.stopTransaction();
+        }
+        catch(error) {
+            // The trips go back as they were, the new forecast stays: the trips past its window are flagged
+            me.changes = [];
+            stm.rejectTransaction();
+            await project.commitAsync();
+            throw error;
+        }
+        finally {
+            // Nothing else is recorded: a team previewed on a trip is no change to undo
             stm.disable();
         }
 
@@ -139,22 +148,44 @@ export default class ForecastPlanner {
     }
 
     /**
+     * Whether the forecast's re-plan can still be undone: not once the plan was changed after it
+     * @property {Boolean}
+     */
+    get canUndo() {
+        // `canUndo` is false while the STM is disabled, as it is between the forecast and its Undo
+        return this.project.stm.position > 0;
+    }
+
+    /**
+     * Drops the forecast's Undo. Called when the plan changes after the forecast (a team booked, a trip moved): undoing
+     * the forecast's transaction then would replay its changes over records that changed since
+     */
+    invalidateUndo() {
+        this.project.stm.resetQueue();
+    }
+
+    /**
      * Puts the trips back as they were before the forecast: the STM undoes its transaction
      * @returns {Promise} Resolves once the records are back, the engine then places them
      */
     async undo() {
-        const { stm } = this.project;
+        const
+            me      = this,
+            { stm } = me.project;
 
-        this.changes = [];
+        me.changes = [];
 
         // A disabled STM can undo nothing
         stm.enable();
 
-        if (stm.canUndo) {
-            await stm.undo();
+        try {
+            if (stm.canUndo) {
+                await stm.undo();
+            }
         }
-
-        stm.resetQueue();
-        stm.disable();
+        finally {
+            stm.resetQueue();
+            stm.disable();
+        }
     }
 }
