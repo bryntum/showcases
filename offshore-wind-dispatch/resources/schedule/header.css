@@ -166,8 +166,8 @@
     }
 }
 
-/* The now line's header element (TimeRanges, `showHeaderElements`) as a pill on the hours row, its line on down through
-   the chart. The shaded past is for the rows only */
+/* The now line's header element (TimeRanges, `showHeaderElements`) as a pill on the hours row. The shaded past is for
+   the rows only */
 .ow-scheduler .b-grid-header {
     .ow-past {
         display : none;
@@ -184,20 +184,11 @@
 
         inset-block-start    : calc((var(--ow-row-hours) - var(--ow-now-pill)) / 2);
         height               : var(--ow-now-pill);
-        /* Centred on the line by a fixed width, not a transform, so the line stays on whole pixels */
+        /* Centred on the time by a fixed width, not a transform, so it stays on whole pixels */
         width                : 2.125rem;
         margin-inline-start  : -1.0625rem;
         /* Bryntum rounds the end corners only (a flag on the line), the pill rounds the start ones too */
         border-start-start-radius : var(--b-time-range-line-header-border-radius);
         border-end-start-radius   : var(--b-time-range-line-header-border-radius);
-
-        &::before {
-            content             : '';
-            position            : absolute;
-            /* Bryntum pulls the line in the rows back by its width, this one follows */
-            inset               : 100% auto auto calc(50% - var(--b-time-range-line-width));
-            height              : calc(var(--ow-row-sea) + var(--ow-row-wind) + var(--ow-row-hours) / 2);
-            border-inline-start : var(--b-time-range-line-width) solid var(--b-color-blue);
-        }
     }
 }
