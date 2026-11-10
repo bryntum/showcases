@@ -73,7 +73,7 @@ dropped.
     the map into the phone tabs and back, `TeamTray.js` is the team tray in the header (a Container with a `List` of
     the waiting teams' store, a card per team, the drag sources)
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
-    button and a `ButtonGroup` for the Day / Week views as `tools`; it holds the forecast notice, the scheduler, the
+    button and a `ButtonGroup` for the Day / Week views as header `strips` (`dock : 'header'`); it holds the forecast notice, the scheduler, the
     Week view, and the legend as its bbar, a Toolbar), `MapPanel` (the site's card, a Panel with the map and its
     legend, and the turbine card, drawn by `draw()`, which also fits the map to the selection when it changed) and
     `PhoneTabs` (a `TabPanel` with the arrow keys)

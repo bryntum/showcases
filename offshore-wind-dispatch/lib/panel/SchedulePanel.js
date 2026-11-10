@@ -54,11 +54,11 @@ function legendItems(view) {
 
 /**
  * The schedule half of the app: the forecast notice, the Day view or the Week view, and the legend. Its header holds
- * the title and the fleet, the next forecast's button and the Day | Week toggle (header `tools`). The notice's buttons
+ * the title and the fleet, the next forecast's button and the Day | Week toggle (header `strips`). The notice's buttons
  * call the app's `undoForecast` and `reviewNext` (`up.`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-tools
+ * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-strips
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
  */
 export default class SchedulePanel extends Panel {
@@ -78,9 +78,12 @@ export default class SchedulePanel extends Panel {
         cls    : 'ow-schedule',
         flex   : 1,
         layout : 'vbox',
-        tools  : {
+        // Header strips (`dock : 'header'`), after the title: the higher the weight, the closer to it
+        strips : {
             forecast : {
                 type      : 'button',
+                dock      : 'header',
+                weight    : 2,
                 rendition : 'tonal',
                 cls       : 'ow-forecast-button',
                 hidden    : true,
@@ -89,6 +92,8 @@ export default class SchedulePanel extends Panel {
             // The pressed button's ref is the view it shows
             view : {
                 type        : 'buttongroup',
+                dock        : 'header',
+                weight      : 1,
                 cls         : 'ow-view-toggle',
                 rendition   : 'padded',
                 toggleGroup : true,
@@ -150,12 +155,7 @@ export default class SchedulePanel extends Panel {
             bbar : { cls : 'ow-legend', items : legendItems('day') }
         });
 
-        const
-            { board, scheduler } = this.widgetMap,
-            { view }             = this.tools;
-
-        // A header tool is rendered on its own, without its children: the toggle's buttons are rendered into it
-        view.items.forEach(button => button.render(view.contentElement));
+        const { board, scheduler } = this.widgetMap;
 
         // The Week view follows the trips of the Day view's project
         board.plan = scheduler.project;
@@ -177,7 +177,7 @@ export default class SchedulePanel extends Panel {
     showView(view) {
         const
             { scheduler, board }         = this.widgetMap,
-            { day, week }                = this.tools.view.widgetMap,
+            { day, week }                = this.strips.view.widgetMap,
             isWeek                       = view === 'week',
             button                       = isWeek ? week : day;
 
@@ -212,7 +212,7 @@ export default class SchedulePanel extends Panel {
     }
 
     updatePhone() {
-        if (this.tools) {
+        if (this.strips) {
             this.refreshBar();
         }
     }
@@ -221,7 +221,7 @@ export default class SchedulePanel extends Panel {
         const
             me                 = this,
             phone              = Boolean(me.phone),
-            { forecast, view } = me.tools,
+            { forecast, view } = me.strips,
             next               = me.dispatch.nextForecast;
 
         forecast.hidden = !next;

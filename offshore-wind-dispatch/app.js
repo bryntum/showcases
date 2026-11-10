@@ -33,7 +33,7 @@
  *   by `syncDataOnLoad`. See {@link WeekBoard}.
  * - **Event highlighting linked to a custom SVG map** — `highlightEvents()` and the Scheduler's hover events. See
  *   {@link MapLink} and {@link TurbineMap}.
- * - **Panels, tools, ButtonGroup, TabPanel and the Responsive mixin** — the screen, its Day / Week switch and the
+ * - **Panels with header strips, ButtonGroup, TabPanel and the Responsive mixin** — the screen, its Day / Week switch and the
  *   phone tabs below 760px. See {@link DispatchApp}, {@link SchedulePanel} and {@link PhoneLayout}.
  *
  * Learn more:

@@ -80,8 +80,10 @@
     --b-panel-header-border-bottom : 0;
 }
 
+/* A title's count, a step smaller than the title: the schedule's fleet and the map's turbines alike */
 .ow-panel-count {
     gap         : 0.25rem;
+    font-size   : var(--ow-size-base);
     font-weight : 400;
     color       : var(--b-text-2);
     white-space : nowrap;
@@ -119,7 +121,7 @@
     }
 }
 
-/* The Day | Week toggle, the ButtonGroup's `padded` rendition. Its unpressed buttons at full opacity in the secondary
+/* The Day | Week toggle, a header strip ButtonGroup in its `padded` rendition, tuned by its variables only. Its unpressed buttons at full opacity in the secondary
    text colour: at the rendition's half opacity they fell under 4.5:1 in dark */
 .ow-view-toggle.b-button-group {
     --b-button-height                                : var(--ow-bar-control);
@@ -135,8 +137,6 @@
         --b-button-color         : var(--b-text-2);
         --b-button-pressed-color : var(--b-text-1);
         --b-button-font-weight   : 500;
-
-        min-width : var(--ow-bar-control);
     }
 }
 
