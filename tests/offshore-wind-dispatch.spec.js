@@ -53,7 +53,7 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(scheduler(page)).toHaveClass(/\bb-scheduler\b/);
         // Five vessels, the standby Kittiwake among them, and three helicopters, Heli 3 on standby
         await expect(scheduler(page).locator('.ow-resource')).toHaveCount(8);
-        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('5 CTV · 3 heli');
+        await expect(page.locator('.ow-schedule .ow-panel-count')).toHaveText('4 CTV · 1 SWATH · 3 heli');
         await expect(scheduler(page).locator('.ow-group')).toHaveText(['Vessels · 5', 'Helicopters · 3']);
         await expect(trip(page, 'NT-1')).toBeVisible();
         // The weather no-go of every vessel is a resource time range
@@ -727,9 +727,10 @@ test.describe('Offshore Wind Dispatch forecast', () => {
 
         const third = page.locator('.ow-kpis .ow-kpi').nth(2);
 
-        // Right after the forecast nothing is past its window, the third count is what it moved to tomorrow
-        await expect(third).toContainText('Moved to');
-        await expect(third).toHaveClass(/\bow-kpi-alert\b/);
+        // The trips already at sea when the forecast came in are not re-planned: they stay as they are, past their
+        // window, and the third count is theirs
+        await expect(third).toContainText('At risk');
+        await expect(third.locator('b')).toHaveText('3');
 
         const id = await page.evaluate(async() => {
             const
@@ -755,7 +756,7 @@ test.describe('Offshore Wind Dispatch forecast', () => {
         await expect(page.locator('.ow-map-label-risk')).not.toHaveCount(0);
         // One slot for the third count: a trip past its window wins over the turbines moved to tomorrow
         await expect(third).toContainText('At risk');
-        await expect(third.locator('b')).toHaveText('1');
+        await expect(third.locator('b')).toHaveText('4');
         await expect(third).toHaveClass(/\bow-kpi-warn\b/);
     });
 
@@ -1103,6 +1104,143 @@ test.describe('Offshore Wind Dispatch, teams dragged onto vessels', () => {
         await expect(page.locator('.ow-drop-tip')).toBeHidden();
 
         await page.mouse.up();
+    });
+});
+
+test.describe('Offshore Wind Dispatch, dispatch rules', () => {
+    test('every job needs GWO: a team without it is refused, and the certificates shown are the ones checked', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app    = globalThis.bryntum.query('dispatchapp'),
+                vessel = app.scheduler.resourceStore.getById('kw'),
+                plan   = { id : 'KW-9', start : 540, stops : [], mode : 'vessel', wait : 0, pax : 0, seats : vessel.seats },
+                // A job that asks for no certificate of its own
+                job    = { turbine : 'T-07', minutes : 60 },
+                check  = certs => app.dropController.rawCheck(plan, vessel,
+                    { id : 'Z', name : 'Team Z', techs : 3, certs }, job);
+
+            return { without : check([]), with : check(['GWO']) };
+        });
+
+        expect(result.without.valid).toBe(false);
+        expect(result.without.reason).toBe('Team Z lacks GWO');
+        expect(result.without.certs).toEqual(['GWO']);
+        expect(result.with.reason).toBe(null);
+    });
+
+    test('a vessel is on one trip at a time: a drag or a booking that runs into its other trip is refused', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app             = globalThis.bryntum.query('dispatchapp'),
+                [first, second] = ['H1-1', 'H1-2'].map(id => app.trips.find(each => each.id === id)),
+                // The pick-up dragged to leave while the drop-off is still out
+                departs         = first.departs + 15,
+                drag            = app.scheduler.validateTripDrag({
+                    eventRecords : [second],
+                    startDate    : second.dateOf(departs + second.transits.out)
+                }),
+                // A new trip of Northern Tern's planned to leave while its first trip is out
+                trip            = app.trips.find(each => each.id === 'NT-1'),
+                vessel          = trip.resource,
+                plan            = {
+                    id    : 'NT-9',
+                    start : trip.departs + 15,
+                    stops : [],
+                    mode  : 'vessel',
+                    wait  : 0,
+                    pax   : 0,
+                    seats : vessel.seats
+                },
+                booked          = app.dropController.rawCheck(plan, vessel,
+                    { id : 'Z', name : 'Team Z', techs : 3, certs : ['GWO'] }, { turbine : 'T-07', minutes : 60 });
+
+            return { drag, booked : booked.reason, name : vessel.name };
+        });
+
+        expect(result.drag.valid).toBe(false);
+        expect(result.drag.message).toContain('is out on H1-1');
+        expect(result.booked).toContain(`${result.name} is out on NT-1`);
+    });
+
+    test('a helicopter row with no trip to join refuses the team without adding a trip to the plan', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(() => {
+            const
+                app    = globalThis.bryntum.query('dispatchapp'),
+                count  = () => app.scheduler.eventStore.count,
+                before = count(),
+                heli   = app.scheduler.resourceStore.getById('h3'),
+                team   = app.dispatch.waitingStore.first.id,
+                drop   = app.dropController.previewDrop(team, heli);
+
+            return { valid : drop.result.valid, short : drop.result.short, added : count() - before };
+        });
+
+        expect(result).toEqual({ valid : false, short : 'Vessels only', added : 0 });
+    });
+
+    test('a drag cancelled while the plan is being placed does not get its preview back', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(async() => {
+            const app = globalThis.bryntum.query('dispatchapp');
+
+            app.drag.showHeld(app.dispatch.waitingStore.first.id, app.dropController.dropTargets()[0]);
+            // Escape while the change is awaited
+            await app.replan(() => app.drag.keys.endHeld());
+
+            return {
+                held     : app.held,
+                previews : app.scheduler.eventStore.query(each => each.preview || each.draft).length,
+                chips    : document.querySelectorAll('.ow-drag-chip').length
+            };
+        });
+
+        expect(result).toEqual({ held : null, previews : 0, chips : 0 });
+    });
+
+    test('the trip editor saves a new time on station: the trip leaves later, its legs with it', async({ page }) => {
+        await open(page);
+
+        const before = await page.evaluate(async() => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.id === 'NT-1');
+
+            await app.scheduler.features.taskEdit.editEvent(trip);
+
+            return trip.departs;
+        });
+
+        await expect.poll(() => page.evaluate(() =>
+            Boolean(globalThis.bryntum.query('dispatchapp').scheduler.features.taskEdit.editor?.isVisible))).toBe(true);
+
+        await page.evaluate(() => {
+            const
+                { editor } = globalThis.bryntum.query('dispatchapp').scheduler.features.taskEdit,
+                field      = editor.widgetMap.startDateField,
+                value      = new Date(field.value);
+
+            value.setMinutes(value.getMinutes() + 30);
+            field.value = value;
+            editor.widgetMap.saveButton.element.click();
+        });
+
+        await expect.poll(() => page.evaluate(() => {
+            const
+                app  = globalThis.bryntum.query('dispatchapp'),
+                trip = app.trips.find(each => each.id === 'NT-1'),
+                // The legs run on from the departure: the first stop starts when the sail out ends
+                legs = trip.legs;
+
+            return [app.scheduler.features.taskEdit.editor.isVisible, trip.departs, legs[1].from === legs[0].to,
+                trip.minutesOf(trip.constraintDate) === trip.minutesOf(trip.startDate)];
+        })).toEqual([false, before + 30, true, true]);
     });
 });
 
