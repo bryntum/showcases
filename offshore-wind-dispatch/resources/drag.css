@@ -1,0 +1,171 @@
+/* A team being dragged (drag/DragChip.js, drag/TeamDrag.js): DragHelper's proxy, the chip in the page's body, and the
+ * Bryntum Tooltip of the trip under it (drag/DropTooltip.js). The pointer passes through both */
+
+/* The chip: teal where the team fits on the trip under it, red where it does not, neutral over empty space. Over the
+   app, under Bryntum's floating widgets, so the tooltip stays on top */
+.ow-drag-chip {
+    position           : absolute;
+    inset-block-start  : 0;
+    inset-inline-start : 0;
+    z-index            : calc(var(--b-float-root-z-index) - 1);
+    display            : flex;
+    flex-wrap          : wrap;
+    align-items        : center;
+    gap                : 0.5834em;
+    max-width          : 16.25rem;
+    padding            : 0.3334em 0.8334em 0.3334em 0.3334em;
+    border-radius      : 0.5rem;
+    background-color   : var(--ow-surface);
+    border             : 1px solid var(--ow-reach);
+    box-shadow         : var(--ow-shadow-lifted);
+    rotate             : -3deg;
+    pointer-events     : none;
+    font-size          : var(--ow-size-sm);
+    white-space        : nowrap;
+
+    &[data-state='valid'] {
+        box-shadow : 0 0 0 2px color-mix(in srgb, var(--ow-reach) 35%, transparent), var(--ow-shadow-lifted);
+    }
+
+    &[data-state='invalid'] {
+        border-color : var(--ow-stop);
+        box-shadow   : 0 0 0 2px color-mix(in srgb, var(--ow-stop) 30%, transparent), var(--ow-shadow-lifted);
+    }
+
+    &[data-state='neutral'] {
+        border-color : var(--b-border-7);
+    }
+}
+
+.ow-drag-team {
+    display     : flex;
+    align-items : center;
+    gap         : 0.5834em;
+}
+
+/* The team's certificates (TeamChip#teamChipContent, compact), quiet text, HV emphasised */
+.ow-certs {
+    display : flex;
+    gap     : 0.3334em;
+}
+
+.ow-cert {
+    font-size : 0.65625rem;
+    color     : var(--ow-c-muted);
+
+    & + &::before {
+        content           : '/';
+        margin-inline-end : 0.381em;
+    }
+}
+
+.ow-cert-hv {
+    font-weight : 700;
+    color       : var(--b-text-1);
+}
+
+.ow-drag-status {
+    flex-basis    : 100%;
+    padding       : 0.182em 0.546em;
+    border-radius : var(--ow-c-radius);
+    font-size     : var(--ow-size-xs);
+    font-weight   : 600;
+
+    [data-state='valid'] > & {
+        color            : color-mix(in srgb, var(--ow-reach) 80%, var(--b-text-1));
+        background-color : color-mix(in srgb, var(--ow-reach) 14%, transparent);
+    }
+
+    [data-state='invalid'] > & {
+        color            : var(--ow-stop);
+        background-color : color-mix(in srgb, var(--ow-stop) 12%, transparent);
+    }
+}
+
+/* While DragHelper drags, the grabbing hand (its own class on the body) */
+.b-drag-helper-active {
+    cursor : grabbing;
+}
+
+/* The tooltip, styled as a card: its head in the tone of the check, the facts (frame.css), each certificate with its
+   mark */
+.b-tooltip.ow-drop-tip {
+    --ow-tone               : var(--ow-reach);
+    --b-popup-background    : var(--ow-surface);
+    --b-popup-border        : 1px solid var(--b-border-7);
+    --b-popup-border-radius : 0.5625rem;
+    --b-popup-padding       : 0.625rem 0.75rem;
+
+    width          : 15.5rem;
+    box-shadow     : 0 10px 30px rgb(0 0 0 / 20%);
+    pointer-events : none;
+    font-size      : var(--ow-size-sm);
+
+    &.ow-drop-tip-invalid {
+        --ow-tone : var(--ow-stop);
+    }
+
+    dl {
+        margin : 0.667em 0;
+    }
+
+    dd {
+        font-variant-numeric : tabular-nums;
+    }
+
+    dd:has(.ow-drop-cert) {
+        display     : flex;
+        flex-wrap   : wrap;
+        align-items : center;
+        gap         : 0.167em 0.8334em;
+    }
+
+    .ow-drop-cert {
+        display     : inline-flex;
+        align-items : center;
+        gap         : 0.25em;
+
+        .ow-icon {
+            width  : 1em;
+            height : 1em;
+        }
+    }
+
+    .ow-drop-cert-held .ow-icon {
+        color : var(--ow-c-work-ink);
+    }
+
+    .ow-drop-cert-missing .ow-icon {
+        color : var(--ow-c-stop-ink);
+    }
+}
+
+.ow-drop-tip-head {
+    display     : flex;
+    align-items : center;
+    gap         : 0.5em;
+    font-weight : 700;
+    color       : var(--ow-tone);
+}
+
+.ow-drop-tip-foot {
+    padding-block-start : 0.609em;
+    border-block-start  : 1px solid var(--b-border-7);
+    font-size           : 0.71875rem;
+    color               : var(--b-text-2);
+}
+
+/* Held from the keyboard, the keys that move, book or cancel */
+.ow-drop-tip-keys {
+    margin-block-start : 0.546em;
+    font-size          : var(--ow-size-xs);
+    color              : var(--b-text-2);
+
+    kbd {
+        padding       : 0 0.364em;
+        border        : 1px solid var(--b-border-7);
+        border-radius : 0.1875rem;
+        font          : inherit;
+        font-weight   : 600;
+    }
+}

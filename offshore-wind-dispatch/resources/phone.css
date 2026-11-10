@@ -1,12 +1,10 @@
 /* Phones (DispatchApp#phone, below 760px): the KPI header keeps the site and the alert, the schedule and the map
- * become tabs, the schedule's hours scroll sideways at 44px an hour at least (the day preset's tick width). The title bars and the
- * legend are hidden by the panels themselves (SchedulePanel#phone, MapPanel#phone) */
+ * become tabs, the hours scroll sideways. The panels hide their title bars and legends themselves */
 
 .ow-app.ow-phone {
     /* Not cards on a phone: the tab fills the width */
     --ow-card-radius  : 0;
     --ow-card-shadow  : none;
-    /* The vessel column and the axis labels closer to the edge (schedule/scheduler.css) */
     --ow-column-inset : 0.625rem;
 
     .ow-kpis {
@@ -26,8 +24,7 @@
         }
     }
 
-    /* The schedule and the map as the tabs of a Bryntum TabPanel (DispatchApp#updatePhone), its tab bar styled as a
-       segmented control */
+    /* The schedule and the map as the tabs of a Bryntum TabPanel, its tab bar a segmented control */
     .ow-tabs {
         --b-panel-background : var(--ow-surface);
     }
@@ -38,10 +35,10 @@
         --b-tab-bar-border-bottom-width : 0;
         --b-tab-border-radius           : 0.3125rem;
         --b-tab-font-weight             : 600;
-        --b-tab-color                   : var(--ow-ink);
-        --b-tab-hover-color             : var(--ow-ink);
-        --b-tab-active-tab-color        : var(--ow-ink);
-        --b-tab-hover-background        : color-mix(in srgb, var(--ow-ink) 5%, transparent);
+        --b-tab-color                   : var(--b-text-1);
+        --b-tab-hover-color             : var(--b-text-1);
+        --b-tab-active-tab-color        : var(--b-text-1);
+        --b-tab-hover-background        : color-mix(in srgb, var(--b-text-1) 5%, transparent);
         --b-tab-active-background       : var(--ow-surface);
         --b-tab-indicator-display       : none;
 
@@ -64,14 +61,14 @@
     }
 
     .ow-tabs > .b-panel-body-wrap > .b-panel-content {
-        border-block-start : 1px solid var(--ow-border);
+        border-block-start : 1px solid var(--b-border-7);
     }
 
     .ow-tray-head, .ow-team-job, .ow-axis-label small {
         display : none;
     }
 
-    /* Only the next forecast's button stays in the schedule's title bar, across the width */
+    /* Only the next forecast's button stays in the schedule's title bar */
     .ow-schedule .ow-panel-bar.b-toolbar {
         --b-toolbar-padding : 0 calc(var(--ow-bar-inset) * 2);
 
@@ -99,7 +96,7 @@
 
     /* The muted line gives way in the narrow column */
     .ow-resource small {
-        font-size     : var(--ow-size-2xs);
+        font-size     : 0.625rem;
         overflow      : hidden;
         text-overflow : ellipsis;
     }

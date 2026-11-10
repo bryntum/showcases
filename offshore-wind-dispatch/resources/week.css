@@ -1,13 +1,14 @@
 /* The Week view, the week as a day board (week/WeekBoard.js): a column per day with its sea state in the header, a cell
-   per vessel and day, the jobs per day in the summary row */
+ * per vessel and day, the jobs per day in the summary row */
 
 .ow-week-board {
     --b-grid-row-border-color    : var(--ow-tick);
     --b-grid-cell-border-color   : var(--ow-tick);
-    --b-column-lines-tick-color  : var(--ow-border);
-    --b-column-lines-major-color : var(--ow-border);
+    --b-column-lines-tick-color  : var(--b-border-7);
+    --b-column-lines-major-color : var(--b-border-7);
 
-    /* The vessel column, and its header naming the day header's rows */
+    /* The vessel column, on the card's surface also when hovered or selected, and its header naming the day header's
+       rows */
     .ow-week-vessel.b-grid-cell, .ow-week-axis.b-grid-header {
         flex-direction  : column;
         align-items     : flex-start;
@@ -15,7 +16,6 @@
         gap             : 0.154em;
     }
 
-    /* On the card's surface, also when hovered or selected */
     .ow-week-vessel.b-grid-cell {
         --b-grid-cell-background                : var(--ow-surface);
         --b-grid-cell-hover-background          : var(--ow-surface);
@@ -24,12 +24,11 @@
         --b-grid-cell-padding-inline            : var(--ow-inset) 0.5rem;
     }
 
-
     .ow-week-vessel, .ow-week-axis .b-grid-header-text-content {
         b {
             font-size   : var(--ow-size-md);
             font-weight : 600;
-            color       : var(--ow-ink);
+            color       : var(--b-text-1);
         }
 
         small {
@@ -38,9 +37,9 @@
         }
     }
 
+    /* Its text as wide as the header: Bryntum's `width: 0`, `flex: 1` content would get no width in this column. The
+       inline padding not by the header's padding variable, which is its block padding too */
     .ow-week-axis {
-        /* The header's text as wide as the header: its content is Bryntum's `width: 0`, `flex: 1` row, which in this
-           column would leave it no width at all */
         .b-grid-header-text {
             align-self : stretch;
         }
@@ -50,16 +49,14 @@
             flex-direction : column;
             gap            : 0.154em;
         }
+
+        &.b-grid-header {
+            padding-inline : 1.5rem 0.5rem;
+            min-height     : 5.5rem;
+        }
     }
 
-    /* A day's header: the date, the sea state pill, the wave height and the wind. The vessel column's header sets the
-       height, the time axis shares it */
-    .ow-week-axis.b-grid-header {
-        /* Not by the header's padding variable, which is its block padding too */
-        padding-inline : 1.5rem 0.5rem;
-        min-height     : 5.5rem;
-    }
-
+    /* A day's header: the date, the sea state pill, the wave height and the wind */
     .b-sch-header-time-axis-cell.ow-week-day {
         align-items : stretch;
         padding     : 0.5rem 0.625rem;
@@ -85,7 +82,7 @@
             font-size   : var(--ow-size-base);
             font-weight : 600;
             white-space : nowrap;
-            color       : var(--ow-ink);
+            color       : var(--b-text-1);
         }
 
         small {
@@ -95,14 +92,14 @@
                 white-space : nowrap;
             }
         }
-    }
 
-    /* Today: its date in a pill, the bright blue of the now line with white text (as the Day view's now pill) */
-    .b-sch-header-time-axis-cell.ow-week-today .ow-week-date {
-        padding          : 0.077em 0.6154em;
-        border-radius    : 999px;
-        color            : var(--b-color-white);
-        background-color : var(--ow-now);
+        /* Today: its date in a pill, white on the now line's blue */
+        &.ow-week-today .ow-week-date {
+            padding          : 0.077em 0.6154em;
+            border-radius    : 999px;
+            color            : var(--b-color-white);
+            background-color : var(--b-primary);
+        }
     }
 
     /* The sea state pill: blue where the crew transfer vessels go, grey where they do not */
@@ -118,21 +115,18 @@
 
     .ow-sea-none {
         background-color : var(--ow-c-neutral-bg);
-        color            : var(--ow-ink-sub);
+        color            : var(--b-text-2);
     }
 
-    /* A vessel's day with trips, Bryntum's event element as the card: the work tint with a hairline border, its text
-       inset 6px 8px 10px from the card's edge (the 1px border included), room for the seats bar at its foot */
-    /* A day's trips: a tinted card without a border, inset into the day as a free day's placeholder (below), px as
-       the board's resourceMargin (WeekBoard.js) */
+    /* A vessel's day with trips, Bryntum's event element as a tinted card, inset into the day as a free day's
+       placeholder (below), px as the board's resourceMargin */
     .b-sch-event-wrap.ow-cell-wrap {
-        box-sizing     : border-box;
         padding-inline : 5px;
     }
 
     .b-sch-event-wrap .b-sch-event.ow-cell {
         --b-sch-event-background     : var(--ow-c-work-tint);
-        --b-sch-event-color          : var(--ow-ink);
+        --b-sch-event-color          : var(--b-text-1);
         --b-sch-event-border-width   : 0;
         --b-sch-event-border-radius  : var(--ow-c-radius);
         --b-sch-event-font-size      : var(--ow-size-sm);
@@ -162,7 +156,6 @@
         display         : flex;
         justify-content : space-between;
         gap             : 0.3334em;
-        font-size       : var(--ow-size-sm);
         white-space     : nowrap;
         color           : var(--ow-c-work-ink);
 
@@ -175,13 +168,13 @@
         overflow      : hidden;
         white-space   : nowrap;
         text-overflow : ellipsis;
-        color         : var(--ow-ink-sub);
+        color         : var(--b-text-2);
     }
 
-    /* Work a forecast carried over from the day before: planned, no alarm. The plan's blue, dashed, as the trip in the
-       Day view; back after its window as well, the orange below wins */
+    /* Work a forecast carried over from the day before: planned, no alarm, dashed in the plan's blue; back after its
+       window as well, the orange below wins */
     .b-sch-event-wrap .b-sch-event.ow-cell-carried {
-        outline        : 1px dashed var(--ow-carried);
+        outline        : 1px dashed var(--ow-plan);
         outline-offset : -1px;
 
         .ow-cell-jobs {
@@ -189,7 +182,6 @@
         }
     }
 
-    /* Back after its window: orange, how late */
     .b-sch-event-wrap .b-sch-event.ow-cell-late {
         --b-sch-event-background : var(--ow-c-risk-tint);
 
@@ -202,8 +194,8 @@
         }
     }
 
-    /* The seats bar: a thin line in the cell's foot (px), on a faint track. Not multiplied with the card (the
-       feature's blend), which darkens it on the dark card */
+    /* The seats bar: a thin line in the cell's foot (px) on a faint track, in the now line's blue. Not blended with
+       the card, which darkens it in dark */
     .ow-cell {
         --b-percent-bar-blend-mode : normal;
 
@@ -216,9 +208,9 @@
             background    : color-mix(in srgb, var(--ow-c-transit) 35%, transparent);
         }
 
-        /* The feature declares its colour on the bar itself, so it is set here: the bright blue of the now line */
+        /* The feature declares its colour on the bar itself */
         .b-task-percent-bar {
-            --b-percent-bar-background : var(--ow-now);
+            --b-percent-bar-background : var(--b-primary);
 
             height        : 100%;
             border-radius : 2px;
@@ -226,8 +218,8 @@
         }
     }
 
-    /* A vessel's day without trips: free until its window closes, dashed, or no-go, hatched. The classes are on the
-       range's element (WeekBoard#renderFree) */
+    /* A vessel's day without trips (WeekBoard#renderFree): free until its window closes, dashed, or no-go, hatched. A
+       crew held over it, the drop target, as a trip held over in the Day view */
     .b-sch-resource-time-range {
         --b-resource-time-range-background  : none;
         --b-resource-time-range-color       : var(--ow-c-muted);
@@ -244,13 +236,11 @@
         &:is(.ow-week-free, .ow-week-drop)::before {
             content       : '';
             position      : absolute;
-            /* As the trips' cards, px as the board's resourceMargin */
             inset         : 5px;
             border        : 1px dashed var(--ow-c-transit);
             border-radius : var(--ow-c-radius);
         }
 
-        /* A crew held over the day, the drop target: as a trip held over in the Day view (schedule/trips.css) */
         &.ow-week-drop::before {
             border           : var(--ow-drop-outline);
             background-color : var(--ow-drop-tint);

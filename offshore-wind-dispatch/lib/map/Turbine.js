@@ -135,13 +135,13 @@ export function turbineSvg({ hs = 1.1, limit = 1.5, spin = true, wind = 0, repai
     <rect x="71" y="164" width="18" height="32" rx="1" fill="var(--ow-yellow)"/>
     <rect x="64" y="162" width="32" height="3" rx="1" fill="var(--ow-yellow-shade)"/>
     <path d="M64 162 v-5 M96 162 v-5 M64 157.5 h32" stroke="var(--ow-yellow-shade)" stroke-width="1.2" fill="none"/>
-    <g stroke="var(--ow-ink)" stroke-width="1" opacity="0.75">
+    <g stroke="var(--b-text-1)" stroke-width="1" opacity="0.75">
         <path d="M90 166 V205 M94 166 V205"/>
         <path d="M90 170 h4 M90 175 h4 M90 180 h4 M90 185 h4 M90 190 h4 M90 195 h4 M90 200 h4"/>
     </g>
 
     <!-- The vessel limit on the boat landing: above this wave height a crew transfer vessel cannot push on -->
-    <path d="M58 ${mark} H102" stroke="var(--ow-limit)" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <path d="M58 ${mark} H102" stroke="var(--ow-risk)" stroke-width="1.2" stroke-dasharray="3 2"/>
     <text x="104" y="${mark + 3}" class="ow-turbine-label">${limit.toFixed(1)} m</text>
 
     <!-- Tower: tapered, lit from the left -->
