@@ -1,5 +1,10 @@
 /* The tooltip of the map on a turbine (map/TurbineTooltip.js), the turbine card at a smaller size */
 
+/* The card brings its own padding, so the tooltip adds none */
+.b-tooltip.ow-map-tip {
+    --b-panel-padding : 0;
+}
+
 .ow-card.ow-card-tip {
     /* The illustration as tall as the text beside it */
     --ow-art-w : 7.75rem;
