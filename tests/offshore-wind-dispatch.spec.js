@@ -58,6 +58,21 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(tray(page).locator('.ow-team')).toHaveCount(3);
     });
 
+    test('a stop names its turbine, and its hours on station where they fit beside it', async({ page }) => {
+        await page.setViewportSize({ width : 1600, height : 960 });
+        await open(page);
+
+        // The stop of a leg by its turbine, on a trip
+        const stop = (id, turbine) => trip(page, id).locator('.ow-seg-stop', { hasText : turbine });
+
+        // 2.5 h on station: room for both
+        await expect(stop('SP-1', 'T-31').locator('.ow-seg-hours')).toBeVisible();
+        await expect(stop('SP-1', 'T-31').locator('.ow-seg-hours')).toHaveText('2.5 h');
+        // 20 minutes: the turbine alone, the hours hidden by the container query
+        await expect(stop('H1-1', 'T-58').locator('b')).toHaveText('T-58');
+        await expect(stop('H1-1', 'T-58').locator('.ow-seg-hours')).toBeHidden();
+    });
+
     test('at 1600 x 960 the page and the schedule do not scroll, the frame is aligned to its corner, the status line is one line', async({ page }) => {
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);

@@ -105,9 +105,31 @@
         /* Bryntum's tonal event style in the work blue (eventStyle, eventColor) */
         > .b-sch-event.ow-seg-stop {
             --b-sch-event-border-color : var(--ow-c-work-line);
+            --b-sch-event-font-weight  : 400;
 
             /* A stop too short for its turbine's name grows just wide enough to hold it */
             min-width : max-content;
+
+            /* The room after the turbine, a size container: it adds nothing to the stop's max-content, and its
+               query hides the hours when they do not fit beside the name. The turbine always shows */
+            .ow-seg-room {
+                container-type : inline-size;
+                flex           : 1;
+                min-width      : 0;
+                text-align     : end;
+            }
+
+            .ow-seg-hours {
+                padding-inline-start : 0.5em;
+                font-variant-numeric : tabular-nums;
+                white-space          : nowrap;
+            }
+
+            @container (width < 3.5em) {
+                .ow-seg-hours {
+                    display : none;
+                }
+            }
         }
 
         /* The stop the vessel cannot get back from before its window closes */
