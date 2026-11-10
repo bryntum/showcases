@@ -43,7 +43,7 @@
         font-weight      : 600;
         line-height      : 1;
         white-space      : nowrap;
-        color            : light-dark(var(--ow-c-work), color-mix(in srgb, var(--ow-c-work), var(--b-color-white) 55%));
+        color            : var(--ow-c-work-ink);
         background-color : color-mix(in srgb, var(--ow-c-work) 12%, transparent);
 
         &.ow-tip-late {

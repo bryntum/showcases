@@ -2,7 +2,7 @@ import { Widget } from '@bryntum/core-enterprise';
 
 /**
  * One of the day's counts: a number over its label, no box. A tone tints it when the number is above zero: `warn` (past
- * the window) and `alert` (moved to tomorrow) in the at risk orange, `stop` (turbines stopped) in red.
+ * the window) in the at risk orange, `alert` (moved to tomorrow) in the plan's blue, `stop` (turbines stopped) in red.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html

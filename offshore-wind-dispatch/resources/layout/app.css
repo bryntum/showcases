@@ -12,10 +12,11 @@
     /* The shell paints the frame of the app panel (shared/shell.css), the page colour goes over it */
     background-color : var(--b-panel-background);
     font-size        : var(--ow-size-base);
+}
 
-    small {
-        font-size : 0.85em;
-    }
+/* A step down for small text, without specificity: the components that set a size of their own keep it */
+:where(.ow-app.b-panel) small {
+    font-size : 0.85em;
 }
 
 /* The app panel's body: no padding, no gaps. The panels and containers in it inherit these, down to the ones that set
@@ -40,7 +41,7 @@
     }
 }
 
-/* The schedule's column: its card, the crews tray under it on the page */
+/* The schedule's column, its card */
 .ow-left {
     min-width : 0;
 }

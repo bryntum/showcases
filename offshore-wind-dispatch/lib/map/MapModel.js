@@ -147,7 +147,7 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) 
         labels = [{
             id   : job.turbine,
             text : result.valid ? `${job.turbine} · +${duration(job.minutes)} · back ${hhmm(result.back)}` : `${job.turbine} · ${result.short}`,
-            tone : result.valid ? 'target' : 'fault'
+            tone : result.valid ? 'target' : 'risk'
         }];
         callout = [turbineCount(drop.reach), ` within reach of ${trip.id} before the window closes at ${hhmm(drop.close)}`];
     }

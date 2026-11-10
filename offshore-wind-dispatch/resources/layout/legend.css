@@ -74,7 +74,7 @@
         width            : 1.5rem;
         height           : 1.25px;
         border-radius    : 0;
-        background-color : var(--ow-c-work-line);
+        background-color : var(--ow-c-dependency);
 
         &::after {
             content                   : '';
@@ -84,7 +84,7 @@
             width                     : 0;
             height                    : 0;
             border                    : 3.5px solid transparent;
-            border-inline-start-color : var(--ow-c-work-line);
+            border-inline-start-color : var(--ow-c-dependency);
             border-inline-end-width   : 0;
             translate                 : 0 -50%;
         }
@@ -115,16 +115,16 @@
             text-decoration : none;
 
             &:hover {
-                color           : var(--ow-c-work);
+                color           : var(--ow-c-work-ink);
                 text-decoration : underline;
             }
         }
     }
 }
 
-/* On a short screen the rows need the height more than the key does: it goes first, under 800px (the turbine's card
-   goes under 720px, map/card.css) */
-@media (max-height: 800px) {
+/* On a short screen the rows need the height more than the key does: it goes under 700px, after the turbine's card
+   (under 720px, map/card.css) */
+@media (max-height: 700px) {
     .ow-legend.b-widget {
         display : none;
     }

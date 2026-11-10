@@ -12,7 +12,8 @@
 
     &[data-tone='reach'] { --ow-tone : var(--ow-reach); }
     &[data-tone='risk'] { --ow-tone : var(--ow-risk); }
-    &[data-tone='cancel'] { --ow-tone : var(--ow-cancel); }
+    &[data-tone='moved'] { --ow-tone : var(--ow-moved); }
+    &[data-tone='wait'] { --ow-tone : var(--ow-wait); }
 
     .ow-turbine {
         width  : var(--ow-art-w);

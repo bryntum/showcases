@@ -105,9 +105,12 @@ export default class MapPanel extends Panel {
      * @param {Boolean} options.follow The map follows the selection (AppState#mapFollows)
      */
     draw({ state, trips, selectedTrip, turbine, held, follow }) {
-        const { map, card } = this.widgetMap;
+        const
+            { map, card, legend } = this.widgetMap,
+            model                 = mapModel({ state, trips, selectedTrip, selectedTurbine : turbine, drop : held });
 
-        map.draw(mapModel({ state, trips, selectedTrip, selectedTurbine : turbine, drop : held }));
+        map.draw(model);
+        legend.moved = [...model.markers.values()].some(({ status }) => status === 'moved');
         this.fit(selectedTrip, turbine, follow && !held, Boolean(held));
 
         if (turbine) {

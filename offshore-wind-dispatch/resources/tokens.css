@@ -2,14 +2,17 @@
  * set of rules. On the root, as the drag chip, its tooltip and the Scheduler's tooltips render outside the app */
 
 :root {
-    /* Trips on plan, helicopters, past the window, moved, and what a dragged team can reach */
+    /* Trips on plan, helicopters, past the window (at risk), stopped, and what a dragged team can reach */
     --ow-plan    : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
     --ow-heli    : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-purple) 80%, var(--b-color-white)));
     --ow-risk    : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
-    --ow-cancel  : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
+    --ow-stop    : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
     --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
+    /* No alarm: teams waiting for a trip in slate, work a forecast moved to tomorrow in the plan's blue, both dashed */
+    --ow-wait    : light-dark(#5b6878, #9aa6b4);
+    --ow-moved   : var(--ow-plan);
     /* The calm sea */
     --ow-sea-ok  : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
     --ow-now     : var(--b-color-blue);
@@ -46,6 +49,8 @@
     /* The schedule, the header and the tray: neutrals and blue carry the plan, orange only what is past the window,
        red only what is stopped. Exact values of the calm redesign, each with its dark counterpart */
     --ow-c-work        : light-dark(#1f6fb8, #2a6db0);
+    /* Text in the work blue: in dark a lighter blue than the fills, which reads on the button tint and the cards */
+    --ow-c-work-ink    : light-dark(#1a5f9e, #8bbcef);
     /* The tonal work block, as Bryntum's tonal event style makes it from the work blue: a tint and a hairline */
     --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 86%),
         color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%));
@@ -59,7 +64,9 @@
     --ow-c-risk-ink    : light-dark(#8a4500, #ffb766);
     --ow-c-stop-ink    : light-dark(#b71c1c, #ff8f86);
     --ow-c-stop-tint   : light-dark(#fdecea, #3b1a1a);
-    --ow-c-transit     : light-dark(#b8c0c8, #5e6975);
+    --ow-c-transit     : light-dark(#b8c0c8, #7b8794);
+    /* The dependency lines, from the work blocks' hairline; in dark a step lighter, or they sink into the rows */
+    --ow-c-dependency  : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%), #5f8fc4);
     --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
     --ow-c-nogo        : light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%));
@@ -127,4 +134,18 @@
         color-mix(in srgb, var(--ow-c-work), var(--b-mix) 72%));
     --ow-c-work-hover-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 35%);
     --ow-c-risk-hover-tint : color-mix(in srgb, var(--ow-c-risk-line) 16%, var(--ow-c-risk-tint));
+
+    /* A trip a forecast moved to tomorrow, faded in its old place: less in dark, where the faded marks sink into the
+       dark rows. Not a colour, so not light-dark(): the page's dark mode sets it below */
+    --ow-moved-fade        : 0.35;
+}
+
+:root[data-theme='dark'] {
+    --ow-moved-fade : 0.6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --ow-moved-fade : 0.6;
+    }
 }

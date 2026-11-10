@@ -1,16 +1,17 @@
 /* The legend of the map (map/MapLegend.js) */
 
-/* One row at the panel's width, the markers as the map draws them, In work with its wrench */
+/* Two rows of three, the markers as the map draws them, In work with its wrench. The sixth place is Moved's, shown
+   once a forecast moved work: the legend keeps its height, and the map its size, when it comes */
 .ow-map-legend {
-    flex        : none;
-    display     : flex;
+    flex                  : none;
+    display               : grid;
+    grid-template-columns : repeat(3, max-content);
     /* Lined up with the map's straight edges above it, past its rounded corners */
-    padding     : var(--ow-inset) calc(var(--ow-map-margin) + var(--ow-card-radius));
-    flex-wrap   : wrap;
-    gap         : 0.364em 0.7273em;
-    font-size   : var(--ow-size-xs);
-    color       : var(--ow-ink-sub);
-    white-space : nowrap;
+    padding               : var(--ow-inset) calc(var(--ow-map-margin) + var(--ow-card-radius));
+    gap                   : 0.364em 1.4545em;
+    font-size             : var(--ow-size-xs);
+    color                 : var(--ow-ink-sub);
+    white-space           : nowrap;
 
     span {
         display     : flex;
@@ -25,9 +26,9 @@
     }
 }
 
-/* On a short screen the map needs the height more than its key does: it goes under 800px, as the schedule's
+/* On a short screen the map needs the height more than its key does: it goes under 700px, as the schedule's
    (layout/legend.css) */
-@media (max-height: 800px) {
+@media (max-height: 700px) {
     .ow-map-legend.b-widget {
         display : none;
     }

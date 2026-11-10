@@ -57,7 +57,7 @@
     }
 
     .ow-drop-cert-held .ow-icon {
-        color : var(--ow-c-work);
+        color : var(--ow-c-work-ink);
     }
 
     .ow-drop-cert-missing .ow-icon {
@@ -65,7 +65,7 @@
     }
 
     &.ow-drop-tip-invalid {
-        --ow-tone : var(--ow-cancel);
+        --ow-tone : var(--ow-stop);
     }
 }
 

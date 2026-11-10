@@ -123,10 +123,10 @@ function noteOf({ state, turbine, trip, drop, stand }) {
                     note : ['Back ', clock(drop.result.back), ` · ${duration(drop.result.margin)} before the ${name} window`],
                     tone : 'reach'
                 } :
-                { note : [drop.result.short], tone : 'cancel' },
+                { note : [drop.result.short], tone : 'risk' },
             moved : () => ({
                 note : [`Return leg would meet Hs ${state.hsAt(trip.endMinute).toFixed(1)} m`],
-                tone : 'cancel'
+                tone : 'moved'
             }),
             'at-risk' : () => ({
                 note : ['Back ', clock(trip.endMinute), ` · ${duration(trip.endMinute - close)} after the ${name} window`],
@@ -135,7 +135,7 @@ function noteOf({ state, turbine, trip, drop, stand }) {
             none : () => state.waiting.includes(turbine) ?
                 {
                     note : [`${state.teams.get(state.jobAt(turbine).team)?.name} waits · drag it on a trip`],
-                    tone : 'risk'
+                    tone : 'wait'
                 } :
                 { note : ['Window open until ', clock(state.windows.ctv)], tone : 'ok' }
         };

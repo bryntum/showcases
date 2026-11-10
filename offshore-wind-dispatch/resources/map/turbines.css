@@ -85,7 +85,7 @@
 }
 
 .ow-m-fault {
-    --ow-tone : var(--ow-cancel);
+    --ow-tone : var(--ow-stop);
 }
 
 .ow-m-reach, .ow-m-target {
@@ -98,9 +98,9 @@
     }
 }
 
-/* Waiting at risk, moved to tomorrow: dashed discs */
+/* No alarm, dashed discs: a team waiting for a trip in slate, work a forecast moved to tomorrow in the plan's blue */
 .ow-m-waiting {
-    --ow-tone : var(--ow-risk);
+    --ow-tone : var(--ow-wait);
 
     .ow-marker-disc {
         stroke-width     : 2;
@@ -109,7 +109,7 @@
 }
 
 .ow-m-moved {
-    --ow-tone : var(--ow-cancel);
+    --ow-tone : var(--ow-moved);
 
     .ow-marker-disc {
         stroke-width     : 1.6;

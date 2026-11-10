@@ -1,10 +1,15 @@
-/* The labels over the turbines of the map (map/MapDrawing.js), in the colour of their tone */
+/* The labels over the turbines of the map (map/MapDrawing.js), in the colour of their tone. Their size and their
+   outline are divided by the map's zoom, so both keep their size on screen as the map zooms */
 
 .ow-map-label {
     --ow-label-ink : var(--ow-plan);
 
-    &:is(.ow-map-label-fault, .ow-map-label-moved) {
-        --ow-label-ink : var(--ow-cancel);
+    &.ow-map-label-fault {
+        --ow-label-ink : var(--ow-stop);
+    }
+
+    &.ow-map-label-moved {
+        --ow-label-ink : var(--ow-moved);
     }
 
     &.ow-map-label-risk {
@@ -21,7 +26,7 @@
         fill            : var(--ow-label-ink);
         paint-order     : stroke;
         stroke          : var(--ow-sea-map);
-        stroke-width    : 3.5px;
+        stroke-width    : calc(3.5px / var(--ow-map-zoom, 1));
         stroke-linejoin : round;
         pointer-events  : none;
     }

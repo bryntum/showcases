@@ -53,7 +53,7 @@
             --b-sch-event-cursor : default;
 
             > .b-nested-events-container {
-                opacity : 0.35;
+                opacity : var(--ow-moved-fade);
                 filter  : grayscale(1);
 
                 &::before {
@@ -127,6 +127,6 @@
 
     /* A forecast's change, quiet */
     .ow-trip-change {
-        color : var(--ow-c-work);
+        color : var(--ow-c-work-ink);
     }
 }

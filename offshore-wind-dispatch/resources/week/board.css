@@ -38,10 +38,18 @@
         }
     }
 
-    .ow-week-axis .b-grid-header-text-content {
-        display        : flex;
-        flex-direction : column;
-        gap            : 0.154em;
+    .ow-week-axis {
+        /* The header's text as wide as the header: its content is Bryntum's `width: 0`, `flex: 1` row, which in this
+           column would leave it no width at all */
+        .b-grid-header-text {
+            align-self : stretch;
+        }
+
+        .b-grid-header-text-content {
+            display        : flex;
+            flex-direction : column;
+            gap            : 0.154em;
+        }
     }
 
     /* A day's header: the date, the sea state pill, the wave height and the wind. The vessel column's header sets the
@@ -105,7 +113,7 @@
         white-space      : nowrap;
         font-weight      : 600;
         background-color : var(--ow-c-button-tint);
-        color            : var(--ow-c-work);
+        color            : var(--ow-c-work-ink);
     }
 
     .ow-sea-none {
@@ -156,7 +164,7 @@
         gap             : 0.3334em;
         font-size       : var(--ow-size-sm);
         white-space     : nowrap;
-        color           : var(--ow-c-work);
+        color           : var(--ow-c-work-ink);
 
         b {
             font-weight : 600;
@@ -168,6 +176,17 @@
         white-space   : nowrap;
         text-overflow : ellipsis;
         color         : var(--ow-ink-sub);
+    }
+
+    /* Work a forecast moved here from the day before: planned, later, no alarm. The plan's blue, dashed, as a moved
+       turbine on the map; back after its window as well, the orange below wins */
+    .b-sch-event-wrap .b-sch-event.ow-cell-moved {
+        outline        : 1px dashed var(--ow-moved);
+        outline-offset : -1px;
+
+        .ow-cell-jobs {
+            color : var(--ow-c-work-ink);
+        }
     }
 
     /* Back after its window: orange, how late */

@@ -333,7 +333,7 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         expect(await animation('T-07')).toBe('none');
     });
 
-    test('the legend fits one row: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
+    test('the legend fits two rows of three: In work with its wrench, Planned, Waiting, At risk, Stopped', async({ page }) => {
         // Tall enough for the legends, which give way on short screens
         await page.setViewportSize({ width : 1600, height : 960 });
         await open(page);
@@ -361,9 +361,12 @@ test.describe('Offshore Wind Dispatch turbines', () => {
         expect(marks.every(mark => mark.inside)).toBe(true);
         expect(new Set(marks.map(mark => mark.width)).size).toBe(1);
 
+        // Three a row, the sixth place kept for Moved, which a forecast adds without changing the legend's height
         const tops = await entries.evaluateAll(spans => spans.map(span => span.getBoundingClientRect().top));
 
-        expect(new Set(tops).size).toBe(1);
+        expect(new Set(tops.slice(0, 3)).size).toBe(1);
+        expect(tops[3]).toBeGreaterThan(tops[0]);
+        expect(tops[4]).toBe(tops[3]);
     });
 
     test('of the trips serving a turbine, the card shows the selected trip\'s visit', async({ page }) => {

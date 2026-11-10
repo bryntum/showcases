@@ -67,7 +67,7 @@
         border-block-start : 1px solid var(--ow-border);
     }
 
-    .ow-tray-title, .ow-team-job, .ow-axis-label small {
+    .ow-tray-head, .ow-team-job, .ow-axis-label small {
         display : none;
     }
 

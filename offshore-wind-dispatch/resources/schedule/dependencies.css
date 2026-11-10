@@ -6,13 +6,13 @@
 
     .b-sch-dependency {
         &.ow-dep {
-            --b-dependency-color : var(--ow-c-work-line);
+            --b-dependency-color : var(--ow-c-dependency);
 
             stroke-linejoin : round;
             stroke-linecap  : round;
 
             &.b-sch-dependency-over {
-                --b-dependency-color : var(--ow-c-work);
+                --b-dependency-color : var(--ow-c-work-ink);
             }
 
             &.ow-dep-broken {
