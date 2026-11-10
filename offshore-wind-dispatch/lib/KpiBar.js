@@ -69,7 +69,7 @@ export default class KpiBar extends Container {
      * @param {Object} values
      * @param {String} values.site
      * @param {String} values.day The day shown, "Mon 9 Nov"
-     * @param {Object[]} values.kpis `{ label, value, tone }`, tone `warn`, `alert` or `stop` when it needs attention
+     * @param {Object[]} values.kpis `{ label, value, tone }`, tone `warn` or `stop` when it needs attention
      */
     draw({ site, day, kpis }) {
         const { clock, first, second, third, fourth } = this.widgetMap;

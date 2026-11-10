@@ -323,12 +323,10 @@ export default class DispatchScheduler extends Scheduler {
             { trip }                        = args.eventRecord;
 
         return renderTrip(args, {
-            close        : dispatch.closeOf(trip.resource),
-            sailOut      : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
-            firstSailing : dispatch.firstSailing,
-            nextDay      : dispatch.nextDay,
-            dropFit      : this.fittingTrips.has(trip),
-            typeOf       : turbine => dispatch.jobAt(turbine)?.type ?? ''
+            close   : dispatch.closeOf(trip.resource),
+            sailOut : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
+            dropFit : this.fittingTrips.has(trip),
+            typeOf  : turbine => dispatch.jobAt(turbine)?.type ?? ''
         });
     }
 

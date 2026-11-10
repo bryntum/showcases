@@ -62,28 +62,21 @@ export const tripEdit = {
 };
 
 /**
- * Why a trip's time cannot be changed, as it cannot be dragged: it has left port, or is moved to tomorrow
- * @param {TripModel} trip
- * @returns {String|null}
- */
-const lockedBecause = trip => trip.status === 'moved' ? 'moved to tomorrow' : (trip.draggable ? null : 'under way');
-
-/**
  * The editor for a trip: its ID, team and people on board as the title, a helicopter's buffers are flights. Read-only
- * for a trip that cannot be moved
+ * for a trip under way, which cannot be dragged either
  * @param {Object} event The TaskEdit feature's beforeTaskEditShow event
  */
 export function beforeTripEditShow({ taskRecord : trip, editor }) {
     const
         { preambleField, postambleField, tabBar } = editor.widgetMap,
         by                                        = trip.mode === 'heli' ? 'Fly' : 'Sail',
-        locked                                    = lockedBecause(trip);
+        locked                                    = !trip.draggable;
 
     // One tab left: no tab bar. The feature's `items` configure the tabs, not the tab panel, so it is hidden here
     tabBar.hidden        = true;
-    // A trip under way or moved to tomorrow is shown, read-only (no Save, Delete or Cancel, the close tool stays)
-    editor.readOnly      = Boolean(locked);
-    editor.title         = [trip.id, teamText(trip), paxText(trip), locked].filter(Boolean).join(' · ');
+    // A trip under way is shown, read-only (no Save, Delete or Cancel, the close tool stays)
+    editor.readOnly      = locked;
+    editor.title         = [trip.id, teamText(trip), paxText(trip), locked && 'under way'].filter(Boolean).join(' · ');
     preambleField.label  = `${by} out`;
     postambleField.label = `${by} back`;
 }

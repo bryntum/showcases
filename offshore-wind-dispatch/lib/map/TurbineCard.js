@@ -31,12 +31,9 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     const
         held    = drop?.job.turbine === turbine,
         { trip, stop } = visitOf({ trips, turbine, drop, selectedTrip, held }),
-        // Its trip's status may be `at-risk` since, the turbine still waits for tomorrow
-        trimmed = trips.find(each => each.change === 'trimmed' && each.removed?.includes(turbine)),
-        // Where it stands: held over a trip, moved to tomorrow, on a trip, or neither
-        stand   = standOf(held, trip, trimmed),
-        planned = trip ?? trimmed,
-        vessel  = planned?.resource;
+        // Where it stands: held over a trip, the status of its trip, or none
+        stand   = held ? 'held' : trip?.status ?? 'none',
+        vessel  = trip?.resource;
 
     return {
         ...describe(state, turbine),
@@ -44,11 +41,11 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
         // At hub height now, how fast the rotor of the drawing turns
         wind    : state.windAt(),
         stand,
-        trip    : vessel ? `${planned.id} · ${vessel.name}` : 'Not assigned',
-        when    : whenOf(stand, stop, state),
+        trip    : vessel ? `${trip.id} · ${vessel.name}` : 'Not assigned',
+        when    : stop ? `On station ${hhmm(stop.from)} – ${hhmm(stop.to)}` : '–',
         hs      : state.hsAt(stop?.from ?? state.now),
         limit   : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
-        ...noteOf({ state, turbine, trip : planned, drop, stand })
+        ...noteOf({ state, turbine, trip, drop, stand })
     };
 }
 
@@ -65,28 +62,6 @@ function visitOf({ trips, turbine, drop, selectedTrip, held }) {
         trip   = selectedTrip && serves(selectedTrip) ? selectedTrip : trips.find(serves);
 
     return { trip, stop : trip?.legs.find(leg => leg.type === 'stop' && leg.turbine === turbine) };
-}
-
-// Held over a trip, moved to tomorrow, the status of its trip, or none
-function standOf(held, trip, trimmed) {
-    if (held) {
-        return 'held';
-    }
-
-    if (trip?.status === 'moved' || trimmed) {
-        return 'moved';
-    }
-
-    return trip?.status ?? 'none';
-}
-
-// When the turbine is worked on: on station today, or the first sailing of the next day it was moved to
-function whenOf(stand, stop, { firstSailing, nextDay }) {
-    if (stand === 'moved') {
-        return `Moved to ${nextDay} ${hhmm(firstSailing)}`;
-    }
-
-    return stop ? `On station ${hhmm(stop.from)} – ${hhmm(stop.to)}` : '–';
 }
 
 // The turbine, its job and the team for it
@@ -124,10 +99,6 @@ function noteOf({ state, turbine, trip, drop, stand }) {
                     tone : 'reach'
                 } :
                 { note : [drop.result.short], tone : 'risk' },
-            moved : () => ({
-                note : [`Return leg would meet Hs ${state.hsAt(trip.endMinute).toFixed(1)} m`],
-                tone : 'moved'
-            }),
             'at-risk' : () => ({
                 note : ['Back ', clock(trip.endMinute), ` · ${duration(trip.endMinute - close)} after the ${name} window`],
                 tone : 'risk'
@@ -156,7 +127,7 @@ export function reachOf({ state, trips, turbine }) {
     const
         minutes = state.jobAt(turbine)?.minutes ?? 60,
         options = trips
-            .filter(trip => trip.mode === 'vessel' && trip.status !== 'moved' && trip.departs > state.now &&
+            .filter(trip => trip.mode === 'vessel' && trip.departs > state.now &&
                 trip.stops.length && !trip.turbines.includes(turbine))
             .map(trip => {
                 const { stop, back } = appendStop(trip.plan, { turbine, minutes });

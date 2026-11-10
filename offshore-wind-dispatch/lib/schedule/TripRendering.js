@@ -101,14 +101,12 @@ export function paxText(trip) {
 /**
  * What changed, after the trip's label: set by a forecast. Past its window needs no word here, the sail back says it
  * @param {TripModel} trip
- * @param {Number} firstSailing When the next day's first trips sail, minutes since midnight
- * @param {String} nextDay The day after the one shown, "Tue"
  * @returns {String|null}
  */
-function changeText(trip, firstSailing, nextDay) {
+function changeText(trip) {
     return {
-        trimmed : () => `${trip.removed.join(', ')} → ${nextDay}`,
-        moved   : () => `moved to ${nextDay} ${hhmm(firstSailing)}`,
+        trimmed : () => 'trimmed',
+        carried : () => 'carried over',
         pulled  : () => `${duration(trip.minutesOf(trip.previousDeparture) - trip.departs)} earlier`
     }[trip.status]?.() ?? null;
 }
@@ -165,20 +163,18 @@ function renderLeg(leg, renderData, close, typeOf) {
  * @param {Object} options
  * @param {Number} options.close When the trip's window closes
  * @param {Number} options.sailOut How wide the trip's sail out is drawn, px
- * @param {Number} options.firstSailing When the next day's first trips sail, minutes since midnight
- * @param {String} options.nextDay The day after the one shown, "Tue"
  * @param {Boolean} options.dropFit A team is dragged and would fit on the trip
  * @param {Function} options.typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, { close, sailOut, firstSailing, nextDay, dropFit, typeOf }) {
+export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFit, typeOf }) {
     if (eventRecord.isLeg) {
         return renderLeg(eventRecord, renderData, close, typeOf);
     }
 
     const
         trip   = eventRecord,
-        change = changeText(trip, firstSailing, nextDay);
+        change = changeText(trip);
 
     renderData.cls['ow-trip']                = 1;
     // On the wrapper, which also holds the sail out and back (EventBuffer): the hover's outline goes round all of it
@@ -224,8 +220,8 @@ export function renderBuffers({ eventRecord : trip, preambleConfig, postambleCon
     preambleConfig.cls  = `ow-transit ow-transit-out${edge ? ' ow-transit-edge' : ''}`;
     preambleConfig.text = hhmm(trip.departs);
 
-    postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 && trip.status !== 'moved' ? ' ow-transit-late' : ''}`;
-    postambleConfig.text = late > 0 && trip.status !== 'moved' ? `${hhmm(back)} · +${duration(late)}` : hhmm(back);
+    postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 ? ' ow-transit-late' : ''}`;
+    postambleConfig.text = late > 0 ? `${hhmm(back)} · +${duration(late)}` : hhmm(back);
 }
 
 /**
@@ -233,7 +229,7 @@ export function renderBuffers({ eventRecord : trip, preambleConfig, postambleCon
  * with an arrowhead, which may cross rows, its tooltip names what the stop waits for. The links that keep a trip's
  * legs in order (PlanDependencyModel#isChain) are the engine's business and not drawn. It turns orange where the
  * engine cannot resolve it in the weather: the stop still starts before the trip is done (and its lag over), or the
- * wait brings the stop's trip back after its window. Hidden while the stop's trip is moved to tomorrow
+ * wait brings the stop's trip back after its window
  * @param {Object} args The Dependencies feature's renderer arguments
  */
 export function renderDependency({ domConfig, dependencyRecord }) {
@@ -254,7 +250,6 @@ export function renderDependency({ domConfig, dependencyRecord }) {
 
     domConfig.class['ow-dep']        = 1;
     domConfig.class['ow-dep-broken'] = broken;
-    domConfig.class['ow-dep-moved']  = toEvent?.trip.status === 'moved';
 }
 
 /**
@@ -267,7 +262,7 @@ export function renderDependency({ domConfig, dependencyRecord }) {
 export function renderVessel(vessel, { day, close, limit }) {
     const
         // Its trips of the day shown, not their legs, which are assigned to it too
-        trips = vessel.events.filter(trip => !trip.isLeg && trip.day === day && trip.status !== 'moved'),
+        trips = vessel.events.filter(trip => !trip.isLeg && trip.day === day),
         pax   = trips.reduce((most, trip) => Math.max(most, trip.pax), 0),
         // The seats taken, as a ring round the icon: orange when one of its trips is back after its window
         used  = vessel.seats ? Math.round(pax / vessel.seats * 100) : 0,

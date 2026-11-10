@@ -75,7 +75,7 @@ export default class TeamTray extends Container {
     }
 
     updateLifted(lifted) {
-        this.chips.forEach(chip => chip.lifted = chip.team.id === lifted);
+        this.chips.forEach(chip => chip.lifted = chip.waitingId === lifted);
     }
 
     // A chip per team, in the store's order
@@ -92,9 +92,10 @@ export default class TeamTray extends Container {
             me    = this,
             first = me.items.indexOf(me.widgetMap.empty) + 1;
 
-        records.forEach(({ team, job, fault }, i) => me.insert({
-            type   : 'teamchip',
-            lifted : team.id === me.lifted,
+        records.forEach(({ id, team, job, fault }, i) => me.insert({
+            type      : 'teamchip',
+            waitingId : id,
+            lifted    : id === me.lifted,
             team,
             job,
             fault
@@ -122,12 +123,12 @@ export default class TeamTray extends Container {
     }
 
     /**
-     * The team's chip
-     * @param {String} teamId
+     * The chip of a team waiting
+     * @param {String} id Its record's ID in the waiting store
      * @returns {TeamChip|undefined}
      */
-    chipOf(teamId) {
-        return this.chips.find(chip => chip.team.id === teamId);
+    chipOf(id) {
+        return this.chips.find(chip => chip.waitingId === id);
     }
 }
 

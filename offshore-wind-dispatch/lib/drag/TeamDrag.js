@@ -158,8 +158,8 @@ export default class TeamDrag {
     /**
      * Checks the team again where it is held, after the plan or the forecast changed (DispatchApp#replan): the trip
      * under the pointer, or the trip held over without one, previewed and its tooltip redrawn against the plan as it is
-     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have moved some to
-     * tomorrow
+     * now. From the keyboard, the trips the arrows step through are read again, the forecast may have taken some off
+     * the day
      */
     refresh() {
         const

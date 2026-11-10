@@ -12,7 +12,7 @@ import { hhmm } from '../util/Time.js';
 
 /**
  * The other trips of a vessel on a day, port to port, that a trip has to keep clear of. Not the trip itself, not a
- * draft shown for a team held over the vessel, not one moved to tomorrow
+ * draft shown for a team held over the vessel
  * @param {TripModel[]} trips The trips of the day
  * @param {VesselModel} vessel
  * @param {String} [except] The ID of the trip being checked
@@ -20,7 +20,7 @@ import { hhmm } from '../util/Time.js';
  */
 export function busyOf(trips, vessel, except) {
     return trips
-        .filter(trip => trip.resource === vessel && trip.id !== except && !trip.draft && trip.change !== 'moved')
+        .filter(trip => trip.resource === vessel && trip.id !== except && !trip.draft)
         .map(trip => ({ id : trip.id, start : trip.departs, end : trip.endMinute }));
 }
 
@@ -62,7 +62,7 @@ function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
 }
 
 /**
- * Whether a trip may leave at the departure it is dragged to: not once moved to tomorrow, not in the past, back
+ * Whether a trip may leave at the departure it is dragged to: not in the past, back
  * before its window closes, not while its vessel is out on another trip, and without a dependency pushing a stop past
  * its window
  * @param {DispatchScheduler} scheduler
@@ -74,10 +74,6 @@ export function validateTripDrag(scheduler, { eventRecords, startDate, newResour
         { dispatch } = scheduler,
         trip         = eventRecords[0],
         departs      = scheduler.departsAt(trip, startDate);
-
-    if (trip.status === 'moved') {
-        return { valid : false, message : `${trip.id} is moved to tomorrow` };
-    }
 
     // Trips under way are not draggable at all (their `draggable` field, DispatchApp#evaluate)
     if (departs < dispatch.now) {

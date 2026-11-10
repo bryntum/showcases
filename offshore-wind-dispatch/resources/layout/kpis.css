@@ -66,7 +66,7 @@
     }
 
     /* As wide as the map's card (MapPanel's width). The counts a little closer than the parts' gap, so the longest
-       labels ("Moved to Wed") fit whole; they never shrink */
+       labels fit whole; they never shrink */
     .ow-kpis-counts {
         --b-container-gap : 1.25rem;
 
@@ -138,13 +138,6 @@
 .ow-kpi-warn {
     :is(small, b) {
         color : var(--ow-c-risk-ink);
-    }
-}
-
-/* Moved to tomorrow: planned, later. No alarm, the plan's blue */
-.ow-kpi-alert {
-    :is(small, b) {
-        color : var(--ow-c-work-ink);
     }
 }
 

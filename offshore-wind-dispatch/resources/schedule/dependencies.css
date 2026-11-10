@@ -20,9 +20,9 @@
             }
         }
 
-        /* A stop waits for tomorrow with its trip, and the links that keep a trip's legs in order, for the scheduling
-           engine (PlanDependencyModel#isChain), are not drawn */
-        &.ow-dep-moved, &.ow-dep-chain {
+        /* The links that keep a trip's legs in order, for the scheduling engine (PlanDependencyModel#isChain), are not
+           drawn */
+        &.ow-dep-chain {
             display : none;
         }
     }

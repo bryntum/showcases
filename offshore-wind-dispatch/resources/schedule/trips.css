@@ -49,22 +49,11 @@
             }
         }
 
-        &.ow-trip-moved {
-            --b-sch-event-cursor : default;
-
-            > .b-nested-events-container {
-                opacity : var(--ow-moved-fade);
-                filter  : grayscale(1);
-
-                &::before {
-                    background-color   : transparent;
-                    border-block-start : var(--ow-transit-w) dashed var(--ow-c-transit);
-                }
-            }
-
-            .ow-trip-head > span:first-child {
-                text-decoration : line-through;
-            }
+        /* A trip a forecast carried over from the day before: planned, no alarm. Its line dashed in the plan's blue, as
+           its cell in the Week view */
+        &.ow-trip-carried > .b-nested-events-container::before {
+            background-color   : transparent;
+            border-block-start : var(--ow-transit-w) dashed var(--ow-carried);
         }
 
         /* A team dragged, and it would fit on the trip: a quiet outline in the work blue while the drag lasts */

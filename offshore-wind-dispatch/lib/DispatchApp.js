@@ -302,8 +302,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     //region Plan
 
     /**
-     * Sets each trip's status from the plan as the engine placed it: moved to tomorrow, else past its window (even if
-     * the forecast changed it), else as is
+     * Sets each trip's status from the plan as the engine placed it: past its window (even if the forecast changed it),
+     * else as the forecast left it, else on plan
      */
     evaluate() {
         const { dispatch } = this;
@@ -312,9 +312,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             const late = trip.endMinute > dispatch.closeOf(trip.resource);
 
             // A field set to its own value is no change, the trip is not redrawn
-            trip.status = trip.change === 'moved' ? 'moved' : late ? 'at-risk' : trip.change ?? 'on-plan';
+            trip.status = late ? 'at-risk' : trip.change ?? 'on-plan';
             // A trip that has left port is under way: no drag, no grab cursor (EventDrag reads the field)
-            trip.draggable = trip.departs > dispatch.now && trip.status !== 'moved' && !trip.draft;
+            trip.draggable = trip.departs > dispatch.now && !trip.draft;
         });
     }
 
@@ -356,7 +356,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             me                       = this,
             { held, dropController } = me,
             // The team held, to hold it again once the plan has changed
-            again                    = held && { teamId : held.team.id, target : held.target, at : held.at };
+            again                    = held && { teamId : held.id, target : held.target, at : held.at };
 
         dropController.clearPreview();
 
@@ -502,7 +502,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         });
 
         if (changes.length) {
-            me.parts.notice.draw({ ...forecastPlanner.summary(changes), changes : changes.length });
+            me.parts.notice.draw({ ...forecastPlanner.summary(changes), changes : forecastPlanner.reviewable.length });
             me.reviewNext();
         }
     }
@@ -523,7 +523,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             change = me.forecastPlanner.nextChange();
 
         if (change) {
-            me.appState.selectedTurbine = change.removed[0] ?? change.trip.turbines[0];
+            me.appState.selectedTurbine = change.trip.turbines[0];
             me.scheduler.selectEvent(change.trip);
             me.scheduler.scrollEventIntoView(change.trip, { block : 'center', highlight : true });
         }
@@ -542,7 +542,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         state.mapFollows = true;
 
-        if (trip && !trip.allStops.some(stop => stop.turbine === current) && !trip.removed?.includes(current)) {
+        if (trip && !trip.allStops.some(stop => stop.turbine === current)) {
             state.selectedTurbine = trip.allStops[0]?.turbine;
         }
     }

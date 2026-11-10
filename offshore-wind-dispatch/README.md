@@ -20,9 +20,10 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
    a tooltip says when the trip would be back and checks the seats and certificates, and the map rings every turbine
    the trip could still reach before the window closes. Drop it to book it
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
-   trips not yet gone are brought forward, trimmed (their last stops wait for tomorrow) or moved to tomorrow. The
-   notice lists each change
-4. **Undo** in the notice puts every trip back, in one step
+   trips not yet gone are brought forward, trimmed or taken off the day. The stops cut go to tomorrow as a trip of the
+   same vessel if they fit its window and the vessel's other trips; tomorrow no crew transfer vessel goes out, so
+   Sea Puffin's team waits at the port again, a chip per stop. The notice lists each change
+4. **Undo** in the notice puts every trip back and takes tomorrow's trips and the waiting chips away, in one step
 5. **Open Week**: the week as a day board, a cell per vessel per day. A free cell takes a team too, as a new trip on
    that day; a click on a day opens it in the Day view
 
@@ -37,7 +38,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | The sail out and back, with their times | `EventBuffer` (`preamble`, `postamble`) | `lib/schedule/TripRendering.js`, `resources/schedule/transit.css` |
 | Trip times | The scheduling engine: dependencies between the legs, a constraint on the departure | `lib/model/TripModel.js#layout` |
 | "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js`, `lib/schedule/DispatchSync.js` |
-| Weather no-go hatch, ghost of a moved trip | `ResourceTimeRanges` | `lib/schedule/DispatchSync.js` |
+| Weather no-go hatch, ghost of a trip brought forward | `ResourceTimeRanges` | `lib/schedule/DispatchSync.js` |
 | Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | Dragging a trip, refused when it breaks the window | `EventDrag` with a `validatorFn` | `lib/schedule/TripValidator.js` |
 | Dragging a team from the header onto a trip | `DragHelper`, a `Tooltip` | `lib/drag/` |
@@ -59,8 +60,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
   1.5 m CTV and 2.0 m SWATH limits, blue up to where it crosses the CTV limit and orange after, then the wind at hub
   height for the helicopters (limit 20 m/s, bold above it)
 * **Header**: over the schedule, the site and the day shown, and at its right end the crews waiting at the port; over
-  the map, the day's counts: due, assigned, at risk in orange (or, once a forecast moved some, moved to tomorrow in
-  blue) and stopped in red. The weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and a
+  the map, the day's counts: due, assigned, at risk in orange and stopped in red. The weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and a
   late trip's tag
 * **Vessel column**: the vessel, its type, its limit, and the most people on board of its trips against its seats
 * **Dependency**: the HV isolation flown out to the offshore substation must be done before the team on T-45 starts
@@ -70,7 +70,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
   one on a trip, or on an empty part of a vessel's row, which books it on the vessel's best trip or a new trip from
   port. Should the plan or the forecast change while a team is held, it is checked again
 * **Map** (custom SVG): the farm with every turbine's status (blue in work or planned, orange at risk, red stopped,
-  dashed slate a team waiting for a trip, dashed blue work a forecast moved to tomorrow), the substation, the port and
+  dashed slate a team waiting for a trip), the substation, the port and
   the routes of the trips. The selected
   turbine is drawn below it, on its transition piece, with the sea at the forecast wave height against the vessel's
   limit on the boat landing. The map and the schedule follow each other: select a turbine and its trip is selected,
@@ -95,7 +95,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Held team | A team dragged from the tray (or held from the keyboard) over a trip or a vessel's row: the trip previews its stop until it is dropped or moves on |
 | Ring | The map's circle round a turbine: the turbines of the trip hovered or selected, and while a team is held the turbines its trip can still reach |
 | Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
-| Pulled, moved, trimmed | What a new forecast did to a trip: brought forward, moved to tomorrow, or its last stops moved to tomorrow |
+| Pulled, trimmed, moved | What a new forecast did to a trip: brought forward, its last stops cut, or all of them cut (the trip leaves the day) |
+| Carried over | A trip a forecast made on the next day of the stops it cut, on the same vessel. Dashed, "carried over" in its label |
 | Draft | A new trip from port, shown while a team is held over a vessel with no trip it could join, removed unless the team is booked on it |
 
 ## How it works
@@ -253,7 +254,7 @@ and the lag has passed, and the rest of its trip moves with it. A trip drag that
 dependent stop so late that its trip is back after its window is refused, with the dependency's reason
 (`TripValidator#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
 bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a
-line orange when the plan breaks it, and hides it while the stop's trip is moved to tomorrow. `syncDependencies()` adds
+line orange when the plan breaks it. `syncDependencies()` adds
 it again whenever both ends are in the plan, so it comes back when Undo brings back a stop a forecast had cut.
 
 ### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
@@ -285,17 +286,22 @@ on a turbine still selects it. A "Show all" button, shown only while zoomed, goe
 
 `apply()` takes the next forecast and goes through each vessel's trips in start order, inside one transaction of the
 project's StateTrackingManager (`project.stm`, recording only then). A trip back after the new close is brought forward
-if it fits after the trip before it, else its last stops are cut and wait for tomorrow, else it moves to tomorrow
-(`Planner#replanTrip`); the engine places each changed trip before the next is planned. The changes are listed for the
-notice, lost work first. `undo()` is the STM's `undo()`: the trips, their legs and dependencies go back, the new
-forecast stays.
+if it fits after the trip before it, else its last stops are cut, all of them when not even the first fits
+(`Planner#replanTrip`); a trip left with no stop is removed. The engine places each changed trip before the next is
+planned. The stops cut go to the next day for real (`carry()`): a new trip of the same vessel, `change : 'carried'`, at
+the first sailing after its other trips that day, if it is back before that day's window closes and runs into none of
+them (`Planner#nextDayStart`, the same `clashOf` check a drag gets); else each stop's team waits at the port again, a
+record of the waiting store (`<team>:<turbine>`). Each trip then lives on its own day, the Day view, the Week view and
+the map show it there like any other. The changes are listed for the notice, lost work first. The STM also tracks the
+waiting store, so `undo()`, the STM's `undo()`, puts back the trips, their legs and dependencies, removes the trips
+carried over and the teams waiting again; the new forecast stays.
 
 ## Styling
 
 Every colour is a token in `resources/tokens.css`, light and dark through `light-dark()`. In the schedule, the header
 and the tray, neutrals and blue carry the plan, orange marks only what is at risk (past the window), red only what is
-stopped; work a forecast moved to tomorrow is blue and dashed, a team waiting for a trip slate and dashed, never an
-alarm colour. Purple is the helicopters' wind, teal what a dragged team can reach.
+stopped; a trip a forecast carried over to the next day is dashed in blue, a team waiting for a trip slate and dashed,
+never an alarm colour. Purple is the helicopters' wind, teal what a dragged team can reach.
 Below 760px wide the schedule and the map become tabs and the hours scroll sideways at 44px per hour.
 
 The generic icons are [Phosphor Icons](https://phosphoricons.com) (MIT), Light weight, from `@phosphor-icons/core`.

@@ -157,10 +157,23 @@ export function projectData({ vessels, trips, dependencies }, dateOf) {
 }
 
 /**
+ * The ID of a vessel's next trip: its trips are numbered through the week, "SR-7"
+ * @param {TripModel[]} trips The trips of the week
+ * @param {VesselModel} vessel
+ * @returns {String}
+ */
+export function nextTripId(trips, vessel) {
+    const numbers = trips.filter(trip => trip.resource === vessel && !trip.draft)
+        .map(trip => Number(String(trip.id).split('-').at(-1)) || 0);
+
+    return `${String(vessel.id).toUpperCase()}-${Math.max(0, ...numbers) + 1}`;
+}
+
+/**
  * Adds a trip and its legs to an event store, assigned to a vessel, its legs linked in order
  * @param {Scheduler.data.EventStore} eventStore
  * @param {VesselModel} vessel
- * @param {Object} trip `{ id, departs, midnight, day, draft }`, `departs` in minutes since `midnight`
+ * @param {Object} trip `{ id, departs, midnight, day, draft, change, note }`, `departs` in minutes since `midnight`
  * @param {Object[]} stops
  * @returns {TripModel}
  */

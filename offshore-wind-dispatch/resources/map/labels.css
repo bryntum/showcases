@@ -8,10 +8,6 @@
         --ow-label-ink : var(--ow-stop);
     }
 
-    &.ow-map-label-moved {
-        --ow-label-ink : var(--ow-moved);
-    }
-
     &.ow-map-label-risk {
         --ow-label-ink : var(--ow-risk);
     }

@@ -20,7 +20,7 @@
             display : none;
         }
 
-        :is(.ow-kpi-warn, .ow-kpi-alert) {
+        .ow-kpi-warn {
             display             : block;
             margin-inline-start : auto;
         }

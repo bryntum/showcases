@@ -50,10 +50,9 @@ export default class TripModel extends EventModelEnterprise {
     static $name = 'TripModel';
 
     static fields = [
-        // Set by the forecast: `trimmed` (last stops to tomorrow), `moved` (all of it) or `pulled` (brought forward)
+        // Set by the forecast: `pulled` (brought forward), `trimmed` (its last stops cut), or `carried` for the trip it
+        // made of stops it cut from a trip the day before (ForecastPlanner#carry)
         { name : 'change', defaultValue : null },
-        // The turbines the forecast moved to tomorrow. Never undefined, so the forecast's Undo puts back an empty list
-        { name : 'removed', type : 'array', defaultValue : [] },
         // The departure before the forecast brought it forward (`pulled`)
         { name : 'previousDeparture', type : 'date', defaultValue : null },
         // `on-plan`, `at-risk` or the change, kept up to date by the app (DispatchApp#evaluate)
@@ -313,14 +312,13 @@ export default class TripModel extends EventModelEnterprise {
         const me = this;
 
         return {
-            id     : me.id,
-            start  : me.departs,
-            stops  : me.stops,
-            mode   : me.mode,
-            wait   : me.wait,
-            change : me.change,
-            pax    : me.pax,
-            seats  : me.resource?.seats ?? 0
+            id    : me.id,
+            start : me.departs,
+            stops : me.stops,
+            mode  : me.mode,
+            wait  : me.wait,
+            pax   : me.pax,
+            seats : me.resource?.seats ?? 0
         };
     }
 

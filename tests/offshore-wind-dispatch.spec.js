@@ -731,6 +731,100 @@ test.describe('Offshore Wind Dispatch forecast', () => {
             .toEqual(['hv-t45', 'pickup-t58']);
     });
 
+    const board = page => page.locator('.ow-week-board');
+
+    // What the forecast left on a day: each trip with its stops and how it changed, the teams waiting
+    const planOf = (page, day) => page.evaluate(day => {
+        const app = globalThis.bryntum.query('dispatchapp');
+
+        const trips = app.scheduler.weekTrips.filter(each => each.day === day);
+
+        return {
+            trips   : trips.map(each => `${each.id} ${each.resource.id} ${each.turbines.join(',')} ${each.change ?? ''}`.trim()),
+            waiting : app.dispatch.waitingStore.map(each => each.id)
+        };
+    }, day);
+
+    // Kittiwake out at 08:30, after the new forecast comes in, with Team F for T-34, then Team G for T-49: back after
+    // 14:00, the new forecast trims it. `open` opens tomorrow's crew transfer window all day, else it has none
+    const trimmedSetup = (page, open) => page.evaluate(async open => {
+        const
+            app     = globalThis.bryntum.query('dispatchapp'),
+            vessel  = app.scheduler.resourceStore.getById('kw');
+
+        if (open) {
+            app.dispatch.days[1].windows.ctv = app.dispatch.day.dayEnd * 60;
+        }
+
+        app.dropController.dropTeam('F', vessel);
+
+        const trip = app.trips.find(each => each.resource === vessel);
+
+        await app.replan(() => trip.layout({ departs : 8.5 * 60 }));
+        await app.replan(() => {
+            app.dispatch.waitingStore.remove('G');
+            trip.layout({ stops : [...trip.stops, { turbine : 'T-49', minutes : 180, team : 'G' }] });
+        });
+    }, open);
+
+    test('stops a forecast cuts go to tomorrow as a trip of the vessel when they fit there', async({ page }) => {
+        await open(page);
+        await trimmedSetup(page, true);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText('1 trip trimmed');
+
+        // Today Kittiwake keeps T-34, tomorrow it has a trip of its own for T-49, from the first sailing
+        expect((await planOf(page, 0)).trips).toContain('KW-1 kw T-34 trimmed');
+        expect((await planOf(page, 1)).trips).toContain('KW-2 kw T-49 carried');
+        expect(await page.evaluate(() => globalThis.bryntum.query('dispatchapp').scheduler.eventStore.getById('KW-2')
+            .departs)).toBe(6 * 60 + 30);
+
+        // The week shows it on its own day, dashed
+        await page.locator('.ow-panel-bar').getByRole('button', { name : 'Week' }).click();
+        await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell-jobs')).toHaveText('T-49');
+        await expect(board(page).locator('[data-event-id="kw:1"] .ow-cell')).toHaveClass(/\bow-cell-carried\b/);
+
+        // The Day view of that day shows it, a trip like any other
+        await board(page).locator('[data-event-id="kw:1"]').click();
+        await expect(trip(page, 'KW-2')).toContainText('carried over');
+    });
+
+    test('a trip the forecast takes off today that does not fit tomorrow leaves its teams waiting', async({ page }) => {
+        await open(page);
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toContainText('Sea Puffin\'s trip off today');
+        await expect(page.locator('.ow-notice')).toContainText('2 stops wait at the port');
+
+        // No crew transfer vessel goes out tomorrow: Sea Puffin's trip is gone from today, nowhere tomorrow, and Team C
+        // waits for each of its stops
+        const [today, tomorrow] = [await planOf(page, 0), await planOf(page, 1)];
+
+        expect(today.trips.some(each => each.startsWith('SP-'))).toBe(false);
+        expect(tomorrow.trips.some(each => each.includes(' sp '))).toBe(false);
+        expect(today.waiting).toEqual(['F', 'G', 'H', 'C:T-31', 'C:T-41']);
+        await expect(tray(page).locator('.ow-team[data-team="C:T-31"]')).toContainText('2 h 30 min');
+        await expect(tray(page).locator('.ow-team[data-team="C:T-41"]')).toContainText('T-41');
+    });
+
+    test('Undo of the forecast puts back the trips, takes tomorrow\'s trip and the waiting teams away', async({ page }) => {
+        await open(page);
+        await trimmedSetup(page, true);
+
+        const before = [await planOf(page, 0), await planOf(page, 1)];
+
+        await page.locator('.ow-forecast-button').click();
+        await expect(page.locator('.ow-notice')).toBeVisible();
+        // Today trimmed, tomorrow two trips more: Kittiwake's and Sea Puffin's
+        expect((await planOf(page, 0)).trips).toContain('KW-1 kw T-34 trimmed');
+        expect((await planOf(page, 1)).trips).toHaveLength(before[1].trips.length + 2);
+
+        await page.locator('.ow-notice').getByRole('button', { name : 'Undo' }).click();
+
+        await expect.poll(() => planOf(page, 0)).toEqual(before[0]);
+        expect(await planOf(page, 1)).toEqual(before[1]);
+        await expect(tray(page).locator('.ow-team')).toHaveCount(before[0].waiting.length);
+    });
+
     test('a trip the forecast brought forward, dragged past its window, is at risk', async({ page }) => {
         await open(page, '?state=forecast');
 

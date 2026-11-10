@@ -10,9 +10,10 @@
     --ow-stop    : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
     --ow-reach   : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
-    /* No alarm: teams waiting for a trip in slate, work a forecast moved to tomorrow in the plan's blue, both dashed */
+    /* No alarm: teams waiting for a trip in slate, work a forecast carried over to the next day in the plan's blue,
+       both dashed */
     --ow-wait    : light-dark(#5b6878, #9aa6b4);
-    --ow-moved   : var(--ow-plan);
+    --ow-carried : var(--ow-plan);
     /* The calm sea */
     --ow-sea-ok  : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
     --ow-now     : var(--b-color-blue);
@@ -134,18 +135,4 @@
         color-mix(in srgb, var(--ow-c-work), var(--b-mix) 72%));
     --ow-c-work-hover-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 35%);
     --ow-c-risk-hover-tint : color-mix(in srgb, var(--ow-c-risk-line) 16%, var(--ow-c-risk-tint));
-
-    /* A trip a forecast moved to tomorrow, faded in its old place: less in dark, where the faded marks sink into the
-       dark rows. Not a colour, so not light-dark(): the page's dark mode sets it below */
-    --ow-moved-fade        : 0.35;
-}
-
-:root[data-theme='dark'] {
-    --ow-moved-fade : 0.6;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
-        --ow-moved-fade : 0.6;
-    }
 }

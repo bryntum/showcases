@@ -69,7 +69,7 @@ export default class KeyboardDrag {
     }
 
     /**
-     * The trips the arrows step through, read again after the forecast, which may have moved some to tomorrow
+     * The trips the arrows step through, read again after the forecast, which may have taken some off the day
      * @param {TripModel} trip The trip the team is held over
      */
     refreshTrips(trip) {
@@ -122,7 +122,7 @@ export default class KeyboardDrag {
         const
             { keyboard } = this,
             count        = keyboard.trips.length,
-            // Held over a trip no longer in the list (the forecast moved it), the arrows start from either end
+            // Held over a trip no longer in the list (the forecast took it off), the arrows start from either end
             from         = keyboard.index < 0 ? (step > 0 ? -1 : 0) : keyboard.index;
 
         if (count) {

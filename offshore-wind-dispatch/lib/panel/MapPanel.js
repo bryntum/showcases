@@ -106,11 +106,10 @@ export default class MapPanel extends Panel {
      */
     draw({ state, trips, selectedTrip, turbine, held, follow }) {
         const
-            { map, card, legend } = this.widgetMap,
+            { map, card }         = this.widgetMap,
             model                 = mapModel({ state, trips, selectedTrip, selectedTurbine : turbine, drop : held });
 
         map.draw(model);
-        legend.moved = [...model.markers.values()].some(({ status }) => status === 'moved');
         this.fit(selectedTrip, turbine, follow && !held, Boolean(held));
 
         if (turbine) {
@@ -132,7 +131,7 @@ export default class MapPanel extends Panel {
         const
             me       = this,
             key      = [trip?.id, turbine, follow, held].join('|'),
-            turbines = trip ? [...trip.turbines, ...(trip.removed ?? [])] : [],
+            turbines = trip?.turbines ?? [],
             fit      = !turbine || turbines.includes(turbine) ? turbines : [turbine];
 
         if (key !== me.fitKey) {

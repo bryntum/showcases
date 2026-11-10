@@ -46,7 +46,7 @@ export default class ForecastNotice extends Container {
      * @param {Object} options
      * @param {String} options.headline
      * @param {String} options.detail
-     * @param {Number} options.changes How many trips changed
+     * @param {Number} options.changes How many trips changed that are still on the day, to review
      */
     draw({ headline, detail, changes }) {
         const { text, review, undo } = this.widgetMap;
@@ -55,7 +55,8 @@ export default class ForecastNotice extends Container {
             iconConfig('warning'),
             { tag : 'span', children : [{ tag : 'b', text : headline }, ` ${detail}`] }
         ];
-        review.text = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        review.text   = `Review ${changes} ${changes === 1 ? 'change' : 'changes'}`;
+        review.hidden = !changes;
         undo.hidden = false;
         this.hidden = false;
     }

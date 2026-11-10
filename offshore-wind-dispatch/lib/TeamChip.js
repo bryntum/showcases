@@ -28,6 +28,12 @@ export default class TeamChip extends Widget {
 
     static configurable = {
         /**
+         * The ID of its record in the waiting store, which the drag passes on as the chip's `data-team`
+         * @config {String}
+         */
+        waitingId : null,
+
+        /**
          * The team, `{ id, name, techs, certs }`
          * @config {Object}
          */
@@ -74,7 +80,7 @@ export default class TeamChip extends Widget {
             { team }     = me;
 
         me.job                  = job;
-        me.element.dataset.team = team.id;
+        me.element.dataset.team = me.waitingId;
         me.tooltip              = `${team.techs} technicians, ${team.certs.join(', ')} · ${job.turbine} ${job.job}`;
         me.ariaLabel            = `${team.name}, ${job.turbine}. Drag onto a trip, or press Enter to choose a trip with the arrow keys`;
         // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"

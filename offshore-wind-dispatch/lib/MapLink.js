@@ -14,13 +14,13 @@
  */
 
 /**
- * The trips serving a turbine, or that the forecast took it off
+ * The trips serving a turbine
  * @param {TripModel[]} trips
  * @param {String} turbine
  * @returns {TripModel[]}
  */
 export function tripsOf(trips, turbine) {
-    return turbine ? trips.filter(trip => trip.turbines.includes(turbine) || trip.removed?.includes(turbine)) : [];
+    return turbine ? trips.filter(trip => trip.turbines.includes(turbine)) : [];
 }
 
 export default class MapLink {

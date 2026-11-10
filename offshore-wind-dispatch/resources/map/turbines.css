@@ -98,21 +98,12 @@
     }
 }
 
-/* No alarm, dashed discs: a team waiting for a trip in slate, work a forecast moved to tomorrow in the plan's blue */
+/* No alarm, a dashed disc: a team waiting for a trip, in slate */
 .ow-m-waiting {
     --ow-tone : var(--ow-wait);
 
     .ow-marker-disc {
         stroke-width     : 2;
-        stroke-dasharray : 2.5 1.6;
-    }
-}
-
-.ow-m-moved {
-    --ow-tone : var(--ow-moved);
-
-    .ow-marker-disc {
-        stroke-width     : 1.6;
         stroke-dasharray : 2.5 1.6;
     }
 }

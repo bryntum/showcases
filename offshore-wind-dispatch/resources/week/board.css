@@ -178,10 +178,10 @@
         color         : var(--ow-ink-sub);
     }
 
-    /* Work a forecast moved here from the day before: planned, later, no alarm. The plan's blue, dashed, as a moved
-       turbine on the map; back after its window as well, the orange below wins */
-    .b-sch-event-wrap .b-sch-event.ow-cell-moved {
-        outline        : 1px dashed var(--ow-moved);
+    /* Work a forecast carried over from the day before: planned, no alarm. The plan's blue, dashed, as the trip in the
+       Day view; back after its window as well, the orange below wins */
+    .b-sch-event-wrap .b-sch-event.ow-cell-carried {
+        outline        : 1px dashed var(--ow-carried);
         outline-offset : -1px;
 
         .ow-cell-jobs {

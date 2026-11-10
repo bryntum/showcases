@@ -16,7 +16,7 @@ import { duration, hhmm } from '../util/Time.js';
  * @returns {String|null} `repair`, `fault` or `null` when it runs
  */
 export function stoppedOf(state, trips, id) {
-    if (trips.some(trip => trip.status !== 'moved' && trip.departs <= state.now && trip.turbines.includes(id))) {
+    if (trips.some(trip => trip.departs <= state.now && trip.turbines.includes(id))) {
         return 'repair';
     }
 
@@ -47,14 +47,10 @@ function markerOf(id, context) {
     };
 }
 
-// The status of a turbine in the plan: served by a trip (`work`, `planned`, `risk`), `moved`, stopped (`fault`),
-// `waiting` for its team, or none
-function planStatusOf(id, { state, byTurbine, removed }) {
+// The status of a turbine in the plan: served by a trip (`work`, `planned`, `risk`), stopped (`fault`), `waiting` for
+// its team, or none
+function planStatusOf(id, { state, byTurbine }) {
     const trip = byTurbine.get(id);
-
-    if (trip?.status === 'moved' || removed.has(id)) {
-        return 'moved';
-    }
 
     if (trip) {
         return trip.status === 'at-risk' ? 'risk' : trip.departs <= state.now ? 'work' : 'planned';
@@ -67,7 +63,7 @@ function planStatusOf(id, { state, byTurbine, removed }) {
     return state.waiting.includes(id) ? 'waiting' : '';
 }
 
-// The labels of the plan: the selected turbine, faults, trips past the window, and what the forecast moved
+// The labels of the plan: the selected turbine, faults and trips past the window
 function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     const
         labels = [],
@@ -84,19 +80,11 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     }
 
     trips.forEach(trip => {
-        // The selected turbine has its label already
-        if (trip.status === 'at-risk' && trip.turbines.length) {
-            if (trip.turbines.at(-1) === selectedTurbine && labels.some(label => label.id === selectedTurbine)) {
-                return;
-            }
+        const last = trip.turbines.at(-1);
 
-            labels.push({ id : trip.turbines.at(-1), text : trip.turbines.at(-1), tone : 'risk' });
-        }
-        else if (trip.status === 'trimmed' && trip.removed.length) {
-            labels.push({ id : trip.removed.at(-1), text : `${trip.removed.join(', ')} → ${state.nextDay}`, tone : 'moved' });
-        }
-        else if (trip.status === 'moved' && trip.turbines.length) {
-            labels.push({ id : trip.turbines[0], text : `${trip.id} → ${state.nextDay}`, tone : 'moved' });
+        // The selected turbine has its label already
+        if (trip.status === 'at-risk' && last && !(last === selectedTurbine && labels.some(label => label.id === last))) {
+            labels.push({ id : last, text : last, tone : 'risk' });
         }
     });
 
@@ -122,18 +110,16 @@ const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
 export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) {
     const
         byTurbine = tripsByTurbine(trips),
-        removed   = new Set(trips.flatMap(trip => trip.removed ?? [])),
         context   = {
             state,
             trips,
             byTurbine,
-            removed,
             reach     : drop?.reach ?? null,
             target    : drop?.job.turbine,
             focusTrip : drop?.trip ?? null
         },
         markers   = new Map(turbineIds.map(id => [id, markerOf(id, context)])),
-        routes    = trips.filter(trip => trip.mode === 'vessel' && trip.status !== 'moved').map(trip => ({
+        routes    = trips.filter(trip => trip.mode === 'vessel').map(trip => ({
             stops : trip.turbines,
             kind  : trip === (drop?.trip ?? selectedTrip) ? 'selected' : null
         }));

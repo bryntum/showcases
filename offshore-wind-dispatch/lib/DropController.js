@@ -2,7 +2,7 @@ import { DateHelper, StringHelper, Toast } from '@bryntum/core-enterprise';
 import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
 import { busyOf } from './schedule/TripValidator.js';
-import { addTrip } from './model/TripData.js';
+import { addTrip, nextTripId } from './model/TripData.js';
 import { hhmm } from './util/Time.js';
 
 const
@@ -11,7 +11,7 @@ const
         preview }),
     // The plan of a new trip from port, with no stops yet
     newPlan      = (id, start, vessel) => ({
-        id, start, stops : [], mode : vessel.mode, wait : 0, change : null, pax : 0, seats : vessel.seats
+        id, start, stops : [], mode : vessel.mode, wait : 0, pax : 0, seats : vessel.seats
     }),
     // A new trip only described, not in the plan: on a free cell of the Week view, or the trip a helicopter refuses
     draftOf      = (plan, vessel) => ({ id : plan.id, draft : true, departs : plan.start, resource : vessel }),
@@ -52,8 +52,8 @@ export default class DropController {
     }
 
     /**
-     * The team held and its check, `{ target, trip, team, job, result, reach, close }` (see previewDrop), `null` while
-     * it is over nothing: the app state's
+     * The team held and its check, `{ id, target, trip, team, job, result, reach, close }` (see previewDrop), `null`
+     * while it is over nothing: the app state's
      * @property {Object|null}
      */
     get held() {
@@ -74,7 +74,7 @@ export default class DropController {
 
     /**
      * A team waiting at the port, and its job
-     * @param {String} teamId
+     * @param {String} teamId The waiting record's ID, see WaitingTeamModel
      * @returns {Object} `{ team, job }`
      */
     waitingTeam(teamId) {
@@ -98,7 +98,7 @@ export default class DropController {
      * @param {Number|null} [at] Minutes since midnight at the point held on the Day view's time axis, none from the
      * keyboard or over the Week view
      * @param {Boolean} [fresh] Checked again even if unchanged, as a booking is
-     * @returns {Object|null} `{ target, trip, team, job, result, reach, close, at }`
+     * @returns {Object|null} `{ id, target, trip, team, job, result, reach, close, at }`, `id` the waiting record's
      */
     previewDrop(teamId, target, at = null, fresh = false) {
         const
@@ -107,7 +107,7 @@ export default class DropController {
             blocked  = me.blockedAt(target, at),
             { held } = me;
 
-        if (!fresh && held?.target === target && held.team.id === teamId && (held.at != null) === (blocked != null)) {
+        if (!fresh && held?.target === target && held.id === teamId && (held.at != null) === (blocked != null)) {
             return held;
         }
 
@@ -148,10 +148,12 @@ export default class DropController {
             vessel        = this.scheduler.resourceStore.getById(cell.vesselId),
             close         = dispatch.windowsOf(day)[vessel.window],
             now           = day ? dispatch.day.dayStart * 60 : dispatch.days[0].now,
-            plan          = newPlan(this.newTripId(vessel), day ? dispatch.firstSailing : nextSailing([], now), vessel),
+            plan          = newPlan(nextTripId(this.scheduler.weekTrips, vessel),
+                day ? dispatch.firstSailing : nextSailing([], now), vessel),
             limit         = dispatch.limits[vessel.window];
 
         return {
+            id     : entry.id,
             target : cell,
             at     : null,
             trip   : draftOf(plan, vessel),
@@ -164,18 +166,6 @@ export default class DropController {
             vessel,
             day
         };
-    }
-
-    /**
-     * The ID of a vessel's next trip: its trips are numbered through the week, "SR-7"
-     * @param {VesselModel} vessel
-     * @returns {String}
-     */
-    newTripId(vessel) {
-        const numbers = this.scheduler.weekTrips.filter(trip => trip.resource === vessel && !trip.draft)
-            .map(trip => Number(String(trip.id).split('-').at(-1)) || 0);
-
-        return `${String(vessel.id).toUpperCase()}-${Math.max(0, ...numbers) + 1}`;
     }
 
     /**
@@ -205,6 +195,7 @@ export default class DropController {
 
         // Checked before the stop is previewed, against the plan alone
         return me.held = {
+            id     : entry.id,
             target,
             at,
             team,
@@ -248,7 +239,7 @@ export default class DropController {
     tripFor(target, team, job) {
         const
             { now }  = this.dispatch,
-            joinable = trip => !trip.draft && trip.status !== 'moved' && trip.departs > now,
+            joinable = trip => !trip.draft && trip.departs > now,
             isTrip   = target instanceof TripModel;
 
         if (isTrip && joinable(target)) {
@@ -270,9 +261,13 @@ export default class DropController {
         }
 
         // None to join: a new trip from port, once the vessel is back from its last one
-        const backs = trips.filter(trip => trip.status !== 'moved').map(trip => trip.endMinute);
+        const backs = trips.map(trip => trip.endMinute);
 
-        return { trip : null, vessel, plan : newPlan(this.newTripId(vessel), nextSailing(backs, now), vessel) };
+        return {
+            trip : null,
+            vessel,
+            plan : newPlan(nextTripId(this.scheduler.weekTrips, vessel), nextSailing(backs, now), vessel)
+        };
     }
 
     /**
@@ -411,13 +406,13 @@ export default class DropController {
             return;
         }
 
-        const { trip, team, job, result } = drop;
+        const { id, trip, team, job, result } = drop;
 
         // Booked: the previewed stop becomes the trip's, a draft trip a trip of the plan
         me.held    = null;
         trip.draft = false;
         trip.layout({ stops : [...trip.stops, stopOf(team, job)] });
-        me.dispatch.waitingStore.remove(team.id);
+        me.dispatch.waitingStore.remove(id);
         me.onBooked({ trip, turbine : job.turbine });
 
         tell(`${team.name} booked on ${trip.id}, back in port by ${hhmm(result.back)}`);
@@ -427,14 +422,14 @@ export default class DropController {
      * Books a team on a new trip on a vessel's free day of the week: the trip goes in the plan of that day
      * @param {Object} drop See cellDrop
      */
-    bookCell({ team, job, result, plan, vessel, day }) {
+    bookCell({ id, team, job, result, plan, vessel, day }) {
         const me = this;
 
         me.held = null;
         // Its departure in minutes of that day
         addTrip(me.scheduler.eventStore, vessel,
             { id : plan.id, departs : plan.start, midnight : me.dispatch.dateOf(day), day }, [stopOf(team, job)]);
-        me.dispatch.waitingStore.remove(team.id);
+        me.dispatch.waitingStore.remove(id);
         me.onBooked({ trip : null, turbine : job.turbine });
 
         tell(`${team.name} booked on ${plan.id}, ${DateHelper.format(me.dispatch.dateOf(day), 'ddd D')}, ` +
@@ -448,7 +443,7 @@ export default class DropController {
     dropTargets() {
         const { resourceStore } = this.scheduler;
 
-        return this.trips.filter(trip => trip.status !== 'moved' && trip.resource && !trip.draft)
+        return this.trips.filter(trip => trip.resource && !trip.draft)
             .sort((a, b) => resourceStore.indexOf(a.resource) - resourceStore.indexOf(b.resource) ||
                 a.startDate - b.startDate);
     }

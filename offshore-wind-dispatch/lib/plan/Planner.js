@@ -11,7 +11,8 @@ import { duration, hhmm } from '../util/Time.js';
  *
  * - A trip has to be back at port before the weather window of its vessel closes
  * - When a forecast closes the window earlier, a trip not yet gone is brought forward if it fits before the close,
- *   otherwise the last stops are cut and wait for tomorrow, and a trip left with nothing is moved to tomorrow. A trip
+ *   otherwise the last stops are cut and go to tomorrow, all of them when none fits. Tomorrow they are a trip of the
+ *   same vessel if it fits that day's window and the vessel's other trips, else their teams wait at the port. A trip
  *   already gone is left as it is, flagged
  * - A team dropped on a trip gets a stop after the last one, if the seats, the certificates and the window allow it
  */
@@ -119,8 +120,8 @@ export function turbinesOf(stops) {
  * @param {Number} context.close When its window closes
  * @param {Number} context.now
  * @param {Number} context.earliest The earliest start it could be brought forward to: the end of the trip before it
- * @returns {Object|null} `{ change, start, stops, removed }`, `change` is `pulled`, `trimmed` or
- * `moved`
+ * @returns {Object|null} `{ change, start, stops, later }`: `change` is `pulled`, `trimmed` or `moved` (nothing kept),
+ * `stops` the stops it keeps today, `later` the ones that wait for tomorrow
  */
 export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earliest }) {
     const fits = kept => start + wait + tripMinutes(kept, mode) <= close;
@@ -135,20 +136,34 @@ export function replanTrip({ start, stops, mode, wait = 0 }, { close, now, earli
     const latest = Math.floor((close - wait - tripMinutes(stops, mode)) / quarter) * quarter;
 
     if (latest >= Math.max(earliest, now + quarter)) {
-        return { change : 'pulled', start : latest, stops, removed : [] };
+        return { change : 'pulled', start : latest, stops, later : [] };
     }
 
-    // The last stops wait for tomorrow
-    for (let count = stops.length - 1; count > 0; count--) {
-        const kept = stops.slice(0, count);
+    // The last stops wait for tomorrow, all of them when not even the first fits
+    let count = stops.length - 1;
 
-        if (fits(kept)) {
-            return { change : 'trimmed', start, stops : kept, removed : turbinesOf(stops.slice(count)) };
-        }
+    while (count > 0 && !fits(stops.slice(0, count))) {
+        count--;
     }
 
-    // Nothing fits: the trip moves to tomorrow
-    return { change : 'moved', start, stops, removed : turbinesOf(stops) };
+    return { change : count ? 'trimmed' : 'moved', start, stops : stops.slice(0, count), later : stops.slice(count) };
+}
+
+/**
+ * Where stops a forecast cut from a trip go on the next day: a trip of their own on the same vessel at its first
+ * sailing that day, after its other trips, if it is back before that day's window closes. Else `null`: the teams wait
+ * at the port
+ * @param {Object[]} stops
+ * @param {Object} vessel `{ mode }`
+ * @param {Object} day That day's `{ close, firstSailing, busy }`, `busy` the vessel's trips that day, see clashOf
+ * @returns {Number|null} The departure, minutes since that day's midnight
+ */
+export function nextDayStart(stops, vessel, { close, firstSailing, busy }) {
+    const
+        start = Math.max(firstSailing, ...busy.map(trip => nextSailing([trip.end], 0))),
+        end   = start + tripMinutes(stops, vessel.mode);
+
+    return end <= close && !clashOf({ start, end }, busy) ? start : null;
 }
 
 /**
@@ -203,10 +218,6 @@ function brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, 
         late    = back - close,
         clash   = clashOf({ start : trip.start, end : back }, busy);
 
-    if (trip.change === 'moved') {
-        return [`${trip.id} is moved to tomorrow`, 'Moved to tomorrow'];
-    }
-
     if (trip.mode === 'heli') {
         return ['Helicopters hoist teams on and off, drop it on a vessel', 'Vessels only'];
     }
@@ -245,7 +256,7 @@ function brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, 
 /**
  * What dropping a team on a trip would do: its stop, when the trip is back, and whether it may go there
  * @param {Object} options
- * @param {Object} options.trip `{ id, start, stops, mode, wait, pax, seats, change }`
+ * @param {Object} options.trip `{ id, start, stops, mode, wait, pax, seats }`
  * @param {Object} options.team `{ id, name, techs, certs }`
  * @param {Object} options.job `{ turbine, minutes, certs }`
  * @param {Number} options.close When the trip's window closes
@@ -282,17 +293,13 @@ export function previewDrop({ trip, team, job, close, limit, now, vessel, at, no
 
 /**
  * The turbines a trip could still add a stop at, of the passed length, and be back before its window closes
- * @param {Object} trip `{ start, stops, mode, wait, change }`
+ * @param {Object} trip `{ start, stops, mode, wait }`
  * @param {Number} minutes The work at the turbine
  * @param {Number} close
  * @returns {Set<String>}
  */
 export function reachable(trip, minutes, close) {
     const visited = new Set(turbinesOf(trip.stops));
-
-    if (trip.change === 'moved') {
-        return new Set();
-    }
 
     return new Set(turbineIds.filter(id => !visited.has(id) &&
         appendStop(trip, { turbine : id, minutes }).back <= close));

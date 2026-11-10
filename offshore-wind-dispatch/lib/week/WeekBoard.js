@@ -308,17 +308,16 @@ export default class WeekBoard extends Scheduler {
     }
 
     // A vessel's day with trips: its times top left, its seats top right, its turbines, and the seats bar. Work a
-    // forecast moved here from the day before says so
+    // forecast carried over from the day before is dashed
     renderCell({ eventRecord : cell, renderData }) {
-        const
-            late  = cell.late > 0 ? lateText(cell.late) : null,
-            moved = cell.moved ? `Moved here: ${cell.moved}` : null;
+        const late = cell.late > 0 ? lateText(cell.late) : null;
 
-        renderData.cls['ow-cell']      = 1;
+        renderData.cls['ow-cell']         = 1;
+        renderData.cls['ow-cell-late']    = cell.late > 0;
+        renderData.cls['ow-cell-heli']    = cell.resource?.mode === 'heli';
+        renderData.cls['ow-cell-carried'] = cell.carried;
         // Its wrapper inset into the day, as a free day's placeholder (week/board.css)
         renderData.wrapperCls['ow-cell-wrap'] = 1;
-        renderData.cls['ow-cell-late'] = cell.late > 0;
-        renderData.cls['ow-cell-heli'] = cell.resource?.mode === 'heli';
 
         return [
             {
@@ -327,7 +326,7 @@ export default class WeekBoard extends Scheduler {
             },
             {
                 class : 'ow-cell-jobs',
-                text  : [moved, late, cell.turbines].filter(Boolean).join(' · ')
+                text  : [late, cell.turbines].filter(Boolean).join(' · ')
             }
         ];
     }

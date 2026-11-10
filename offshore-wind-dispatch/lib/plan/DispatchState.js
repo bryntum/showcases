@@ -112,11 +112,7 @@ export default class DispatchState extends Base.mixin(Events) {
          */
         me.waitingStore = new Store({
             modelClass : WaitingTeamModel,
-            data       : data.waiting.map(turbine => {
-                const job = me.jobAt(turbine);
-
-                return { id : job.team, team : me.teams.get(job.team), job, fault : me.faults.has(turbine) };
-            })
+            data       : data.waiting.map(turbine => me.waitingOf(turbine))
         });
         // Midnight of today, the first day of the week
         me.weekStart = DateHelper.clearTime(new Date());
@@ -170,6 +166,20 @@ export default class DispatchState extends Base.mixin(Events) {
     showDay(index) {
         this.dayIndex = index;
         this.trigger('change', { name : 'day' });
+    }
+
+    /**
+     * A team waiting at the port with its job, the data of a record of the waiting store
+     * @param {String} turbine Its job's
+     * @param {Object} [options]
+     * @param {String} [options.id] Its record's ID, the team's by default
+     * @param {Number} [options.minutes] How long the job takes, when a trip's stop has it
+     * @returns {Object} `{ id, team, job, fault }`
+     */
+    waitingOf(turbine, { id, minutes } = {}) {
+        const job = { turbine, minutes : 60, ...this.allJobs[turbine], ...(minutes && { minutes }) };
+
+        return { id : id ?? job.team, team : this.teams.get(job.team), job, fault : this.faults.has(turbine) };
     }
 
     /**
@@ -373,24 +383,16 @@ export default class DispatchState extends Base.mixin(Events) {
     }
 
     /**
-     * The day's counts of the KPI header (KpiBar): turbines due, turbines on a trip, either the trips past their window
-     * (when any) or the turbines a forecast moved to the next day, and the turbines stopped
+     * The day's counts of the KPI header (KpiBar): turbines due, turbines on a trip, trips past their window and
+     * turbines stopped
      * @param {TripModel[]} trips The trips of the day shown
      * @returns {Object[]} `{ label, value, tone }`
      */
     kpis(trips) {
-        const
-            assigned = new Set(trips.filter(trip => trip.status !== 'moved').flatMap(trip => trip.turbines)),
-            moved    = new Set(trips.flatMap(trip => trip.status === 'moved' ? trip.turbines : trip.removed ?? [])),
-            atRisk   = trips.filter(trip => trip.status === 'at-risk').length;
-
         return [
             { label : this.isToday ? 'Due today' : 'Due', value : this.dueTurbines.length },
-            { label : 'Assigned', value : assigned.size },
-            // One slot: trips past their window need acting on now, so they win over what a forecast already moved
-            atRisk || !moved.size ?
-                { label : 'At risk', value : atRisk, tone : 'warn' } :
-                { label : `Moved to ${this.nextDay}`, value : moved.size, tone : 'alert' },
+            { label : 'Assigned', value : new Set(trips.flatMap(trip => trip.turbines)).size },
+            { label : 'At risk', value : trips.filter(trip => trip.status === 'at-risk').length, tone : 'warn' },
             { label : 'Stopped', value : this.faults.size, tone : 'stop' }
         ];
     }

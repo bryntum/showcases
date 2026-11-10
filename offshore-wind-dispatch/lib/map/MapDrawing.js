@@ -69,7 +69,7 @@ export function routeSvg({ stops, kind }) {
 
 /**
  * The label above a turbine, below it where above would sit on the substation
- * @param {Object} label `{ id, text, tone }`, tone `fault`, `risk`, `moved`, `target` or none
+ * @param {Object} label `{ id, text, tone }`, tone `fault`, `risk`, `target` or none
  * @returns {String} SVG
  */
 export function labelSvg({ id, text, tone }) {

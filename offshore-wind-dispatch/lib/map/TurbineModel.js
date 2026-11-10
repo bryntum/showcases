@@ -8,7 +8,6 @@ const statusWords = {
     planned : 'planned',
     waiting : 'team waiting',
     risk    : 'at risk',
-    moved   : 'moved to tomorrow',
     fault   : 'stopped'
 };
 
@@ -27,7 +26,7 @@ export default class TurbineModel extends Model {
         { name : 'y', type : 'number' },
         'row',
         /**
-         * `target`, `reach`, `work`, `planned`, `waiting`, `risk`, `moved`, `fault`, or empty for none
+         * `target`, `reach`, `work`, `planned`, `waiting`, `risk`, `fault`, or empty for none
          * @field {String} status
          */
         { name : 'status', defaultValue : '' },

@@ -1,7 +1,6 @@
 /* The legend of the map (map/MapLegend.js) */
 
-/* Two rows of three, the markers as the map draws them, In work with its wrench. The sixth place is Moved's, shown
-   once a forecast moved work: the legend keeps its height, and the map its size, when it comes */
+/* Two rows of three, the markers as the map draws them, In work with its wrench */
 .ow-map-legend {
     flex                  : none;
     display               : grid;
