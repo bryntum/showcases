@@ -196,10 +196,18 @@
     white-space        : nowrap;
     overflow           : hidden;
 
+    /* The key keeps its width, the credit gives way when the panel is narrow */
     .ow-l {
         display     : inline-flex;
+        flex        : none;
         align-items : center;
         gap         : 0.667em;
+    }
+
+    .ow-legend-credit {
+        min-width     : 0;
+        overflow      : hidden;
+        text-overflow : ellipsis;
     }
 
     /* The swatch: a block of the mark's colours, or a line */

@@ -221,5 +221,6 @@ export function renderRange({ resourceTimeRangeRecord : { kind, name, resource }
     wrapperCls['ow-ghost']        = kind === 'ghost';
     wrapperCls['ow-drop-outline'] = kind === 'drop';
 
-    return name ?? '';
+    // Only the outline shows its name; a no-go range's name ("Hs > 1.5 m") is for its tooltip
+    return kind === 'drop' ? name : '';
 }
