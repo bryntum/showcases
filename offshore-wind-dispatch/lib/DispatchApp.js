@@ -5,6 +5,8 @@ import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
 import { tripsOf } from './feature/MapLink.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
+import { planBreak, planSnapshot } from './schedule/TripValidator.js';
+import { tell } from './util/Message.js';
 // Also registers the widget types used below
 import './KpiBar.js';
 import './panel/SchedulePanel.js';
@@ -47,6 +49,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         // The ID of the team dragged from the tray
         lifted : null,
+
+        // The ID of the waiting team whose booking the engine is placing (DropController#dropTeam)
+        booking : null,
 
         /**
          * The team held and its check, `{ id, target, trip, team, job, result, reach, close, at }`
@@ -102,6 +107,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
+            beforeEventDrag      : 'onBeforeTripDrag',
             afterEventDrop       : 'onTripDrop',
             tripTimeChange       : 'onTripTimeChange',
             thisObj              : me
@@ -208,6 +214,12 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     updateLifted(lifted) {
         if (this.parts) {
             this.parts.tray.lifted = lifted;
+        }
+    }
+
+    updateBooking(booking) {
+        if (this.parts) {
+            this.parts.tray.booking = booking;
         }
     }
 
@@ -334,19 +346,36 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
     }
 
-    // The departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt)
+    // No trip is picked up while a change of the plan is placed (DispatchProject#runChange). The plan as it is, to
+    // check the drop against
+    onBeforeTripDrag() {
+        this.dragStartPlan = planSnapshot(this.scheduler.weekTrips);
+
+        return !this.scheduler.project.changePending;
+    }
+
+    // The departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt). Once the engine
+    // has placed it, a drop that breaks the plan (planBreak) goes back to where the trip was, and says why
     onTripDrop({ valid, eventRecords }) {
         const
-            { scheduler } = this,
-            trip          = eventRecords?.[0];
+            me            = this,
+            { scheduler } = me,
+            trip          = eventRecords?.[0],
+            // The plan as the drag found it; a drop without a drag start (from code) compares with the plan now
+            before        = me.dragStartPlan ?? planSnapshot(scheduler.weekTrips);
 
-        if (!valid) {
-            return null;
-        }
+        return valid && trip && scheduler.project.runChange(async() => {
+            await me.replan(() => trip.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
 
-        this.planEdited();
+            const why = planBreak(scheduler, before, [trip]);
 
-        return this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
+            if (!why) {
+                return me.planEdited();
+            }
+
+            tell(why);
+            await me.replan(() => trip.layout({ departs : before.get(trip).start }));
+        });
     }
 
     // The trip editor has already laid the trip out from its new time on station
@@ -426,6 +455,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     //region Forecast
 
+    // One change of the plan at a time: while another is placed, the forecast waits for the next click. A re-plan that
+    // fails is rolled back by the ForecastPlanner, the new forecast stays
     async applyForecast() {
         const
             me                  = this,
@@ -433,9 +464,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         let changes = [];
 
-        await me.replan(async() => {
-            changes = await forecastPlanner.apply();
-        });
+        try {
+            await me.scheduler.project.runChange(() => me.replan(async() => {
+                changes = await forecastPlanner.apply();
+            }));
+        }
+        catch(error) {
+            console.warn(error);
+            tell('The plan could not be re-planned on the new forecast, its trips are as they were');
+            await me.replan();
+        }
 
         if (changes.length) {
             me.parts.schedulePane.showNotice({
@@ -447,12 +485,12 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     }
 
     // Puts back the trips as they were before the forecast. The forecast stays, the trips past it are flagged
-    undoForecast() {
+    async undoForecast() {
         const me = this;
 
-        me.parts.notice.hidden = true;
-
-        return me.replan(() => me.forecastPlanner.undo());
+        if (await me.scheduler.project.runChange(() => me.replan(() => me.forecastPlanner.undo())) !== false) {
+            me.parts.notice.hidden = true;
+        }
     }
 
     // The notice's "Show on Wednesday": the next day, the trip the forecast's cut work went to selected

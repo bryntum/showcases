@@ -1357,6 +1357,70 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
         await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
     });
 
+    test('while a booking is placed the team is reserved and no other change starts, a failed one is rolled back', async({ page }) => {
+        await open(page);
+
+        const result = await page.evaluate(async() => {
+            const
+                app         = globalThis.bryntum.query('dispatchapp'),
+                { project } = app.scheduler,
+                trip        = id => app.trips.find(each => each.id === id),
+                card        = id => document.querySelector(`.ow-tray .ow-team[data-team="${id}"]`),
+                kittiwake   = app.scheduler.resourceStore.getById('kw'),
+                closes      = app.dispatch.windows.ctv,
+                // Not awaited: the engine is placing it
+                first       = app.dropController.dropTeam('F', trip('NT-1')),
+                during      = {
+                    pending : project.changePending,
+                    card    : card('F').classList.contains('ow-team-pending'),
+                    // Team G fits on Kittiwake, but waits for the booking placed
+                    again   : await app.dropController.dropTeam('G', kittiwake),
+                    drag    : app.scheduler.trigger('beforeEventDrag', { eventRecords : [trip('SR-1')] }),
+                    edit    : app.scheduler.trigger('beforeTaskEdit', { taskRecord : trip('SR-1') })
+                };
+
+            // The forecast waits: the window it would close earlier stays
+            await app.applyForecast();
+            during.forecast = app.dispatch.windows.ctv === closes;
+
+            const booked = await first;
+
+            // The engine fails on the next booking, a new trip of Kittiwake's: the trip is taken away again
+            const commit = project.commitAsync;
+
+            project.commitAsync = function() {
+                project.commitAsync = commit;
+
+                return Promise.reject(new Error('Test failure'));
+            };
+
+            const failed = await app.dropController.dropTeam('G', kittiwake);
+
+            await app.replan();
+
+            return {
+                during,
+                booked,
+                failed,
+                unchanged : app.trips.filter(each => each.resource === kittiwake).length === 0,
+                pending   : project.changePending,
+                waiting   : app.dispatch.waitingStore.map(each => each.id),
+                reserved  : document.querySelectorAll('.ow-team-pending').length
+            };
+        });
+
+        expect(result).toEqual({
+            during    : { pending : true, card : true, again : false, drag : false, edit : false, forecast : true },
+            booked    : true,
+            failed    : false,
+            unchanged : true,
+            pending   : false,
+            waiting   : ['G', 'H'],
+            reserved  : 0
+        });
+        await expect(page.locator('.b-toast').last()).toContainText('Team G could not be booked, the plan is as it was');
+    });
+
     test('a drag cancelled while the plan is being placed does not get its outline back', async({ page }) => {
         await open(page);
 

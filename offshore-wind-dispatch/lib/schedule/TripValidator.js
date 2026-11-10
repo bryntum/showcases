@@ -3,7 +3,8 @@ import { hhmm } from '../util/Time.js';
 
 /**
  * The checks of a trip moved to a new time, shared by the drag (the EventDrag feature's `validatorFn`) and the trip
- * editor's time field (DispatchScheduler#checkTripTime), so both refuse the same times with the same reason.
+ * editor's time field (DispatchScheduler#checkTripTime), so both refuse the same times with the same reason. And the
+ * final check after the engine has placed a booking, a drag or an edit (`planBreak`), shared by all three.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
@@ -95,6 +96,66 @@ export function validateTripDrag(scheduler, { eventRecords, startDate, newResour
     const broken = dependencyBreak(scheduler, trip, departs);
 
     return broken ? { valid : false, message : broken } : true;
+}
+
+/**
+ * The plan before a change, to check the engine's result against (planBreak)
+ * @param {TripModel[]} trips The week's trips
+ * @returns {Map} TripModel → `{ start, end }`, minutes since its midnight, port to port
+ */
+export function planSnapshot(trips) {
+    return new Map(trips.map(trip => [trip, { start : trip.departs, end : trip.endMinute }]));
+}
+
+const overlaps = (a, b) => Boolean(a && b && a.start < b.end && b.start < a.end);
+
+// "Test link: BP-1 would be back 17:20, after its window closes 17:00", led by the dependency that pushed it
+function lateText(trip, close, limit, moved) {
+    const link = trip.legRecords.flatMap(leg => leg.predecessors ?? [])
+        .find(each => !each.isChain && moved.includes(each.fromEvent?.trip));
+
+    return link ? `${link.text}: ${trip.id} would be back ${hhmm(trip.endMinute)}, after its window closes ${hhmm(close)}` :
+        noGoText(trip.endMinute, close, limit);
+}
+
+/**
+ * The final check of a booking, a trip dragged and a trip edited, once the engine has placed the change: the previews
+ * before it are predictions. Checked are the trips the change moved, the ones changed and every trip the engine pushed
+ * through their dependencies on any day, each against the window of its own day and its vessel's other trips that
+ * day, port to port. Only what the change made worse counts: a trip under way already late stays as it is
+ * @param {DispatchScheduler} scheduler
+ * @param {Map} before See planSnapshot
+ * @param {TripModel[]} [changed] The trips changed, checked even if their times stayed
+ * @returns {String|null} Why the change is taken back
+ */
+export function planBreak({ dispatch, weekTrips }, before, changed = []) {
+    const
+        span  = trip => ({ id : trip.id, start : trip.departs, end : trip.endMinute }),
+        moved = weekTrips.filter(trip => changed.includes(trip) || before.get(trip)?.start !== trip.departs ||
+            before.get(trip)?.end !== trip.endMinute);
+
+    for (const trip of moved) {
+        const
+            vessel = trip.resource,
+            limit  = dispatch.limits[vessel.window],
+            close  = dispatch.windowsOf(trip.day)[vessel.window],
+            was    = before.get(trip);
+
+        if (trip.endMinute > close && !(was?.end >= trip.endMinute)) {
+            return lateText(trip, close, limit, moved);
+        }
+
+        // A clash the change made: the two trips did not overlap before it
+        const clash = weekTrips.find(other => other !== trip && other.resource === vessel && other.day === trip.day &&
+            overlaps(span(trip), span(other)) && !overlaps(was, before.get(other)));
+
+        if (clash) {
+            return `${trip.id} would be out ${hhmm(trip.departs)}–${hhmm(trip.endMinute)}: ` +
+                clashText(vessel.name, span(clash));
+        }
+    }
+
+    return null;
 }
 
 /**

@@ -14,6 +14,10 @@ import { rotorText, turbineSvg } from './Turbine.js';
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
  */
 
+// The wave limit of the vessel's window, the CTV's when none serves the turbine. None for a helicopter: its limit is
+// the wind's, not the sea's
+const waveLimit = (state, vessel) => state.limits[vessel?.window ?? 'ctv'].hs ?? null;
+
 /**
  * @param {Object} options
  * @param {DispatchState} options.state
@@ -41,7 +45,7 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
         trip    : vessel ? `${trip.id} · ${vessel.name}` : 'Not assigned',
         when    : stop ? `On station ${hhmm(stop.from)} – ${hhmm(stop.to)}` : '–',
         hs      : state.hsAt(stop?.from ?? state.now),
-        limit   : state.limits[vessel?.window === 'swath' ? 'swath' : 'ctv'].hs,
+        limit   : waveLimit(state, vessel),
         ...noteOf({ state, turbine, trip, drop, stand })
     };
 }

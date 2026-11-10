@@ -185,6 +185,13 @@
     opacity    : 0.45;
 }
 
+/* Its booking is being placed: dimmed, not draggable until it is booked or back (TeamDrag's targetSelector) */
+.ow-team-pending {
+    box-shadow : none;
+    opacity    : 0.45;
+    cursor     : progress;
+}
+
 .ow-team-crew {
     display          : grid;
     place-items      : center;

@@ -13,8 +13,11 @@ import { clock, duration } from '../util/Time.js';
  */
 
 // A departure this close to the start of the timeline, px, has no room for its clock time ("07:45" at 11px) and the
-// dot before it: the time goes after the dot. Keep it in step with trips.css
-const edgeRoom = 44;
+// dot before it: the time goes after the dot. Keep it in step with trips.css. A return's label needs about `charRoom`
+// px a character and its dot after the return, else it goes before the dot
+const
+    edgeRoom = 44,
+    charRoom = 7;
 
 // A stop's time on station: "1.5 h", "1.25 h", "3 h"
 function hoursText(minutes) {
@@ -134,18 +137,23 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFi
  * after its window is
  * @param {Object} args The EventBuffer feature's renderer arguments
  * @param {Number} close When the trip's window closes, minutes since midnight
- * @param {Object} timeline `{ dayStart, perMinute }`: the timeline's start in minutes, and px per minute
+ * @param {Object} timeline `{ dayStart, dayEnd, perMinute }`: the timeline's start and end in minutes, and px per
+ * minute
  */
-export function renderBuffers({ eventRecord : trip, preambleConfig, postambleConfig }, close, { dayStart, perMinute }) {
+export function renderBuffers({ eventRecord : trip, preambleConfig, postambleConfig }, close,
+    { dayStart, dayEnd, perMinute }) {
     const
         late = trip.endMinute - close,
-        edge = (trip.departs - dayStart) * perMinute < edgeRoom;
+        edge = (trip.departs - dayStart) * perMinute < edgeRoom,
+        back = late > 0 ? `${clock(trip.outerEndDate)} · +${duration(late)}` : clock(trip.outerEndDate),
+        // Too close to the end of the timeline for the label after the return's dot
+        end  = (dayEnd - trip.endMinute) * perMinute < back.length * charRoom + 10;
 
     preambleConfig.cls  = `ow-transit ow-transit-out${edge ? ' ow-transit-edge' : ''}`;
     preambleConfig.text = clock(trip.outerStartDate);
 
-    postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 ? ' ow-transit-late' : ''}`;
-    postambleConfig.text = late > 0 ? `${clock(trip.outerEndDate)} · +${duration(late)}` : clock(trip.outerEndDate);
+    postambleConfig.cls  = `ow-transit ow-transit-back${late > 0 ? ' ow-transit-late' : ''}${end ? ' ow-transit-edge' : ''}`;
+    postambleConfig.text = back;
 }
 
 /**

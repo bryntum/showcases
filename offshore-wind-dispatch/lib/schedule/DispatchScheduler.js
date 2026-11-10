@@ -11,7 +11,8 @@ import { hhmm } from '../util/Time.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
 import { beforeTripEditShow, tripEdit } from './TripEdit.js';
-import { tripTimeError, validateTripDrag } from './TripValidator.js';
+import { planBreak, planSnapshot, tripTimeError, validateTripDrag } from './TripValidator.js';
+import { tell } from '../util/Message.js';
 
 const
     // The trips' inset in their 56px row (54px on a phone)
@@ -199,9 +200,17 @@ export default class DispatchScheduler extends Scheduler {
         });
     }
 
-    // Trips are edited, not their legs (the legs let the pointer through to their trip, trips.css)
+    // Trips are edited, not their legs (the legs let the pointer through to their trip, trips.css), and not while
+    // another change of the plan is placed (DispatchProject#runChange)
     onBeforeTripEdit({ taskRecord }) {
-        return !taskRecord.isLeg;
+        const editable = !taskRecord.isLeg && !this.project.changePending;
+
+        // The plan as it is, to check the saved time against (onBeforeTripSave)
+        if (editable) {
+            this.editStartPlan = planSnapshot(this.weekTrips);
+        }
+
+        return editable;
     }
 
     /**
@@ -241,11 +250,25 @@ export default class DispatchScheduler extends Scheduler {
     // TaskEdit owns the transaction: it applies the fields as they change and its Save commits them. The start set
     // that way would move the trip only, so the legs are laid out from the new departure here, inside that same
     // transaction, before the editor commits. A refused time never gets here (checkTripTime)
+    // One change of the plan at a time: while another is placed, Save does nothing and the editor stays open. Once the
+    // engine has placed the new time, a time that breaks the plan (planBreak) is taken back by the editor's own
+    // transaction, its Cancel, and the reason shown
     async onBeforeTripSave({ taskRecord : trip, editor }) {
         const me = this;
 
-        trip.layout({ departs : me.departsAt(trip, editor.widgetMap.startDateField.value) });
-        await me.project.commitAsync();
+        return me.project.runChange(async() => {
+            trip.layout({ departs : me.departsAt(trip, editor.widgetMap.startDateField.value) });
+            await me.project.commitAsync();
+
+            const why = me.editStartPlan && planBreak(me, me.editStartPlan, [trip]);
+
+            if (why) {
+                tell(why);
+                await me.features.taskEdit.cancel();
+
+                return false;
+            }
+        });
     }
 
     onAfterTripSave({ taskRecord : trip }) {
@@ -283,7 +306,11 @@ export default class DispatchScheduler extends Scheduler {
         const { dispatch, timeAxisViewModel } = this;
 
         renderBuffers(args, dispatch.closeOf(args.eventRecord.resource),
-            { dayStart : dispatch.day.dayStart * 60, perMinute : timeAxisViewModel.getDistanceForDuration(60_000) });
+            {
+                dayStart  : dispatch.day.dayStart * 60,
+                dayEnd    : dispatch.day.dayEnd * 60,
+                perMinute : timeAxisViewModel.getDistanceForDuration(60_000)
+            });
     }
 
     // The Group feature runs the column renderer for its header rows too, which have no vessel (renderGroup)
