@@ -68,7 +68,8 @@ export default class TeamDrag {
         me.dragHelper = new DragHelper({
             callOnFunctions      : true,
             outerElement         : tray.element,
-            targetSelector       : '.ow-team[data-team]',
+            // Not a team whose booking the engine is placing
+            targetSelector       : '.ow-team[data-team]:not(.ow-team-pending)',
             // A small chip centred on the pointer, the team's place in the tray stays, dimmed
             cloneTarget          : true,
             autoSizeClonedTarget : false,
@@ -76,7 +77,7 @@ export default class TeamDrag {
             createProxy          : element => createChip(handler.waitingTeam(element.dataset.team).team),
             onDragStart          : ({ context }) => me.onDragStart(context),
             onDrag               : ({ context, event }) => me.onDrag(context, event),
-            onDrop               : () => me.onDrop(),
+            onDrop               : ({ context }) => me.onDrop(context),
             onReset              : () => me.end()
         });
     }
@@ -143,16 +144,31 @@ export default class TeamDrag {
         context.valid = Boolean(me.hover(me.targetAt(me.point), me.point)?.result.valid);
     }
 
-    onDrop() {
+    // DragHelper's asynchronous drop: the drop is finalized once the booking is placed, its proxy goes back to the
+    // tray if it is not. Meanwhile no other team can be picked up (DragHelper waits for the finalize)
+    onDrop(context) {
         const
-            me     = this,
-            target = me.point ? me.targetAt(me.point) : null;
+            me              = this,
+            { team, point } = me,
+            target          = point ? me.targetAt(point) : null;
 
-        if (target && me.team) {
-            me.handler.dropTeam(me.team, target, me.minuteAt(target, me.point));
+        if (!target || !team) {
+            me.end();
+
+            return;
         }
 
+        context.async = true;
+
+        // Reserves the team before the tooltip and the outline go
+        const booked = me.handler.dropTeam(team, target, me.minuteAt(target, point));
+
         me.end();
+        booked.catch(error => {
+            console.warn(error);
+
+            return false;
+        }).then(valid => context.finalize(valid));
     }
 
     // Minutes since midnight on the Day view's time axis. None over a cell of the week, which is the whole day

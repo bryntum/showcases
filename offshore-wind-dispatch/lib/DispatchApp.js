@@ -1,4 +1,4 @@
-import { Panel, Responsive } from '@bryntum/core-enterprise';
+import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import DropController from './DropController.js';
@@ -10,8 +10,10 @@ import './KpiBar.js';
 import './panel/SchedulePanel.js';
 import './panel/MapPanel.js';
 
-// The turbine the page opens on: the one the weather puts at risk
-const openingTurbine = 'T-41';
+const
+    // The turbine the page opens on: the one the weather puts at risk
+    openingTurbine = 'T-41',
+    tell           = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
 
 /**
  * The app: the header, the schedule and the map, wired to the plan (the Scheduler's project), the dispatch state and
@@ -47,6 +49,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         // The ID of the team dragged from the tray
         lifted : null,
+
+        // The ID of the waiting team whose booking the engine is placing (DropController#dropTeam)
+        booking : null,
 
         /**
          * The team held and its check, `{ id, target, trip, team, job, result, reach, close, at }`
@@ -102,6 +107,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         scheduler.on({
             eventSelectionChange : 'onTripSelectionChange',
             eventClick           : 'onTripClick',
+            // No trip is picked up while a change of the plan is placed (DispatchProject#runChange)
+            beforeEventDrag      : () => !scheduler.project.changePending,
             afterEventDrop       : 'onTripDrop',
             tripTimeChange       : 'onTripTimeChange',
             thisObj              : me
@@ -208,6 +215,12 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     updateLifted(lifted) {
         if (this.parts) {
             this.parts.tray.lifted = lifted;
+        }
+    }
+
+    updateBooking(booking) {
+        if (this.parts) {
+            this.parts.tray.booking = booking;
         }
     }
 
@@ -346,7 +359,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         this.planEdited();
 
-        return this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
+        return scheduler.project.runChange(() =>
+            this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) })));
     }
 
     // The trip editor has already laid the trip out from its new time on station
@@ -426,6 +440,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     //region Forecast
 
+    // One change of the plan at a time: while another is placed, the forecast waits for the next click. A re-plan that
+    // fails is rolled back by the ForecastPlanner, the new forecast stays
     async applyForecast() {
         const
             me                  = this,
@@ -433,9 +449,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         let changes = [];
 
-        await me.replan(async() => {
-            changes = await forecastPlanner.apply();
-        });
+        try {
+            await me.scheduler.project.runChange(() => me.replan(async() => {
+                changes = await forecastPlanner.apply();
+            }));
+        }
+        catch(error) {
+            console.warn(error);
+            tell('The plan could not be re-planned on the new forecast, its trips are as they were');
+            await me.replan();
+        }
 
         if (changes.length) {
             me.parts.schedulePane.showNotice({
@@ -447,12 +470,12 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     }
 
     // Puts back the trips as they were before the forecast. The forecast stays, the trips past it are flagged
-    undoForecast() {
+    async undoForecast() {
         const me = this;
 
-        me.parts.notice.hidden = true;
-
-        return me.replan(() => me.forecastPlanner.undo());
+        if (await me.scheduler.project.runChange(() => me.replan(() => me.forecastPlanner.undo())) !== false) {
+            me.parts.notice.hidden = true;
+        }
     }
 
     // The notice's "Show on Wednesday": the next day, the trip the forecast's cut work went to selected

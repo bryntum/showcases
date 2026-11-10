@@ -27,6 +27,9 @@ export default class TeamTray extends Container {
         // The ID of the team dragged: its card stays in the tray, dimmed
         lifted : null,
 
+        // The ID of the team whose booking the engine is placing: its card is dimmed and cannot be dragged
+        booking : null,
+
         cls    : 'ow-tray',
         layout : { type : 'hbox', align : 'center' },
         items  : {
@@ -58,7 +61,8 @@ export default class TeamTray extends Container {
 
     // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
     cardHtml({ id, team, job, fault }) {
-        const cls = `ow-team${fault ? ' ow-team-fault' : ''}${id === this.lifted ? ' ow-team-lifted' : ''}`;
+        const cls = `ow-team${fault ? ' ow-team-fault' : ''}${id === this.lifted ? ' ow-team-lifted' : ''}` +
+            `${id === this.booking ? ' ow-team-pending' : ''}`;
 
         return StringHelper.xss`<div class="${cls}" data-team="${id}"><span class="ow-team-crew">` +
             `${icon('users')}</span>` + StringHelper.xss`<span class="ow-team-text">
@@ -95,6 +99,15 @@ export default class TeamTray extends Container {
     updateLifted(lifted) {
         this.element?.querySelectorAll('.ow-team[data-team]').forEach(card =>
             card.classList.toggle('ow-team-lifted', card.dataset.team === lifted));
+    }
+
+    updateBooking(booking) {
+        this.element?.querySelectorAll('.ow-team[data-team]').forEach(card => {
+            const pending = card.dataset.team === booking;
+
+            card.classList.toggle('ow-team-pending', pending);
+            card.setAttribute('aria-busy', String(pending));
+        });
     }
 }
 
