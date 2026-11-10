@@ -85,7 +85,7 @@ async function encode(page, png, { width : outWidth, crop, type, quality }) {
 }
 
 const
-    server  = await createServer({ root, logLevel : 'warn', server : { port : 0 } }),
+    server  = await createServer({ root, logLevel : 'warn', server : { port : 0, open : false } }),
     browser = await chromium.launch();
 
 try {
