@@ -13,8 +13,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 ## Try it in 60 seconds
 
 1. **Inspect T-41.** The page opens on it: its card under the map says Sea Puffin is back at 14:17, 17 minutes after
-   the CTV window. In the schedule that is the orange stop and return tag; in the time axis, the wave height crossing
-   the 1.5 m limit at 14:00
+   the CTV window. In the schedule that is the orange stop and return tag; in the time axis, the CTV window closing at
+   14:00, the first hour the forecast is over its 1.5 m limit
 2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip. While it is held, an
    outline on the trip's row shows where its stop would go,
    a tooltip says when the trip would be back and checks the seats and certificates, and the map rings every turbine
