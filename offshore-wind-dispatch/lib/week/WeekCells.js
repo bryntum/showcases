@@ -52,21 +52,17 @@ function hourText(minutes) {
 export function weekDays(state, trips) {
     return Array.from({ length : dayCount }, (_, index) => {
         const
-            { hs, wind } = state.forecastOf(index),
-            own          = trips.filter(trip => trip.day === index && !trip.draft),
-            planned      = new Set(own.flatMap(trip => trip.turbines)),
-            // Work a forecast carried over to the day is due on it too
-            due          = new Set([...state.dueOn(index),
-                ...own.filter(trip => trip.change === 'carried').flatMap(trip => trip.turbines)]);
+            { hs, wind }     = state.forecastOf(index),
+            { due, planned } = state.daySummary(index, trips.filter(trip => trip.day === index));
 
         return {
             index,
-            date    : state.dateOf(index),
-            sea     : seaState(state.windowsOf(index).ctv, state.day),
-            hs      : [Math.min(...hs), Math.max(...hs)],
-            wind    : Math.max(...wind),
-            due     : due.size,
-            planned : planned.size
+            date : state.dateOf(index),
+            sea  : seaState(state.windowsOf(index).ctv, state.day),
+            hs   : [Math.min(...hs), Math.max(...hs)],
+            wind : Math.max(...wind),
+            due,
+            planned
         };
     });
 }

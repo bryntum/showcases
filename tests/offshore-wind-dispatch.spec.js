@@ -480,6 +480,9 @@ test.describe('Offshore Wind Dispatch, the Week view as a day board', () => {
         // The Summary feature's row: the jobs planned against the jobs due, per day
         await expect(board(page).locator('.b-time-axis-summary-value')).toHaveCount(7);
         await expect(board(page).locator('.b-time-axis-summary-value').first()).toHaveText('11 / 14');
+        // Every turbine a day's trips visit is due that day: never more planned than due
+        await expect(board(page).locator('.b-time-axis-summary-value'))
+            .toHaveText(['11 / 14', '1 / 6', '9 / 11', '11 / 15', '11 / 16', '2 / 8', '0 / 6']);
     });
 
     test('Monday is today: the same trips, Sea Puffin late', async({ page }) => {

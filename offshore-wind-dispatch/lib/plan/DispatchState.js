@@ -246,8 +246,23 @@ export default class DispatchState extends Base.mixin(Events) {
         return this.waitingStore.records;
     }
 
-    get dueTurbines() {
-        return this.dueOn(this.dayIndex);
+    /**
+     * A day's work, counted the same for the KPI header and the Week view: the turbines due, the ones its trips visit
+     * (`planned`) and its trips past their window. Work booked or carried over onto the day is due on it too
+     * @param {Number} index 0 is today
+     * @param {TripModel[]} trips The trips of that day
+     * @returns {Object} `{ due, planned, atRisk }`
+     */
+    daySummary(index, trips) {
+        const
+            own     = trips.filter(trip => !trip.draft),
+            planned = new Set(own.flatMap(trip => trip.turbines));
+
+        return {
+            due     : new Set([...this.dueOn(index), ...planned]).size,
+            planned : planned.size,
+            atRisk  : own.filter(trip => trip.status === 'at-risk').length
+        };
     }
 
     /**
@@ -256,14 +271,12 @@ export default class DispatchState extends Base.mixin(Events) {
      * @returns {Object[]} `{ label, value, tone }`
      */
     kpis(trips) {
-        // Work a forecast carried over to the day is due on it too, as the Week view counts it
-        const due = new Set([...this.dueTurbines,
-            ...trips.filter(trip => trip.change === 'carried').flatMap(trip => trip.turbines)]);
+        const { due, planned, atRisk } = this.daySummary(this.dayIndex, trips);
 
         return [
-            { label : this.isToday ? 'Due today' : 'Due', value : due.size },
-            { label : 'Assigned', value : new Set(trips.flatMap(trip => trip.turbines)).size },
-            { label : 'At risk', value : trips.filter(trip => trip.status === 'at-risk').length, tone : 'warn' },
+            { label : this.isToday ? 'Due today' : 'Due', value : due },
+            { label : 'Assigned', value : planned },
+            { label : 'At risk', value : atRisk, tone : 'warn' },
             { label : 'Stopped', value : this.faults.size, tone : 'stop' }
         ];
     }
