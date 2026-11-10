@@ -20,20 +20,25 @@ function fleetCount(vessels) {
 
 const link = (href, text) => ({ tag : 'a', href, target : '_blank', rel : 'noopener', text });
 
-// The footer under the rows: what the marks mean, and the products the page is built with. Swatches in scheduler.css
+// The footer under the rows: what the marks mean, and the products the page is built with. Swatches in scheduler.css,
+// the work and risk ones in frame.css
 function legendHtml(view) {
-    const item = (kind, text) => ({ tag : 'span', class : `ow-l ow-l-${kind}`, children : [{ tag : 'i' }, text] });
+    const item = (kind, text, mark = '') => ({
+        tag      : 'span',
+        class    : `ow-l ow-l-${kind}`,
+        children : [{ tag : 'i', class : mark && `ow-mark-${mark}` }, text]
+    });
 
     return view === 'week' ? [
-        item('cell', 'Trips: times, seats, turbines; bar = seats used'),
+        item('cell', 'Trips: times, seats, turbines; bar = seats used', 'work'),
         item('free', 'Workable, free'),
         item('nogo', 'No-go'),
         { tag : 'span', class : 'ow-legend-credit', text : 'Drag a crew onto a free cell to plan it' }
     ] : [
-        item('work', 'Work'),
+        item('work', 'Work', 'work'),
         item('transit', 'Transit'),
         item('dependency', 'Must finish first'),
-        item('risk', 'At risk'),
+        item('risk', 'At risk', 'risk'),
         item('nogo', 'Weather no-go'),
         {
             tag      : 'span',

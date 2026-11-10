@@ -208,7 +208,7 @@
             content       : '';
             position      : absolute;
             inset         : 5px;
-            border        : 1px dashed var(--ow-c-transit);
+            border        : var(--ow-free-line);
             border-radius : var(--ow-c-radius);
         }
 

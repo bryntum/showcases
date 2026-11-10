@@ -69,6 +69,8 @@
     /* Shared by the Day and the Week view */
     --ow-hatch        : repeating-linear-gradient(135deg, light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%)) 0 2px,
         transparent 2px 9px);
+    /* A workable day left free, its cell and its swatch */
+    --ow-free-line    : 1px dashed var(--ow-c-transit);
     --ow-drop-outline : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);
     --ow-drop-tint    : color-mix(in srgb, var(--ow-c-work) 8%, transparent);
 }

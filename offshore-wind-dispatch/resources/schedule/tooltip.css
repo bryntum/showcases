@@ -44,18 +44,11 @@
     }
 
     .ow-tip-block {
-        position         : absolute;
-        inset-block      : 0;
-        min-inline-size  : 0.25em;
-        border           : 1px solid var(--ow-c-work-line);
-        border-radius    : 0.25em;
-        background-color : var(--ow-c-work-tint);
-        box-shadow       : 0 0 0 2px var(--ow-surface);
-
-        &.ow-tip-risk {
-            border-color     : var(--ow-c-risk-line);
-            background-color : var(--ow-c-risk-tint);
-        }
+        position        : absolute;
+        inset-block     : 0;
+        min-inline-size : 0.25em;
+        border-radius   : 0.25em;
+        box-shadow      : 0 0 0 2px var(--ow-surface);
     }
 
     .ow-tip-close {

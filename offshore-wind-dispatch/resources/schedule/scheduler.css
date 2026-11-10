@@ -190,12 +190,6 @@
         border-radius : 0.125rem;
     }
 
-    /* The tonal work block, also the Week view's day with trips */
-    :is(.ow-l-work, .ow-l-cell) i {
-        background-color : var(--ow-c-work-tint);
-        box-shadow       : inset 0 0 0 1px var(--ow-c-work-line);
-    }
-
     /* The transit line with its hollow and solid end dots */
     .ow-l-transit i {
         width            : 1.5rem;
@@ -246,11 +240,6 @@
         }
     }
 
-    .ow-l-risk i {
-        background-color : var(--ow-c-risk-tint);
-        box-shadow       : inset 0 0 0 1.5px var(--ow-c-risk-line);
-    }
-
     /* The rows' hatch, denser and darker to read at this size */
     .ow-l-nogo i {
         background-image : repeating-linear-gradient(135deg,
@@ -259,7 +248,7 @@
 
     /* The Week view's workable day left free */
     .ow-l-free i {
-        border : 1px dashed var(--ow-c-transit);
+        border : var(--ow-free-line);
     }
 
     /* The product links, quiet, underlined on hover */

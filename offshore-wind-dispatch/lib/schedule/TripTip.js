@@ -55,7 +55,7 @@ export function tripTipContent(trip, state) {
                 class    : 'ow-tip-track',
                 children : [
                     ...stops.map(leg => ({
-                        class : `ow-tip-block${risky(leg) ? ' ow-tip-risk' : ''}`,
+                        class : `ow-tip-block ow-mark-${risky(leg) ? 'risk' : 'work'}`,
                         style : `inset-inline-start:${share(leg.from)};inline-size:${((leg.to - leg.from) /
                             Math.max(1, back - start) * 100).toFixed(2)}%`
                     })),

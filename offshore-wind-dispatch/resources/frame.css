@@ -224,6 +224,18 @@
     align-items : center;
 }
 
+/* The plan's marks as the schedule draws its stops, work in blue and at risk in orange: the legend's swatches and the
+   trip tooltip's blocks */
+.ow-mark-work {
+    border           : 1px solid var(--ow-c-work-line);
+    background-color : var(--ow-c-work-tint);
+}
+
+.ow-mark-risk {
+    border           : 1px solid var(--ow-c-risk-line);
+    background-color : var(--ow-c-risk-tint);
+}
+
 /* The facts in the tooltips and the turbine's card, a term and its value per line */
 :is(.ow-tip, .ow-drop-tip, .ow-card-body) {
     dl {
