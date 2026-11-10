@@ -93,25 +93,11 @@ for (const source of showcases) {
 test.describe('Shell header at phone width', () => {
     test.use({ viewport : { width : 390, height : 844 } });
 
-    test('Get the code is an icon, Free trial moves into the popover, all within the viewport', async({ page }) => {
+    // On a phone the showcase is all there is: the header collapses, the app runs edge to edge
+    test('the header is out of the way, the app fills the width', async({ page }) => {
         await page.goto('./logistics-control-tower/');
 
-        const
-            header  = page.locator('.sc-header'),
-            button  = page.getByRole('button', { name : 'Get the code' }),
-            popover = page.getByRole('dialog', { name : 'Run it locally' });
-
-        // The header's own trial link is hidden, the label stays the button's name
-        await expect(header.locator('.sc-trial')).toBeHidden();
-        expect((await button.boundingBox()).width).toBeLessThan(50);
-
-        await button.click();
-
-        const box = await popover.boundingBox();
-
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(390);
-        await expect(popover.getByRole('link', { name : 'Free trial' })).toHaveAttribute('href', trialUrl);
+        await expect(page.getByRole('button', { name : 'Get the code' })).toBeHidden();
 
         const { scrollWidth, clientWidth } = await page.evaluate(() => {
             const { scrollWidth, clientWidth } = document.documentElement;

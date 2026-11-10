@@ -162,28 +162,10 @@ test.describe('EV Operations on a phone', () => {
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
 
-    test('the breadcrumb keeps the title in full and the gallery link reachable', async({ page }) => {
+    // On a phone the showcase is all there is: the header with its breadcrumb collapses
+    test('the header with the breadcrumb is out of the way', async({ page }) => {
         await page.goto('./ev-operations/');
 
-        const
-            breadcrumb = page.getByRole('navigation', { name : 'Breadcrumb' }),
-            title      = breadcrumb.getByRole('heading', { level : 1, name : 'EV Operations' }),
-            gallery    = breadcrumb.getByRole('link', { name : 'Showcases' }),
-            toggle     = page.locator('.sc-header .sc-scheme-toggle');
-
-        await expect(gallery).toBeVisible();
-        await expect(title).toBeVisible();
-
-        const
-            titleBox  = await title.boundingBox(),
-            toggleBox = await toggle.boundingBox();
-
-        // Not cut, and clear of the header's tools
-        expect(await title.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-        expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(toggleBox.x);
-
-        await gallery.click();
-
-        await expect(page.locator('[data-cards] .card').filter({ hasText : 'EV Operations' })).toBeVisible();
+        await expect(page.getByRole('navigation', { name : 'Breadcrumb' })).toBeHidden();
     });
 });
