@@ -1,4 +1,4 @@
-/* The Show all button over the map (map/ShowAllButton.js) */
+/* The Show all button over the map (map/TurbineMap.js), shown while the map is zoomed in */
 
 /* Fitted to a trip (TurbineMap#fitTo) the map zooms in, its text keeps its size */
 .ow-map-whole.b-button {

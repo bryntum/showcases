@@ -9,8 +9,8 @@ const
     zoomMs       = 180;
 
 /**
- * The part of the farm the map shows, and how the user moves it: the wheel and a trackpad or finger pinch zoom around
- * the pointer, from the whole farm to a few turbines, a drag (Bryntum's DragHelper) or a two finger scroll pans.
+ * The part of the farm the map shows, and how the user moves it: the wheel, a two finger scroll and a pinch zoom around
+ * the pointer, from the whole farm to a few turbines, a drag (Bryntum's DragHelper) pans.
  * `fitTo()` fits the view to a trip, and the Show all button of the map goes back to the whole farm.
  *
  * It moves the SVG's viewBox, the view arithmetic is in MapView. Not a widget: it works on the SVG, the Show all button
@@ -62,7 +62,7 @@ export default class MapViewport {
             pointerup          : 'onPinchPointer',
             pointercancel      : 'onPinchPointer',
             lostpointercapture : 'onPinchPointer',
-            // The wheel and the trackpad zoom or pan the map, not the page
+            // The wheel and the trackpad zoom the map, not the page
             wheel              : { handler : 'onWheel', passive : false }
         });
     }

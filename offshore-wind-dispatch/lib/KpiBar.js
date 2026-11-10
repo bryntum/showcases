@@ -1,14 +1,11 @@
 import { Container } from '@bryntum/core-enterprise';
 // Also registers the widget types used below
 import './Kpi.js';
-import './KpiClock.js';
 import './TeamTray.js';
 
 /**
- * The header, in two parts as the app under it: over the schedule the site and the day shown (KpiClock) and, at its
- * right end, the crews waiting at the port (TeamTray); over the map the day's counts (Kpi, from plan/Kpis.js), the
- * plan's first and what needs acting on after a divider. The time is the schedule's now line, and the
- * weather window is told by the schedule itself: the wave chart's crossing, the no-go hatch and the late trip's tag.
+ * The header, in two parts as the app under it: over the schedule the site and the day shown, and at its right end the
+ * crews waiting at the port (TeamTray); over the map the day's counts (Kpi), what needs acting on after a divider.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
@@ -35,7 +32,8 @@ export default class KpiBar extends Container {
                 flex   : 1,
                 layout : { type : 'hbox', align : 'center' },
                 items  : {
-                    clock : { type : 'kpiclock' },
+                    // The site over the day shown, quiet
+                    clock : { type : 'widget', cls : 'ow-clock' },
                     // Pushes the crews to the right end
                     fill  : { type : 'widget', cls : 'ow-kpi-fill', flex : '1 1 0' },
                     tray  : { type : 'teamtray' }
@@ -76,7 +74,7 @@ export default class KpiBar extends Container {
     draw({ site, day, kpis }) {
         const { clock, first, second, third, fourth } = this.widgetMap;
 
-        clock.draw({ site, day });
+        clock.html = [{ tag : 'b', text : site }, { tag : 'small', text : day }];
         [first, second, third, fourth].forEach((kpi, index) => kpi.draw(kpis[index]));
     }
 }

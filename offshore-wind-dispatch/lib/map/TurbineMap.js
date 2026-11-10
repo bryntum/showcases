@@ -5,7 +5,6 @@ import TurbineModel from './TurbineModel.js';
 import MapViewport from './MapViewport.js';
 // Also registers the widget types used below
 import './MapLegend.js';
-import './ShowAllButton.js';
 import './TurbineTooltip.js';
 
 // The arrow keys, as a direction on the map
@@ -30,9 +29,9 @@ const directions = {
  * - The map is one tab stop: the arrow keys move the focus to the nearest turbine in that direction
  * - The tooltip is a TurbineTooltip on the markers, its content from the `tipContent` function, shown on hover and on
  *   keyboard focus
- * - It zooms like a map (MapViewport): the wheel and a trackpad or finger pinch zoom around the pointer, a drag or a
- *   two finger scroll pans. `fitTo()` fits it to a trip, the Show all button (ShowAllButton) goes back to the whole
- *   farm. The view the user chose stays until the app fits it again (MapPanel#fit)
+ * - It zooms like a map (MapViewport): the wheel, a two finger scroll and a pinch zoom around the pointer, a drag
+ *   pans. `fitTo()` fits it to a trip, the Show all button goes back to the whole farm. The view the user chose stays
+ *   until the app fits it again (MapPanel#fit)
  *
  * Drawn in `currentColor` and CSS custom properties, so it follows light and dark.
  *
@@ -122,10 +121,14 @@ export default class TurbineMap extends Widget {
         me.svgElement = me.element.querySelector('.ow-map-svg');
         // Back to the whole farm, shown only while the map is fitted to a trip
         me.wholeFarmButton = Widget.create({
-            type     : 'showallbutton',
+            type      : 'button',
+            cls       : 'ow-map-whole',
+            rendition : 'elevated',
+            text      : 'Show all',
+            hidden    : true,
             // In one row with the callout, so the two never overlap
-            appendTo : me.element.querySelector('.ow-map-top'),
-            onClick  : () => {
+            appendTo  : me.element.querySelector('.ow-map-top'),
+            onClick   : () => {
                 me.fitTo(null);
                 me.trigger('wholeFarm');
             }
