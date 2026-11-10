@@ -92,7 +92,7 @@ export default class ForecastHeader {
         const { forecast, isUpdated } = this.state;
 
         return isUpdated ?
-            StringHelper.xss`<span class="ow-axis-forecast ow-chip-new">Forecast ${forecast.issued}</span>` :
+            StringHelper.xss`<span class="ow-axis-forecast ow-pill">Forecast ${forecast.issued}</span>` :
             StringHelper.xss`<span class="ow-axis-forecast">Forecast ${forecast.issued}</span>`;
     }
 

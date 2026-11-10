@@ -143,19 +143,8 @@
     }
 }
 
-/* Less padding on the icon's side, whose glyph has space of its own */
 .ow-card-rating {
-    display             : inline-flex;
-    align-items         : center;
-    gap                 : 0.273em;
     margin-inline-start : auto;
-    padding             : 0.273em 0.9091em 0.273em 0.7273em;
-    border-radius       : 99px;
-    font-size           : var(--ow-size-xs);
-    line-height         : 1;
-    font-weight         : 500;
-    color               : var(--b-text-2);
-    background-color    : color-mix(in srgb, var(--b-text-2) 12%, transparent);
 }
 
 /* The card inside brings its own padding */

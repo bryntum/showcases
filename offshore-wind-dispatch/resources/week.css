@@ -97,21 +97,6 @@
         }
     }
 
-    .ow-sea {
-        padding          : 0.0834em 0.5em;
-        border-radius    : var(--ow-c-radius);
-        font-size        : var(--ow-size-sm);
-        white-space      : nowrap;
-        font-weight      : 600;
-        background-color : var(--ow-c-button-tint);
-        color            : var(--ow-c-work-ink);
-    }
-
-    .ow-sea-none {
-        background-color : var(--ow-c-neutral-bg);
-        color            : var(--b-text-2);
-    }
-
     /* Inset as far as a free day's placeholder (below), px as the board's resourceMargin */
     .b-sch-event-wrap.ow-cell-wrap {
         padding-inline : 5px;

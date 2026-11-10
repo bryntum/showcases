@@ -91,7 +91,7 @@ export function createChip(team) {
                     }
                 ]
             },
-            { tag : 'span', class : 'ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
+            { tag : 'span', class : 'ow-pill ow-drag-status', hidden : true, 'aria-hidden' : 'true' }
         ]
     });
 }

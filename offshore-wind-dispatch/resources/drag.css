@@ -62,20 +62,14 @@
 }
 
 .ow-drag-status {
-    flex-basis    : 100%;
-    padding       : 0.182em 0.546em;
-    border-radius : var(--ow-c-radius);
-    font-size     : var(--ow-size-xs);
-    font-weight   : 600;
+    flex-basis : 100%;
 
     [data-state='valid'] > & {
-        color            : color-mix(in srgb, var(--ow-reach) 80%, var(--b-text-1));
-        background-color : color-mix(in srgb, var(--ow-reach) 14%, transparent);
+        --ow-pill-tone : color-mix(in srgb, var(--ow-reach) 65%, var(--b-text-1));
     }
 
     [data-state='invalid'] > & {
-        color            : var(--ow-stop);
-        background-color : color-mix(in srgb, var(--ow-stop) 12%, transparent);
+        --ow-pill-tone : var(--ow-stop);
     }
 }
 

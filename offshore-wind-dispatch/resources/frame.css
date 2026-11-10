@@ -182,6 +182,36 @@
 }
 
 /* The inline SVG icons (util/Icons.js), and their box in a DomConfig or a button */
+/* A short status in a pill: the tone is its text, a tint of it the background. In floating tooltips too, so not
+   scoped to the app */
+.ow-pill {
+    --ow-pill-tone : var(--ow-c-work-ink);
+
+    display          : inline-flex;
+    align-items      : center;
+    gap              : 0.273em;
+    padding          : 0.182em 0.727em;
+    border-radius    : 99px;
+    font-size        : var(--ow-size-xs);
+    font-weight      : 600;
+    line-height      : 1.25;
+    white-space      : nowrap;
+    color            : var(--ow-pill-tone);
+    background-color : color-mix(in srgb, var(--ow-pill-tone) 12%, transparent);
+
+    &.ow-pill-risk {
+        --ow-pill-tone : var(--ow-c-risk-ink);
+    }
+
+    &.ow-pill-neutral {
+        --ow-pill-tone : var(--b-text-2);
+    }
+
+    &[hidden] {
+        display : none;
+    }
+}
+
 .ow-icon {
     flex           : none;
     width          : 1.2em;

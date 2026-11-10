@@ -190,7 +190,7 @@ export function cardContent(info, id = 'ow') {
                         { tag : 'small', text : info.sub },
                         info.rating && {
                             tag      : 'span',
-                            class    : 'ow-card-rating',
+                            class    : 'ow-pill ow-pill-neutral ow-card-rating',
                             children : [iconConfig('lightning'), info.rating]
                         }
                     ]

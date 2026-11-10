@@ -45,7 +45,7 @@ export function tripTipContent(trip, state) {
                     },
                     {
                         tag   : 'span',
-                        class : `ow-tip-status${late > 0 ? ' ow-tip-late' : ''}`,
+                        class : `ow-pill ow-tip-status${late > 0 ? ' ow-pill-risk' : ''}`,
                         text  : late > 0 ? `+${duration(late)} late` : `${duration(-late)} to spare`
                     }
                 ]

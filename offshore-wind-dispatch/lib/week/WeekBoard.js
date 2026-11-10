@@ -272,7 +272,7 @@ export default class WeekBoard extends Scheduler {
             [lo, hi] = day.hs;
 
         return `<span class="ow-week-date">${date}</span>` +
-            `<span class="ow-sea ow-sea-${day.sea.tone}">${day.sea.text}</span>` +
+            `<span class="ow-pill ow-sea${day.sea.tone === 'none' ? ' ow-pill-neutral' : ''}">${day.sea.text}</span>` +
             // Two spans, so a narrow column wraps before the wind
             `<small><span>Hs ${lo.toFixed(1)}–${hi.toFixed(1)} m</span> · <span>wind ${day.wind}</span></small>`;
     }

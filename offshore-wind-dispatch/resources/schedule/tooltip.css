@@ -27,22 +27,6 @@
         white-space : nowrap;
     }
 
-    .ow-tip-status {
-        padding          : 0.273em 0.9091em;
-        border-radius    : 99px;
-        font-size        : var(--ow-size-xs);
-        font-weight      : 600;
-        line-height      : 1;
-        white-space      : nowrap;
-        color            : var(--ow-c-work-ink);
-        background-color : color-mix(in srgb, var(--ow-c-work) 12%, transparent);
-
-        &.ow-tip-late {
-            color            : var(--ow-c-risk-ink);
-            background-color : var(--ow-c-risk-tint);
-        }
-    }
-
     /* The trip from departure to return, the work on it in proportion, the window's close */
     .ow-tip-track {
         position         : relative;
