@@ -4,17 +4,14 @@ import { aspect, boundedView, clamp, farmView, fitView, isFarm, viewKey, zoomInW
 const
     // A press that moves this many px pans the map, less is a click
     panThreshold = 4,
-    // How long the view takes to fit a selection, and to follow a wheel or pinch step
+    // Milliseconds to fit a selection, and to follow a wheel notch
     fitMs        = 450,
     zoomMs       = 180;
 
 /**
- * The part of the farm the map shows, and how the user moves it: the wheel, a two finger scroll and a pinch zoom around
- * the pointer, from the whole farm to a few turbines, a drag (Bryntum's DragHelper) pans.
- * `fitTo()` fits the view to a trip, and the Show all button of the map goes back to the whole farm.
- *
- * It moves the SVG's viewBox, the view arithmetic is in MapView. Not a widget: it works on the SVG, the Show all button
- * and the tooltip of the map that owns it (TurbineMap).
+ * Zoom and pan of the TurbineMap by moving its SVG's viewBox: the wheel, a two finger scroll and a pinch zoom around
+ * the pointer, a drag (Bryntum's DragHelper) pans. The view arithmetic is in MapView. Not a widget: it works on the
+ * SVG, the Show all button and the tooltip of the map that owns it.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -22,7 +19,7 @@ const
 export default class MapViewport {
     /**
      * @param {Object} options
-     * @param {TurbineMap} options.map The map: its `element`, `svgElement`, `markerTip` and `wholeFarmButton`
+     * @param {TurbineMap} options.map Uses its `element`, `svgElement`, `markerTip` and `wholeFarmButton`
      */
     constructor({ map }) {
         const me = this;
@@ -32,8 +29,8 @@ export default class MapViewport {
 
         const { svgElement } = map;
 
-        // A drag on the map pans it: Bryntum's DragHelper runs the gesture (the threshold, mouse, pen and touch, the
-        // release anywhere on the page, Escape). Locked on both axes, the SVG itself stays put, the drag moves the view
+        // DragHelper runs the gesture (threshold, mouse, pen and touch, release anywhere, Escape). Locked on both axes,
+        // so the SVG itself stays put and the drag moves the view
         me.panHelper = new DragHelper({
             callOnFunctions : true,
             outerElement    : map.element,
@@ -73,19 +70,13 @@ export default class MapViewport {
         this.panHelper?.destroy();
     }
 
-    /**
-     * Animates the map's viewBox to fit the given turbines and the port, or back to the whole farm. The app calls it
-     * when the selection changes (MapPanel#fit), so a view the user panned or zoomed to stays until then
-     * @param {String[]|null} ids The turbines to fit, `null` or none for the whole farm
-     */
     fitTo(ids) {
         this.animateTo(ids?.length ? fitView(ids) : farmView, fitMs);
     }
 
     /**
-     * Eases the view to another, the way a wheel notch, a fit or Show all moves it
      * @param {Object} target `{ x, y, width, height }`
-     * @param {Number} duration Milliseconds, none with reduced motion
+     * @param {Number} duration Milliseconds, ignored with reduced motion (the view jumps)
      */
     animateTo(target, duration) {
         const
@@ -113,18 +104,15 @@ export default class MapViewport {
         me.frame = requestAnimationFrame(step);
     }
 
-    /**
-     * Stops an animation of the view where it is, the user takes over
-     */
     stopAnimation() {
         cancelAnimationFrame(this.frame);
         this.frame = this.target = null;
     }
 
     /**
-     * How the SVG shows a viewBox in its box: scaled to fit and centred (`xMidYMid meet`)
+     * Where the SVG shows a viewBox on the screen, scaled to fit and centred (`xMidYMid meet`)
      * @param {Object} [view] `{ width, height }`
-     * @returns {Object} `{ scale, left, top }`, px per map unit, and where the view's top left is on the screen
+     * @returns {Object} `{ scale, left, top }`: px per map unit, and the view's top left in client px
      */
     screenOf(view = this.view) {
         const
@@ -139,12 +127,11 @@ export default class MapViewport {
     }
 
     /**
-     * Zooms around a point of the screen, which stays over the same point of the farm, as a map does
+     * Zooms around a point of the screen, which stays over the same point of the farm
      * @param {Number} factor Above 1 zooms in
      * @param {Number} clientX
      * @param {Number} clientY
-     * @param {Boolean} [animate] Eased (a wheel notch), or at once (a trackpad or finger pinch, in small steps of its
-     * own)
+     * @param {Boolean} [animate] Eased for a wheel notch; a trackpad or finger pinch comes in small steps of its own
      */
     zoomAt(factor, clientX, clientY, animate = false) {
         const
@@ -167,23 +154,15 @@ export default class MapViewport {
         }
     }
 
-    /**
-     * Moves the view by a distance on the screen, within the farm
-     * @param {Number} dx px
-     * @param {Number} dy px
-     * @param {Object} [from] The view to move, the current one by default
-     */
+    // Moves the view by a distance in screen px, kept within the farm
     panBy(dx, dy, from = this.view) {
         const { scale } = this.screenOf(from);
 
         this.setView(boundedView(from.x - dx / scale, from.y - dy / scale, from.width));
     }
 
-    /**
-     * The wheel zooms around the pointer, as on Google Maps: a two finger scroll or a pinch on a trackpad (the browser
-     * sends a pinch with `ctrlKey`, in bigger steps) and a mouse wheel. Dragging pans
-     * @param {WheelEvent} event
-     */
+    // A trackpad pinch arrives as a wheel event with `ctrlKey`, in bigger steps than a two finger scroll. Line or page
+    // deltas (a mouse wheel) are notches, eased
     onWheel(event) {
         const
             me    = this,
@@ -195,10 +174,7 @@ export default class MapViewport {
         me.zoomAt(Math.exp(-dy * (event.ctrlKey ? 0.01 : 0.004)), event.clientX, event.clientY, lines);
     }
 
-    /**
-     * A drag past the threshold starts a pan (DragHelper's `dragStart`). The view moves from the one at the start
-     * @param {MouseEvent|TouchEvent} event
-     */
+    // DragHelper's `dragStart`. The pan moves from the view at its start
     onPanStart(event) {
         const
             me    = this,
@@ -214,7 +190,7 @@ export default class MapViewport {
         me.map.markerTip.hide();
     }
 
-    // DragHelper's `drag`: the view follows the pointer
+    // DragHelper's `drag`
     onPan(context, event) {
         const
             { panning } = this,
@@ -247,11 +223,8 @@ export default class MapViewport {
         this.onPinchPointer(event);
     }
 
-    /**
-     * Two fingers on a touch screen pinch the map: it zooms around their midpoint and moves with it. The second finger
-     * takes over from a pan of the first
-     * @param {PointerEvent} event
-     */
+    // Two fingers on a touch screen zoom around their midpoint and move with it. The second finger takes over from a
+    // pan of the first
     onPinchPointer(event) {
         const
             me          = this,
@@ -304,7 +277,6 @@ export default class MapViewport {
         svgElement.setAttribute('viewBox', viewKey(view));
         // Text keeps its size as the map zooms in
         svgElement.style.setProperty('--ow-map-zoom', String(farmView.width / view.width));
-        // Show all, whenever the view is not the whole farm
         wholeFarmButton.hidden = !zoomed;
         element.classList.toggle('ow-map-zoomed', zoomed);
     }

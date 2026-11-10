@@ -5,9 +5,8 @@ import VesselModel from './VesselModel.js';
 import VesselRangeModel from './VesselRangeModel.js';
 
 /**
- * The Day view's project, the ProjectModelEnterprise whose scheduling engine places the trips, which also holds the
- * teams: a trip finds the names and the headcount of the teams on board through its own project (TripModel#pax,
- * TripRendering#teamText)
+ * The Day view's project. It also holds the teams by ID, so a trip finds the names and headcount of its teams through
+ * its own project (TripModel#pax, TripRendering#teamText).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise
@@ -24,10 +23,7 @@ export default class DispatchProject extends ProjectModelEnterprise {
         // Undo of a forecast's re-plan (ForecastPlanner): recorded as one transaction, not automatically
         stm : { autoRecord : false },
 
-        /**
-         * The teams by ID (DispatchState#teams)
-         * @config {Map<String,Object>}
-         */
+        // DispatchState#teams
         teams : null
     };
 }

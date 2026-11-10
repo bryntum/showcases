@@ -1,12 +1,11 @@
 import { mapXY } from '../plan/Farm.js';
 
 /**
- * The viewBox arithmetic of the map: which part of the farm is shown. Plain functions on plain
- * `{ x, y, width, height }` views, all at the farm's aspect ratio and inside the farm (MapViewport moves the SVG's
- * view between them)
+ * The map's viewBox arithmetic for MapViewport: plain functions on `{ x, y, width, height }` views, all in map units,
+ * at the farm's aspect ratio and inside the farm.
  */
 
-// The whole farm, the SVG's own viewBox, also the furthest the map zooms out
+// The SVG's own viewBox, also the furthest the map zooms out
 export const farmView = Object.freeze({ x : 0, y : 0, width : 440, height : 330 });
 
 // The port's marker and its label, kept in view when fitted to a trip
@@ -22,13 +21,7 @@ export const
     isFarm      = view => view.width >= farmView.width - 0.5,
     clamp       = (value, min, max) => Math.min(Math.max(value, min), max);
 
-/**
- * A view of the farm's aspect ratio, `width` wide, kept inside the farm
- * @param {Number} x
- * @param {Number} y
- * @param {Number} width
- * @returns {Object} `{ x, y, width, height }`
- */
+// A view `width` wide at the farm's aspect ratio, kept inside the farm
 export function boundedView(x, y, width) {
     const
         w = clamp(width, zoomInWidth, farmView.width),
@@ -37,11 +30,7 @@ export function boundedView(x, y, width) {
     return { x : clamp(x, 0, farmView.width - w), y : clamp(y, 0, farmView.height - h), width : w, height : h };
 }
 
-/**
- * The viewBox that fits turbines and the port, at the farm's aspect ratio, inside the farm
- * @param {String[]} ids
- * @returns {Object} `{ x, y, width, height }`
- */
+// The view that fits the turbines and the port
 export function fitView(ids) {
     const
         points = ids.map(mapXY),

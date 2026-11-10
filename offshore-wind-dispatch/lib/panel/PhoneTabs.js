@@ -1,9 +1,8 @@
 import { TabPanel } from '@bryntum/core-enterprise';
 
 /**
- * The tabs of a phone, where the schedule and the map are one tab each (PhoneLayout). The TabPanel gives
- * the tab list, its roles and the switching, and this class adds the arrow keys through the tab bar's `keyMap`: the
- * TabBar has the tab roles but no arrow keys, the ARIA tabs pattern moves between the tabs with them.
+ * The phone's tabs, the schedule and the map (PhoneLayout). Adds the arrow keys to the tab bar's `keyMap`: the TabBar
+ * has the ARIA tab roles but not the arrow keys the ARIA tabs pattern moves between the tabs with.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/TabPanel
@@ -35,8 +34,7 @@ export default class PhoneTabs extends TabPanel {
         this.stepTab(event, 1);
     }
 
-    // Shows the previous or next tab, and the focus stays in the tab list, on the tab shown. `event.widget` is the tab
-    // bar, whose items are the tabs
+    // The focus stays in the tab list, on the tab shown. `event.widget` is the tab bar, whose items are the tabs
     stepTab({ widget }, step) {
         const
             count = this.items.length,

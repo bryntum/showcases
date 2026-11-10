@@ -155,7 +155,9 @@ trip's plan (`TripModel#plan`: its departure, stops and wait on station, read fr
 them), in minutes since the trip's midnight: about 2 ms a hover, the 60 turbines of the reach included. The engine is
 not asked: a trial change placed by the engine and taken back takes about 90 ms a check, the reach would take seconds,
 and the drag checks on every move. Once the team is dropped, its stop is laid out like any other and the engine places
-it. The forecast's re-plan works the same way: the planner proposes each trip's new departure and stops, and the
+it (`DropController#dropTeam`); the team leaves the tray and the booking is told only after that, when the trip and
+every trip that waits for it are still back before their windows, else the trip is put back and the reason shown. The
+forecast's re-plan works the same way: the planner proposes each trip's new departure and stops, and the
 engine places each changed trip before the next one on the vessel is planned.
 
 | To change | Look in |
@@ -251,7 +253,7 @@ snapped to 5 minutes (`DispatchScheduler#departsAt`).
 The Dependencies feature draws the lines from a trip into a stop, a nested event, of another trip: the HV isolation
 (H2-1) into the T-45 stop of the SWATH's trip, and the helicopter's drop-off (H1-1) into the pick-up stop of H1-2 with a
 lag (`data/farm.json`, `dependencies`). The scheduling engine starts the dependent stop once the trip before it is done
-and the lag has passed, and the rest of its trip moves with it. A trip drag that would push a
+(its end, before its sail back) and the lag has passed, and the rest of its trip moves with it. A trip drag that would push a
 dependent stop so late that its trip is back after its window is refused, with the dependency's reason
 (`TripValidator#dependencyBreak`, from the EventDrag feature's `validatorFn`), and the forecast re-plan does not
 bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). The renderer (`renderDependency`) turns a

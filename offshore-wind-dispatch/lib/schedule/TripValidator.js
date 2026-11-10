@@ -2,17 +2,15 @@ import { clashOf, clashText, noGoText } from '../plan/Planner.js';
 import { hhmm } from '../util/Time.js';
 
 /**
- * The checks of a trip moved to a new time, by a drag (the EventDrag feature's `validatorFn`) or by the trip editor's
- * time field (DispatchScheduler#checkTripTime): plain functions on the DispatchScheduler, its dispatch state and its
- * dependency store.
+ * The checks of a trip moved to a new time, shared by the drag (the EventDrag feature's `validatorFn`) and the trip
+ * editor's time field (DispatchScheduler#checkTripTime), so both refuse the same times with the same reason.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
  */
 
 /**
- * The other trips of a vessel on a day, port to port, that a trip has to keep clear of. Not the trip itself, not a
- * draft shown for a team held over the vessel
+ * The other trips of a vessel, port to port, that a trip has to keep clear of. Not a draft shown for a held team
  * @param {TripModel[]} trips The trips of the day
  * @param {VesselModel} vessel
  * @param {String} [except] The ID of the trip being checked
@@ -25,9 +23,9 @@ export function busyOf(trips, vessel, except) {
 }
 
 /**
- * The reason a trip moved to a new departure breaks a dependency of the plan, if it does: the engine would move the
- * dependent stop (its trip waits on station, or the trip's own stop moves later) and that trip would be back after its
- * weather window
+ * Why a trip moved to a new departure breaks a dependency, if it does. A dependency alone is no reason: the engine
+ * would make the dependent stop wait. It is refused when that wait brings the dependent trip back after its window.
+ * Worked out from the current dates, not by asking the engine, as the drag checks on every move
  * @param {DispatchScheduler} scheduler
  * @param {TripModel} trip
  * @param {Number} departs The trip's new departure, minutes since midnight
@@ -44,7 +42,7 @@ function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
         if (fromEvent?.endDate && dependent && (fromEvent.trip === trip || dependent === trip)) {
             const
                 shift = record => (record.trip === trip ? delta : 0),
-                // Where the stop could start without waiting on station, and where the trip it follows is done
+                // When the stop could start without waiting on station, and when the trip it follows is done
                 free  = toEvent.minutesOf(toEvent.startDate) - dependent.wait + shift(toEvent),
                 done  = fromEvent.minutesOf(fromEvent.endDate) + shift(fromEvent) + (dependency.lag ?? 0),
                 wait  = Math.max(0, done - free),
@@ -62,9 +60,8 @@ function dependencyBreak({ dependencyStore, dispatch }, trip, departs) {
 }
 
 /**
- * Whether a trip may leave at the departure it is dragged to: not in the past, back
- * before its window closes, not while its vessel is out on another trip, and without a dependency pushing a stop past
- * its window
+ * Whether a trip may leave at the departure it is dragged to: not in the past, back before its window closes, not
+ * while its vessel is out on another trip, and without a dependency pushing a trip past its window
  * @param {DispatchScheduler} scheduler
  * @param {Object} context The EventDrag feature's validation context, `{ eventRecords, startDate, newResource }`
  * @returns {Boolean|Object} `true`, or `{ valid : false, message }`
@@ -80,7 +77,6 @@ export function validateTripDrag(scheduler, { eventRecords, startDate, newResour
         return { valid : false, message : 'Cannot leave port in the past' };
     }
 
-    // Out at sea while the vessel's weather is over its limit
     const
         vessel = newResource ?? trip.resource,
         close  = dispatch.closeOf(vessel),
@@ -96,15 +92,13 @@ export function validateTripDrag(scheduler, { eventRecords, startDate, newResour
         return { valid : false, message : clashText(vessel.name, clash) };
     }
 
-    // A stop that waits for another trip is not refused: the engine starts it once that trip is done. Unless that
-    // leaves a trip back after its window
     const broken = dependencyBreak(scheduler, trip, departs);
 
     return broken ? { valid : false, message : broken } : true;
 }
 
 /**
- * Why a time typed in the trip editor is refused, checked as a drag to it is
+ * Why a time typed in the trip editor is refused, checked as a drag to it would be
  * @param {DispatchScheduler} scheduler
  * @param {TripModel} trip
  * @param {Date} time The time typed, its hours and minutes on the trip's day

@@ -1,6 +1,5 @@
-/* The trips (schedule/TripRendering.js): NestedEvents parents over their time on station, no box, their label on top
- * (the feature's header), then the line with their legs on it, the nested events; the sail out and back are their
- * buffer time (EventBuffer feature) */
+/* The trips and their legs (schedule/TripRendering.js): the NestedEvents parent has no box, only its label in the
+ * feature's header and the line its legs sit on. The sail out and back are its EventBuffer */
 
 .ow-scheduler {
     --b-nested-events-parent-color                  : var(--ow-c-muted);
@@ -41,14 +40,14 @@
             }
         }
 
-        /* A team dragged that would fit on the trip: a quiet outline while the drag lasts */
+        /* A trip the dragged team would fit on */
         &.ow-trip-fits {
             outline        : 1.5px solid color-mix(in srgb, var(--ow-c-work) 45%, transparent);
             outline-offset : 3px;
             border-radius  : var(--ow-c-radius);
         }
 
-        /* A team held over the trip, the drop target, as a day of the Week view held over (week.css) */
+        /* The drop target, as a held over day of the Week view (week.css) */
         &.ow-trip-drop > .b-nested-events-container {
             outline          : var(--ow-drop-outline);
             outline-offset   : 3px;
@@ -57,7 +56,7 @@
         }
     }
 
-    /* A trip under the pointer: a dotted outline round all of it, clear of the end dots */
+    /* A hovered trip's outline, wide enough to clear the end dots */
     .b-sch-event-wrap.ow-trip-wrap:is(:hover, .b-hover):not(.ow-trip-held)::after {
         content        : '';
         position       : absolute;
@@ -115,8 +114,7 @@
             --b-sch-event-background : transparent;
         }
 
-        /* Work, Bryntum's tonal event style in the work blue (eventStyle, eventColor): the turbine in semibold, the
-           job type and the hours at the right in regular */
+        /* Bryntum's tonal event style in the work blue (eventStyle, eventColor) */
         > .b-sch-event.ow-seg-stop {
             --b-sch-event-border-color : var(--ow-c-work-line);
             --b-sch-event-font-weight  : 400;
@@ -157,8 +155,8 @@
         }
     }
 
-    /* The sail out and back: the feature's band transparent, a 1px line at the height of the trip's line instead, a
-       hollow dot at the departure, a solid one at the return. Back after the window, the sail back is orange */
+    /* The sail out and back: the feature's band made transparent, drawn instead as a line at the height of the trip's
+       line, with a dot at each end */
     .ow-transit {
         --b-event-buffer-color : transparent;
         --ow-transit-color     : var(--ow-c-transit);
@@ -244,8 +242,7 @@
     }
 }
 
-/* "SP-1 · Team C · 4 pax", from the departure on: back by the sail out. No box of its own, its forecast change in
-   the plan's blue */
+/* The trip's label, shifted back by the sail out so it starts at the departure */
 .ow-trip-head {
     display             : flex;
     align-items         : center;

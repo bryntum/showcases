@@ -2,14 +2,12 @@ import { Rectangle, Tooltip } from '@bryntum/core-enterprise';
 import { iconConfig } from '../util/Icons.js';
 import { hhmm } from '../util/Time.js';
 
-// The content of the tooltip of a team held over a trip, see DropController#previewDrop
+// `drop` is DropController#previewDrop's result
 function dropTipContent({ trip, team, job, result, reach, close }) {
     const
-        // A vessel with no trip left to join gets a new one
         name  = trip.draft ? `a new trip, ${trip.id} from port at ${hhmm(trip.departs)}` : trip.id,
         head  = result.valid ? [iconConfig('check-circle'), { tag : 'span', text : `${job.turbine} fits on ${name}` }] :
             [iconConfig('warning'), { tag : 'span', text : `${job.turbine} does not fit on ${name}` }],
-        // Each certificate with a small icon: a check in the work blue if the team holds it, a red cross if not
         certs = result.certs.map(cert => {
             const held = team.certs.includes(cert);
 
@@ -42,9 +40,8 @@ function dropTipContent({ trip, team, job, result, reach, close }) {
 }
 
 /**
- * The tooltip of a team held over a trip: a Bryntum Tooltip shown by the point the team is held at, not by hovering an
- * element. Its alignment keeps it in the viewport. It is a live region, so a screen reader reads what each trip would
- * give as the team moves from trip to trip.
+ * The tooltip of a team held over a trip, shown by the point the team is held at rather than by hovering an element.
+ * It is a live region, so a screen reader reads what each trip would give as the team moves from trip to trip.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip
@@ -57,20 +54,14 @@ export default class DropTooltip extends Tooltip {
     static configurable = {
         cls               : 'ow-drop-tip',
         anchor            : false,
-        // Shown and hidden by showDrop(), not by hovering an element
         autoShow          : false,
         hideDelay         : false,
         dismissDelay      : 0,
-        // A live region, read out as the team moves from trip to trip
         role              : 'status',
         elementAttributes : { 'aria-live' : 'polite' }
     };
 
-    /**
-     * Shows what a team gives on a trip, below a point
-     * @param {Object} drop See DropController#previewDrop
-     * @param {{x: Number, y: Number}} point In the viewport
-     */
+    // `point` is in the viewport
     showDrop(drop, point) {
         this.html = dropTipContent(drop);
         this.element.classList.toggle('ow-drop-tip-invalid', !drop.result.valid);

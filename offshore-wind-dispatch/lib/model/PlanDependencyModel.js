@@ -15,16 +15,11 @@ export default class PlanDependencyModel extends DependencyModelEnterprise {
     static $name = 'PlanDependencyModel';
 
     static fields = [
-        // `chain` or `plan`
         { name : 'kind', defaultValue : 'plan' },
         // What the stop waits for, "No work on T-45 until the HV circuit is isolated"
         { name : 'text', defaultValue : '' }
     ];
 
-    /**
-     * `true` for a link between a trip's legs, not a dependency of the plan
-     * @property {Boolean}
-     */
     get isChain() {
         return this.kind === 'chain';
     }

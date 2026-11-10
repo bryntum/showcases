@@ -3,28 +3,20 @@ import { DateHelper } from '@bryntum/core-enterprise';
 import { hhmm } from '../util/Time.js';
 
 /**
- * Brings the scheduling project's stores in line with the dispatch state (DispatchState): the weather no-go of each
- * vessel and the old place of trips brought forward as resource time ranges (VesselRangeModel, by their `kind`), the
- * now line as a time range, and the dependencies of the plan. Not a widget: it works on the stores of the
- * DispatchScheduler that owns it.
+ * Brings the DispatchScheduler's project stores in line with the dispatch state: the no-go and ghost resource time
+ * ranges (VesselRangeModel, by `kind`), the now line, and the plan's dependencies.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Dependencies
  */
 export default class DispatchSync {
-    /**
-     * @param {Object} options
-     * @param {DispatchScheduler} options.scheduler
-     */
     constructor({ scheduler }) {
         this.scheduler = scheduler;
     }
 
     /**
-     * Brings a store's records in line with the passed data, by ID: updated in place, added or removed. The stores are
-     * the scheduling project's, replacing every record would leave the ones drawn before behind
+     * Brings a store's records in line with the data, by ID: updated in place, added or removed. Replacing every
+     * record would leave the ones drawn before behind
      * @param {Core.data.Store} store
      * @param {Object[]} data
      */
@@ -44,18 +36,12 @@ export default class DispatchSync {
         });
     }
 
-    /**
-     * Draws the state anew after the forecast or the plan changed: the ranges, the now line, the dependencies
-     */
     refresh() {
         this.syncRanges();
         this.syncNow();
         this.syncDependencies();
     }
 
-    /**
-     * The weather no-go of each vessel and the old place of trips brought forward, as resource time ranges
-     */
     syncRanges() {
         const
             { scheduler } = this,
@@ -75,7 +61,7 @@ export default class DispatchSync {
                 id         : `ghost-${trip.id}`,
                 kind       : 'ghost',
                 resourceId : trip.resource?.id,
-                // As long as the trip is now, from its old departure
+                // From its old departure, as long as the trip is now
                 startDate  : trip.previousDeparture,
                 endDate    : DateHelper.add(trip.previousDeparture,
                     trip.outerEndDate.getTime() - trip.outerStartDate.getTime(), 'millisecond')
@@ -86,8 +72,8 @@ export default class DispatchSync {
     }
 
     /**
-     * The dependencies of the data whose ends are in the plan. A stop the forecast moves to tomorrow takes its
-     * dependency with it, Undo brings the stop back and this the dependency
+     * Adds the data's dependencies whose two ends are in the plan and that are missing: a stop a forecast cut takes
+     * its dependency with it, which comes back here once Undo brings the stop back
      */
     syncDependencies() {
         const
@@ -102,9 +88,7 @@ export default class DispatchSync {
         }
     }
 
-    /**
-     * The now line and the lightly shaded past, today only: a later day is all ahead
-     */
+    // The now line and the shaded past, today only
     syncNow() {
         const
             { scheduler } = this,

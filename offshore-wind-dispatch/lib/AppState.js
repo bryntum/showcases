@@ -1,43 +1,27 @@
 import { Base, Events } from '@bryntum/core-enterprise';
 
 /**
- * What the app shows apart from the plan, in one observable object: the turbine selected, whether the map follows
- * the selection, the team lifted from the tray and the one held over a trip with its check. The trip selected is the
- * Scheduler's own selection, the plan is the project's, the day and the forecast are the dispatch state's.
- *
- * Each property is a `configurable`: setting it to a new value fires `change`, which the views listen to. A value set
- * to what it is already is no change.
+ * The app's view state as one observable object. Each property is a `configurable`, so setting it to a new value fires
+ * `change`; setting it to the value it has is no change.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/Base
  * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
  */
 export default class AppState extends Base.mixin(Events) {
     static $name = 'AppState';
 
     static configurable = {
-        /**
-         * The turbine selected, on the map or through its trip
-         * @prp {String|null}
-         */
         selectedTurbine : null,
 
-        /**
-         * The map follows the selection: fitted to the selected trip or turbine. Off until the user selects one, and
-         * after the map's Show all button
-         * @prp {Boolean}
-         */
+        // The map fits itself to the selected trip or turbine. Off until the user selects one, and after Show all
         mapFollows : false,
 
-        /**
-         * The team dragged from the tray, by ID: its chip is dimmed
-         * @prp {String|null}
-         */
+        // The ID of the team dragged from the tray
         lifted : null,
 
         /**
-         * The team held over a trip or a vessel's row and its check, `{ target, trip, team, job, result, reach,
-         * close }` (DropController#previewDrop), `null` while it is over nothing
+         * The team held and its check, `{ id, target, trip, team, job, result, reach, close, at }`
+         * (DropController#previewDrop), `null` while it is over nothing
          * @prp {Object|null}
          */
         held : null

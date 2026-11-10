@@ -1,8 +1,7 @@
-/* A team being dragged (drag/DragChip.js, drag/TeamDrag.js): DragHelper's proxy, the chip in the page's body, and the
- * Bryntum Tooltip of the trip under it (drag/DropTooltip.js). The pointer passes through both */
+/* A team being dragged (drag/TeamDrag.js): DragHelper's proxy chip in the page's body (createChip in TeamChip.js), and
+ * the Tooltip of the trip under it (drag/DropTooltip.js). The pointer passes through both */
 
-/* The chip: teal where the team fits on the trip under it, red where it does not, neutral over empty space. Over the
-   app, under Bryntum's floating widgets, so the tooltip stays on top */
+/* Over the app, under Bryntum's floating widgets, so the tooltip stays on top of the chip */
 .ow-drag-chip {
     position         : absolute;
     z-index          : calc(var(--b-float-root-z-index) - 1);
@@ -41,7 +40,7 @@
     gap         : 0.5834em;
 }
 
-/* The team's certificates (TeamChip#teamChipContent, compact), quiet text, HV emphasised */
+/* The team's certificates (TeamChip#teamChipContent, compact) */
 .ow-certs {
     display : flex;
     gap     : 0.3334em;
@@ -80,13 +79,12 @@
     }
 }
 
-/* While DragHelper drags, the grabbing hand (its own class on the body) */
+/* DragHelper's class on the body while it drags */
 .b-drag-helper-active {
     cursor : grabbing;
 }
 
-/* The tooltip, styled as a card: its head in the tone of the check, the facts (frame.css), each certificate with its
-   mark */
+/* The tooltip, styled as a card. The facts' grid is in frame.css */
 .b-tooltip.ow-drop-tip {
     --ow-tone               : var(--ow-reach);
     --b-popup-background    : var(--ow-surface);

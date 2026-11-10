@@ -3,10 +3,8 @@ import { iconConfig } from '../util/Icons.js';
 import { duration, hhmm } from '../util/Time.js';
 
 /**
- * The tooltip of a trip bar as a DomConfig, in the style of the map's turbine tooltip (the `eventTooltip` feature of
- * the DispatchScheduler is its container): a header with the trip, its vessel and a pill saying how the trip stands
- * against its weather window, a mini timeline of the trip's shape, and a two column grid of facts
- * (resources/schedule/tooltip.css)
+ * The content of a trip's tooltip (the `eventTooltip` feature's template), styled like the map's turbine tooltip in
+ * resources/schedule/tooltip.css: the trip and how it stands against its window, a mini timeline, a list of facts
  * @param {TripModel} trip
  * @param {DispatchState} state
  * @returns {Object[]} DomConfig
@@ -19,7 +17,7 @@ export function tripTipContent(trip, state) {
         late   = back - close,
         stops  = trip.legs.filter(leg => leg.type === 'stop' && !leg.preview),
         share  = minutes => `${((minutes - start) / Math.max(1, back - start) * 100).toFixed(2)}%`,
-        // A stop the vessel cannot get back from before its window closes, as the schedule draws it
+        // As TripRendering#renderLeg marks a stop at risk
         risky  = leg => trip.status === 'at-risk' && leg.to + portMinutes(leg.turbine, trip.mode) > close,
         fact   = (term, value) => [{ tag : 'dt', text : term }, { tag : 'dd', text : value }],
         facts  = [
@@ -39,7 +37,6 @@ export function tripTipContent(trip, state) {
             {
                 tag      : 'header',
                 children : [
-                    // Its vessel's icon, as in the vessel column
                     { tag : 'span', class : 'ow-tip-vessel', children : [iconConfig(trip.resource?.glyph ?? 'ctv')] },
                     {
                         tag      : 'span',
@@ -53,7 +50,7 @@ export function tripTipContent(trip, state) {
                     }
                 ]
             },
-            // The trip from its departure to its return, the work in proportion, the window's close if it is inside
+            // Departure to return, the stops in proportion, and the window's close if it falls inside
             {
                 class    : 'ow-tip-track',
                 children : [

@@ -1,16 +1,15 @@
 /**
- * Moves the app's two halves, the schedule and the map, between the container that shows them side by side and the
- * phone's tab panel (PhoneTabs), where each is a tab. The widgets stay the app's, only their parent changes.
+ * Moves the schedule and the map between the side-by-side container and the phone's tab panel (PhoneTabs). The widgets
+ * are re-parented, not recreated.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container#function-add
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/TabPanel
  */
 export default class PhoneLayout {
     /**
      * @param {Object} options
-     * @param {Core.widget.Container} options.main Shows the halves side by side
-     * @param {Core.widget.TabPanel} options.tabs Shows them as tabs on a phone
+     * @param {Core.widget.Container} options.main
+     * @param {Core.widget.TabPanel} options.tabs
      * @param {Core.widget.Widget[]} options.halves The schedule and the map, in tab order
      * @param {Core.widget.Widget[]} options.views The widgets with a `phone` config of their own
      */
@@ -18,10 +17,6 @@ export default class PhoneLayout {
         Object.assign(this, { main, tabs, halves, views });
     }
 
-    /**
-     * Shows the halves as tabs on a phone, side by side otherwise
-     * @param {Boolean} phone
-     */
     apply(phone) {
         const
             { main, tabs, halves, views } = this,
@@ -50,19 +45,11 @@ export default class PhoneLayout {
         }
     }
 
-    /**
-     * Shows the schedule's or the map's tab
-     * @param {String} tab `schedule` or `map`
-     */
+    // `schedule` or `map`
     showTab(tab) {
         this.tabs.activeTab = tab === 'map' ? 1 : 0;
     }
 
-    /**
-     * The tab a half stands for
-     * @param {Core.widget.Widget} half
-     * @returns {String} `schedule` or `map`
-     */
     tabOf(half) {
         return half && half === this.halves[1] ? 'map' : 'schedule';
     }

@@ -1,6 +1,5 @@
-/* The map of the farm (map/TurbineMap.js, map/MapDrawing.js): its box and SVG, the row over it with the callout and the
- * Whole farm button, the farm itself, the turbine markers (map/Turbine.js) and their labels, and its legend
- * (map/MapLegend.js). Sizes divided by --ow-map-zoom keep their size on screen as the map zooms */
+/* The map of the farm (map/TurbineMap.js, map/MapDrawing.js, map/Turbine.js) and its legend (map/MapLegend.js). Sizes
+ * divided by --ow-map-zoom keep their size on screen as the map zooms */
 
 .ow-map.b-widget {
     min-height       : 0;
@@ -17,7 +16,7 @@
     }
 }
 
-/* Zoomed in, the map pans by dragging (MapViewport#onPanStart) */
+/* A drag or a pinch moves the map (MapViewport), not the page */
 .ow-map-svg {
     position     : absolute;
     inset        : 0;
@@ -40,7 +39,7 @@
     }
 }
 
-/* The selected trip or the team held over the map (map/MapModel.js) */
+/* What a held team's trip can reach (map/MapModel.js) */
 .ow-map-callout {
     flex             : 1 1 auto;
     min-width        : 0;
@@ -55,7 +54,7 @@
     }
 }
 
-/* Shown while the map is zoomed in, to a trip (TurbineMap#fitTo) */
+/* Show all, shown while zoomed in */
 .ow-map-whole.b-button {
     --b-button-elevated-background : var(--ow-surface);
     --b-button-elevated-color      : var(--b-text-1);
@@ -70,7 +69,6 @@
     margin-inline-start : auto;
 }
 
-/* The farm: the depth contours, the export cable, the routes of the trips, the port and the substation */
 .ow-contours path {
     fill   : none;
     stroke : light-dark(rgb(42 127 176 / 18%), rgb(127 196 224 / 10%));
@@ -160,7 +158,7 @@
         stroke-linecap : round;
     }
 
-    /* The wrench of a turbine in work, white, in place of the rotor */
+    /* Shown in place of the rotor glyph for a turbine in work (.ow-m-work) */
     .ow-marker-wrench {
         display        : none;
         fill           : var(--b-color-white);
@@ -174,7 +172,7 @@
     height : 1rem;
 }
 
-/* One tab stop for the map, the arrow keys move between the turbines; the halo shows the focus (below) */
+/* The halo shows the focus (below) */
 .ow-marker {
     cursor : pointer;
 
@@ -225,7 +223,7 @@
     }
 }
 
-/* No alarm, a dashed disc: a team waiting for a trip */
+/* A team waiting for a trip */
 .ow-m-waiting {
     --ow-tone : var(--ow-wait);
 
@@ -235,8 +233,7 @@
     }
 }
 
-/* The halo: the drop target, selected, ringed (the stops of the trip selected or hovered in the schedule), hovered,
-   focused in Bryntum's focus colour; the later wins */
+/* The halo's states in rising priority, the later rule wins: drop target, selected, ringed, hovered, focused */
 .ow-marker-halo {
     .ow-m-target & {
         fill         : color-mix(in srgb, var(--ow-reach) 22%, transparent);
@@ -270,7 +267,7 @@
     opacity : 0.4;
 }
 
-/* The labels over the turbines, in the colour of their tone, outlined in the sea's */
+/* Outlined in the sea's colour, so a label reads over the routes and markers */
 .ow-map-label {
     --ow-label-ink : var(--ow-plan);
 

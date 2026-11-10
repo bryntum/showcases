@@ -1,7 +1,6 @@
 import { DomHelper } from '@bryntum/core-enterprise';
 import { createShell } from '@showcases/shared';
-// Structural CSS of Scheduler and of the products it builds on (Core, Grid), then the Svalbard theme, which renders
-// light and dark from one file
+// Svalbard renders light and dark from one file
 import '@bryntum/scheduler-enterprise/scheduler.css';
 import '@bryntum/scheduler-enterprise/svalbard.css';
 import './resources/app.css';
@@ -10,16 +9,11 @@ import farmUrl from './data/farm.json?url';
 import DispatchApp from './lib/DispatchApp.js';
 
 /**
- * Offshore Wind Dispatch: the crew transfer vessels and helicopters of an offshore wind farm in a Bryntum Scheduler,
- * planned against the weather window. Drag a team onto a trip to see which turbines the trip can still reach before
- * the wave height closes the window, and bring in the next forecast to watch the plan change with it.
- *
- * `?state=forecast` opens with the 08:00 forecast applied, `?state=drag` with Team F held over Northern Tern's trip,
- * `?tab=map` with the map tab at phone widths, `?view=week` with the Week view.
+ * Offshore Wind Dispatch: loads the farm data and starts the app. The URL options (`?state`, `?view`, `?tab`) are in
+ * the README.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
- * https://www.ag-grid.com/charts/javascript/area-series/
  */
 
 const

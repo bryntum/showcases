@@ -1,20 +1,17 @@
-/* The showcase's own colours and sizes, on the root, as the drag chip and the tooltips render outside the app. Text,
- * borders and the now line use the theme's own variables (--b-text-1, --b-text-2, --b-border-7, --b-primary) */
+/* The showcase's own colours and sizes. On the root, not the app, as the drag chip and the tooltips render outside
+ * the app's element */
 
 :root {
-    /* Trips on plan, past the window (at risk), stopped, what a dragged team can reach, a team waiting */
     --ow-plan : light-dark(color-mix(in srgb, var(--b-color-blue) 88%, var(--b-color-black)), var(--b-color-blue));
     --ow-risk : light-dark(color-mix(in srgb, var(--b-color-orange) 85%, var(--b-color-black)), var(--b-color-orange));
     --ow-stop    : light-dark(color-mix(in srgb, var(--b-color-red) 88%, var(--b-color-black)),
         color-mix(in srgb, var(--b-color-red) 80%, var(--b-color-white)));
     --ow-reach : light-dark(color-mix(in srgb, var(--b-color-teal) 75%, var(--b-color-black)), var(--b-color-teal));
     --ow-wait  : light-dark(#5b6878, #9aa6b4);
-    /* Cards a step lighter than the page behind them, in dark too */
     --ow-surface : light-dark(var(--b-neutral-100), #1e1e1e);
     /* The hour lines, lighter than the row lines (also read by WaveChart.js) */
     --ow-tick : color-mix(in srgb, var(--b-border-7) 45%, transparent);
 
-    /* The map */
     --ow-sea-map : light-dark(#eaf3f9, #0e1c29);
     --ow-marker  : light-dark(#fff, #253141);
 
@@ -28,12 +25,10 @@
     --ow-sea-foam     : light-dark(#fff, #a6dcef);
     --ow-beacon       : #e5322d;
 
-    /* The schedule, the header and the tray: blue carries the plan, orange only what is past the window, red only what
-       is stopped. The work blue is the trips' eventColor (TripRendering.js), the chart colours WaveChart.js reads */
+    /* The work blue is also the trips' eventColor (TripRendering.js); WaveChart.js reads the chart colours */
     --ow-c-work : light-dark(#1f6fb8, #2a6db0);
-    /* Text in the work blue, lighter in dark to read on the tints */
     --ow-c-work-ink : light-dark(#1a5f9e, #8bbcef);
-    /* The tonal work block: its tint and hairline, as Bryntum's tonal event style makes them */
+    /* Mixed the way Bryntum's tonal event style mixes its tint and hairline */
     --ow-c-work-tint   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 86%),
         color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%));
     --ow-c-work-line : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%);
@@ -42,7 +37,6 @@
     --ow-c-risk-ink  : light-dark(#8a4500, #ffb766);
     --ow-c-stop-ink  : light-dark(#b71c1c, #ff8f86);
     --ow-c-transit   : light-dark(#b8c0c8, #7b8794);
-    /* The dependency lines: the work blocks' hairline, a step lighter in dark */
     --ow-c-dependency  : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 55%), #5f8fc4);
     --ow-c-muted       : light-dark(#6b6b6b, #a7a7a7);
     --ow-c-footer      : light-dark(#fafafa, #1a2029);
@@ -51,23 +45,20 @@
     --ow-c-chart-fill  : light-dark(rgb(31 111 184 / 10%), rgb(90 160 230 / 14%));
     --ow-c-chart-risk  : light-dark(rgb(224 123 0 / 12%), rgb(240 150 46 / 14%));
 
-    /* The type scale: the app's text is base (frame.css), titles a step up, notes and labels steps down */
     --ow-size-xs   : 0.6875rem;
     --ow-size-sm   : 0.75rem;
     --ow-size-base : 0.8125rem;
     --ow-size-md   : 0.875rem;
 
-    /* The timeline's sizes are px, as its rows, ticks and margins in DispatchScheduler.js: the transit line, the
-       hollow end dot and the solid one */
+    /* px, as the rows, ticks and margins DispatchScheduler.js sets */
     --ow-transit-w   : 1px;
     --ow-dot-out     : 8px;
     --ow-dot-back    : 6px;
     --ow-bar-control : 1.875rem;
-    /* A card's inner inset, its title bar's, and the map's margin in its card (px, as MapPanel.js sets it) */
+    /* The map's margin is px, as MapPanel.js sets it */
     --ow-inset      : 1rem;
     --ow-bar-inset  : 0.75rem;
     --ow-map-margin : 16px;
-    /* The frame's inner padding is its corner radius, so what sits in it starts where the curve ends */
     --ow-gutter        : 1.5rem;
     --ow-card-radius   : 0.5rem;
     --ow-card-shadow   : 0 2px 12px -2px light-dark(rgb(16 24 40 / 10%), rgb(0 0 0 / 50%));
@@ -76,8 +67,7 @@
     --ow-shadow-chip   : 0 1px 3px rgb(0 0 0 / 8%);
     --ow-shadow-lifted : 0 10px 24px rgb(0 0 0 / 22%);
 
-    /* Shared by the Day and the Week view: the weather no-go hatch, and the drop target of a crew held over a trip or
-       a free day */
+    /* Shared by the Day and the Week view */
     --ow-hatch        : repeating-linear-gradient(135deg, light-dark(rgb(70 80 95 / 9%), rgb(200 210 225 / 9%)) 0 2px,
         transparent 2px 9px);
     --ow-drop-outline : 1.5px solid color-mix(in srgb, var(--ow-c-work) 70%, transparent);

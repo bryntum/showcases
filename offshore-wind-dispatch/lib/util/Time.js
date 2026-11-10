@@ -1,13 +1,10 @@
 /**
- * Times of day as the dispatch planner counts them, in minutes since midnight of the day a trip is on: formatting and
- * parsing only, no state. The records hold Dates, the scheduling engine calculates them; DateHelper converts between
- * those and these minutes, from the day's midnight (DispatchState#midnight), and formats Dates.
+ * Formatting and parsing of the planner's times of day: minutes since midnight of the day a trip is on. The records
+ * hold Dates; DispatchState#midnight is the zero these minutes count from.
  */
 
 /**
  * "07:40" as minutes since midnight
- * @param {String} text
- * @returns {Number}
  */
 export function parseTime(text) {
     const [hours, minutes] = text.split(':').map(Number);
@@ -17,8 +14,6 @@ export function parseTime(text) {
 
 /**
  * Minutes since midnight as "07:40", past midnight as "01:28 tomorrow"
- * @param {Number} minutes
- * @returns {String}
  */
 export function hhmm(minutes) {
     const
@@ -32,8 +27,6 @@ export function hhmm(minutes) {
 
 /**
  * A duration as "6 h 20 min", "2 h" or "48 min"
- * @param {Number} minutes
- * @returns {String}
  */
 export function duration(minutes) {
     const

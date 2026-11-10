@@ -2,17 +2,12 @@ import { turbineIds } from '../plan/Farm.js';
 import { duration, hhmm } from '../util/Time.js';
 
 /**
- * What the turbine map shows, worked out from the trips and the dispatcher's state: a status per turbine, the labels,
- * the vessel routes and, while a team is dragged, the turbines the trip can still reach.
- * TurbineMap draws it.
+ * What the turbine map shows, as plain data worked out from the trips and the dispatch state (mapModel). TurbineMap
+ * draws it.
  */
 
 /**
- * Whether a turbine is stopped, and why: a team works on it (its trip has left port), or it has a fault. A stopped
- * turbine's rotor does not turn
- * @param {DispatchState} state
- * @param {TripModel[]} trips
- * @param {String} id
+ * A turbine is stopped while a team works on it (its trip has left port), or with a fault
  * @returns {String|null} `repair`, `fault` or `null` when it runs
  */
 export function stoppedOf(state, trips, id) {
@@ -23,11 +18,6 @@ export function stoppedOf(state, trips, id) {
     return state.faults.has(id) ? 'fault' : null;
 }
 
-/**
- * The trip serving each turbine
- * @param {TripModel[]} trips
- * @returns {Map<String,TripModel>}
- */
 function tripsByTurbine(trips) {
     const map = new Map();
 
@@ -36,8 +26,7 @@ function tripsByTurbine(trips) {
     return map;
 }
 
-// How one turbine is shown: its status, and dimmed while a trip's reach is shown and it lies outside it (all but the
-// stops of that trip itself). TurbineMap#syncMarker turns it into the marker's classes
+// Dimmed while a trip's reach is shown and the turbine lies outside it, unless it is a stop of that trip
 function markerOf(id, context) {
     const { reach, target, focusTrip, byTurbine } = context;
 
@@ -47,8 +36,6 @@ function markerOf(id, context) {
     };
 }
 
-// The status of a turbine in the plan: served by a trip (`work`, `planned`, `risk`), stopped (`fault`), `waiting` for
-// its team, or none
 function planStatusOf(id, { state, byTurbine }) {
     const trip = byTurbine.get(id);
 
@@ -63,7 +50,7 @@ function planStatusOf(id, { state, byTurbine }) {
     return state.waiting.includes(id) ? 'waiting' : '';
 }
 
-// The labels of the plan: the selected turbine, faults and trips past the window
+// Labels for the selected turbine, the faults and the last stop of each trip past the window
 function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     const
         labels = [],
@@ -91,11 +78,9 @@ function planLabels({ state, trips, selectedTurbine, byTurbine }) {
     return labels;
 }
 
-// The count that leads the callout, in bold
 const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
 
 /**
- * The map's content
  * @param {Object} options
  * @param {DispatchState} options.state
  * @param {TripModel[]} options.trips

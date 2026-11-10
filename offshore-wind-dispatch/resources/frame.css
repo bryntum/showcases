@@ -2,7 +2,6 @@
  * panel/MapPanel.js), the forecast's notice (ForecastNotice.js) and the inline SVG icons (util/Icons.js) */
 
 .ow-app.b-panel {
-    /* The page: the header and the tray sit on it, the schedule and the map are cards on it */
     --b-panel-background   : light-dark(#f4f5f7, #141414);
     --b-button-font-weight : 400;
     /* The shell frames the app with this radius (shared/shell.css) */
@@ -25,7 +24,7 @@
     --b-container-gap : 0;
 }
 
-/* The two halves side by side, a gutter apart and from the page's edges, which they do not pass on */
+/* The two halves, a gutter apart and from the page's edges. They do not pass the padding and gap on */
 .ow-main {
     --b-container-padding : 0 var(--ow-gutter) var(--ow-gutter);
     --b-container-gap     : var(--ow-gutter);
@@ -40,8 +39,8 @@
     min-width : 0;
 }
 
-/* The cards: the schedule (a Panel), the site's (a Container) and the turbine's (a Widget). No radius and no shadow
-   on a phone (phone.css) */
+/* The cards: the schedule (a Panel), the site's (a Container) and the turbine's (a Widget). phone.css takes the
+   radius and shadow off */
 .ow-schedule, .ow-side-card, .ow-side .ow-card.b-widget {
     min-width        : 0;
     min-height       : 0;
@@ -51,7 +50,7 @@
     box-shadow       : var(--ow-card-shadow);
 }
 
-/* The map's column of two cards, a gutter apart. Transparent, and not clipping their shadows */
+/* The map's column of two cards. Not clipping, so the cards' shadows show */
 .ow-side {
     --b-panel-gap        : var(--ow-gutter);
     --b-panel-background : transparent;
@@ -115,7 +114,7 @@
     white-space : nowrap;
 }
 
-/* The next forecast, a `tonal` button in the work blue, through its rendition's variables */
+/* The next forecast's button, through the `tonal` rendition's variables */
 .ow-forecast-button.b-button {
     --b-button-tonal-color             : var(--ow-c-work-ink);
     --b-button-tonal-background        : var(--ow-c-button-tint);
@@ -151,7 +150,7 @@
     }
 }
 
-/* The forecast's notice, a Container with Bryntum Buttons, in the plan's blue: news, not an alarm */
+/* The forecast's notice (ForecastNotice.js) */
 .ow-notice.b-widget {
     --b-container-gap          : 0.625rem;
     --b-container-padding      : 0.5rem 1rem 0.5rem 1.5rem;
@@ -192,7 +191,7 @@
     font-size : var(--ow-size-base);
 }
 
-/* The icons, inline SVG in the text colour, and in a box of their own in a DomConfig or a button */
+/* The inline SVG icons (util/Icons.js), and their box in a DomConfig or a button */
 .ow-icon {
     flex           : none;
     width          : 1.2em;

@@ -4,11 +4,9 @@ import { createChip, showOnChip } from '../TeamChip.js';
 import './DropTooltip.js';
 
 /**
- * Dragging a team from the tray onto a vessel. Bryntum's DragHelper runs the drag: the threshold, the proxy following
- * the pointer for mouse, pen and touch, Escape, the animated return of an aborted or refused drop. The whole time axis
- * is the drop target: over a trip bar, or anywhere on a vessel's row, the handler (DropController) previews the stop
- * the team would get, and a Bryntum Tooltip (DropTooltip) by the pointer says when the trip is back against the window.
- * The same check marks the drag invalid (`context.valid`) and colours the proxy (showOnChip).
+ * Dragging a team from the tray onto a vessel, run by Bryntum's DragHelper. The pointer side only: the handler
+ * (DropController) previews, checks and books, and that one check sets `context.valid`, the proxy's colour and the
+ * DropTooltip.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -17,10 +15,10 @@ import './DropTooltip.js';
 export default class TeamDrag {
     /**
      * @param {Object} options
-     * @param {TeamTray} options.tray The crews waiting at the port, whose chips are dragged
+     * @param {TeamTray} options.tray
      * @param {Scheduler.view.Scheduler} options.scheduler
-     * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
-     * @param {DropController} options.handler Previews, checks and books the team
+     * @param {WeekBoard} options.board While it shows, its free cells are the drop targets
+     * @param {DropController} options.handler
      */
     constructor({ tray, scheduler, board, handler }) {
         const me = this;
@@ -54,8 +52,8 @@ export default class TeamDrag {
     }
 
     /**
-     * Holds a team over a trip as a pointer resting on its previewed stop would, without one: for `?state=drag` and
-     * the screenshots. It stays over that trip while the plan changes, and Escape puts it back
+     * Only for the `?state=drag` URL state (the screenshots): holds a team over a trip as a pointer resting on its
+     * previewed stop would, with no pointer. Escape puts it back
      * @param {String} teamId
      * @param {TripModel} trip
      * @returns {Promise} Resolves once it is shown
@@ -94,7 +92,7 @@ export default class TeamDrag {
     onDragStart(context) {
         const me = this;
 
-        // A team held by the URL state goes back first
+        // A team held by `?state=drag` goes back first
         me.end();
         me.proxy = context.element;
         me.lift(context.grabbed.dataset.team);
@@ -108,8 +106,7 @@ export default class TeamDrag {
         context.valid = Boolean(me.hover(me.targetAt(me.point), me.point)?.result.valid);
     }
 
-    // Released over a trip, a row or a free cell: checked there again and booked if it fits, else the app says why
-    // (DropController#dropTeam). The preview redraws the trip under the pointer, so the target is found again
+    // The preview redraws the trip under the pointer, so the target is found again
     onDrop() {
         const
             me     = this,
@@ -122,12 +119,7 @@ export default class TeamDrag {
         me.end();
     }
 
-    /**
-     * Where on the Day view's time axis a team is held. None over a cell of the week, which is the whole day
-     * @param {TripModel|VesselModel|Object|null} target
-     * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {Number|null} Minutes since midnight
-     */
+    // Minutes since midnight on the Day view's time axis. None over a cell of the week, which is the whole day
     minuteAt(target, point) {
         const
             { scheduler } = this,
@@ -136,20 +128,15 @@ export default class TeamDrag {
         return date ? DateHelper.diff(scheduler.dispatch.midnight, date, 'minute') : null;
     }
 
-    // Checks the team again where it is held after the plan or the forecast changed (DispatchApp#replan): the pointer
-    // may be still while the trips move under it
+    // Called by DispatchApp#replan: the pointer may be still while the trips move under it
     refresh() {
         if (this.isDragging && this.point) {
             this.hover(this.target ?? this.targetAt(this.point), this.point);
         }
     }
 
-    /**
-     * What a team held at a point is over: a trip bar (a draft trip counts as its vessel's row), else a vessel's row in
-     * the time axis, else nothing. In the Week view, a vessel's day without a trip (WeekBoard#cellAt)
-     * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {TripModel|VesselModel|Object|null}
-     */
+    // A trip bar (a draft trip counts as its vessel's row), else a vessel's row, else null. In the Week view, a free
+    // cell (WeekBoard#cellAt). `point` is in the viewport
     targetAt(point) {
         const { board } = this;
 
@@ -183,13 +170,7 @@ export default class TeamDrag {
         me.tip = Widget.create({ type : 'droptooltip' });
     }
 
-    /**
-     * Previews the team on a trip, a vessel or a cell, or none: the tooltip, the proxy and the trip's highlight all
-     * show this one check
-     * @param {TripModel|VesselModel|Object|null} target
-     * @param {{x: Number, y: Number}} point In the viewport
-     * @returns {Object|null} See DropController#previewDrop
-     */
+    // The tooltip, the proxy and the trip's highlight all show this one check, see DropController#previewDrop
     hover(target, point) {
         const
             me   = this,
@@ -197,7 +178,6 @@ export default class TeamDrag {
 
         showOnChip(me.proxy, drop);
 
-        // The Week view tints the cell held over, as the Day view does the trip
         if (me.board) {
             me.board.dropCell = target?.isWeekCell ? target : null;
         }
@@ -212,7 +192,6 @@ export default class TeamDrag {
         return drop;
     }
 
-    // The team goes back to the tray, or was booked: the preview ends
     end() {
         const me = this;
 
@@ -220,7 +199,7 @@ export default class TeamDrag {
             return;
         }
 
-        // The chip of a team held by the URL state is ours, DragHelper removes its own proxy
+        // The chip of a team held by `?state=drag` is ours, DragHelper removes its own proxy
         if (me.onKey) {
             document.removeEventListener('keydown', me.onKey);
             me.proxy.remove();

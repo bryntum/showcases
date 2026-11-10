@@ -4,13 +4,13 @@ import { icon } from '../util/Icons.js';
 import { turbineMarker } from './Turbine.js';
 
 /**
- * The SVG of the map as strings: the parts that do not change (the sea, the cable, the port, the substation and the
- * markers), and the routes and labels the map draws again whenever the plan changes (TurbineMap#draw)
+ * The map's SVG as strings: the static farm (mapSvg), and the routes and labels TurbineMap#draw redraws on each change
+ * of the plan.
  */
 
 /**
- * The SVG of the farm and the strip above it that holds the callout and the Show all button. The routes, the labels
- * and the callout are empty, TurbineMap#draw fills them
+ * The farm with empty route, label and callout containers for TurbineMap#draw, and the strip above it for the callout
+ * and the Show all button
  * @param {Object} site `{ port, portKm, name }`
  * @returns {String} HTML
  */
@@ -53,7 +53,6 @@ export function mapSvg(site) {
 }
 
 /**
- * A route from the port to each stop
  * @param {Object} route `{ stops, kind }`, kind `selected`, `preview` or none
  * @returns {String} SVG
  */
@@ -73,7 +72,6 @@ export function routeSvg({ stops, kind }) {
  * @returns {String} SVG
  */
 export function labelSvg({ id, text, tone }) {
-    // The substation is not a turbine, it carries no label
     if (id === substation) {
         return '';
     }

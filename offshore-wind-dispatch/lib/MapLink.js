@@ -1,24 +1,12 @@
 /**
- * Links the turbine map and the schedule under the pointer, both ways:
- *
- * - A turbine hovered on the map lights up the trips that serve it, with the Scheduler's own event highlighting, which
- *   fades the other trips
- * - A trip hovered in the schedule rings its turbines on the map. With none hovered, the trip a team is held over or
- *   else the selected trip keeps its turbines ringed
- *
- * The selection is linked by the app (DispatchApp#onTurbineSelectionChange and #onTripSelectionChange).
+ * Links the hover of the map and the schedule, both ways. With no trip hovered, the trip a team is held over, else the
+ * selected trip, keeps its turbines ringed. The selection is linked by DispatchApp.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#function-highlightEvents
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler#event-eventMouseEnter
  */
 
-/**
- * The trips serving a turbine
- * @param {TripModel[]} trips
- * @param {String} turbine
- * @returns {TripModel[]}
- */
 export function tripsOf(trips, turbine) {
     return turbine ? trips.filter(trip => trip.turbines.includes(turbine)) : [];
 }
@@ -42,18 +30,12 @@ export default class MapLink {
         });
     }
 
-    /**
-     * Rings and lights up again, the plan under the pointer may have changed
-     */
+    // The plan under the pointer may have changed
     refresh() {
         this.map.ring(this.ringedTurbines());
         this.lightTrips(this.map.hovered);
     }
 
-    /**
-     * Lights up the trips of a turbine, or none
-     * @param {String|null} turbine
-     */
     lightTrips(turbine) {
         const
             me            = this,
@@ -94,7 +76,6 @@ export default class MapLink {
         }
     }
 
-    // The turbines of the trip hovered, else of the focus trip
     ringedTurbines() {
         const trip = (this.hoverTrip ?? this.focusTrip())?.trip;
 

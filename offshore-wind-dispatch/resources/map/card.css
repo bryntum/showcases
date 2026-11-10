@@ -1,5 +1,5 @@
-/* The selected turbine (map/TurbineCard.js) and the map's tooltip on a turbine (map/TurbineTooltip.js), the same card
- * at another size: the illustration (--ow-art-w wide) beside the facts (frame.css) and a note in the turbine's tone */
+/* The selected turbine's card (map/TurbineCard.js), and the same card at another size in the map's tooltip
+ * (map/TurbineTooltip.js). The facts' grid is in frame.css */
 
 :is(.ow-card.b-widget, .ow-card-tip) {
     --ow-tone : light-dark(color-mix(in srgb, var(--b-color-cyan) 70%, var(--b-color-black)), var(--b-color-cyan));
@@ -18,7 +18,7 @@
     }
 }
 
-/* In the map's column (frame.css), 1.25rem narrower than in the tooltip, so the note beside it stays whole */
+/* The art narrower than in the tooltip, so the note beside it stays whole in the map's column */
 .ow-card.b-widget {
     --ow-art-w : 6.5rem;
 
@@ -45,7 +45,7 @@
     fill        : var(--b-text-2);
 }
 
-/* The rotor, drawn turning for a running turbine at the wind's speed (--ow-rotor-period, map/Turbine.js) */
+/* The rotor turns only without a reduced motion preference, at --ow-rotor-period (map/Turbine.js) */
 @media (prefers-reduced-motion : no-preference) {
     .ow-turbine-rotor {
         animation : ow-spin var(--ow-rotor-period, 0s) linear infinite;
@@ -58,7 +58,7 @@
     }
 }
 
-/* The wrench badge of a turbine under repair (Phosphor's light wrench, thickened by a stroke of its own colour) */
+/* Phosphor's light wrench, thickened by a stroke of its own colour to read at badge size */
 .ow-turbine-badge {
     color : var(--ow-plan);
 
@@ -92,7 +92,6 @@
     }
 }
 
-/* The id, its row and the rating pill on one text baseline */
 .ow-card-title {
     display     : flex;
     flex-wrap   : wrap;
@@ -112,7 +111,7 @@
     font-weight : 600;
 }
 
-/* One line, the time in semibold, cut with an ellipsis where too long for the card */
+/* One line, cut with an ellipsis where too long for the card */
 .ow-card-note {
     display          : flex;
     align-items      : center;
@@ -144,8 +143,7 @@
     }
 }
 
-/* The turbine's rating, a small muted pill with a lightning bolt, at the right end of the title line; a little less
-   padding on the icon's side, whose glyph has its own space */
+/* Less padding on the icon's side, whose glyph has space of its own */
 .ow-card-rating {
     display             : inline-flex;
     align-items         : center;
@@ -160,7 +158,7 @@
     background-color    : color-mix(in srgb, var(--b-text-2) 12%, transparent);
 }
 
-/* The tooltip: the card brings its own padding, the illustration as tall as the text beside it */
+/* The card inside brings its own padding */
 .b-tooltip.ow-map-tip {
     --b-panel-padding : 0;
 }

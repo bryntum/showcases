@@ -7,14 +7,8 @@ import { mapModel } from '../map/MapModel.js';
 import { cardInfo } from '../map/TurbineCard.js';
 
 /**
- * The map half of the app: a column of two cards. The site's card has a title bar with the site's name and its
- * turbine count, the map of the farm (TurbineMap) inset, and its legend. The selected turbine's card
- * (TurbineCard) is under it. On a phone it is the Map tab.
- *
- * `draw()` draws both from the plan and the app's state, and fits the map to what is selected when that changed.
- *
- * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
+ * The map half of the app: the site's card (title bar, TurbineMap, legend) over the selected turbine's card.
+ * `draw()` redraws both on every change, but moves the map only when the selection changed (see fit).
  */
 export default class MapPanel extends Panel {
     static $name = 'MapPanel';
@@ -22,22 +16,13 @@ export default class MapPanel extends Panel {
     static type = 'mappanel';
 
     static configurable = {
-        /**
-         * The site, for the map's port label and the title: `{ port, portKm, name }`
-         * @config {Object}
-         */
+        // `{ port, portKm, name }`
         site : null,
 
-        /**
-         * Returns the content (a DomConfig) of a turbine's tooltip on the map, see TurbineMap#tipContent
-         * @config {Function}
-         */
+        // See TurbineMap#tipContent
         tipContent : null,
 
-        /**
-         * At phone widths the map is its own tab, the site's title bar goes. Set by PhoneLayout
-         * @prp {Boolean}
-         */
+        // Set by PhoneLayout. The site's title bar goes
         phone : false,
 
         cls    : 'ow-side',
@@ -54,7 +39,6 @@ export default class MapPanel extends Panel {
             title  : 'Map',
             header : false,
             items  : {
-                // The site's card: the title bar, the map inset with the card's padding, the legend on the card
                 place : {
                     type   : 'container',
                     cls    : 'ow-side-card',
@@ -66,7 +50,6 @@ export default class MapPanel extends Panel {
                             cls   : 'ow-panel-bar',
                             items : {
                                 title  : { type : 'widget', cls : 'ow-panel-title', html : StringHelper.encodeHtml(site.name) },
-                                // The count at the right end
                                 spacer : '->',
                                 count  : {
                                     type    : 'widget',
@@ -79,7 +62,6 @@ export default class MapPanel extends Panel {
                         legend : { type : 'maplegend' }
                     }
                 },
-                // The selected turbine, a card of its own
                 card : { type : 'turbinecard' }
             }
         });
@@ -95,14 +77,13 @@ export default class MapPanel extends Panel {
     }
 
     /**
-     * Draws the map and the selected turbine's card, and fits the map to the selection when it changed
      * @param {Object} options
      * @param {DispatchState} options.state
      * @param {TripModel[]} options.trips The trips of the day shown
      * @param {TripModel|null} options.selectedTrip
-     * @param {String|null} options.turbine The turbine shown: the held team's, else the selected one
-     * @param {Object|null} options.held The team held and its check, see DropController#previewDrop
-     * @param {Boolean} options.follow The map follows the selection (AppState#mapFollows)
+     * @param {String|null} options.turbine The held team's turbine, else the selected one
+     * @param {Object|null} options.held See DropController#previewDrop
+     * @param {Boolean} options.follow AppState#mapFollows
      */
     draw({ state, trips, selectedTrip, turbine, held, follow }) {
         const
@@ -117,16 +98,8 @@ export default class MapPanel extends Panel {
         }
     }
 
-    /**
-     * Fits the map to the selected trip's turbines and the port, or to the selected turbine and the port, when it
-     * follows the selection. A team held over a trip shows the whole farm, what the trip can still reach is all over
-     * it. Only a change of what is shown moves the map: another trip or turbine, following or not, a team held or not.
-     * A redraw of the same selection (the plan, the clock, a hover) leaves the view the user panned or zoomed to
-     * @param {TripModel|null} trip
-     * @param {String|null} turbine
-     * @param {Boolean} follow
-     * @param {Boolean} held
-     */
+    // Only a change of what is shown moves the map (another trip or turbine, following or not, a team held or not): a
+    // redraw of the same selection (the plan, the clock, a hover) must not undo the user's pan or zoom
     fit(trip, turbine, follow, held) {
         const
             me       = this,
@@ -140,13 +113,8 @@ export default class MapPanel extends Panel {
         }
     }
 
-    /**
-     * Keeps the map where it is for a selection: the user picked a turbine on the map itself, so it is in view, or went
-     * to the whole farm with Show all. The next change of the selection fits it again
-     * @param {TripModel|null} trip
-     * @param {String|null} turbine
-     * @param {Boolean} follow
-     */
+    // For a selection made on the map itself, or Show all: the map is already where it should be. The next change of
+    // the selection fits it again
     keepView(trip, turbine, follow) {
         this.fitKey = [trip?.id, turbine, follow, false].join('|');
     }

@@ -1,8 +1,7 @@
 import { ResourceModelEnterprise } from '@bryntum/scheduler-enterprise';
 
 /**
- * A crew transfer vessel, the SWATH vessel or a helicopter, a resource of the Day view's Scheduler and of the Week
- * view's (both on the Enterprise tier)
+ * A crew transfer vessel, the SWATH or a helicopter: a resource of both the Day and the Week view.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ResourceModelEnterprise
@@ -22,19 +21,11 @@ export default class VesselModel extends ResourceModelEnterprise {
         { name : 'seats', type : 'int' }
     ];
 
-    /**
-     * The glyph of the icon set: `ctv`, `swath` or `heli`
-     * @property {String}
-     */
     get glyph() {
         return this.mode === 'heli' ? 'heli' : this.window === 'swath' ? 'swath' : 'ctv';
     }
 
-    /**
-     * Just its type, "CTV", "SWATH", "AW169", the first part of its `kind`. Not `type`: that is a field of the
-     * Enterprise resource model already
-     * @property {String}
-     */
+    // "CTV", "SWATH", "AW169": the first part of `kind`. Not named `type`, a field of the Enterprise resource model
     get vesselType() {
         return this.kind.split(' · ')[0];
     }

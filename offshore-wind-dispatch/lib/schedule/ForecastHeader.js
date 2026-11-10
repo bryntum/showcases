@@ -2,17 +2,10 @@ import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
 import WaveChart from './WaveChart.js';
 
 /**
- * The weather in the time axis. The Scheduler's header has three rows, defined by its view preset (the day shown is
- * in the page's header, KpiBar):
- *
- * 1. The hours, the ticks of the schedule
- * 2. The wave height, one cell over the whole day holding the AG Charts chart (WaveChart)
- * 3. The wind at hub height per hour, from 20 m/s in the helicopters' purple
- *
- * The vessel column's header beside them names the rows and the forecast they show. A header row is rendered by its
- * `renderer` whenever the time axis is drawn. The chart lives in one element of its own, moved into the wave height
- * cell each time that cell is drawn, so it is not recreated. A new forecast updates the wind values and the label in
- * place, the time axis itself does not change.
+ * The time axis rows of the Day view (hours, wave height, wind) and the vessel column's header naming them. The wave
+ * height row is one cell over the day; the chart lives in an element of its own, moved into that cell whenever the
+ * time axis is drawn, never recreated. A new forecast updates the wind values and the label in place, the time axis
+ * itself does not change.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/preset/ViewPreset#config-headers
@@ -27,7 +20,7 @@ export default class ForecastHeader {
 
         me.state     = state;
         me.chartHost = DomHelper.createElement({ class : 'ow-wave-chart' });
-        // Not the header's own content: DomSync keeps it where it is mounted instead of releasing (hiding) it
+        // Not the header's own content: DomSync leaves it where it is mounted instead of releasing (hiding) it
         me.chartHost.retainElement = true;
         me.chart     = new WaveChart({
             element : me.chartHost,
@@ -37,13 +30,12 @@ export default class ForecastHeader {
     }
 
     /**
-     * The header rows of the view preset
+     * The header rows of the view preset. The day is in the page's header, not a row
      * @returns {Object[]}
      */
     get headers() {
         const me = this;
 
-        // The day is in the page's header: the hours are the time axis' first row
         return [
             { unit : 'hour', dateFormat : 'HH:mm', align : 'start', headerCellCls : 'ow-hour-cell' },
             {
@@ -78,12 +70,12 @@ export default class ForecastHeader {
             { forecast, limits, day } = this.state,
             wind                      = forecast.wind[hour - day.dayStart];
 
-        // Above the limit, as DispatchState closes the window
+        // Strictly above, as DispatchState closes the window
         return { wind, over : wind > limits.heli.wind };
     }
 
     /**
-     * The vessel column's header: the forecast shown, and the names of the weather rows
+     * The vessel column's header: the forecast shown and the names of the weather rows
      * @returns {String} HTML
      */
     get labelHtml() {
@@ -105,9 +97,9 @@ export default class ForecastHeader {
     }
 
     /**
-     * Puts the chart in the wave height cell of a Scheduler's header, and again whenever the Scheduler draws its time
-     * axis anew (another view preset or time span). The chart's element is `retainElement`, so the header's own
-     * redraws (scroll, resize) leave it where it is
+     * Puts the chart in the wave height cell, and again whenever the Scheduler draws its time axis anew (another view
+     * preset or time span), which makes a new cell. The header's own redraws (scroll, resize) keep the cell, and the
+     * `retainElement` chart stays in it
      * @param {Scheduler.view.Scheduler} scheduler
      */
     attach(scheduler) {
@@ -130,7 +122,7 @@ export default class ForecastHeader {
             me   = this,
             cell = me.scheduler?.element.querySelector('.ow-sea-today');
 
-        // Drawn again only when moved into a new cell
+        // Moved, and drawn again, only into a new cell
         if (cell && (me.chartHost.parentElement !== cell)) {
             cell.append(me.chartHost);
             me.chart.redraw();
@@ -138,7 +130,7 @@ export default class ForecastHeader {
     }
 
     /**
-     * Shows the state's forecast: the chart, the wind values and the label
+     * Shows the state's forecast: the chart, the wind values and the label, updated in place
      * @returns {Promise} Resolves once the chart is drawn
      */
     refresh() {

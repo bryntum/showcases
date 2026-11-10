@@ -1,5 +1,5 @@
-/* The KPI header (KpiBar.js) on the page: the site and the day, the crews waiting at the port (TeamTray.js,
- * TeamChip.js), and the numbers of the day over the map's card, as wide as it (MapPanel's width) */
+/* The KPI header (KpiBar.js), the team tray (TeamTray.js, TeamChip.js) and the counts, as wide as the map's card
+ * below them (MapPanel's width) */
 
 .ow-kpis {
     --b-container-gap     : var(--ow-gutter);
@@ -122,8 +122,7 @@
     color : var(--ow-c-stop-ink);
 }
 
-/* The tray, its title over its hint, then a card per team. Room around the cards for their hover ring and shadow,
-   which the tray clips as far past its edges */
+/* The clip margin leaves room past the tray's edges for the cards' hover ring and shadow */
 .ow-tray {
     --b-container-gap     : 1rem;
     --b-container-padding : 0.375rem 0;
@@ -173,7 +172,6 @@
     opacity    : 0.45;
 }
 
-/* The people icon in a neutral circle, red for a team waiting for a stopped turbine, its job too */
 .ow-team-crew {
     display          : grid;
     place-items      : center;

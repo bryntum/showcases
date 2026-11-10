@@ -1,27 +1,22 @@
 import { EventModelEnterprise } from '@bryntum/scheduler-enterprise';
 
 /**
- * A cell of the Week view: one vessel's trips of one day as one event, from the earliest departure to the latest
- * return, so cells never stack (WeekCells#weekCells). Its `name` is its times, its `percentDone` the seats used, which
- * the PercentBar feature draws
- *
- * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/EventModelEnterprise
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/PercentBar
+ * A cell of the Week view: one vessel's trips of one day as one derived event (WeekCells#weekCells). Its `name` is its
+ * times, its `percentDone` the seats used, which the PercentBar feature draws.
  */
 export default class WeekCellModel extends EventModelEnterprise {
     static $name = 'WeekCellModel';
 
     static fields = [
-        // The day of the week, 0 is today
+        // 0 is today
         { name : 'day', type : 'number' },
         // The IDs of its trips, "SR-1 SR-2"
         'trips',
         // The turbines served, "T-07 T-08 T-17"
         'turbines',
-        // It has a trip a forecast carried over from the day before, drawn dashed
+        // Has a trip a forecast carried over from the day before, drawn dashed
         { name : 'carried', type : 'boolean' },
-        // The most people on board on one trip, of the seats the vessel has
+        // The most people on board one trip, against the vessel's seats
         { name : 'pax', type : 'number' },
         { name : 'seats', type : 'number' },
         // Minutes the last trip is back after the vessel's window closes

@@ -6,8 +6,7 @@ import '../Legend.js';
 import '../schedule/DispatchScheduler.js';
 import '../week/WeekBoard.js';
 
-// The fleet in a few words, "4 CTV · 1 SWATH · 3 heli": the vessels by their type (the first part of their `kind`),
-// then the helicopters
+// "4 CTV · 1 SWATH · 3 heli": a vessel's type is the first part of its `kind`
 function fleetCount(vessels) {
     const counts = new Map();
 
@@ -21,12 +20,10 @@ function fleetCount(vessels) {
 }
 
 /**
- * The schedule half of the app: a Panel whose tbar holds the title, the next forecast's button and the Day | Week
- * toggle, over the forecast notice, the Day view (DispatchScheduler) or the Week view (WeekBoard), and the legend.
- * On a phone it is the Schedule tab.
+ * The schedule half of the app: the forecast notice, the Day view or the Week view, and the legend, under a tbar that
+ * is the title bar. Its `header` is off; its `title` is only the tab's text on a phone.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
  */
 export default class SchedulePanel extends Panel {
@@ -35,39 +32,25 @@ export default class SchedulePanel extends Panel {
     static type = 'schedulepanel';
 
     static configurable = {
-        /**
-         * The dispatcher's state, the weather windows and the clock
-         * @config {DispatchState}
-         */
         dispatch : null,
 
-        /**
-         * The parsed data/farm.json
-         * @config {Object}
-         */
+        // The parsed data/farm.json
         data : null,
 
-        /**
-         * At phone widths the title bar holds the next forecast's button only, and goes when there is none; the
-         * legend goes too. Set by PhoneLayout
-         * @prp {Boolean}
-         */
+        // Set by PhoneLayout. The title bar then holds only the next forecast's button, the legend goes
         phone : false,
 
         cls    : 'ow-schedule',
         flex   : 1,
         layout : 'vbox',
-        // Its tab's text on a phone, the tbar is the title bar
         title  : 'Schedule',
         header : false,
         tbar   : {
             cls   : 'ow-panel-bar',
             items : {
                 title    : { type : 'widget', cls : 'ow-panel-title', html : 'Vessels &amp; helicopters' },
-                // The fleet in a few words, set from the dispatch state
                 count    : { type : 'widget', cls : 'ow-panel-count' },
                 spacer   : '->',
-                // The next forecast, in: the one action that changes the plan, quiet and blue
                 forecast : {
                     type      : 'button',
                     rendition : 'tonal',
@@ -75,7 +58,7 @@ export default class SchedulePanel extends Panel {
                     hidden    : true,
                     onClick   : 'up.onForecastClick'
                 },
-                // A segmented control: the pressed button is the raised one, its ref the view it shows
+                // The pressed button's ref is the view it shows
                 view : {
                     type        : 'buttongroup',
                     rendition   : 'padded',
@@ -109,9 +92,7 @@ export default class SchedulePanel extends Panel {
                     project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) },
                         index => dispatch.dateOf(index))
                 },
-                // The Week view, a day board of the same trips
                 board  : { type : 'weekboard', flex : 1, hidden : true, dispatch },
-                // The schedule's footer
                 legend : { type : 'legend' }
             }
         });
@@ -134,7 +115,6 @@ export default class SchedulePanel extends Panel {
     }
 
     /**
-     * Shows the Day or the Week view of the schedule
      * @param {'day'|'week'} view
      */
     showView(view) {
@@ -144,7 +124,7 @@ export default class SchedulePanel extends Panel {
             isWeek                       = view === 'week',
             button                       = isWeek ? week : day;
 
-        // Opened otherwise, by a click on a day of the week: the toggle is pressed, which shows the view
+        // Called from code (a click on a day of the week): pressing the toggle shows the view through onViewToggle
         if (!button.pressed) {
             button.pressed = true;
 
@@ -163,9 +143,6 @@ export default class SchedulePanel extends Panel {
         }
     }
 
-    /**
-     * Updates the tbar: the next forecast's button, and on a phone only that
-     */
     refreshBar() {
         const
             me                                       = this,
@@ -181,7 +158,7 @@ export default class SchedulePanel extends Panel {
         me.widgetMap.legend.hidden = phone;
 
         if (next) {
-            // The action in semibold: a Button's text takes DomConfigs. In one span, which keeps the space before it
+            // A Button's text takes DomConfigs. One span keeps the space before the bold part
             forecast.text = { tag : 'span', children : [`Forecast ${next.issued} is in · `, { tag : 'b', text : 'Re-plan' }] };
         }
     }

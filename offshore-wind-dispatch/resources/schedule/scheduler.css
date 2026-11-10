@@ -1,15 +1,14 @@
-/* The Scheduler (schedule/DispatchScheduler.js): its grid variables, the vessel column and the group rows, the past
- * and the now line, the no-go ranges, the dependencies, and the footer under the rows (Legend.js) */
+/* The Scheduler (schedule/DispatchScheduler.js) and the footer under its rows (Legend.js) */
 
 .ow-scheduler {
-    /* The vessel column's inner inset, lined up with the card's title bar, narrower on a phone (phone.css) */
+    /* Lines the vessel column up with the card's title bar */
     --ow-column-inset          : var(--ow-inset);
     --b-grid-row-border-color  : var(--ow-tick);
     --b-grid-cell-border-color : var(--ow-tick);
-    /* A selected row: an opaque tint in the work blue across the whole row, the vessel cell included */
+    /* Opaque, so the vessel cell takes the same tint as the rest of a selected row */
     --b-grid-cell-selected-background       : color-mix(in srgb, var(--ow-c-work) 7%, var(--ow-surface));
     --b-grid-cell-hover-selected-background : var(--b-grid-cell-selected-background);
-    /* The group rows, a slim band in muted semibold; the Group feature reads the height as px */
+    /* The Group feature reads the height as px */
     --b-group-row-height         : 28px;
     --b-group-header-background  : var(--ow-c-footer);
     --b-group-header-color       : var(--ow-c-muted);
@@ -17,19 +16,19 @@
     --b-group-header-icon-color  : var(--ow-c-muted);
     --b-column-lines-tick-color  : var(--ow-tick);
     --b-column-lines-major-color : var(--ow-tick);
-    /* The now line, 1px, under the trips */
+    /* The now line under the trips */
     --b-time-range-line-width         : 1px;
     --b-time-range-line-zindex        : 4;
     --b-dependency-hover-stroke-width : 1.5;
 
-    /* The vessel column, on the card's surface also when hovered */
+    /* The vessel column keeps the card's surface when hovered */
     .ow-resource-cell.b-grid-cell {
         --b-grid-cell-background       : var(--ow-surface);
         --b-grid-cell-hover-background : var(--ow-surface);
         --b-grid-cell-padding-inline   : var(--ow-column-inset) 0.5rem;
     }
 
-    /* Vessels, Helicopters: the vessel cell in the band's shade too */
+    /* The group row's vessel cell in the band's shade too */
     .b-grid-row.b-group-row .b-grid-cell {
         --b-grid-cell-font-size        : var(--ow-size-xs);
         --b-grid-cell-background       : var(--b-group-header-background);
@@ -39,7 +38,6 @@
         text-transform : uppercase;
     }
 
-    /* The hours already gone, lightly shaded in the rows */
     .b-sch-range.ow-past {
         --b-time-range-opacity    : 1;
         --b-time-range-background : light-dark(rgb(16 24 40 / 4%), rgb(255 255 255 / 3%));
@@ -50,9 +48,7 @@
         --b-time-range-line-color : var(--b-color-blue);
     }
 
-    /* The no-go ranges (TripRendering.js#renderRange): hatched from the time the vessel's limit is crossed, purple
-       tinted for a helicopter. A trip brought forward leaves a dashed outline where its work blocks were (px, as the
-       row's geometry) */
+    /* The no-go ranges and ghosts (TripRendering.js#renderRange). The ghost's inset is px, as the row's geometry */
     .b-sch-resource-time-range {
         --b-resource-time-range-background : none;
 
@@ -74,8 +70,8 @@
         }
     }
 
-    /* The dependencies (TripRendering.js): the work blocks' hairline, the work blue on hover, orange when broken. The
-       links that only keep a trip's legs in order for the engine (PlanDependencyModel#isChain) are not drawn */
+    /* The dependencies (TripRendering.js). The links that only keep a trip's legs in order for the engine
+       (PlanDependencyModel#isChain) are not drawn */
     .b-sch-dependency {
         &.ow-dep {
             --b-dependency-color : var(--ow-c-dependency);
@@ -98,8 +94,7 @@
     }
 }
 
-/* A vessel: its type's icon in a circle, ringed by the seats taken (--ow-use, set by the renderer), left of the name
-   over one muted line */
+/* A vessel: its icon ringed by the seats taken (--ow-use, set by the renderer) */
 .ow-resource {
     display     : flex;
     align-items : center;

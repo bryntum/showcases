@@ -1,6 +1,6 @@
-/* The Scheduler's header with the weather in it (schedule/ForecastHeader.js): the hours, the wave height chart and the
- * wind, and beside them the vessel column's header naming those rows. Both sides share the row lines, each drawn
- * inside the row above it in one colour, so the rows line up; the 1px line under it all is the header container's */
+/* The time axis rows (schedule/ForecastHeader.js) and the vessel column's header naming them. Both sides draw the row
+ * lines the same way, inside the row above in one colour, so the rows line up; the line under it all is the header
+ * container's */
 
 .ow-scheduler {
     --ow-row-hours : 2rem;
@@ -83,7 +83,7 @@
     color       : var(--ow-c-muted);
 }
 
-/* Over the helicopters' limit: the only bold values of the row */
+/* Over the helicopters' limit */
 .ow-wind-over {
     font-weight : 700;
     color       : light-dark(color-mix(in srgb, var(--b-color-purple) 85%, var(--b-color-black)),
@@ -159,7 +159,6 @@
     }
 }
 
-/* The newer forecast, flagged in the plan's blue */
 .ow-chip-new {
     padding          : 0.091em 0.546em;
     border-radius    : var(--ow-c-radius);

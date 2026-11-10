@@ -1,5 +1,4 @@
-/* The Week view, the week as a day board (week/WeekBoard.js): a column per day with its sea state in the header, a cell
- * per vessel and day, the jobs per day in the summary row */
+/* The Week view (week/WeekBoard.js) */
 
 .ow-week-board {
     --b-grid-row-border-color    : var(--ow-tick);
@@ -7,8 +6,7 @@
     --b-column-lines-tick-color  : var(--b-border-7);
     --b-column-lines-major-color : var(--b-border-7);
 
-    /* The vessel column, on the card's surface also when hovered or selected, and its header naming the day header's
-       rows */
+    /* The vessel column keeps the card's surface when hovered or selected */
     .ow-week-vessel.b-grid-cell, .ow-week-axis.b-grid-header {
         flex-direction  : column;
         align-items     : flex-start;
@@ -37,8 +35,8 @@
         }
     }
 
-    /* Its text as wide as the header: Bryntum's `width: 0`, `flex: 1` content would get no width in this column. The
-       inline padding not by the header's padding variable, which is its block padding too */
+    /* Bryntum's `width: 0`, `flex: 1` header content would get no width in this column. The inline padding is set
+       directly, as the header's padding variable sets its block padding too */
     .ow-week-axis {
         .b-grid-header-text {
             align-self : stretch;
@@ -56,7 +54,6 @@
         }
     }
 
-    /* A day's header: the date, the sea state pill, the wave height and the wind */
     .b-sch-header-time-axis-cell.ow-week-day {
         align-items : stretch;
         padding     : 0.5rem 0.625rem;
@@ -92,7 +89,6 @@
             }
         }
 
-        /* Today: its date in a pill, white on the now line's blue */
         &.ow-week-today .ow-week-date {
             padding          : 0.077em 0.6154em;
             border-radius    : 999px;
@@ -101,7 +97,6 @@
         }
     }
 
-    /* The sea state pill: blue where the crew transfer vessels go, grey where they do not */
     .ow-sea {
         padding          : 0.0834em 0.5em;
         border-radius    : var(--ow-c-radius);
@@ -117,8 +112,7 @@
         color            : var(--b-text-2);
     }
 
-    /* A vessel's day with trips, Bryntum's event element as a tinted card, inset into the day as a free day's
-       placeholder (below), px as the board's resourceMargin */
+    /* Inset as far as a free day's placeholder (below), px as the board's resourceMargin */
     .b-sch-event-wrap.ow-cell-wrap {
         padding-inline : 5px;
     }
@@ -143,7 +137,7 @@
         }
     }
 
-    /* A narrow day keeps the times, its seats are the bar */
+    /* A narrow day drops the seat count, the percent bar still shows it */
     @container (width < 120px) {
         .ow-cell-head span {
             display : none;
@@ -167,8 +161,7 @@
         color         : var(--b-text-2);
     }
 
-    /* Work a forecast carried over from the day before: planned, no alarm, dashed in the plan's blue; back after its
-       window as well, the orange below wins */
+    /* Carried over by a forecast. When also late, the late rule below wins */
     .b-sch-event-wrap .b-sch-event.ow-cell-carried {
         outline        : 1px dashed var(--ow-plan);
         outline-offset : -1px;
@@ -190,8 +183,7 @@
         }
     }
 
-    /* The seats bar: a thin line in the cell's foot (px) on a faint track, in the now line's blue. Not blended with
-       the card, which darkens it in dark */
+    /* The seats bar (PercentBar). Not blended with the card, which darkens it in dark */
     .ow-cell {
         --b-percent-bar-blend-mode : normal;
 
@@ -214,8 +206,7 @@
         }
     }
 
-    /* A vessel's day without trips (WeekBoard#renderFree): free until its window closes, dashed, or no-go, hatched. A
-       crew held over it, the drop target, as a trip held over in the Day view */
+    /* A vessel's day without trips (WeekBoard#renderFree): free, no-go, or the drop target of a held team */
     .b-sch-resource-time-range {
         --b-resource-time-range-background  : none;
         --b-resource-time-range-color       : var(--ow-c-muted);
@@ -246,7 +237,7 @@
         }
     }
 
-    /* The jobs per day */
+    /* The Summary row, the jobs per day */
     .b-grid-footer-container {
         font-size : var(--ow-size-sm);
         color     : var(--ow-c-muted);

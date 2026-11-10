@@ -3,17 +3,16 @@ import { hhmm } from '../util/Time.js';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// The showcase's font, for every label of the chart (its theme's `fontFamily`)
+// The showcase's font, for the chart's labels; textHours() measures with it too
 const
     fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
-    // A limit's name, on its line at the left end: small, with air before it and before the dashes
+    // A limit's name, at the left end of its line
     limitFont  = { fontSize : 9, fontWeight : 500, padding : 6 };
 
-// Room the wave height axis keeps, px: above the roughest hour for its point and value label, under the calmest one for
-// its point, under the start value for its label, about a limit for its name. No label is cut at the chart's edges
+// Room the wave height axis keeps for labels and points, px (range()), so no label is cut at the chart's edges
 const room = { label : 20, point : 5, limit : 13, guide : 8, under : 24 };
 
-// Hovering a point only shows its tooltip: no dimming of the series, no bigger marker, just a slightly heavier ring
+// Hovering a point only shows its tooltip: no dimming of the other series, no bigger marker
 const highlight = {
     highlightedSeries   : { opacity : 1 },
     unhighlightedSeries : { opacity : 1 },
@@ -22,12 +21,7 @@ const highlight = {
     bringToFront        : false
 };
 
-/**
- * The resolved colour of a CSS custom property, after `light-dark()` and `color-mix()`
- * @param {HTMLElement} element Where the property is read
- * @param {String} name
- * @returns {String}
- */
+// The resolved colour of a CSS custom property on an element, after `light-dark()` and `color-mix()`
 function cssColor(element, name) {
     const probe = document.createElement('span');
 
@@ -43,12 +37,8 @@ function cssColor(element, name) {
 
 let pixel;
 
-/**
- * A colour as `rgba()`. The browser computes `color-mix()` to `color(srgb …)`, which AG Charts does not read, so the
- * colour is painted on a one pixel canvas and read back
- * @param {String} color Any CSS colour
- * @returns {String}
- */
+// A colour as `rgba()`. The browser computes `color-mix()` to `color(srgb …)`, which AG Charts does not read, so the
+// colour is painted on a one pixel canvas and read back
 function toRgba(color) {
     pixel ??= Object.assign(document.createElement('canvas'), { width : 1, height : 1 })
         .getContext('2d', { willReadFrequently : true });
@@ -63,18 +53,13 @@ function toRgba(color) {
 }
 
 /**
- * The wave height row of the time axis (ForecastHeader), an AG Charts Community area chart: the hourly significant
- * wave height against the CTV and SWATH limits, and the time the CTV window closes. Its x axis is the schedule's own
- * day with no padding, so each hour of the chart sits over the same hour of the trips. The line turns orange where the
- * CTV window closes, hovering a point tells which vessels can still transfer.
- *
- * Not a widget: it draws into the element it is given. Colours are read from the showcase's CSS custom properties, so
- * the chart takes the Svalbard palette, and it is drawn again when the page switches between light and dark.
+ * The wave height row of the time axis, an AG Charts Community area chart. Not a widget: it draws into the element it
+ * is given, which ForecastHeader moves into the header cell. Its x axis is the schedule's day in hours with no
+ * padding, so each hour of the chart sits over the same hour of the trips. Colours are read from CSS custom
+ * properties, so the chart is drawn again when the page switches between light and dark.
  *
  * Learn more:
  * https://www.ag-grid.com/charts/javascript/area-series/
- * https://www.ag-grid.com/charts/javascript/line-series/
- * https://www.ag-grid.com/charts/javascript/themes-api/
  */
 export default class WaveChart {
     /**
@@ -88,14 +73,13 @@ export default class WaveChart {
 
         Object.assign(me, { element, limits, day, forecast : null });
 
-        // The shell's light / dark switch sets `data-theme` on the root (after its `color-scheme`), the system
-        // setting can change too
+        // Redrawn on a theme switch: the shell's switch sets `data-theme` on the root, or the system setting changes
         me.observer = new MutationObserver(() => me.redraw());
         me.observer.observe(document.documentElement, { attributes : true, attributeFilter : ['data-theme'] });
         me.media = matchMedia('(prefers-color-scheme: dark)');
         me.onMedia = () => me.redraw();
         me.media.addEventListener('change', me.onMedia);
-        // AG Charts sizes itself to its container. A chart created while the header cell had no size yet (being
+        // AG Charts sizes itself to its container. A chart created while the container had no size (the header being
         // drawn, a hidden phone tab) stays empty, so it is drawn again once the container has a size
         me.sized = new ResizeObserver(([entry]) => {
             const { width, height } = entry.contentRect;
@@ -108,7 +92,6 @@ export default class WaveChart {
     }
 
     /**
-     * Draws a forecast
      * @param {Object} forecast
      * @param {Number[]} forecast.hs Hourly wave height from `dayStart`
      * @param {Number} forecast.closes When the CTV window closes, minutes since midnight
@@ -124,14 +107,14 @@ export default class WaveChart {
     redraw() {
         const me = this;
 
-        // Not in the page or not sized yet: drawn by the ResizeObserver once it is
+        // Not in the page or not sized yet: the ResizeObserver draws it once it is
         if (!me.forecast || !me.element.isConnected || !me.element.clientWidth || !me.element.clientHeight) {
             return Promise.resolve();
         }
 
         const options = me.options();
 
-        // A day with another number of window lines is a new chart: AG Charts' update cannot match the series by index
+        // Another number of series (window lines) needs a new chart: AG Charts' update matches series by index
         if (me.chart?.getOptions().series.length === options.series.length) {
             me.chart.update(options);
         }
@@ -150,12 +133,9 @@ export default class WaveChart {
         this.chart?.destroy();
     }
 
-    // The data: one point mid hour, the first and the last value held to the edges so the area spans the whole day.
-    // The line is `calm` while the CTV window is open and `rough` from when it closes: the closing time is the
-    // dispatch state's (the start of the first hour over the limit), so the chart and the no-go ranges tell the same
-    // story. A point on the line marks that time (`cross`), both halves have it. A window closed from the
-    // start of the day is rough all through, one open all day calm. Labelled are the first hour, the crossing and the
-    // last hour only
+    // The line is `calm` while the CTV window is open and `rough` from when it closes. The close is the dispatch
+    // state's (the start of the first hour over the limit), not where the line crosses 1.5 m, so the chart and the
+    // no-go ranges agree. The point at the close (`cross`) is in both halves so the line has no gap
     data() {
         const
             points = this.points(),
@@ -176,8 +156,7 @@ export default class WaveChart {
     }
 
     /**
-     * When the CTV window closes, in hours: before the day's start when it never opens, past its end when it stays
-     * open
+     * When the CTV window closes, in hours: `-Infinity` when it never opens, `Infinity` when it stays open
      * @property {Number}
      */
     get closesHour() {
@@ -188,14 +167,11 @@ export default class WaveChart {
         return hour <= dayStart ? -Infinity : hour >= dayEnd ? Infinity : hour;
     }
 
-    /**
-     * Whether the CTV window closes during the day shown, rather than staying shut or open all day
-     * @property {Boolean}
-     */
     get closesInDay() {
         return Number.isFinite(this.closesHour);
     }
 
+    // One point mid hour, the first and the last value held to the edges so the area spans the whole day
     points() {
         const
             { hs }               = this.forecast,
@@ -235,16 +211,15 @@ export default class WaveChart {
     }
 
     /**
-     * The wave height axis, metres, computed from the forecast shown: from the calmest hour less room for its point to
-     * the roughest one plus room for its value label, both limits and their names inside. The room is in px, so
-     * metres to the chart's height: the range is solved with the room it has to leave
+     * The wave height axis, metres: the forecast and both limits with room around them for their labels. The room is
+     * in px and the metres per px depend on the range itself, so the range is solved by iteration
      * @returns {{ bottom : Number, top : Number }}
      */
     range() {
         const
             { hs }         = this.forecast,
             { ctv, swath } = this.limits,
-            // Drawn only once the container has a size (redraw)
+            // Not 0: drawn only once the container has a size (redraw)
             height         = this.element.clientHeight,
             above          = [[Math.max(...hs), room.label], [swath, room.limit], [ctv, room.limit]],
             // The start value is named under its point (valueLabels)
@@ -252,12 +227,12 @@ export default class WaveChart {
 
         let span = 3;
 
-        // Each pass uses the previous range's metres a px, it settles within a few
+        // Each pass uses the previous range's metres per px; it settles within a few
         for (let i = 0; i < 30; i++) {
             const
                 perPx  = span / height,
                 top    = Math.max(...above.map(([value, px]) => value + px * perPx)),
-                // Not under 0: the fill under the line runs down to 0, it would stop short of the chart's bottom
+                // Not under 0: the fill runs down to 0, it would stop short of the chart's bottom
                 bottom = Math.max(0, Math.min(...below.map(([value, px]) => value - px * perPx)));
 
             span = top - bottom;
@@ -295,15 +270,14 @@ export default class WaveChart {
             seriesArea : { padding : { top : 0, right : 0, bottom : 0, left : 0 } },
             animation  : { enabled : false },
             legend     : { enabled : false },
-            // The window's lines and the limits are line series, not cross lines: AG Charts draws cross lines above the
-            // series, these are listed before the wave line, so the ring where it crosses the CTV limit covers them
+            // The window's lines and the limits are line series, not cross lines: AG Charts draws cross lines above
+            // the series, these are listed before the wave line so its ring at the crossing covers them
             series     : [
                 ...me.windowLines(colors, range),
                 me.limitLine('CTV', colors.muted),
                 me.limitLine('SWATH', colors.muted),
                 me.series('calm', colors.calm, colors.calmFill, colors.surface),
                 me.series('rough', colors.rough, colors.roughFill, colors.surface),
-                // The start value under its point: the limits' names are at the left end, on their lines
                 me.valueLabels(colors, 'first', 'bottom'),
                 me.valueLabels(colors, 'last', 'top')
             ],
@@ -314,8 +288,7 @@ export default class WaveChart {
         };
     }
 
-    // The wave line up to where it crosses the CTV limit (`calm`) or from there (`rough`), a light fill under it. The
-    // crossing has a ring, the first and last hour a dot: the three points labelled
+    // One half of the wave line, `calm` or `rough`. Markers only on the crossing (a ring) and the first and last hour
     series(key, stroke, fill, surface) {
         const { ctv, swath } = this.limits;
 
@@ -324,7 +297,7 @@ export default class WaveChart {
             xKey          : 't',
             yKey          : key,
             yName         : 'Wave height',
-            // One line in two colours, not two legend items (the legend is off; AG Charts warns of the two fills)
+            // The legend is off, but AG Charts warns of the two fills otherwise
             showInLegend  : false,
             interpolation : { type : 'linear' },
             highlight,
@@ -340,12 +313,11 @@ export default class WaveChart {
                     { size : 8, fill : surface, stroke } :
                     (key === 'calm' ? datum.first : datum.last) ? { fill : stroke, stroke } : { size : 0 }
             },
-            // The values are labelled by valueLabels(), under their points
+            // Labelled by valueLabels()
             label   : { enabled : false },
             tooltip : {
-                // What the hour means for the crews first, then the numbers behind it. Hs (significant wave height) is
-                // the mean of the highest third of the waves; the largest in a sea state reach about 1.9 × Hs
-                // The points added where the line crosses a limit sit on the limit: they report their hour's value
+                // Hs is the mean of the highest third of the waves; the largest in a sea state reach about 1.9 × Hs.
+                // A point added at an edge or at the close reports its hour's value, not its own
                 renderer : ({ datum }) => {
                     const
                         hour = Math.floor(datum.t),
@@ -368,9 +340,8 @@ export default class WaveChart {
         };
     }
 
-    // The value of the first hour or the last one, above its point: under the last one it would sit on the SWATH line,
-    // under the first one it would be cut at the chart's foot. One series each, so each can be placed on its own; an
-    // area series cannot place its labels, a line series can. The crossing is named on the window's line (guide)
+    // The value of the first or the last hour, as a line series of its own: an area series cannot place its labels.
+    // The first goes under its point, the last above, clear of the SWATH line
     valueLabels(colors, which, placement) {
         return {
             type         : 'line',
@@ -388,7 +359,6 @@ export default class WaveChart {
                 fontSize   : 10,
                 fontWeight : 500,
                 formatter  : ({ datum }) => (datum[which] ? datum.hs.toFixed(1) : ''),
-                // The last hour past the crossing in the orange of the line there
                 itemStyler : ({ datum }) => ({
                     color : datum.last && datum.rough != null ? colors.roughInk : colors.muted
                 })
@@ -396,8 +366,7 @@ export default class WaveChart {
         };
     }
 
-    // A vertical line series over the whole height at one time, with a label beside its lower end: the window's close
-    // where the waves cross the CTV limit, named "1.5 m at 14:00", and after a new forecast the old close, dashed
+    // A vertical line at one time over the whole height, its label beside its foot
     guide({ time, stroke, dash, width, text, color, weight = 500, placement }, { bottom, top }) {
         const labelAt = bottom + room.guide * (top - bottom) / this.element.clientHeight;
 
@@ -429,8 +398,8 @@ export default class WaveChart {
         };
     }
 
-    // The close of the window, when it closes during the day, and, after a new forecast, the one before, each named
-    // beside its foot
+    // The CTV close, "1.5 m at 14:00", and after a new forecast the one before, dashed. Labels face away from each
+    // other
     windowLines(colors, range) {
         const
             { closes, was } = this.forecast,
@@ -459,8 +428,8 @@ export default class WaveChart {
         ].filter(Boolean);
     }
 
-    // A limit, a faded dashed line over the day, named at its left end: the dashes start after the name, which is the
-    // label of the line's first point
+    // A limit, a faded dashed line named at its left end: the line starts after the name, which is the label of its
+    // first point
     limitLine(name, ink) {
         const
             { dayStart, dayEnd } = this.day,
@@ -476,7 +445,6 @@ export default class WaveChart {
                 { t : dayEnd, v : value }
             ],
             stroke        : ink,
-            // Faded: the limits guide the eye, the wave line carries the story (the names keep full ink)
             strokeOpacity : 0.45,
             strokeWidth   : 1,
             lineDash      : [3, 3],
@@ -494,7 +462,7 @@ export default class WaveChart {
         };
     }
 
-    // The day of the schedule and the hour lines
+    // Hours, no labels: the schedule's own header has them
     timeAxis(grid) {
         const { dayStart, dayEnd } = this.day;
 
@@ -513,7 +481,7 @@ export default class WaveChart {
         };
     }
 
-    // How wide a limit's name is with the air around it, in hours (the x axis' unit)
+    // How wide a limit's name and its padding are, in hours (the x axis' unit)
     textHours(text) {
         const
             me      = this,
@@ -525,7 +493,6 @@ export default class WaveChart {
         return (limitFont.padding * 2 + context.measureText(text).width) / perHour;
     }
 
-    // Metres
     heightAxis({ bottom, top }) {
         return {
             type      : 'number',

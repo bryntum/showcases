@@ -1,5 +1,4 @@
-/* The trip tooltip (schedule/TripTip.js) in Bryntum's EventTooltip, in the style of the map's turbine tooltip: a
- * header with a status pill, a mini timeline of the trip, the facts (frame.css) */
+/* The trip tooltip (schedule/TripTip.js) in Bryntum's EventTooltip. The facts' grid is in frame.css */
 
 .ow-tip {
     min-width : 17rem;
@@ -28,7 +27,6 @@
         white-space : nowrap;
     }
 
-    /* How the trip stands against its window: a quiet blue tint, orange when it is late */
     .ow-tip-status {
         padding          : 0.273em 0.9091em;
         border-radius    : 99px;
@@ -45,7 +43,7 @@
         }
     }
 
-    /* The trip from departure to return: its line, the work on it in proportion, the window's close */
+    /* The trip from departure to return, the work on it in proportion, the window's close */
     .ow-tip-track {
         position         : relative;
         height           : 1.167em;

@@ -7,16 +7,14 @@ import { stoppedOf } from './MapModel.js';
 import { rotorText, turbineSvg } from './Turbine.js';
 
 /**
- * The selected turbine under the map: the illustration with the sea at the forecast wave height against the vessel's
- * limit, then the job, the team, the trip, when, and one line on how it stands against the weather window. The map's
- * tooltip on a turbine shows the same card (cardContent, tipInfo).
+ * The card of the selected turbine under the map, and the functions that fill it. The map's tooltip on a turbine shows
+ * the same card, smaller (tipInfo, tipContent).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
  */
 
 /**
- * What the card says about a turbine
  * @param {Object} options
  * @param {DispatchState} options.state
  * @param {TripModel[]} options.trips
@@ -31,14 +29,13 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     const
         held    = drop?.job.turbine === turbine,
         { trip, stop } = visitOf({ trips, turbine, drop, selectedTrip, held }),
-        // Where it stands: held over a trip, the status of its trip, or none
         stand   = held ? 'held' : trip?.status ?? 'none',
         vessel  = trip?.resource;
 
     return {
         ...describe(state, turbine),
         stopped : stoppedOf(state, trips, turbine),
-        // At hub height now, how fast the rotor of the drawing turns
+        // At hub height now, sets the speed of the drawn rotor
         wind    : state.windAt(),
         stand,
         trip    : vessel ? `${trip.id} · ${vessel.name}` : 'Not assigned',
@@ -49,8 +46,8 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
     };
 }
 
-// The trip that visits a turbine and its stop there: the trip of a team held over it, else the selected trip if it
-// serves the turbine (a pickup after a drop-off), else the first one that does
+// The trip of a team held over the turbine, else the selected trip if it serves the turbine (a pickup after a
+// drop-off), else the first one that does
 function visitOf({ trips, turbine, drop, selectedTrip, held }) {
     if (held) {
         // From the team's check: the scheduling engine may not have placed the previewed leg yet
@@ -64,7 +61,6 @@ function visitOf({ trips, turbine, drop, selectedTrip, held }) {
     return { trip, stop : trip?.legs.find(leg => leg.type === 'stop' && leg.turbine === turbine) };
 }
 
-// The turbine, its job and the team for it
 function describe(state, turbine) {
     const
         job  = state.jobAt(turbine),
@@ -84,10 +80,9 @@ function describe(state, turbine) {
     };
 }
 
-// A time in the card's one line, semibold
 const clock = minutes => ({ tag : 'b', text : hhmm(minutes) });
 
-// The line on the weather window as DomConfig children, one line, and its tone
+// The one line on the weather window, as DomConfig children, and its tone
 function noteOf({ state, turbine, trip, drop, stand }) {
     const
         close = trip && state.closeOf(trip.resource),
@@ -141,8 +136,7 @@ export function reachOf({ state, trips, turbine }) {
 }
 
 /**
- * What the map's tooltip says about a turbine: the card's, and for a turbine no trip serves, when a trip could still
- * reach it, the sea drawn at that hour
+ * The card's info, plus for a turbine no trip serves when a trip could still reach it, the sea drawn at that hour
  * @param {Object} options See cardInfo
  * @returns {Object} See cardInfo
  */
@@ -167,14 +161,11 @@ export function tipInfo({ state, trips, turbine, drop, selectedTrip }) {
 }
 
 /**
- * The card's content as DomConfigs: the turbine at the wave height, the job, the team, the trip, when, and the weather
- * note
  * @param {Object} info See cardInfo
  * @param {String} [id] Prefix of the IDs in the drawing, unique per card on the page
  * @returns {Object[]} DomConfig
  */
 export function cardContent(info, id = 'ow') {
-    // A stopped turbine's rotor stands still, the wrench marks one under repair
     const
         art  = turbineSvg({
             hs     : info.hs,
@@ -188,7 +179,6 @@ export function cardContent(info, id = 'ow') {
             .filter(Boolean).flatMap(([term, text]) => [{ tag : 'dt', text : term }, { tag : 'dd', text }]);
 
     return [
-        // The drawing is SVG markup
         { class : 'ow-card-art', html : art },
         {
             class    : 'ow-card-body',
@@ -198,7 +188,6 @@ export function cardContent(info, id = 'ow') {
                     children : [
                         { tag : 'b', text : info.name },
                         { tag : 'small', text : info.sub },
-                        // The rating, a small pill with a lightning bolt
                         info.rating && {
                             tag      : 'span',
                             class    : 'ow-card-rating',
@@ -215,7 +204,6 @@ export function cardContent(info, id = 'ow') {
 }
 
 /**
- * The map's tooltip on a turbine as DomConfigs: the card's content in a smaller card
  * @param {Object} info See tipInfo
  * @returns {Object[]} DomConfig
  */
@@ -234,7 +222,6 @@ export default class TurbineCard extends Widget {
     };
 
     /**
-     * Shows a turbine
      * @param {Object} info See cardInfo
      */
     draw(info) {

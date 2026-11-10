@@ -1,11 +1,7 @@
 /**
- * The showcase's icons, one set drawn in one weight: Phosphor Light (MIT, `@phosphor-icons/core`, the set Logistics
- * Control Tower uses) for the generic ones, Tabler Icons (MIT, below) for the vessels and the helicopter, and one drawn
- * here in Phosphor's 256 grid and 12 unit line for what neither has: the turbine. The map's substation is Phosphor's
- * lightning in a square the map draws (MapDrawing).
- *
- * Every icon is inline SVG in `currentColor`, so it takes the colour of its text in light and dark. `?raw` imports
- * the few SVGs used as strings, the bundle holds these and no others.
+ * The showcase's icons as inline SVG in `currentColor`: Phosphor Light, Tabler outline for the vessels, the helicopter
+ * and the crews, and the turbine drawn here in Phosphor's grid and line weight. Each SVG is imported `?raw`, so the
+ * bundle holds these and no others.
  */
 import anchor from '@phosphor-icons/core/assets/light/anchor-simple-light.svg?raw';
 import arrowUndo from '@phosphor-icons/core/assets/light/arrow-u-up-left-light.svg?raw';
@@ -20,12 +16,12 @@ import waves from '@phosphor-icons/core/assets/light/waves-light.svg?raw';
 import wind from '@phosphor-icons/core/assets/light/wind-light.svg?raw';
 import wrench from '@phosphor-icons/core/assets/light/wrench-light.svg?raw';
 import x from '@phosphor-icons/core/assets/light/x-light.svg?raw';
-// The one filled icon: the wrench of the map's In work marker, solid at the size of a marker
+// The one filled icon: the line weight is too thin at the size of a map marker
 import wrenchFill from '@phosphor-icons/core/assets/fill/wrench-fill.svg?raw';
 
 /*
- * The transport and crew icons, from Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter, users), drawn in a
- * lighter line to sit with Phosphor Light. MIT License, Copyright (c) 2020-2026 Paweł Kuna, https://github.com/tabler/tabler-icons
+ * Tabler Icons 3.51.0 (outline: speedboat, ship, helicopter, users), drawn in a lighter line to sit with Phosphor
+ * Light. MIT License, Copyright (c) 2020-2026 Paweł Kuna, https://github.com/tabler/tabler-icons
  */
 const tabler = {
     // Crew transfer vessel
@@ -39,7 +35,6 @@ const tabler = {
         <path d="M4 18l-1 -5h18l-2 4"/>
         <path d="M5 13v-6h8l4 6"/>
         <path d="M7 7v-4h-1"/>`,
-    // The people icon of the crews waiting at port
     users : `
         <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
         <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
@@ -55,9 +50,8 @@ const tabler = {
         <path d="M19 19l-8 0"/>`
 };
 
-// The drawn icons: stroked paths in Phosphor Light's grid (256) and line (12), round caps and joins
+// Stroked paths in Phosphor Light's grid (256) and line (12)
 const drawn = {
-    // Wind turbine: tower, three blades from the hub
     turbine : `
         <path d="M120 112 L114 228 H142 L136 112"/>
         <circle cx="128" cy="96" r="12"/>
@@ -81,21 +75,15 @@ const phosphor = {
     x
 };
 
-/**
- * The path data of a one path Phosphor icon, in its 256 grid, to draw it inside another SVG (the map's markers, the
- * turbine illustration)
- * @param {String} name A Phosphor name above
- * @returns {String}
- */
+// The path data of a one path Phosphor icon, in its 256 grid, to draw it inside another SVG
 export function iconPath(name) {
     return phosphor[name].match(/\sd="([^"]+)"/)[1];
 }
 
 /**
- * An icon as inline SVG
- * @param {String} name A Phosphor name above, or `ctv`, `swath`, `heli`, `turbine`
+ * @param {String} name A Phosphor name above, or `ctv`, `swath`, `users`, `heli`, `turbine`
  * @param {String} [cls] Extra classes
- * @returns {String}
+ * @returns {String} SVG markup
  */
 export function icon(name, cls = '') {
     const classes = `ow-icon ow-icon-${name} ${cls}`.trim();
@@ -113,13 +101,8 @@ export function icon(name, cls = '') {
     return phosphor[name].replace('<svg ', `<svg class="${classes}" aria-hidden="true" `);
 }
 
-/**
- * An icon as a DomConfig, for a widget's `html`, a Button's `text` or a `children` list (DomSync keeps the SVG it has
- * drawn)
- * @param {String} name See icon()
- * @param {String} [cls] Extra classes
- * @returns {Object} DomConfig
- */
+// An icon as a DomConfig, for a widget's `html`, a Button's `text` or a `children` list. The SVG goes in as the `html`
+// of a span, so DomSync keeps the SVG it has drawn
 export function iconConfig(name, cls = '') {
     return { tag : 'span', class : 'ow-icon-host', html : icon(name, cls) };
 }

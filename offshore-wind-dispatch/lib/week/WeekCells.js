@@ -3,10 +3,9 @@ import { DateHelper } from '@bryntum/core-enterprise';
 import { duration, hhmm } from '../util/Time.js';
 
 /**
- * The week as a day board, plain functions from the week's trips and the dispatch state to the Week view's data
- * (WeekBoard): one cell per vessel per day. A day a vessel has trips is ONE derived event over them, from the earliest
- * departure to the latest return, so cells never stack; a day without is a whole-day resource time range, `No-go` when
- * its window never opens, else `Free` until its window closes.
+ * The Week view's data, plain functions from the week's trips and the dispatch state. A vessel's day with trips is ONE
+ * derived event over them, from the earliest departure to the latest return, so cells never stack; a day without is a
+ * whole-day resource time range, which a held team can be dropped on when it is `free`.
  */
 
 const dayCount = 7;
@@ -22,7 +21,7 @@ export function dayOf(state, date) {
 }
 
 /**
- * "Go until 14", "No CTV", "Go · all day": the crew transfer vessels' window of a day
+ * "Go until 14", "No CTV", "Go · all day": the CTVs' window of a day
  * @param {Number} close When it closes, minutes since midnight
  * @param {Object} day `{ dayStart, dayEnd }`
  * @returns {Object} `{ text, tone }`, tone `go`, `short` or `none`
@@ -73,7 +72,6 @@ export function weekDays(state, trips) {
 }
 
 /**
- * The Week view's data: a cell event per vessel and day with trips, a resource time range per vessel and day without
  * @param {DispatchState} state
  * @param {Object[]} vessels `{ id, window, seats }`
  * @param {TripModel[]} trips The trips of the whole week
@@ -98,7 +96,6 @@ export function weekCells(state, vessels, trips) {
                 id    = `${vessel.id}:${index}`;
 
             if (own.length) {
-                // When the first trip leaves port and the last one is back, as the engine placed them
                 const
                     departs  = Math.min(...own.map(trip => trip.departs)),
                     back     = Math.max(...own.map(trip => trip.endMinute)),
@@ -114,7 +111,7 @@ export function weekCells(state, vessels, trips) {
                     endDate     : DateHelper.add(state.dateOf(index), back, 'minute'),
                     name        : `${hhmm(departs)}–${hhmm(back)}`,
                     trips       : own.map(trip => trip.id).join(' '),
-                    // A trip a forecast made the day before of the stops it cut from a trip
+                    // Has a trip carried over: made by a forecast of the stops it cut from the day before
                     carried     : own.some(trip => trip.change === 'carried'),
                     turbines    : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
                     pax,
@@ -143,11 +140,7 @@ export function weekCells(state, vessels, trips) {
     return { events, ranges };
 }
 
-/**
- * How late a cell's last return is, "+17 min"
- * @param {Number} late Minutes
- * @returns {String}
- */
+// How late a cell's last return is, "+17 min"
 export function lateText(late) {
     return `+${duration(late)}`;
 }
