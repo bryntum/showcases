@@ -275,8 +275,7 @@ export default class DispatchScheduler extends Scheduler {
             close   : dispatch.closeOf(trip.resource),
             sailOut : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
             dropFit : features.dropTarget.isFitting(trip),
-            held    : features.dropTarget.isHeld(trip),
-            typeOf  : turbine => dispatch.jobAt(turbine)?.type ?? ''
+            held    : features.dropTarget.isHeld(trip)
         });
     }
 

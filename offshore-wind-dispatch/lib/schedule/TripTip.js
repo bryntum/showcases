@@ -26,7 +26,9 @@ export function tripTipContent(trip, state) {
         fact    = (term, value) => [{ tag : 'dt', text : term }, { tag : 'dd', text : value }],
         facts   = [
             ...fact(trip.departs <= state.now ? 'Under way since' : 'Leaves', clock(start)),
-            ...stops.flatMap(leg => fact(`${leg.turbine} on station`,
+            // The stop's turbine and job, which its block in the schedule has no room for
+            ...stops.flatMap(leg => fact(
+                [leg.turbine, state.jobAt(leg.turbine)?.type, 'on station'].filter(Boolean).join(' '),
                 `${clock(leg.startDate)}–${clock(leg.endDate)} (${duration(leg.duration)})`)),
             ...trip.waits.flatMap(({ turbine, minutes, after }) =>
                 fact('Waits', `${duration(minutes)} at ${turbine}${after ? ` for ${after}` : ''}`)),

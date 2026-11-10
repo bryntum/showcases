@@ -12,46 +12,9 @@ import { clock, duration } from '../util/Time.js';
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventBuffer#config-renderer
  */
 
-// The renderers decide what fits from these px sizes: keep them in step with trips.css
-const
-    // A departure this close to the start of the timeline has no room for its clock time ("07:45" at 11px) and the
-    // dot before it: the time goes after the dot
-    edgeRoom  = 44,
-    // A work block's text: the average width of a 12px character, `--b-sch-event-padding-inline` each side and the
-    // gap between the turbine, the type and the hours
-    blockFont = { char : 7, padding : 6, gap : 6 };
-
-// About how wide a work block's text is, px
-function textWidth(text) {
-    return text.length * blockFont.char;
-}
-
-/**
- * What a work block of a width has room for: short of room, the hours are dropped first, then the job type. The text
- * never wraps nor is cut
- * @param {TripModel} stop The stop's record, `turbine` and `duration` in minutes
- * @param {Number} width px
- * @param {String} [type] The short job type, "Service"
- * @returns {Object} `{ turbine, type, hours }` booleans
- */
-function blockText({ turbine, duration : minutes }, width, type = '') {
-    const
-        room     = width - 2 * blockFont.padding,
-        name     = textWidth(turbine),
-        withType = type ? name + blockFont.gap + textWidth(type) : name,
-        hours    = textWidth(hoursText(minutes));
-
-    return {
-        turbine : name <= room,
-        type    : Boolean(type) && withType <= room,
-        hours   : withType + blockFont.gap + hours <= room
-    };
-}
-
-// "1.5 h", "1.25 h", "3 h"
-function hoursText(minutes) {
-    return `${Number((minutes / 60).toFixed(2))} h`;
-}
+// A departure this close to the start of the timeline, px, has no room for its clock time ("07:45" at 11px) and the
+// dot before it: the time goes after the dot. Keep it in step with trips.css
+const edgeRoom = 44;
 
 /**
  * The teams on board: "Team B", "Teams D, E"
@@ -77,15 +40,15 @@ function changeText(trip) {
 }
 
 /**
- * A leg, a nested event: a stop is a work block, a hop is empty so the trip's line shows through. A stop is at risk
- * when the vessel cannot get back to port from it before its window closes
+ * A leg, a nested event: a stop is a work block named by its turbine (its job and hours are in the trip's tooltip), a
+ * hop is empty so the trip's line shows through. A stop is at risk when the vessel cannot get back to port from it
+ * before its window closes
  * @param {TripModel} leg
  * @param {Object} renderData
  * @param {Number} close When the trip's window closes, minutes since midnight
- * @param {Function} typeOf The short job type of a turbine, "Service"
- * @returns {Object[]|String} DomConfigs
+ * @returns {Object|String} DomConfig
  */
-function renderLeg(leg, renderData, close, typeOf) {
+function renderLeg(leg, renderData, close) {
     const
         { cls }   = renderData,
         isTransit = leg.kind === 'transit',
@@ -101,21 +64,11 @@ function renderLeg(leg, renderData, close, typeOf) {
         return '';
     }
 
-    const
-        type = typeOf(leg.turbine),
-        fits = blockText(leg, renderData.width, type);
-
     // Bryntum's tonal style derives the tint and the text from this colour (tuned in trips.css)
     renderData.eventStyle = 'tonal';
     renderData.eventColor = risk ? 'var(--ow-c-risk-line)' : 'var(--ow-c-work)';
-    // Too short for its name: the block grows to hold it (trips.css)
-    cls['ow-seg-narrow']  = !fits.turbine;
 
-    return [
-        { tag : 'b', text : leg.turbine },
-        fits.type ? { tag : 'span', class : 'ow-seg-type', text : type } : null,
-        fits.hours ? { tag : 'span', class : 'ow-seg-hours', text : hoursText(leg.duration) } : null
-    ];
+    return { tag : 'b', text : leg.turbine };
 }
 
 /**
@@ -126,12 +79,11 @@ function renderLeg(leg, renderData, close, typeOf) {
  * @param {Number} options.sailOut How wide the trip's sail out is drawn, px
  * @param {Boolean} options.dropFit A team is dragged and would fit on the trip
  * @param {Boolean} options.held A team is held over the trip
- * @param {Function} options.typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFit, held, typeOf }) {
+export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFit, held }) {
     if (eventRecord.isLeg) {
-        return renderLeg(eventRecord, renderData, close, typeOf);
+        return renderLeg(eventRecord, renderData, close);
     }
 
     const

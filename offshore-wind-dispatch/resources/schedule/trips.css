@@ -83,30 +83,18 @@
         pointer-events : none;
 
         > .b-sch-event.ow-seg {
-            --b-sch-event-border-radius : var(--ow-c-radius);
-            /* px, as TripRendering.js#blockText counts them, the gap and the narrow block's padding too */
+            --b-sch-event-border-radius  : var(--ow-c-radius);
             --b-sch-event-padding-inline : 6px;
             --b-sch-event-font-size      : 12px;
 
             translate : none;
-            overflow  : visible;
 
             > .b-sch-event-content {
-                overflow    : visible;
                 line-height : 1;
             }
 
             b {
                 font-weight : 600;
-            }
-
-            /* A stop too short for its name grows just wide enough to hold it */
-            &.ow-seg-narrow {
-                min-width : max-content;
-
-                > .b-sch-event-content {
-                    padding-inline : 6px;
-                }
             }
         }
 
@@ -117,12 +105,9 @@
         /* Bryntum's tonal event style in the work blue (eventStyle, eventColor) */
         > .b-sch-event.ow-seg-stop {
             --b-sch-event-border-color : var(--ow-c-work-line);
-            --b-sch-event-font-weight  : 400;
 
-            .ow-seg-hours {
-                margin-inline-start  : auto;
-                font-variant-numeric : tabular-nums;
-            }
+            /* A stop too short for its turbine's name grows just wide enough to hold it */
+            min-width : max-content;
         }
 
         /* The stop the vessel cannot get back from before its window closes */
