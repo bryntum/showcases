@@ -15,7 +15,7 @@ export function tripTipContent(trip, state) {
         start  = trip.departs,
         back   = trip.endMinute,
         late   = back - close,
-        stops  = trip.legs.filter(leg => leg.type === 'stop' && !leg.preview),
+        stops  = trip.legs.filter(leg => leg.type === 'stop'),
         share  = minutes => `${((minutes - start) / Math.max(1, back - start) * 100).toFixed(2)}%`,
         // As TripRendering#renderLeg marks a stop at risk
         risky  = leg => trip.status === 'at-risk' && leg.to + portMinutes(leg.turbine, trip.mode) > close,

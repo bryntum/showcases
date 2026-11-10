@@ -249,14 +249,12 @@ export default class DispatchState extends Base.mixin(Events) {
      * @returns {Object} `{ due, planned, atRisk }`
      */
     daySummary(index, trips) {
-        const
-            own     = trips.filter(trip => !trip.draft),
-            planned = new Set(own.flatMap(trip => trip.turbines));
+        const planned = new Set(trips.flatMap(trip => trip.turbines));
 
         return {
             due     : new Set([...this.dueOn(index), ...planned]).size,
             planned : planned.size,
-            atRisk  : own.filter(trip => trip.status === 'at-risk').length
+            atRisk  : trips.filter(trip => trip.status === 'at-risk').length
         };
     }
 

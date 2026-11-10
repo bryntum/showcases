@@ -87,8 +87,7 @@ export function weekCells(state, vessels, trips) {
         for (const vessel of vessels) {
             const
                 close = windows[vessel.window],
-                own   = trips.filter(trip => trip.day === index && trip.resource?.id === vessel.id &&
-                    !trip.draft),
+                own   = trips.filter(trip => trip.day === index && trip.resource?.id === vessel.id),
                 id    = `${vessel.id}:${index}`;
 
             if (own.length) {

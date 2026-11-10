@@ -229,7 +229,11 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         this.redrawSide?.();
     }
 
-    updateHeld() {
+    updateHeld(held) {
+        if (this.parts) {
+            this.scheduler.drop = held;
+        }
+
         this.redrawSide?.();
     }
 
@@ -292,7 +296,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         me.parts.schedulePane.showView('day');
 
         if (index !== me.dispatch.dayIndex) {
-            me.dropController.clearPreview();
             me.scheduler.clearEventSelection();
             me.dispatch.showDay(index);
             me.scheduler.showDay();
@@ -316,7 +319,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             // A field set to its own value is no change, the trip is not redrawn
             trip.status = late ? 'at-risk' : trip.change ?? 'on-plan';
             // A trip that has left port is under way: no drag, no grab cursor (EventDrag reads the field)
-            trip.draggable = trip.departs > dispatch.now && !trip.draft;
+            trip.draggable = trip.departs > dispatch.now;
         });
     }
 
@@ -346,39 +349,22 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     }
 
     /**
-     * Changes the plan and lets the scheduling engine place it. A held team's previewed stop is taken off first, so the
-     * change and the trips' status see the plan only, then previewed again against the new plan: no view keeps showing
-     * a check made against the old one
+     * Changes the plan and lets the scheduling engine place it. A team held meanwhile is checked again against the new
+     * plan: no view keeps showing a check made against the old one
      * @param {Function} [change] Changes the plan, may return a Promise
      * @returns {Promise} Resolves once the engine has placed it
      */
     async replan(change) {
-        const
-            me                       = this,
-            { held, dropController } = me,
-            again                    = held && { teamId : held.id, target : held.target, at : held.at };
-
-        dropController.clearPreview();
-
-        // Taken after the preview is cleared above: any later clear means the drag was cancelled, ended or moved on
-        const generation = dropController.generation;
+        const me = this;
 
         await change?.();
         // The engine pushes the stops that wait for another trip, and the legs after them
         await me.scheduler.project.commitAsync();
 
-        if (me.isDestroyed) {
-            return;
+        if (!me.isDestroyed) {
+            me.evaluate();
+            me.drag?.refresh();
         }
-
-        me.evaluate();
-
-        // Held again, unless the drag ended or moved on meanwhile: a cancelled preview is not brought back
-        if (again && !me.held && dropController.generation === generation && me.drag?.isDragging) {
-            dropController.previewDrop(again.teamId, again.target, again.at);
-        }
-
-        me.drag?.refresh();
     }
 
     // The departure is snapped, not the trip's start at its first stop (DispatchScheduler#departsAt)
@@ -403,15 +389,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         return this.replan();
     }
 
-    // The engine has placed a change. While a team is held that is its previewed stop: only the map and the card
-    // follow it, the plan's own counts and ranges are unchanged
+    // The engine has placed a change
     onPlanReady() {
-        if (this.held) {
-            this.refreshSide();
-        }
-        else {
-            this.refreshPlan();
-        }
+        this.refreshPlan();
     }
 
     // The day or the forecast changed, mostly with the plan: drawn once the engine has placed it, the weather too
@@ -449,10 +429,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     // The map and the turbine card
     refreshSide() {
         const
-            me       = this,
-            // A team held over a cell of the Week view, or refused by a helicopter, previews nothing on the day the map
-            // shows: no trip of the plan has its stop
-            held     = me.held?.trip?.isModel ? me.held : null;
+            me   = this,
+            // A team held over a cell of the Week view is not on the day the map shows
+            held = me.held?.target.isWeekCell ? null : me.held;
 
         if (me.isDestroyed || !me.parts) {
             return;
@@ -531,8 +510,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         this.mapFollows = true;
 
-        if (trip && !trip.allStops.some(stop => stop.turbine === this.selectedTurbine)) {
-            this.selectedTurbine = trip.allStops[0]?.turbine;
+        if (trip && !trip.stops.some(stop => stop.turbine === this.selectedTurbine)) {
+            this.selectedTurbine = trip.stops[0]?.turbine;
         }
     }
 
@@ -542,8 +521,8 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const
             { trip } = eventRecord,
             minute   = event && trip.minutesOf(this.scheduler.getDateFromDomEvent(event)),
-            stop     = minute != null && trip.legs.find(leg => leg.type === 'stop' && !leg.preview &&
-                leg.from <= minute && minute < leg.to);
+            stop     = minute != null && trip.legs.find(leg => leg.type === 'stop' && leg.from <= minute &&
+                minute < leg.to);
 
         if (stop) {
             this.mapFollows      = true;

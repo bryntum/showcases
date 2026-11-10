@@ -54,29 +54,17 @@ function hoursText(minutes) {
 }
 
 /**
- * The teams on board: "Team B", "Teams D, E", "New trip" for a draft without teams. Includes a team held over the trip
+ * The teams on board: "Team B", "Teams D, E"
  * @param {TripModel} trip
  * @returns {String}
  */
-export function teamText(trip) {
-    const ids = [...new Set(trip.allStops.map(stop => stop.team))];
-
-    if (ids.length === 1) {
-        return trip.project?.teams?.get(ids[0])?.name ?? ids[0];
-    }
-
-    return ids.length ? `Teams ${ids.join(', ')}` : 'New trip';
+export function teamText({ teamIds, project }) {
+    return teamIds.length === 1 ? project?.teams?.get(teamIds[0])?.name ?? teamIds[0] : `Teams ${teamIds.join(', ')}`;
 }
 
-/**
- * People on board, a held team included: "5 pax"
- * @param {TripModel} trip
- * @returns {String}
- */
+// People on board, "5 pax"
 export function paxText(trip) {
-    const ids = [...new Set(trip.allStops.map(stop => stop.team))];
-
-    return `${ids.reduce((sum, id) => sum + (trip.project?.teams?.get(id)?.techs ?? 0), 0)} pax`;
+    return `${trip.pax} pax`;
 }
 
 // What a forecast changed, after the trip's label. At risk needs no word, the sail back's tag says it
@@ -102,13 +90,12 @@ function renderLeg(leg, renderData, close, typeOf) {
         { cls }   = renderData,
         isTransit = leg.kind === 'transit',
         back      = !isTransit && leg.endDate ? leg.minutesOf(leg.endDate) + portMinutes(leg.turbine, leg.mode) : 0,
-        risk      = !isTransit && !leg.preview && leg.trip.status === 'at-risk' && back > close;
+        risk      = !isTransit && leg.trip.status === 'at-risk' && back > close;
 
-    cls['ow-seg']         = 1;
-    cls['ow-seg-hop']     = isTransit;
-    cls['ow-seg-stop']    = !isTransit;
-    cls['ow-seg-risk']    = risk;
-    cls['ow-seg-preview'] = leg.preview;
+    cls['ow-seg']      = 1;
+    cls['ow-seg-hop']  = isTransit;
+    cls['ow-seg-stop'] = !isTransit;
+    cls['ow-seg-risk'] = risk;
 
     if (isTransit) {
         return '';
@@ -138,10 +125,11 @@ function renderLeg(leg, renderData, close, typeOf) {
  * @param {Number} options.close When the trip's window closes, minutes since midnight
  * @param {Number} options.sailOut How wide the trip's sail out is drawn, px
  * @param {Boolean} options.dropFit A team is dragged and would fit on the trip
+ * @param {Boolean} options.held A team is held over the trip
  * @param {Function} options.typeOf The short job type of a turbine, "Service"
  * @returns {Object[]|String} DomConfigs
  */
-export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFit, typeOf }) {
+export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFit, held, typeOf }) {
     if (eventRecord.isLeg) {
         return renderLeg(eventRecord, renderData, close, typeOf);
     }
@@ -153,10 +141,10 @@ export function renderTrip({ eventRecord, renderData }, { close, sailOut, dropFi
     renderData.cls['ow-trip']                = 1;
     // On the wrapper, which also holds the buffer: the hover's outline goes round the sail out and back too
     renderData.wrapperCls['ow-trip-wrap']    = 1;
-    renderData.wrapperCls['ow-trip-held']    = trip.hasPreview;
+    renderData.wrapperCls['ow-trip-held']    = held;
     renderData.cls[`ow-trip-${trip.status}`] = 1;
     renderData.cls['ow-trip-heli']           = trip.mode === 'heli';
-    renderData.cls['ow-trip-drop']           = trip.hasPreview;
+    renderData.cls['ow-trip-drop']           = held;
     renderData.cls['ow-trip-fits']           = dropFit;
 
     // NestedEvents places the legs from the start of the trip's wrapper, which with a buffer is the departure, not
@@ -270,19 +258,16 @@ export function renderGroup({ groupRowFor, groupRecords, isFirstColumn }) {
 }
 
 /**
- * The resource time ranges (VesselRangeModel): a vessel's weather no-go, or the ghost of a trip brought forward.
- * Neither has a label. The classes go on the range's own element, its `wrapperCls`
+ * The resource time ranges (VesselRangeModel): a vessel's weather no-go, the ghost of a trip brought forward, or the
+ * outline of a held team's stop. None has a label. The classes go on the range's own element, its `wrapperCls`
  * @param {Object} args The ResourceTimeRanges feature's renderer arguments
  * @returns {String}
  */
-export function renderRange({ resourceTimeRangeRecord : range, renderData }) {
-    const
-        { wrapperCls } = renderData,
-        isGhost        = range.kind === 'ghost';
-
-    wrapperCls['ow-nogo']      = !isGhost;
-    wrapperCls['ow-nogo-heli'] = !isGhost && range.resource?.mode === 'heli';
-    wrapperCls['ow-ghost']     = isGhost;
+export function renderRange({ resourceTimeRangeRecord : { kind, resource }, renderData : { wrapperCls } }) {
+    wrapperCls['ow-nogo']         = kind === 'nogo';
+    wrapperCls['ow-nogo-heli']    = kind === 'nogo' && resource?.mode === 'heli';
+    wrapperCls['ow-ghost']        = kind === 'ghost';
+    wrapperCls['ow-drop-outline'] = kind === 'drop';
 
     return '';
 }

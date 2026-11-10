@@ -6,23 +6,22 @@ import { addTrip, nextTripId } from './model/TripData.js';
 import { hhmm } from './util/Time.js';
 
 const
-    stopOf       = (team, job, preview = false) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id,
-        preview }),
-    newPlan      = (id, start, vessel) => ({
+    stopOf  = (team, job) => ({ turbine : job.turbine, minutes : job.minutes, team : team.id }),
+    newPlan = (id, start, vessel) => ({
         id, start, stops : [], mode : vessel.mode, wait : 0, pax : 0, seats : vessel.seats
     }),
-    // A new trip only described, not in the plan: on a free cell of the Week view, or the trip a helicopter refuses
-    draftOf      = (plan, vessel) => ({ id : plan.id, draft : true, departs : plan.start, resource : vessel }),
+    // A new trip from port, only described until the team is dropped on it
+    draftOf = ({ id, start }, vessel) => ({ id, draft : true, departs : start, resource : vessel, turbines : [] }),
     // Encoded: the reason comes from the plan
-    tell         = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
+    tell    = text => Toast.show({ html : StringHelper.encodeHtml(text), cls : 'ow-toast-message' });
 
 /**
- * The `handler` TeamDrag calls (see TeamDrag's DropHandler): lifts a team, previews its stop where it is held, books it
- * on release. Held over a vessel's row rather than a trip, the team goes on the vessel's best trip (the one it fits on
- * that is back first, else the first, so the tooltip says why), or a draft trip from port when none is left to join.
+ * The `handler` TeamDrag calls: lifts a team, checks it where it is held, books it on release. Held over a vessel's
+ * row rather than a trip, the team goes on the vessel's best trip (the one it fits on that is back first, else the
+ * first, so the tooltip says why), or a new trip from port when none is left to join.
  *
- * The preview check is synchronous, on the planner's plain values (Planner#previewDrop): the engine is too slow to ask
- * on every pointer move. Only a booking is placed by the engine.
+ * The check is synchronous, on the planner's plain values (Planner#previewDrop): the engine is too slow to ask on every
+ * pointer move. Nothing is written to the project until the drop, which the engine places.
  */
 export default class DropController {
     /**
@@ -62,8 +61,8 @@ export default class DropController {
     }
 
     /**
-     * Previews a team where it is held and checks it. The hover and the release both go through it, so what is booked
-     * is what was shown. The same team over the same target, on the same side of the window's close, keeps its check
+     * Checks a team where it is held. The hover and the release both go through it, so what is booked is what was
+     * shown. The same team over the same target, on the same side of the window's close, keeps its check
      * @param {String} teamId
      * @param {TripModel|VesselModel|Object|null} target The trip, the vessel's row or the Week view's cell held over
      * @param {Number|null} [at] Minutes since midnight at the point held on the Day view's time axis, none over the
@@ -81,13 +80,7 @@ export default class DropController {
             return held;
         }
 
-        me.clearPreview();
-
-        if (target) {
-            me.holdPreview(teamId, target, blocked);
-        }
-
-        return me.held;
+        return me.held = target ? me.check(teamId, target, blocked) : null;
     }
 
     // The minute held at when it is in the vessel's no-go range, else none. A cell of the week is the whole day
@@ -139,7 +132,7 @@ export default class DropController {
     }
 
     // `at` only when it is in the vessel's no-go range. Null when the team no longer waits
-    holdPreview(teamId, target, at = null) {
+    check(teamId, target, at = null) {
         const
             me    = this,
             entry = me.waitingTeam(teamId);
@@ -149,7 +142,7 @@ export default class DropController {
         }
 
         if (target.isWeekCell) {
-            return me.held = me.cellDrop(teamId, target);
+            return me.cellDrop(teamId, target);
         }
 
         const
@@ -157,37 +150,17 @@ export default class DropController {
             { plan, trip, vessel } = me.tripFor(target, team, job),
             close                  = me.dispatch.closeOf(vessel);
 
-        // Checked before the stop is previewed, against the plan alone
-        return me.held = {
+        return {
             id     : entry.id,
             target,
             at,
             team,
             job,
             result : me.checkPlan(plan, vessel, team, job, at),
-            trip   : me.previewStop(trip, plan, vessel, stopOf(team, job, true)),
+            trip   : trip ?? draftOf(plan, vessel),
             close,
             reach  : reachable(plan, job.minutes, close)
         };
-    }
-
-    // The previewed stop is a leg of the trip, or of a new draft trip. Not on a helicopter, which never takes a team:
-    // its refusal needs no record in the plan, the new trip is only described, as for a Week cell (cellDrop)
-    previewStop(trip, plan, vessel, stop) {
-        const { midnight, dayIndex } = this.dispatch;
-
-        if (vessel.mode === 'heli') {
-            return trip ?? draftOf(plan, vessel);
-        }
-
-        if (trip) {
-            trip.layout({ stops : [...trip.stops, stop] });
-
-            return trip;
-        }
-
-        return addTrip(this.scheduler.eventStore, vessel,
-            { id : plan.id, departs : plan.start, midnight, draft : true, day : dayIndex }, [stop]);
     }
 
     // `{ trip, plan, vessel }`: the trip under the team if it can still be joined, else the vessel's best trip, else
@@ -195,7 +168,7 @@ export default class DropController {
     tripFor(target, team, job) {
         const
             { now }  = this.dispatch,
-            joinable = trip => !trip.draft && trip.departs > now,
+            joinable = trip => trip.departs > now,
             isTrip   = target instanceof TripModel;
 
         if (isTrip && joinable(target)) {
@@ -204,7 +177,7 @@ export default class DropController {
 
         const
             vessel = isTrip ? target.resource : target,
-            trips  = this.trips.filter(trip => trip.resource === vessel && !trip.draft),
+            trips  = this.trips.filter(trip => trip.resource === vessel),
             open   = trips.filter(joinable).map(trip => {
                 const plan = trip.plan;
 
@@ -260,7 +233,7 @@ export default class DropController {
             entry = me.waitingTeam(teamId);
 
         me.clearFitting();
-        entry && me.trips.filter(trip => !trip.draft && me.checkDrop(trip, entry.team, entry.job).valid)
+        entry && me.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid)
             .forEach(trip => me.scheduler.fittingTrips.add(trip));
         me.outlineFitting(true);
     }
@@ -294,27 +267,6 @@ export default class DropController {
             vessel : vessel.name,
             at
         });
-    }
-
-    // Counts the previews ended: DispatchApp#replan previews a held team again only if nothing ended it meanwhile
-    generation = 0;
-
-    clearPreview() {
-        const trip = this.held?.trip;
-
-        this.generation++;
-
-        // A cell of the week, or a helicopter's refused new trip, previews nothing in the store
-        if (trip instanceof TripModel && !trip.isDestroyed) {
-            if (trip.draft) {
-                this.scheduler.eventStore.remove(trip);
-            }
-            else {
-                trip.layout({ stops : trip.stops });
-            }
-        }
-
-        this.held = null;
     }
 
     /**
@@ -358,24 +310,18 @@ export default class DropController {
         return true;
     }
 
-    // Taken back when the engine's result breaks a window, `why` then says how. The preview is taken off and placed
-    // first, so the trips that wait for this one are measured against the plan alone
+    // Taken back when the engine's result breaks a window, `why` then says how
     async book({ trip, team, job, vessel = trip.resource }, day) {
         const
             me                      = this,
             { project, eventStore } = me.scheduler,
             stop                    = stopOf(team, job),
-            fresh                   = trip.draft && { id : trip.id, departs : trip.departs, day };
-
-        me.clearPreview();
-        await project.commitAsync();
-
-        const
-            midnight = me.dispatch.dateOf(day),
-            booked   = fresh ? addTrip(eventStore, vessel, { ...fresh, midnight }, [stop]) : trip,
-            before   = !fresh && trip.stops,
+            fresh                   = trip.draft && { id : trip.id, departs : trip.departs, day },
+            midnight                = me.dispatch.dateOf(day),
+            booked                  = fresh ? addTrip(eventStore, vessel, { ...fresh, midnight }, [stop]) : trip,
+            before                  = !fresh && trip.stops,
             // When each trip that waits for this one is back without the team
-            waits    = me.waitingOn(booked).map(link => ({ link, back : link.toEvent.trip.endMinute }));
+            waits                   = me.waitingOn(booked).map(link => ({ link, back : link.toEvent.trip.endMinute }));
 
         before && trip.layout({ stops : [...before, stop] });
         await project.commitAsync();
@@ -428,7 +374,7 @@ export default class DropController {
 
     endDrag() {
         this.clearFitting();
-        this.clearPreview();
+        this.held          = null;
         this.state.lifted = null;
     }
 }

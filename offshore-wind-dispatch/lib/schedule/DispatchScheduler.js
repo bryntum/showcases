@@ -48,6 +48,13 @@ export default class DispatchScheduler extends Scheduler {
          */
         phone : false,
 
+        /**
+         * The check of a team held over a trip or a vessel's row (DropController#previewDrop): its stop is outlined
+         * where it would go, a resource time range, and its trip marked. Nothing of it is in the plan
+         * @prp {Object|null}
+         */
+        drop : null,
+
         cls                       : 'ow-scheduler',
         rowHeight                 : 56,
         barMargin                 : 0,
@@ -201,10 +208,9 @@ export default class DispatchScheduler extends Scheduler {
         });
     }
 
-    // Trips are edited, not their legs (the legs let the pointer through to their trip, trips.css). A draft trip,
-    // shown while a team is dragged, has no editor
+    // Trips are edited, not their legs (the legs let the pointer through to their trip, trips.css)
     onBeforeTripEdit({ taskRecord }) {
-        return !taskRecord.isLeg && !taskRecord.draft;
+        return !taskRecord.isLeg;
     }
 
     /**
@@ -288,6 +294,7 @@ export default class DispatchScheduler extends Scheduler {
             close   : dispatch.closeOf(trip.resource),
             sailOut : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
             dropFit : this.fittingTrips.has(trip),
+            held    : this.drop?.trip === trip,
             typeOf  : turbine => dispatch.jobAt(turbine)?.type ?? ''
         });
     }
@@ -347,6 +354,22 @@ export default class DispatchScheduler extends Scheduler {
 
     //region Data and drag
 
+    // The outline moves with the check, the trips held over and left are marked
+    updateDrop(drop, was) {
+        const me = this;
+
+        if (me.isConfiguring) {
+            return;
+        }
+
+        me.syncRanges();
+
+        if (was?.trip !== drop?.trip) {
+            new Set([was?.trip, drop?.trip]).forEach(trip => trip?.isModel && !trip.isDestroyed &&
+                me.repaintEventsForResource(trip.resource));
+        }
+    }
+
     /**
      * Redraws after the plan changed: the ghosts of the trips brought forward, the vessels' seats taken
      */
@@ -364,8 +387,8 @@ export default class DispatchScheduler extends Scheduler {
         this.forecastHeader.refresh();
     }
 
-    // A vessel's weather no-go from its window's close to the end of the day, and the ghost of a trip the forecast
-    // brought forward at its old place
+    // A vessel's weather no-go from its window's close to the end of the day, the ghost of a trip the forecast
+    // brought forward at its old place, and the outline of a held team's stop
     syncRanges() {
         const
             me     = this,
@@ -389,9 +412,19 @@ export default class DispatchScheduler extends Scheduler {
                 startDate  : trip.previousDeparture,
                 endDate    : DateHelper.add(trip.previousDeparture,
                     trip.outerEndDate.getTime() - trip.outerStartDate.getTime(), 'millisecond')
-            }));
+            })),
+            // Not over a cell of the Week view, nor for a helicopter, which takes no team
+            { drop } = me,
+            vessel   = drop?.trip.resource,
+            outline  = drop && !drop.target.isWeekCell && vessel?.mode === 'vessel' ? [{
+                id         : 'drop',
+                kind       : 'drop',
+                resourceId : vessel.id,
+                startDate  : at(drop.result.stop.from),
+                endDate    : at(drop.result.stop.to)
+            }] : [];
 
-        me.resourceTimeRangeStore.data = [...nogo, ...ghosts];
+        me.resourceTimeRangeStore.data = [...nogo, ...ghosts, ...outline];
     }
 
     // The now line and the shaded past, today only

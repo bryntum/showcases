@@ -132,19 +132,11 @@
             --b-sch-event-border-color : var(--ow-c-risk-line);
         }
 
-        /* The stop of a team held over the trip */
-        > .b-sch-event.ow-seg-preview {
-            --b-sch-event-color      : var(--ow-reach);
-            --b-sch-event-background : color-mix(in srgb, var(--ow-reach) 16%, var(--ow-surface));
-
-            outline        : 1.5px dashed var(--ow-reach);
-            outline-offset : -1.5px;
-        }
     }
 
     /* The trip's hover state (the legs let the pointer through to it): its work blocks a step stronger */
     .b-nested-events-parent:is(:hover, .b-hover) .b-nested-event {
-        > .b-sch-event.ow-seg-stop:not(.ow-seg-preview, .ow-seg-risk) {
+        > .b-sch-event.ow-seg-stop:not(.ow-seg-risk) {
             --b-sch-event-background   : light-dark(color-mix(in srgb, var(--ow-c-work), var(--b-mix) 80%),
                 color-mix(in srgb, var(--ow-c-work), var(--b-mix) 72%));
             --b-sch-event-border-color : color-mix(in srgb, var(--ow-c-work), var(--b-mix) 35%);

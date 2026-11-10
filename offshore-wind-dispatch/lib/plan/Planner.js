@@ -4,7 +4,7 @@ import { duration, hhmm } from '../util/Time.js';
 /**
  * The dispatch rules, plain synchronous functions on plain values. A trip is `{ start, stops, mode, wait }`: its
  * departure in minutes since its midnight, its stops `{ turbine, minutes, team }` in order, `vessel` or `heli`, and the
- * minutes the engine holds it on station for another trip (TripModel#wait). The drop preview calls these on every
+ * minutes the engine holds it on station for another trip (TripModel#wait). The drop check calls these on every
  * pointer move, so they do not ask the engine: about 2 ms a hover with the reach, against about 90 ms for one trial
  * change placed by the engine and taken back.
  */
@@ -22,7 +22,7 @@ function requiredCerts(job) {
 
 /**
  * The legs of a trip: out from the port, the stops with the hops between them, back to the port
- * @param {Object[]} stops `{ turbine, minutes, team, preview }`
+ * @param {Object[]} stops `{ turbine, minutes, team }`
  * @param {String} mode `vessel` or `heli`
  * @returns {Object[]} `{ type : 'transit' | 'stop', minutes, ...stop }`
  */
@@ -68,7 +68,7 @@ export function timeLegs(start, legs) {
 /**
  * A stop added after a trip's last one. The trip's wait on station is put before it, at the stops already there
  * @param {Object} trip `{ start, stops, mode, wait }`
- * @param {Object} stop `{ turbine, minutes, team, preview }`
+ * @param {Object} stop `{ turbine, minutes, team }`
  * @returns {Object} `{ stops, stop, back }`, `stop` is the added leg with its `from` and `to`
  */
 export function appendStop({ start, stops, mode, wait = 0 }, stop) {
@@ -216,8 +216,7 @@ function brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, 
  */
 export function previewDrop({ trip, team, job, close, limit, now, vessel, at, nowhere = false, busy = [] }) {
     const
-        { stops, stop, back } = appendStop(trip,
-            { turbine : job.turbine, minutes : job.minutes, team : team.id, preview : true }),
+        { stops, stop, back } = appendStop(trip, { turbine : job.turbine, minutes : job.minutes, team : team.id }),
         seats                 = trip.pax + team.techs,
         certs                 = requiredCerts(job),
         [reason, short]       = brokenRule({ trip, team, job, certs, close, limit, now, vessel, seats, back, at,

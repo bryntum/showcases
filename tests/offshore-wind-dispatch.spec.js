@@ -104,7 +104,7 @@ test.describe('Offshore Wind Dispatch', () => {
         expect(m.noteRows).toBe(true);
     });
 
-    test('dragging a team onto a trip previews the stop, then books it', async({ page }) => {
+    test('dragging a team onto a trip outlines where its stop would go, then books it', async({ page }) => {
         await open(page);
 
         const
@@ -125,8 +125,9 @@ test.describe('Offshore Wind Dispatch', () => {
         await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
         await expect(page.locator('.ow-drop-tip')).toContainText('window closes 14:00');
 
-        // The stop it would get is previewed as a leg of the trip
-        await expect(trip(page, 'NT-1').locator('.b-nested-event .ow-seg-preview')).toContainText('T-34');
+        // Where the stop would go is outlined on the trip's row, nothing is in the plan until the drop
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(1);
+        await expect(trip(page, 'NT-1').locator('.b-nested-event[data-event-id="NT-1:T-34"]')).toHaveCount(0);
 
         await page.mouse.up();
 
@@ -178,43 +179,40 @@ test.describe('Offshore Wind Dispatch, a team held over a trip', () => {
 
         await expect(page.locator('.ow-drop-tip')).toContainText('T-34 fits on NT-1');
         await expect(page.locator('.ow-drag-chip')).toHaveCount(1);
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(1);
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(1);
 
         await page.keyboard.press('Escape');
 
         await expect(page.locator('.ow-drop-tip')).toHaveCount(0);
         await expect(page.locator('.ow-drag-chip')).toHaveCount(0);
-        await expect(trip(page, 'NT-1').locator('.ow-seg-preview')).toHaveCount(0);
+        await expect(scheduler(page).locator('.ow-drop-outline')).toHaveCount(0);
         await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
     });
 });
 
 // A team held over a trip is checked again whenever the plan or the forecast changes, never left showing an old check.
-// heldState: the held team's check against a fresh one, the window close it shows against the trip's window now, and
-// the trip's status against the one the plan alone gives, with the previewed stop taken off and put back where the
-// team is held (a trip, or a vessel's row, which may give a new trip from port)
+// heldState: the held team's check against a fresh one, the window close it shows against the trip's window now, the
+// outline (the `drop` resource time range) against the stop the check gives, and the team's stop not in the plan
 const heldState = page => page.evaluate(() => {
     const
         app                         = globalThis.bryntum.query('dispatchapp'),
         { trip, team, job, target } = app.held,
-        close               = app.dispatch.closeOf(trip.resource),
-        pad                 = value => String(value).padStart(2, '0'),
-        state               = {
-            held      : app.held.result,
-            fresh     : app.dropController.checkDrop(trip, team, job),
-            heldClose : app.held.close,
-            close,
-            closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
-            previews  : trip.children.filter(leg => leg.preview).length,
-            status    : trip.status
-        };
+        close                       = app.dispatch.closeOf(trip.resource),
+        pad                         = value => String(value).padStart(2, '0'),
+        minutes                     = date => (date - app.dispatch.midnight) / 60000,
+        outline                     = app.scheduler.resourceTimeRangeStore.getById('drop');
 
-    app.dropController.clearPreview();
-    app.evaluate();
-    state.planStatus = trip.status;
-    app.dropController.holdPreview(team.id, target);
-
-    return state;
+    return {
+        held      : app.held.result,
+        // The trip held over, or the new trip from port once it cannot be joined
+        fresh     : app.dropController.check(team.id, target, app.held.at).result,
+        heldClose : app.held.close,
+        close,
+        closeText : `${pad(Math.floor(close / 60))}:${pad(close % 60)}`,
+        outline   : outline && [minutes(outline.startDate), minutes(outline.endDate)],
+        stop      : [app.held.result.stop.from, app.held.result.stop.to],
+        inPlan    : app.scheduler.eventStore.query(leg => leg.turbine === job.turbine).length > 0
+    };
 });
 
 test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => {
@@ -236,18 +234,18 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
         expect(state.close).toBeLessThan(14 * 60);
         expect(state.heldClose).toBe(state.close);
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
-        expect(state.status).toBe(state.planStatus);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
         await expect(tip).toContainText(`window closes ${state.closeText}`);
         await expect(tip).toContainText(state.fresh.valid ? 'fits on' : 'does not fit on');
         await expect(page.locator('.ow-drag-chip')).toHaveCount(1);
     });
 
-    test('Undo of the forecast checks the held team again, the plan comes back without the previewed stop', async({ page }) => {
+    test('Undo of the forecast checks the held team again, the plan comes back as it was', async({ page }) => {
         await open(page);
 
         const legsOf = () => page.evaluate(() => globalThis.bryntum.query('dispatchapp').trips.map(each =>
-            `${each.id} ${each.departs} ${each.children.filter(leg => !leg.preview).map(leg => leg.id).join(',')}`));
+            `${each.id} ${each.departs} ${each.children.map(leg => leg.id).join(',')}`));
 
         const before = await legsOf();
 
@@ -271,7 +269,8 @@ test.describe('Offshore Wind Dispatch, a held team after a new forecast', () => 
 
         expect(state.heldClose).toBe(state.close);
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
         await expect(page.locator('.ow-drop-tip')).toContainText(`window closes ${state.closeText}`);
 
         // Put back, the trips are as before the forecast
@@ -348,7 +347,7 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
             const
                 app  = globalThis.bryntum.query('dispatchapp'),
                 trip = app.held.trip,
-                // An hour later, late enough for the previewed stop to bring it back after the window
+                // An hour later, late enough for the held team's stop to bring it back after the window
                 to   = trip.departs + 60;
 
             // As EventDrag leaves it, then the app's afterEventDrop listener, which lets the engine place it
@@ -362,10 +361,10 @@ test.describe('Offshore Wind Dispatch, a held team while the plan moves', () => 
 
         const state = await heldState(page);
 
-        // Checked from the new departure, the trip's status from the plan, not from the stop previewed on it
+        // Checked from the new departure, the outline moved with it
         expect(state.held).toEqual(state.fresh);
-        expect(state.previews).toBe(1);
-        expect(state.status).toBe(state.planStatus);
+        expect(state.outline).toEqual(state.stop);
+        expect(state.inPlan).toBe(false);
     });
 
 });
@@ -1318,7 +1317,7 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
         await expect(tray(page).locator('.ow-team[data-team="F"]')).toHaveCount(1);
     });
 
-    test('a drag cancelled while the plan is being placed does not get its preview back', async({ page }) => {
+    test('a drag cancelled while the plan is being placed does not get its outline back', async({ page }) => {
         await open(page);
 
         const result = await page.evaluate(async() => {
@@ -1329,13 +1328,13 @@ test.describe('Offshore Wind Dispatch, dispatch rules', () => {
             await app.replan(() => app.drag.end());
 
             return {
-                held     : app.held,
-                previews : app.scheduler.eventStore.query(each => each.preview || each.draft).length,
-                chips    : document.querySelectorAll('.ow-drag-chip').length
+                held    : app.held,
+                outline : Boolean(app.scheduler.resourceTimeRangeStore.getById('drop')),
+                chips   : document.querySelectorAll('.ow-drag-chip').length
             };
         });
 
-        expect(result).toEqual({ held : null, previews : 0, chips : 0 });
+        expect(result).toEqual({ held : null, outline : false, chips : 0 });
     });
 
     test('the trip editor saves a new time on station: the trip leaves later, its legs with it', async({ page }) => {

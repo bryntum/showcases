@@ -15,8 +15,8 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 1. **Inspect T-41.** The page opens on it: its card under the map says Sea Puffin is back at 14:17, 17 minutes after
    the CTV window. In the schedule that is the orange stop and return tag; in the time axis, the wave height crossing
    the 1.5 m limit at 14:00
-2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip. While it is held, the
-   trip shows the stop it would get,
+2. **Drag Team F onto a trip**, from the crews waiting in the header onto Northern Tern's trip. While it is held, an
+   outline on the trip's row shows where its stop would go,
    a tooltip says when the trip would be back and checks the seats and certificates, and the map rings every turbine
    the trip could still reach before the window closes. Drop it to book it
 3. **Apply the forecast** with **Forecast 08:00 is in · Re-plan**. The CTV window closes at 12:00 instead of 14:00:
@@ -43,7 +43,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | Dragging a trip, refused when it breaks the window | `EventDrag` with a `validatorFn` | `lib/schedule/TripValidator.js` |
 | Dragging a team from the header onto a trip | `DragHelper`, a `Tooltip` | `lib/drag/` |
-| The drop preview: back when, does it fit, what it can reach | Plain synchronous functions | `lib/plan/Planner.js` |
+| The drop check: back when, does it fit, what it can reach; the outline of the stop | Plain synchronous functions, a `ResourceTimeRanges` range | `lib/plan/Planner.js`, `lib/schedule/DispatchScheduler.js` |
 | A forecast's re-plan, and its Undo | `StateTrackingManager` (`project.stm`) | `lib/plan/ForecastPlanner.js` |
 | The Week view | A second Scheduler: `fillTicks`, `PercentBar`, `Summary` | `lib/week/` |
 | Header, panels, notice, tabs | `Panel` (title, header `tools`), `Container`, `ButtonGroup`, `TabPanel` | `lib/DispatchApp.js`, `lib/panel/` |
@@ -93,12 +93,11 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Stop | A turbine a team works at on a trip, `{ turbine, minutes, team }`, the solid blue work block |
 | Transit | Time at sea between two places. The sail out from the port and back to it are the trip's buffer time, its `preamble` and `postamble` (the EventBuffer feature) |
 | Hop | A transit between two turbines, a leg of the trip |
-| Held team | A team dragged from the tray over a trip or a vessel's row: the trip previews its stop until it is dropped or moves on |
+| Held team | A team dragged from the tray over a trip or a vessel's row: an outline shows where its stop would go, nothing is in the plan until it is dropped |
 | Ring | The map's circle round a turbine: the turbines of the trip hovered or selected, and while a team is held the turbines its trip can still reach |
 | Ghost | The faint outline a trip brought forward by the forecast leaves at its old place |
 | Pulled, trimmed, moved | What a new forecast did to a trip: brought forward, its last stops cut, or all of them cut (the trip leaves the day) |
 | Carried over | A trip a forecast made on the next day of the stops it cut, on the same vessel. Dashed, "carried over" in its label |
-| Draft | A new trip from port, shown while a team is held over a vessel with no trip it could join, removed unless the team is booked on it |
 
 ## How it works
 
@@ -150,7 +149,7 @@ Nothing sets a committed leg's dates directly. Booking Team F on Northern Tern's
 their durations and chained after T-23, and after `commitAsync()` the engine has placed them, moved the sail back after
 them and rolled the trip's end out to the new return. The app then reads the times back.
 
-The **drop preview** is the exception, a what-if. A team held over a trip asks: does it fit, when would the trip be
+The **drop check** is the exception, a what-if. A team held over a trip asks: does it fit, when would the trip be
 back, which turbines could it still reach. `lib/plan/Planner.js` answers that with plain synchronous functions on the
 trip's plan (`TripModel#plan`: its departure, stops and wait on station, read from the records as the engine placed
 them), in minutes since the trip's midnight: about 2 ms a hover, the 60 turbines of the reach included. The engine is
@@ -183,7 +182,7 @@ engine places each changed trip before the next one on the vessel is planned.
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
     the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
     and the phone tabs. It wires the plan, the dispatch state and its own view state to
-    the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
+    the views. `DropController.js` checks and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
     of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
     `TeamTray.js` is the team tray in the header (a Container with a `List` of the waiting teams' store, a card
     per team, the drag sources)
@@ -239,7 +238,7 @@ The trip's stops are read from its stop children. Changing them, or the departur
 `Planner#buildLegs` puts the transits between the stops, the first and last become the buffer, and each leg gets its
 duration; the engine then places them in order from the departure (see [Who works out the times](#who-works-out-the-times)).
 Legs that stay keep their record (a stop's ID is `<trip>:<turbine>`), new ones are added and assigned, gone ones
-removed. The stop of a team being dragged over a trip is a leg too (`preview`), shown dashed in teal.
+removed. The stop of a team held over a trip is not a leg: it is outlined by a resource time range (`kind : 'drop'`), dashed in teal, until the team is dropped.
 
 The event renderer draws the trip's label above its line (the feature's `headerHeight`), and each stop at its own
 time on it, solid with the turbine and the hours as far as its width has room. NestedEvents places nested events from

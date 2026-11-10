@@ -11,7 +11,7 @@ const at = (midnight, minutes) => DateHelper.add(midnight, minutes, 'minute');
 
 /**
  * The sail out and back in minutes, which become the trip's event buffer (`preamble`, `postamble`)
- * @param {Object[]} stops `{ turbine, minutes, team, preview }`
+ * @param {Object[]} stops `{ turbine, minutes, team }`
  * @param {String} mode
  * @returns {Object} `{ out, back }`
  */
@@ -32,20 +32,19 @@ export function bufferData({ out, back }) {
  * The data of a trip's stops and the hops between them. The sail out and back are cut off (`slice(1, -1)`): they are
  * the trip's buffer, not legs. The start dates are only a first guess, the engine places each leg after the one before
  * @param {Object} trip `{ id, departs, midnight }`, `departs` in minutes since the trip's `midnight`
- * @param {Object[]} stops `{ turbine, minutes, team, preview }`
+ * @param {Object[]} stops `{ turbine, minutes, team }`
  * @param {String} mode
  */
 export function legsData({ id, departs, midnight }, stops, mode) {
     return timeLegs(departs, buildLegs(stops, mode)).slice(1, -1).map(({ type, from, to, ...leg }, index) => ({
         // A hop keeps its place among all the legs, the sail out counted, in its ID
-        id           : type === 'stop' ? `${id}:${leg.preview ? 'preview' : leg.turbine}` : `${id}:leg-${index + 1}`,
+        id           : type === 'stop' ? `${id}:${leg.turbine}` : `${id}:leg-${index + 1}`,
         name         : leg.turbine ?? '',
         kind         : type,
         turbine      : leg.turbine ?? null,
         team         : leg.team ?? null,
         minutes      : leg.minutes,
         hop          : Boolean(leg.hop),
-        preview      : Boolean(leg.preview),
         startDate    : at(midnight, from),
         duration     : to - from,
         durationUnit : 'minute',
@@ -138,9 +137,9 @@ export function projectData({ vessels, trips, dependencies }, dateOf) {
     };
 }
 
-// The ID of a vessel's next trip, "SR-7": a vessel's trips are numbered through the week, drafts not counted
+// The ID of a vessel's next trip, "SR-7": a vessel's trips are numbered through the week
 export function nextTripId(trips, vessel) {
-    const numbers = trips.filter(trip => trip.resource === vessel && !trip.draft)
+    const numbers = trips.filter(trip => trip.resource === vessel)
         .map(trip => Number(String(trip.id).split('-').at(-1)) || 0);
 
     return `${String(vessel.id).toUpperCase()}-${Math.max(0, ...numbers) + 1}`;
@@ -148,7 +147,7 @@ export function nextTripId(trips, vessel) {
 
 /**
  * Adds a trip and its legs to an event store, all assigned to the vessel (see `projectData`), its legs chained
- * @param {Object} trip `{ id, departs, midnight, day, draft, change, note }`, `departs` in minutes since `midnight`
+ * @param {Object} trip `{ id, departs, midnight, day, change, note }`, `departs` in minutes since `midnight`
  */
 export function addTrip(eventStore, vessel, trip, stops) {
     const [added] = eventStore.rootNode.appendChild([tripData(trip, stops, vessel.mode)]);

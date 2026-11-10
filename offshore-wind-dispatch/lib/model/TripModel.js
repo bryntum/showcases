@@ -29,8 +29,6 @@ export default class TripModel extends EventModelEnterprise {
         { name : 'previousDeparture', type : 'date', defaultValue : null },
         // `on-plan`, `at-risk` or the change, kept up to date by the app (DispatchApp#evaluate)
         { name : 'status', defaultValue : 'on-plan' },
-        // A new trip from port, shown while a team is held over a vessel that has no trip it could join
-        { name : 'draft', type : 'boolean', persist : false },
         // Drop-off, Pickup
         'note',
         // The day of the week the trip is on, 0 is today (data/farm.json)
@@ -43,14 +41,8 @@ export default class TripModel extends EventModelEnterprise {
         'team',
         { name : 'minutes', type : 'number' },
         // A transit between two turbines, not to or from the port
-        { name : 'hop', type : 'boolean' },
-        // The stop shown while a team is dragged over the trip, not part of the plan
-        { name : 'preview', type : 'boolean' }
+        { name : 'hop', type : 'boolean' }
     ];
-
-    get hasPreview() {
-        return this.legRecords.some(leg => leg.preview);
-    }
 
     get isLeg() {
         return Boolean(this.parent && !this.parent.isRoot);
@@ -111,24 +103,15 @@ export default class TripModel extends EventModelEnterprise {
         return this.children?.length ? this.children : [];
     }
 
-    // The plan's stops, a held team's previewed stop left out
     get stops() {
         return this.legRecords
-            .filter(leg => leg.kind === 'stop' && !leg.preview)
+            .filter(leg => leg.kind === 'stop')
             .map(({ turbine, minutes, team }) => ({ turbine, minutes, team }));
-    }
-
-    // The stops as shown, the previewed one at the end
-    get allStops() {
-        const preview = this.legRecords.find(leg => leg.preview);
-
-        return preview ? [...this.stops, { turbine : preview.turbine, minutes : preview.minutes, team    : preview.team,
-            preview : true }] : this.stops;
     }
 
     /**
      * The whole run in minutes as the engine placed it, the buffer added as a transit at each end
-     * @property {Object[]} `{ type, minutes, from, to, turbine, team, hop, preview }`
+     * @property {Object[]} `{ type, minutes, from, to, turbine, team, hop }`
      */
     get legs() {
         const
@@ -153,8 +136,7 @@ export default class TripModel extends EventModelEnterprise {
                 to      : me.minutesOf(leg.endDate),
                 turbine : leg.turbine,
                 team    : leg.team,
-                hop     : leg.hop,
-                preview : leg.preview
+                hop     : leg.hop
             })),
             { type : 'transit', minutes : back, from : last, to : last + back }
         ];
@@ -206,7 +188,7 @@ export default class TripModel extends EventModelEnterprise {
         return [...new Set(this.stops.map(stop => stop.team))];
     }
 
-    // People on board, a previewed team left out: what the seats are checked against
+    // People on board: what the seats are checked against
     get pax() {
         return this.teamIds.reduce((sum, id) => sum + (this.project?.teams?.get(id)?.techs ?? 0), 0);
     }
@@ -231,9 +213,9 @@ export default class TripModel extends EventModelEnterprise {
      * engine then places it: read the times after `project.commitAsync()`
      * @param {Object} [options]
      * @param {Number} [options.departs] The new departure, minutes since midnight
-     * @param {Object[]} [options.stops] The new stops, `{ turbine, minutes, team, preview }`
+     * @param {Object[]} [options.stops] The new stops, `{ turbine, minutes, team }`
      */
-    layout({ departs = this.departs, stops = this.allStops } = {}) {
+    layout({ departs = this.departs, stops = this.stops } = {}) {
         const me = this;
 
         me.placeLegs(legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode));

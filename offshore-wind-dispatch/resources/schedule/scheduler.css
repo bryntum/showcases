@@ -48,7 +48,8 @@
         --b-time-range-line-color : var(--b-color-blue);
     }
 
-    /* The no-go ranges and ghosts (TripRendering.js#renderRange). The ghost's inset is px, as the row's geometry */
+    /* The no-go ranges, ghosts and a held team's stop (TripRendering.js#renderRange). The insets are px, as the row's
+       geometry: at the height of a stop */
     .b-sch-resource-time-range {
         --b-resource-time-range-background : none;
 
@@ -61,12 +62,17 @@
                 light-dark(rgb(110 70 170 / 12%), rgb(190 160 240 / 12%)) 0 2px, transparent 2px 9px);
         }
 
-        &.ow-ghost::before {
+        &:is(.ow-ghost, .ow-drop-outline)::before {
             content       : '';
             position      : absolute;
             inset         : 23px 0 19px;
             border        : 1.5px dashed var(--ow-c-transit);
             border-radius : var(--ow-c-radius);
+        }
+
+        &.ow-drop-outline::before {
+            border-color     : var(--ow-reach);
+            background-color : color-mix(in srgb, var(--ow-reach) 16%, transparent);
         }
     }
 

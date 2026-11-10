@@ -45,8 +45,8 @@ function showOnChip(chip, drop) {
 
 /**
  * Dragging a team from the tray onto a vessel, run by Bryntum's DragHelper. The pointer side only: the handler
- * (DropController) previews, checks and books, and that one check sets `context.valid`, the proxy's colour and the
- * DropTooltip.
+ * (DropController) checks and books, and that one check sets `context.valid`, the proxy's colour, the DropTooltip and
+ * the outline of where the stop would go.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
@@ -92,37 +92,34 @@ export default class TeamDrag {
     }
 
     /**
-     * Only for the `?state=drag` URL state (the screenshots): holds a team over a trip as a pointer resting on its
-     * previewed stop would, with no pointer. Escape puts it back
+     * Only for the `?state=drag` URL state (the screenshots): holds a team over a trip as a pointer resting on the
+     * outline of its stop would, with no pointer. Escape puts it back
      * @param {String} teamId
      * @param {TripModel} trip
      * @returns {Promise} Resolves once it is shown
      */
     async showHeld(teamId, trip) {
         const
-            me                     = this,
-            { scheduler, handler } = me,
-            // On the trip, or on a new trip from port when the trip can no longer be joined
-            leg                    = () => handler.held?.trip.legRecords?.find(each => each.preview);
+            me          = this,
+            { handler } = me,
+            outline     = () => me.scheduler.element.querySelector('.ow-drop-outline');
 
         me.lift(teamId);
         me.target = trip;
         me.proxy = document.body.appendChild(createChip(handler.waitingTeam(teamId).team));
         me.onKey = event => event.key === 'Escape' && me.end();
         document.addEventListener('keydown', me.onKey);
-
-        // The stop's place is known once the engine has placed it and NestedEvents has drawn it, a frame later
         handler.previewDrop(teamId, trip);
-        await scheduler.project.commitAsync();
 
-        for (let frame = 0; frame < 30 && leg() && !scheduler.getElementFromEventRecord(leg()); frame++) {
+        // The outline is drawn a frame later
+        for (let frame = 0; frame < 30 && !outline(); frame++) {
             await new Promise(resolve => requestAnimationFrame(resolve));
         }
 
-        const rect = leg() && scheduler.getElementFromEventRecord(leg())?.getBoundingClientRect();
+        const rect = outline()?.getBoundingClientRect();
 
         if (me.team === teamId) {
-            me.point = rect ? { x : rect.left + rect.width / 2, y : rect.top + 8 } :
+            me.point = rect ? { x : rect.left + rect.width / 2, y : rect.top + rect.height / 2 } :
                 { x : innerWidth / 2, y : innerHeight / 2 };
             DomHelper.setTranslateXY(me.proxy, me.point.x - 20, me.point.y + 8);
             me.hover(trip, me.point);
@@ -146,7 +143,6 @@ export default class TeamDrag {
         context.valid = Boolean(me.hover(me.targetAt(me.point), me.point)?.result.valid);
     }
 
-    // The preview redraws the trip under the pointer, so the target is found again
     onDrop() {
         const
             me     = this,
@@ -168,15 +164,15 @@ export default class TeamDrag {
         return date ? DateHelper.diff(scheduler.dispatch.midnight, date, 'minute') : null;
     }
 
-    // Called by DispatchApp#replan: the pointer may be still while the trips move under it
+    // Called by DispatchApp#replan: the pointer may be still while the trips move under it, checked again
     refresh() {
         if (this.isDragging && this.point) {
-            this.hover(this.target ?? this.targetAt(this.point), this.point);
+            this.hover(this.target ?? this.targetAt(this.point), this.point, true);
         }
     }
 
-    // A trip bar (a draft trip counts as its vessel's row), else a vessel's row, else null. In the Week view, a free
-    // cell (WeekBoard#cellAt). `point` is in the viewport
+    // A trip bar, else a vessel's row, else null. In the Week view, a free cell (WeekBoard#cellAt). `point` is in the
+    // viewport
     targetAt(point) {
         const { board } = this;
 
@@ -192,12 +188,8 @@ export default class TeamDrag {
             trip          = elements.map(element => scheduler.resolveEventRecord(element)).find(Boolean)?.trip,
             vessel        = elements.map(element => scheduler.resolveResourceRecord(element, [x, y])).find(Boolean);
 
-        if (trip && !trip.draft) {
-            return trip;
-        }
-
         // Not a group header, which resolves to no resource
-        return vessel ?? trip?.resource ?? null;
+        return trip ?? vessel ?? null;
     }
 
     lift(teamId) {
@@ -210,11 +202,11 @@ export default class TeamDrag {
         me.tip = Widget.create({ type : 'droptooltip' });
     }
 
-    // The tooltip, the proxy and the trip's highlight all show this one check, see DropController#previewDrop
-    hover(target, point) {
+    // The tooltip, the proxy and the outline all show this one check, see DropController#previewDrop
+    hover(target, point, fresh = false) {
         const
             me   = this,
-            drop = me.handler.previewDrop(me.team, target, me.minuteAt(target, point));
+            drop = me.handler.previewDrop(me.team, target, me.minuteAt(target, point), fresh);
 
         showOnChip(me.proxy, drop);
 

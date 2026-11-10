@@ -50,7 +50,7 @@ export function cardInfo({ state, trips, turbine, drop, selectedTrip }) {
 // drop-off), else the first one that does
 function visitOf({ trips, turbine, drop, selectedTrip, held }) {
     if (held) {
-        // From the team's check: the scheduling engine may not have placed the previewed leg yet
+        // From the team's check: nothing is in the plan until the team is dropped
         return { trip : drop.trip, stop : drop.result.stop };
     }
 

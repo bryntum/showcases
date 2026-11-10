@@ -8,7 +8,7 @@ import { duration, hhmm } from '../util/Time.js';
  *
  * It owns the project's StateTrackingManager. The STM is enabled only for the re-plan's one transaction and its undo,
  * so Undo puts back exactly the re-plan (the engine's own changes and the waiting store included) and nothing else is
- * ever recorded, a held team's preview neither. Any later change of the plan drops the Undo (`invalidateUndo`). A
+ * ever recorded. Any later change of the plan drops the Undo (`invalidateUndo`). A
  * failed re-plan is rolled back. The forecast itself stays either way.
  *
  * Learn more:
@@ -34,7 +34,7 @@ export default class ForecastPlanner {
             me                    = this,
             { dispatch, project } = me,
             { stm }               = project,
-            trips                 = me.getTrips().filter(trip => !trip.draft).sort((a, b) => a.departs - b.departs);
+            trips                 = me.getTrips().sort((a, b) => a.departs - b.departs);
 
         dispatch.applyForecast();
 
@@ -59,7 +59,7 @@ export default class ForecastPlanner {
             throw error;
         }
         finally {
-            // Nothing else is recorded: a team previewed on a trip is no change to undo
+            // Nothing else is recorded
             stm.disable();
         }
 

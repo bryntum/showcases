@@ -10,7 +10,7 @@ import { hhmm } from '../util/Time.js';
  */
 
 /**
- * The other trips of a vessel, port to port, that a trip has to keep clear of. Not a draft shown for a held team
+ * The other trips of a vessel, port to port, that a trip has to keep clear of
  * @param {TripModel[]} trips The trips of the day
  * @param {VesselModel} vessel
  * @param {String} [except] The ID of the trip being checked
@@ -18,7 +18,7 @@ import { hhmm } from '../util/Time.js';
  */
 export function busyOf(trips, vessel, except) {
     return trips
-        .filter(trip => trip.resource === vessel && trip.id !== except && !trip.draft)
+        .filter(trip => trip.resource === vessel && trip.id !== except)
         .map(trip => ({ id : trip.id, start : trip.departs, end : trip.endMinute }));
 }
 
