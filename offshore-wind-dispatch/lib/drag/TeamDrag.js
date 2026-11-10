@@ -12,10 +12,11 @@ import './DropTooltip.js';
  * DropController#previewDrop. `null` while over nothing
  * @property {Function} waitingTeam `(teamId)`, the team waiting at the port and its job, `{ team, job }`
  * @property {Function} liftTeam `(teamId)`, the drag starts: the team's chip dims, the trips it fits on are outlined
- * @property {Function} previewDrop `(teamId, target, at)`, previews the team on a trip or a vessel's row of the Day
- * view, `at` the minute held at. Returns the check, or `null`
- * @property {Function} previewCell `(teamId, cell)`, the same for a free cell of the Week view
- * @property {Function} dropTeam `(teamId, target)`, released there: booked when it fits, else the reason is shown
+ * @property {Function} previewDrop `(teamId, target, at)`, previews and checks the team on a trip or a vessel's row of
+ * the Day view, or a free cell of the Week view, `at` the minute held at. The one check of a drop. Returns it, or
+ * `null`
+ * @property {Function} dropTeam `(teamId, target, at)`, released there: checked again by previewDrop, booked when it
+ * fits, else the reason is shown
  * @property {Function} dropTargets `()`, the trips the keyboard steps through, in row and departure order
  * @property {Function} endDrag `()`, the drag is over: the preview and the outlines go, the tray is drawn again
  */
@@ -47,11 +48,12 @@ export default class TeamDrag {
      * @param {Scheduler.view.Scheduler} options.scheduler
      * @param {WeekBoard} options.board The Week view: while it shows, its free cells are the drop targets
      * @param {DropHandler} options.handler Previews, checks and books the team
+     * @param {Function} options.showDay Shows the Day view, for a team held from the keyboard while the Week view shows
      */
-    constructor({ tray, scheduler, board, handler }) {
+    constructor({ tray, scheduler, board, handler, showDay }) {
         const me = this;
 
-        Object.assign(me, { tray, scheduler, board, handler });
+        Object.assign(me, { tray, scheduler, board, handler, showDay });
 
         me.keys = new KeyboardDrag({ drag : me });
 
@@ -123,8 +125,8 @@ export default class TeamDrag {
         context.valid = Boolean(me.hover(me.targetAt(point), point)?.result.valid);
     }
 
-    // Released over a trip or a row, booked if it fits, else the app says why (DropController#dropTeam). Booked before
-    // the drag ends, so a new trip previewed for the team is kept
+    // Released over a trip, a row or a free cell, checked there as the hover is and booked if it fits, else the app
+    // says why (DropController#dropTeam). Booked before the drag ends, so a new trip previewed for the team is kept
     onDrop() {
         const
             me     = this,
@@ -133,10 +135,26 @@ export default class TeamDrag {
             team   = me.team;
 
         if (target && team) {
-            me.handler.dropTeam(team, target);
+            me.handler.dropTeam(team, target, me.minuteAt(target, me.point));
         }
 
         me.end();
+    }
+
+    /**
+     * Where on the Day view's time axis a team is held, the position the check knows of. None from the keyboard,
+     * which has no point, nor over a cell of the week, which is the whole day (the Day view is hidden then)
+     * @param {TripModel|VesselModel|Object|null} target
+     * @param {{x: Number, y: Number}} point In the viewport
+     * @returns {Number|null} Minutes since midnight
+     */
+    minuteAt(target, point) {
+        const
+            me   = this,
+            date = !target || target.isWeekCell || me.keys.keyboard ? null :
+                me.scheduler.getDateFromCoordinate(point.x, null, false);
+
+        return date ? me.scheduler.dispatch.toMinutes(date) : null;
     }
 
     /**
@@ -217,19 +235,14 @@ export default class TeamDrag {
     /**
      * Previews the team on a trip or a vessel, or none, and shows the tooltip below the point. The tooltip, the proxy
      * and the trip's highlight all show this one check
-     * @param {TripModel|VesselModel|null} target
+     * @param {TripModel|VesselModel|Object|null} target
      * @param {{x: Number, y: Number}} point In the viewport
      * @returns {Object|null} See DropController#previewDrop
      */
     hover(target, point) {
         const
             me   = this,
-            // Where on the Day view's time axis the team is held: the keyboard has no point, and a cell of the week is
-            // the whole day (the Day view is hidden then, it has no date at the point)
-            date = target?.isWeekCell || me.keys.keyboard ? null :
-                me.scheduler.getDateFromCoordinate(point.x, null, false),
-            drop = target?.isWeekCell ? me.handler.previewCell(me.team, target) :
-                me.handler.previewDrop(me.team, target, date ? me.scheduler.dispatch.toMinutes(date) : null);
+            drop = me.handler.previewDrop(me.team, target, me.minuteAt(target, point));
 
         showOnChip(me.keys.heldChip ?? me.proxy, drop);
 
@@ -248,9 +261,12 @@ export default class TeamDrag {
         return drop;
     }
 
-    // The team goes back to the tray, or was booked, the preview ends
+    // The team goes back to the tray, or was booked, the preview ends. However it ends, a team held from the keyboard
+    // loses its chip and keys with it
     end() {
         const me = this;
+
+        me.keys.release();
 
         if (me.team) {
             me.tip.destroy();

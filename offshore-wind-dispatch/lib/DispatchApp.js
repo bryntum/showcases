@@ -1,4 +1,4 @@
-import { Panel, Responsive } from '@bryntum/core-enterprise';
+import { Panel, Responsive, StringHelper, Toast } from '@bryntum/core-enterprise';
 import AppState from './AppState.js';
 import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
@@ -102,7 +102,13 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             state,
             onBooked : booked => me.onTeamBooked(booked)
         });
-        me.drag            = new TeamDrag({ tray, scheduler, board, handler : me.dropController });
+        me.drag            = new TeamDrag({
+            tray,
+            scheduler,
+            board,
+            handler : me.dropController,
+            showDay : () => me.showDayForKeyboard()
+        });
         me.mapLink         = new MapLink({ map, scheduler, focusTrip : () => state.held?.trip ?? me.selectedTrip });
 
         // What the views follow: the plan as the engine placed it, the dispatch state and the app state. Several
@@ -274,6 +280,18 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         }
     }
 
+    // A team held from the keyboard while the Week view shows: the keys move it over the Day view's trips, so that
+    // view is shown, and said so
+    showDayForKeyboard() {
+        const { dispatch, parts } = this;
+
+        parts.schedulePane.showView('day');
+        Toast.show({
+            html : StringHelper.encodeHtml(`Showing the Day view, ${dispatch.dayShort}: pick a trip with the arrow keys`),
+            cls  : 'ow-toast-message'
+        });
+    }
+
     //region Plan
 
     /**
@@ -297,12 +315,25 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
     onTeamBooked({ trip, turbine }) {
         const me = this;
 
+        me.planEdited();
+
         if (trip) {
             me.appState.selectedTurbine = turbine;
             me.scheduler.selectEvent(trip);
         }
 
         return me.replan();
+    }
+
+    // The dispatcher changed the plan after a forecast: undoing the forecast now would replay its changes over records
+    // that changed since, so its Undo goes
+    planEdited() {
+        const { forecastPlanner, parts } = this;
+
+        if (forecastPlanner.canUndo) {
+            forecastPlanner.invalidateUndo();
+            parts.notice.dropUndo();
+        }
     }
 
     /**
@@ -315,12 +346,16 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
      */
     async replan(change) {
         const
-            me      = this,
-            { held } = me,
+            me                       = this,
+            { held, dropController } = me,
             // The team held, to hold it again once the plan has changed
-            again   = held && { teamId : held.team.id, target : held.target, at : held.at };
+            again                    = held && { teamId : held.team.id, target : held.target, at : held.at };
 
-        me.dropController.clearPreview();
+        dropController.clearPreview();
+
+        // Taken after the preview is cleared above: any later clear means the drag was cancelled, ended or moved on
+        const generation = dropController.generation;
+
         await change?.();
         // The engine pushes the stops that wait for another trip, and the legs after them
         await me.scheduler.project.commitAsync();
@@ -331,9 +366,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         me.evaluate();
 
-        // Held again, unless the pointer has moved on to another trip meanwhile
-        if (again && !me.held) {
-            me.dropController.holdPreview(again.teamId, again.target, again.at);
+        // Held again, unless the drag ended or moved on meanwhile: a cancelled preview is not brought back
+        if (again && !me.held && dropController.generation === generation && me.drag?.isDragging) {
+            dropController.previewDrop(again.teamId, again.target, again.at);
         }
 
         me.drag?.refresh();
@@ -346,12 +381,20 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             { scheduler } = this,
             trip          = eventRecords?.[0];
 
-        return valid ? this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) })) : null;
+        if (!valid) {
+            return null;
+        }
+
+        this.planEdited();
+
+        return this.replan(() => trip?.layout({ departs : scheduler.departsAt(trip, trip.startDate) }));
     }
 
-    // The trip editor saved a new time on station
-    onTripTimeChange({ trip, startDate }) {
-        return this.replan(() => trip.layout({ departs : this.scheduler.departsAt(trip, startDate) }));
+    // The trip editor saved a new time on station, the trip already laid out from it
+    onTripTimeChange() {
+        this.planEdited();
+
+        return this.replan();
     }
 
     // The engine has placed a change. While a team is held that is its previewed stop: only the map and the card
@@ -397,8 +440,9 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         const
             me                             = this,
             { dispatch, appState : state } = me,
-            // A team held over a cell of the Week view previews nothing on the day the map shows
-            held                           = state.held?.target.isWeekCell ? null : state.held;
+            // A team held over a cell of the Week view, or refused by a helicopter, previews nothing on the day the map
+            // shows: no trip of the plan has its stop
+            held                           = state.held?.trip?.isModel ? state.held : null;
 
         if (me.isDestroyed || !me.parts) {
             return;
@@ -526,7 +570,11 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         state.selectedTurbine = turbine;
         state.mapFollows      = true;
 
-        if (trip && !me.scheduler.isEventSelected(trip)) {
+        if (!trip) {
+            // No trip serves it: no other trip stays selected, as if it were
+            me.scheduler.clearEventSelection();
+        }
+        else if (!me.scheduler.isEventSelected(trip)) {
             me.scheduler.selectEvent(trip);
             me.scheduler.scrollEventIntoView(trip, { block : 'center' });
         }

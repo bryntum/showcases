@@ -49,8 +49,16 @@ export default class KeyboardDrag {
      */
     start(teamId) {
         const
-            me    = this,
-            { scheduler, handler } = me.drag,
+            me                            = this,
+            { scheduler, handler, board } = me.drag;
+
+        // The keys step through the Day view's trips: from the Week view the Day view is shown first, and says so,
+        // rather than a trip changing out of sight
+        if (board && !board.hidden) {
+            me.drag.showDay?.();
+        }
+
+        const
             trips = handler.dropTargets(),
             index = Math.max(0, trips.indexOf(scheduler.selectedEvents[0]));
 
@@ -204,7 +212,7 @@ export default class KeyboardDrag {
     async previewElement(trip) {
         const
             { scheduler } = this.drag,
-            leg           = trip?.legRecords.find(each => each.preview),
+            leg           = trip?.legRecords?.find(each => each.preview),
             element       = () => leg && !leg.isDestroyed ? scheduler.getElementFromEventRecord(leg) : null;
 
         if (!leg || element()) {
@@ -226,14 +234,21 @@ export default class KeyboardDrag {
         return element();
     }
 
+    // Puts back a team held from the keyboard. A pointer drag is left alone
     endHeld() {
+        if (this.heldChip) {
+            this.drag.end();
+        }
+    }
+
+    // The chip and the keys go, called by TeamDrag#end however the drag ends
+    release() {
         const me = this;
 
         if (me.heldChip) {
             document.removeEventListener('keydown', me.onHeldKey, true);
             me.heldChip.remove();
             me.heldChip = me.keyboard = null;
-            me.drag.end();
         }
     }
 }

@@ -1,6 +1,7 @@
 import { DateHelper, StringHelper, Toast } from '@bryntum/core-enterprise';
 import { nextSailing, previewDrop, reachable } from './plan/Planner.js';
 import TripModel from './model/TripModel.js';
+import { busyOf } from './schedule/TripValidator.js';
 import { addTrip } from './model/TripData.js';
 import { hhmm } from './util/Time.js';
 
@@ -82,49 +83,43 @@ export default class DropController {
     }
 
     /**
-     * Previews a team on a trip or a vessel: the trip shows the stop, the map what the trip can still reach, the card
-     * the turbine
+     * Previews a team where it is held and checks it: the one check of a drop. The pointer's hover, its release and
+     * the keyboard all go through it, so what is booked is what was shown. Over a trip or a vessel's row of the Day
+     * view the trip shows the stop, the map what the trip can still reach, the card the turbine; over a free cell of
+     * the Week view a new trip that day is checked (cellDrop). The same team over the same target with the same
+     * position against the weather keeps its check
      * @param {String} teamId
-     * @param {TripModel|VesselModel|null} target The trip or the vessel's row the team is held over
-     * @param {Number|null} [at] Minutes since midnight at the point held on the time axis, none from the keyboard
-     * @returns {Object|null} `{ target, trip, team, job, result, reach, close }`
+     * @param {TripModel|VesselModel|Object|null} target The trip, the vessel's row or the Week view's cell held over
+     * @param {Number|null} [at] Minutes since midnight at the point held on the Day view's time axis, none from the
+     * keyboard or over the Week view
+     * @param {Boolean} [fresh] Checked again even if unchanged, as a booking is
+     * @returns {Object|null} `{ target, trip, team, job, result, reach, close, at }`
      */
-    previewDrop(teamId, target, at = null) {
+    previewDrop(teamId, target, at = null, fresh = false) {
         const
-            me      = this,
-            vessel  = target instanceof TripModel ? target.resource : target,
-            // Held where the weather is over the vessel's limit
-            blocked = at != null && at >= me.dispatch.closeOf(vessel);
+            me       = this,
+            // Held where the weather is over the vessel's limit: only that position changes the check
+            blocked  = me.blockedAt(target, at),
+            { held } = me;
 
-        if (me.held?.target === target && me.held?.team.id === teamId && (me.held.at != null) === blocked) {
-            return me.held;
+        if (!fresh && held?.target === target && held.team.id === teamId && (held.at != null) === (blocked != null)) {
+            return held;
         }
 
         me.clearPreview();
 
         if (target) {
-            me.holdPreview(teamId, target, blocked ? at : null);
+            me.holdPreview(teamId, target, blocked);
         }
 
         return me.held;
     }
 
-    /**
-     * Previews a team on a vessel's day without a trip in the Week view, see cellDrop. The map and the card stay on the
-     * day the Day view shows
-     * @param {String} teamId
-     * @param {Object} cell See WeekBoard#cellAt
-     * @returns {Object|null} See cellDrop
-     */
-    previewCell(teamId, cell) {
-        const me = this;
+    // The minute held at when it is in the vessel's no-go range, else none. A cell of the week is the whole day
+    blockedAt(target, at) {
+        const vessel = target instanceof TripModel ? target.resource : target;
 
-        if (me.held?.target !== cell || me.held.team.id !== teamId) {
-            me.clearPreview();
-            me.held = me.cellDrop(teamId, cell);
-        }
-
-        return me.held;
+        return at != null && vessel && !target.isWeekCell && at >= this.dispatch.closeOf(vessel) ? at : null;
     }
 
     /**
@@ -210,13 +205,17 @@ export default class DropController {
             result                 = me.checkPlan(plan, vessel, team, job, at);
 
         // The previewed stop is a leg of the trip too, after the last one, on a new trip if there is none to join. Not
-        // on a helicopter, which never takes a team
+        // on a helicopter, which never takes a team: its refusal is explained without a record in the plan, the new
+        // trip it would be only described, as a free cell of the Week view is (cellDrop)
         const
             { midnight, dayIndex } = me.dispatch,
-            shown                  = trip ?? addTrip(me.scheduler.eventStore, vessel,
-                { id : plan.id, departs : plan.start, midnight, draft : true, day : dayIndex }, [stop]);
+            heli                   = vessel.mode === 'heli',
+            shown                  = trip ?? (heli ?
+                { id : plan.id, draft : true, departs : plan.start, resource : vessel } :
+                addTrip(me.scheduler.eventStore, vessel,
+                    { id : plan.id, departs : plan.start, midnight, draft : true, day : dayIndex }, [stop]));
 
-        if (trip && vessel.mode !== 'heli') {
+        if (trip && !heli) {
             trip.layout({ stops : [...trip.stops, stop] });
         }
 
@@ -336,12 +335,13 @@ export default class DropController {
             ?.classList.toggle('ow-trip-fits', on));
     }
 
-    // The dispatch check itself, see Planner#previewDrop
+    // The dispatch check itself, see Planner#previewDrop. The vessel's other trips of the day are kept clear of
     rawCheck(plan, vessel, team, job, at = null, nowhere = false) {
         const { dispatch } = this;
 
         return previewDrop({
             nowhere,
+            busy   : busyOf(this.trips, vessel, plan.id),
             trip   : plan,
             team,
             job,
@@ -353,11 +353,20 @@ export default class DropController {
         });
     }
 
+    /**
+     * Counts the previews ended: a change of the plan awaited while a team is held shows its preview again only if
+     * nothing ended it meanwhile (DispatchApp#replan)
+     * @property {Number}
+     */
+    generation = 0;
+
     clearPreview() {
         const trip = this.held?.trip;
 
-        // A cell of the week previews nothing in the store
-        if (trip && !trip.isDestroyed && !this.held.target.isWeekCell) {
+        this.generation++;
+
+        // A cell of the week, or a helicopter's refused new trip, previews nothing in the store
+        if (trip instanceof TripModel && !trip.isDestroyed) {
             if (trip.draft) {
                 this.scheduler.eventStore.remove(trip);
             }
@@ -370,19 +379,16 @@ export default class DropController {
     }
 
     /**
-     * Released over a trip or a vessel's row: booked when it fits, else the reason is shown
+     * Released over a trip, a vessel's row or a free cell of the Week view: checked again there as the preview is
+     * (previewDrop) against the plan as it is now, booked when it fits, else the reason is shown
      * @param {String} teamId
-     * @param {TripModel|VesselModel} target
+     * @param {TripModel|VesselModel|Object|null} target
+     * @param {Number|null} [at] Minutes since midnight at the point released, see previewDrop
      */
-    dropTeam(teamId, target) {
-        const me = this;
-
-        let drop = me.held;
-
-        if (drop?.team.id !== teamId || drop.target !== target) {
-            me.clearPreview();
-            drop = target ? me.holdPreview(teamId, target) : null;
-        }
+    dropTeam(teamId, target, at = null) {
+        const
+            me   = this,
+            drop = me.previewDrop(teamId, target, at, true);
 
         if (!drop?.result.valid) {
             tell(drop?.result.reason ?? 'The team is not waiting');

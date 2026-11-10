@@ -1,4 +1,4 @@
-import { Container } from '@bryntum/core-enterprise';
+import { Container, StringHelper } from '@bryntum/core-enterprise';
 // Also registers the widget types used below
 import './TeamChip.js';
 
@@ -108,7 +108,7 @@ export default class TeamTray extends Container {
             count            = this.store?.count ?? 0;
 
         if (title) {
-            title.html   = `Crews waiting at ${this.port ?? 'the port'} · ${count}`;
+            title.html   = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
             empty.hidden = Boolean(count);
         }
     }
