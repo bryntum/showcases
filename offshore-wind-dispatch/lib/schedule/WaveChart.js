@@ -180,7 +180,7 @@ export default class WaveChart {
                     strokeWidth  : 0,
                     segmentation : split(at, [c.work, c.work], [c.rough, c.rough])
                 },
-                ...me.limitLines(c, series),
+                ...me.limitLines(c, series, range),
                 me.wave(at, c, series),
                 me.closing(at, range, c, series)
             ].filter(Boolean),
@@ -265,10 +265,14 @@ export default class WaveChart {
     // The CTV and SWATH limits, dashed line series listed before the wave and the close, so their markers and the
     // ring are drawn over them (AG Charts draws cross lines over every series). Each is named on its line at the left
     // end, on a chip of the surface the dashes stop at
-    limitLines({ muted, surface }, series) {
-        const { dayStart, dayEnd } = this.day;
+    limitLines({ muted, surface }, series, [min, max]) {
+        const
+            { dayStart, dayEnd } = this.day,
+            { ctv, swath }       = this.limits,
+            // Under about two label heights apart the names would touch: SWATH's goes over its line then
+            apart                = (swath - ctv) / (max - min) * this.element.clientHeight > 14;
 
-        return Object.entries({ CTV : this.limits.ctv, SWATH : this.limits.swath }).map(([name, value]) => ({
+        return Object.entries({ CTV : ctv, SWATH : swath }).map(([name, value]) => ({
             ...series,
             type          : 'line',
             data          : [{ t : dayStart, y : value, name : true }, { t : dayEnd, y : value }],
@@ -278,7 +282,7 @@ export default class WaveChart {
             strokeWidth   : 1,
             lineDash      : [3, 3],
             marker        : off,
-            label         : label('right', muted, {
+            label         : label(name === 'SWATH' && !apart ? 'top-right' : 'right', muted, {
                 fontSize  : 9,
                 spacing   : 2,
                 fill      : surface,
