@@ -113,7 +113,7 @@ export default class DispatchSync {
 
         DispatchSync.syncStore(scheduler.project.timeRangeStore, !state.isToday ? [] : [
             { id : 'past', startDate : scheduler.startDate, endDate : now, cls : 'ow-past' },
-            { id : 'now', startDate : now, name : hhmm(state.now), cls : 'ow-now' }
+            { id : 'now', startDate : now, endDate : now, name : hhmm(state.now), cls : 'ow-now' }
         ]);
     }
 }

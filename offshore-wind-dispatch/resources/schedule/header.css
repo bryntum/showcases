@@ -168,47 +168,34 @@
     background-color : var(--ow-c-button-tint);
 }
 
-/* The now line in the header: a pill in the hours row, the line from under it down through the chart. The shaded
-   past is for the rows only */
+/* The now line's header element (TimeRanges, `showHeaderElements`) as a pill on the hours row, its line on down through
+   the chart. The shaded past is for the rows only */
 .ow-scheduler .b-grid-header {
     .ow-past {
         display : none;
     }
 
     .ow-now {
-        --ow-now-pill : 0.875rem;
+        --ow-now-pill                             : 0.875rem;
+        --b-time-range-line-header-background     : var(--b-color-blue);
+        --b-time-range-line-header-padding-inline : 0;
+        --b-time-range-header-font-size           : 0.59375rem;
+        --b-time-range-header-font-weight         : 700;
+        --b-time-range-color                      : var(--b-color-white);
 
-        z-index             : 4;
-        overflow            : visible;
-        background          : none;
-        border-inline-start : 0;
-        inset-block-start   : 0;
-        height              : calc(var(--ow-row-hours) + var(--ow-row-sea) + var(--ow-row-wind) + 1px);
+        inset-block-start    : calc((var(--ow-row-hours) - var(--ow-now-pill)) / 2);
+        height               : var(--ow-now-pill);
+        /* Centred on the line by a fixed width, not a transform, so the line stays on whole pixels */
+        width                : 2.125rem;
+        margin-inline-start  : -1.0625rem;
+        border-radius        : calc(var(--ow-now-pill) / 2);
 
         &::before {
             content             : '';
             position            : absolute;
-            inset-inline-start  : 0;
-            inset-block-start   : calc((var(--ow-row-hours) + var(--ow-now-pill)) / 2);
-            inset-block-end     : 0;
+            inset               : 100% auto auto 50%;
+            height              : calc(var(--ow-row-sea) + var(--ow-row-wind) + var(--ow-row-hours) / 2);
             border-inline-start : var(--b-time-range-line-width) solid var(--b-color-blue);
-        }
-
-        label {
-            position             : absolute;
-            inset-block          : calc((var(--ow-row-hours) - var(--ow-now-pill)) / 2) auto;
-            inset-inline-start   : 0;
-            transform            : translateX(-50%);
-            height               : var(--ow-now-pill);
-            padding              : 0 0.527em;
-            white-space          : nowrap;
-            border-radius        : calc(var(--ow-now-pill) / 2);
-            font-size            : 0.59375rem;
-            font-weight          : 700;
-            line-height          : var(--ow-now-pill);
-            font-variant-numeric : tabular-nums;
-            color                : var(--b-color-white);
-            background-color     : var(--b-color-blue);
         }
     }
 }
