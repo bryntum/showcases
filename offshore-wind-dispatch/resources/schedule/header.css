@@ -159,14 +159,6 @@
     }
 }
 
-.ow-chip-new {
-    padding          : 0.091em 0.546em;
-    border-radius    : var(--ow-c-radius);
-    font-size        : var(--ow-size-xs);
-    color            : var(--ow-c-work-ink);
-    background-color : var(--ow-c-button-tint);
-}
-
 /* The now line's header element (TimeRanges, `showHeaderElements`) as a pill on the hours row, its line on down through
    the chart. The shaded past is for the rows only */
 .ow-scheduler .b-grid-header {
@@ -178,6 +170,7 @@
         --ow-now-pill                             : 0.875rem;
         --b-time-range-line-header-background     : var(--b-color-blue);
         --b-time-range-line-header-padding-inline : 0;
+        --b-time-range-line-header-border-radius  : calc(var(--ow-now-pill) / 2);
         --b-time-range-header-font-size           : 0.59375rem;
         --b-time-range-header-font-weight         : 700;
         --b-time-range-color                      : var(--b-color-white);
@@ -187,7 +180,9 @@
         /* Centred on the line by a fixed width, not a transform, so the line stays on whole pixels */
         width                : 2.125rem;
         margin-inline-start  : -1.0625rem;
-        border-radius        : calc(var(--ow-now-pill) / 2);
+        /* Bryntum rounds the end corners only (a flag on the line), the pill rounds the start ones too */
+        border-start-start-radius : var(--b-time-range-line-header-border-radius);
+        border-end-start-radius   : var(--b-time-range-line-header-border-radius);
 
         &::before {
             content             : '';
