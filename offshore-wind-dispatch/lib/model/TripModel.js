@@ -334,67 +334,61 @@ export default class TripModel extends EventModelEnterprise {
      * @param {Object[]} [options.stops] The new stops, `{ turbine, minutes, team, preview }`
      */
     layout({ departs = this.departs, stops = this.allStops } = {}) {
+        const me = this;
+
+        me.placeLegs(legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode));
+        me.placeStart(departs, transitsOf(stops, me.mode));
+    }
+
+    // The legs as the children, in order: a leg that stays is updated, so a dependency into a stop stays attached, a
+    // new one is added and assigned to the vessel, a gone one removed. The links between them are laid again
+    placeLegs(wanted) {
         const
             me                  = this,
-            { resource }        = me,
             { dependencyStore } = me.project,
-            existing            = new Map(me.legRecords.map(leg => [leg.id, leg])),
-            wanted              = legsData({ id : me.id, departs, midnight : me.midnight }, stops, me.mode),
             ids                 = new Set(wanted.map(leg => leg.id)),
-            gone                = me.legRecords.filter(leg => !ids.has(leg.id)),
-            // The links between the legs, laid again below in the new order
-            chains              = me.legRecords.flatMap(leg => (leg.predecessors ?? []).filter(link => link.isChain));
+            gone                = me.legRecords.filter(leg => !ids.has(leg.id));
 
-        dependencyStore.remove(chains);
+        dependencyStore.remove(me.legRecords.flatMap(leg => (leg.predecessors ?? []).filter(link => link.isChain)));
 
         if (gone.length) {
             me.removeChild(gone);
         }
 
-        wanted.forEach((data, index) => {
+        // The start is the engine's, set it would become a constraint
+        wanted.forEach(({ id, startDate, ...values }, index) => {
             const
-                leg  = existing.get(data.id),
-                // The child now at this place, the legs are kept in order
+                leg  = me.legRecords.find(each => each.id === id),
+                // The child now at this place
                 here = me.legRecords[index] ?? null;
 
-            if (leg) {
-                // The ID is the leg's key, and its start is the engine's: set, it would become a constraint
-                const values = { ...data };
-
-                delete values.id;
-                delete values.startDate;
+            if (!leg) {
+                me.insertChild({ id, startDate, ...values }, here).assign(me.resource);
+            }
+            else {
                 leg.set(values);
 
                 if (here !== leg) {
                     me.insertChild(leg, here);
                 }
             }
-            else {
-                const added = me.insertChild(data, here);
-
-                if (resource) {
-                    added.assign(resource);
-                }
-            }
         });
 
         dependencyStore.add(chainData(me.legRecords));
+    }
 
-        // The sail out and back follow the first and last stop, the trip starts at the first stop
+    // The sail out and back (the buffer) follow the first and last stop, the trip starts at its first stop once the
+    // sail out is done. Set also when only the constraint lags: the trip editor sets the start without it
+    placeStart(departs, transits) {
         const
-            transits = transitsOf(stops, me.mode),
-            start    = departs + transits.out,
-            buffers  = bufferData(transits),
-            changed  = transits.out !== me.transits.out || transits.back !== me.transits.back;
+            me   = this,
+            date = me.dateOf(departs + transits.out);
 
-        if (changed) {
-            me.set(buffers);
+        if (transits.out !== me.transits.out || transits.back !== me.transits.back) {
+            me.set(bufferData(transits));
         }
 
-        // Also when only the constraint lags: the trip editor sets the start without it
-        const date = me.dateOf(start);
-
-        if (start !== me.minutesOf(me.startDate) || me.constraintDate?.getTime() !== date.getTime()) {
+        if (date.getTime() !== me.startDate?.getTime() || date.getTime() !== me.constraintDate?.getTime()) {
             me.set({ startDate : date, constraintType : 'startnoearlierthan', constraintDate : date });
         }
     }

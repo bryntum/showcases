@@ -3,10 +3,6 @@ import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
 import { DateHelper, StringHelper } from '@bryntum/core-enterprise';
 import DispatchProject from '../model/DispatchProject.js';
-import PlanDependencyModel from '../model/PlanDependencyModel.js';
-import TripModel from '../model/TripModel.js';
-import VesselModel from '../model/VesselModel.js';
-import VesselRangeModel from '../model/VesselRangeModel.js';
 import DispatchSync from './DispatchSync.js';
 import ForecastHeader from './ForecastHeader.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
@@ -93,7 +89,28 @@ export default class DispatchScheduler extends Scheduler {
         // The engine's calculations here take moments: no progress bar under the header
         projectProgressReporting  : null,
 
-        // Off where the dispatcher deliberately does not get that interaction here
+        // The vessel column. Its renderers reach this scheduler through the column's grid
+        columns : [{
+            field          : 'name',
+            text           : 'Vessel',
+            width          : 214,
+            cls            : 'ow-axis-header',
+            cellCls        : 'ow-resource-cell',
+            sortable       : false,
+            groupable      : false,
+            headerRenderer : ({ column }) => column.grid.forecastHeader.labelHtml,
+            renderer       : ({ record, grid }) => grid.renderVesselCell(record)
+        }],
+
+        // A trip or one of its legs, against its vessel's window. Called on the scheduler
+        eventRenderer(args) {
+            return this.renderEvent(args);
+        },
+
+        resourceTimeRangeRenderer : renderRange,
+
+        // Off where the dispatcher deliberately does not get that interaction here. The callbacks below are called on
+        // their feature, its `client` is this scheduler
         features : {
             // The vessels and their order are the fleet's, not edited or sorted in the plan
             cellEdit           : false,
@@ -104,21 +121,53 @@ export default class DispatchScheduler extends Scheduler {
             timeAxisHeaderMenu : false,
             eventMenu          : false,
             scheduleMenu       : false,
-            // The Enterprise trip editor is TaskEdit (below), not the basic one
+            // The Enterprise trip editor is TaskEdit, not the basic one
             eventEdit          : false,
+            taskEdit           : tripEdit,
             // A trip's length follows from its stops and the distances, and trips are created by dropping a team
             eventResize        : false,
             eventDragCreate    : false,
+            // Along its own row, not into the past, not once gone
+            eventDrag          : {
+                constrainDragToResource : true,
+                validatorFn(context) {
+                    return this.client.validateTripDrag(context);
+                }
+            },
+            eventTooltip : {
+                template({ eventRecord }) {
+                    return tripTipContent(eventRecord.trip, this.client.dispatch);
+                }
+            },
+            // The sail out and back of a trip, its preamble and postamble: a line with the clock times at its ends
+            eventBuffer : {
+                renderer(args) {
+                    this.client.renderTransits(args);
+                }
+            },
             // Empty sea needs no time tip: the wave chart above says what the hour is like
-            scheduleTooltip    : false,
-            // The dependencies are the plan's, from the data, not drawn or edited by hand
-            dependencyEdit     : false,
-            dependencyMenu     : false,
+            scheduleTooltip : false,
+            // The dependencies are the plan's, from the data, not drawn or edited by hand, marked when the plan breaks
+            // one
+            dependencies    : {
+                allowCreate     : false,
+                enableDelete    : false,
+                radius          : 3,
+                // A short arrowhead, as the legend's key draws it (the default is a 6 × 6 triangle in its 9 × 6 box)
+                markerDef       : 'M6,0 L6,6 L9,3 z',
+                // The line turns in the narrow gap before the stop it waits for
+                clearance       : 6,
+                showTooltip     : true,
+                tooltipTemplate : dependency => StringHelper.encodeHtml(dependency.text),
+                renderer        : renderDependency
+            },
+            dependencyEdit : false,
+            dependencyMenu : false,
             // The trip's label starts over its departure (the sail out is its buffer, `--ow-pre`): kept there, not
             // slid along on a scroll
-            stickyEvents       : false,
+            stickyEvents   : false,
             // The legs inside their trip, each at its own time, filling the trip under its head line
-            nestedEvents       : {
+            nestedEvents   : {
                 eventLayout             : 'none',
                 headerHeight            : headHeight,
                 // The legs fill the trip under its label, less these margins: the work blocks on the trip's line
@@ -141,9 +190,19 @@ export default class DispatchScheduler extends Scheduler {
     };
 
     construct(config) {
-        const
-            me     = this,
-            header = me.forecastHeader = new ForecastHeader(config.dispatch);
+        const me = this;
+
+        // The day's hours, with the weather rows of the forecast in the time axis
+        me.forecastHeader = new ForecastHeader(config.dispatch);
+        me.dayPreset      = {
+            base              : 'hourAndDay',
+            tickWidth         : config.phone ? minTick.phone : minTick.wide,
+            displayDateFormat : 'HH:mm',
+            shiftUnit         : 'hour',
+            shiftIncrement    : 1,
+            timeResolution    : { unit : 'minute', increment : 5 },
+            headers           : me.forecastHeader.headers
+        };
 
         /**
          * The trips a dragged team would fit on, outlined while the drag lasts (DropController#markFitting). Not a
@@ -152,72 +211,14 @@ export default class DispatchScheduler extends Scheduler {
          */
         me.fittingTrips = new Set();
 
-        // The day's hours, with the weather rows in the time axis
-        me.dayPreset = {
-            base              : 'hourAndDay',
-            tickWidth         : config.phone ? minTick.phone : minTick.wide,
-            displayDateFormat : 'HH:mm',
-            shiftUnit         : 'hour',
-            shiftIncrement    : 1,
-            timeResolution    : { unit : 'minute', increment : 5 },
-            headers           : header.headers
-        };
-
         super.construct({
             ...config,
             viewPreset : me.dayPreset,
             timeAxis   : { autoAdjust : false },
-            columns    : [{
-                field          : 'name',
-                text           : 'Vessel',
-                width          : 214,
-                cls            : 'ow-axis-header',
-                cellCls        : 'ow-resource-cell',
-                sortable       : false,
-                groupable      : false,
-                headerRenderer : () => header.labelHtml,
-                renderer       : ({ record }) => me.renderVesselCell(record)
-            }],
-            project : {
+            project    : {
                 ...config.project,
                 // The trips read the teams on board from their project
-                teams                       : config.dispatch.teams,
-                // Undo of a forecast's re-plan (ForecastPlanner): recorded as one transaction, not automatically
-                stm                         : { autoRecord : false },
-                eventModelClass             : TripModel,
-                resourceModelClass          : VesselModel,
-                dependencyModelClass        : PlanDependencyModel,
-                resourceTimeRangeModelClass : VesselRangeModel
-            },
-            eventRenderer             : args => me.renderEvent(args),
-            resourceTimeRangeRenderer : renderRange,
-            // The features whose configs call back into this scheduler (its dispatch state, its checks) are set here,
-            // where the instance exists; the others are in `configurable` above
-            features                  : {
-                ...config.features,
-                // Along its own row, not into the past, not once gone or moved to tomorrow
-                eventDrag : {
-                    constrainDragToResource : true,
-                    validatorFn             : context => me.validateTripDrag(context)
-                },
-                taskEdit     : tripEdit,
-                eventTooltip : { template : ({ eventRecord }) => tripTipContent(eventRecord.trip, me.dispatch) },
-                // The sail out and back of a trip, its preamble and postamble: a line with the clock times at its ends
-                eventBuffer  : { renderer : args => me.renderTransits(args) },
-                // Drawn from the data, not created or removed by hand, marked when the plan breaks it
-                dependencies : {
-                    allowCreate     : false,
-                    enableDelete    : false,
-                    radius          : 3,
-                    // A short arrowhead, as the legend's key draws it (the default is a 6 × 6 triangle in its 9 × 6
-                    // box)
-                    markerDef       : 'M6,0 L6,6 L9,3 z',
-                    // The line turns in the narrow gap before the stop it waits for
-                    clearance       : 6,
-                    showTooltip     : true,
-                    tooltipTemplate : dependency => StringHelper.encodeHtml(dependency.text),
-                    renderer        : renderDependency
-                }
+                teams : config.dispatch.teams
             }
         });
 

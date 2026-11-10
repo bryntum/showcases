@@ -56,57 +56,46 @@ export default class SchedulePanel extends Panel {
 
         cls    : 'ow-schedule',
         flex   : 1,
-        layout : 'vbox'
+        layout : 'vbox',
+        // Its tab's text on a phone, the tbar is the title bar
+        title  : 'Schedule',
+        header : false,
+        tbar   : {
+            cls   : 'ow-panel-bar',
+            items : {
+                title    : { type : 'widget', cls : 'ow-panel-title', html : 'Vessels &amp; helicopters' },
+                // The fleet in a few words, set from the dispatch state
+                count    : { type : 'widget', cls : 'ow-panel-count' },
+                spacer   : '->',
+                // The next forecast, in: the one action that changes the plan, quiet and blue
+                forecast : {
+                    type      : 'button',
+                    rendition : 'tonal',
+                    cls       : 'ow-forecast-button',
+                    hidden    : true,
+                    onClick   : 'up.onForecastClick'
+                },
+                // A segmented control: the pressed button is the raised one, its ref the view it shows
+                view : {
+                    type        : 'buttongroup',
+                    rendition   : 'padded',
+                    toggleGroup : true,
+                    items       : {
+                        day  : { text : 'Day', pressed : true, onToggle : 'up.onViewToggle' },
+                        week : { text : 'Week', onToggle : 'up.onViewToggle' }
+                    }
+                }
+            }
+        }
     };
 
     construct(config) {
         const
             { dispatch, data } = config,
-            { day }            = dispatch,
-            me                 = this;
+            { day, midnight }  = dispatch;
 
         super.construct({
             ...config,
-            // Its tab's text on a phone, the tbar is the title bar
-            title  : 'Schedule',
-            header : false,
-            tbar   : {
-                cls   : 'ow-panel-bar',
-                items : {
-                    title : { type : 'widget', cls : 'ow-panel-title', html : 'Vessels &amp; helicopters' },
-                    count : {
-                        type : 'widget',
-                        cls  : 'ow-panel-count',
-                        html : fleetCount(dispatch.vessels)
-                    },
-                    spacer   : '->',
-                    // The next forecast, in: the one action that changes the plan, quiet and blue
-                    forecast : {
-                        type      : 'button',
-                        rendition : 'tonal',
-                        cls       : 'ow-forecast-button',
-                        hidden    : true,
-                        onClick   : () => me.trigger('forecast')
-                    },
-                    // A segmented control: the pressed button is the raised one
-                    view : {
-                        type        : 'buttongroup',
-                        rendition   : 'padded',
-                        toggleGroup : true,
-                        items       : {
-                            day : {
-                                text     : 'Day',
-                                pressed  : true,
-                                onToggle : ({ pressed }) => pressed && me.showView('day')
-                            },
-                            week : {
-                                text     : 'Week',
-                                onToggle : ({ pressed }) => pressed && me.showView('week')
-                            }
-                        }
-                    }
-                }
-            },
             items : {
                 notice    : { type : 'forecastnotice' },
                 scheduler : {
@@ -114,8 +103,8 @@ export default class SchedulePanel extends Panel {
                     flex      : 1,
                     listeners : { paint : 'up.refreshBar' },
                     dispatch,
-                    startDate : DateHelper.add(dispatch.midnight, day.dayStart, 'hour'),
-                    endDate   : DateHelper.add(dispatch.midnight, day.dayEnd, 'hour'),
+                    startDate : DateHelper.add(midnight, day.dayStart, 'hour'),
+                    endDate   : DateHelper.add(midnight, day.dayEnd, 'hour'),
                     // The trips of the whole week, the Day view shows one day's
                     project   : projectData({ ...data, trips : dispatch.week.days.flatMap(({ trips }) => trips) },
                         index => dispatch.dateOf(index))
@@ -126,15 +115,22 @@ export default class SchedulePanel extends Panel {
                 legend : { type : 'legend' }
             }
         });
-    }
-
-    afterConstruct() {
-        super.afterConstruct();
 
         const { scheduler, board } = this.widgetMap;
 
+        this.tbar.widgetMap.count.html = fleetCount(dispatch.vessels);
         // The Week view follows the trips of the Day view's project
         board.plan = scheduler.project;
+    }
+
+    onForecastClick() {
+        this.trigger('forecast');
+    }
+
+    onViewToggle({ source, pressed }) {
+        if (pressed) {
+            this.showView(source.ref);
+        }
     }
 
     /**

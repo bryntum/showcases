@@ -93,6 +93,42 @@ export default class WeekBoard extends Scheduler {
         projectProgressReporting  : null,
         multiEventSelect          : false,
 
+        // The vessels, the Day view's. A day's cell and a free day are derived records, drawn again on each change of
+        // the plan (draw): records that stay are updated, not replaced
+        project : {
+            resourceModelClass          : VesselModel,
+            eventModelClass             : WeekCellModel,
+            resourceTimeRangeModelClass : VesselRangeModel,
+            eventStore                  : { syncDataOnLoad : true },
+            resourceTimeRangeStore      : { syncDataOnLoad : true }
+        },
+
+        columns : [{
+            field          : 'name',
+            text           : 'Sea state',
+            width          : 168,
+            cls            : 'ow-week-axis',
+            cellCls        : 'ow-week-vessel',
+            sortable       : false,
+            groupable      : false,
+            headerRenderer : () => '<b>Sea state</b><small>CTV window, Hs, wind</small>',
+            renderer       : ({ record }) => [
+                { tag : 'b', text : record.name },
+                { tag : 'small', text : `${record.vesselType} · ${record.seats} pax` }
+            ],
+            // The summary row's label: the time axis has the values
+            summaries : [{ sum : () => 0, renderer : () => 'Jobs · planned / due' }]
+        }],
+
+        // Called on the board
+        eventRenderer(args) {
+            return this.renderCell(args);
+        },
+
+        resourceTimeRangeRenderer(args) {
+            return this.renderFree(args);
+        },
+
         // A read-only board: a click opens the day, the plan is changed in the Day view
         features : {
             cellEdit           : false,
@@ -115,63 +151,34 @@ export default class WeekBoard extends Scheduler {
             stickyEvents       : false,
             resourceTimeRanges : true,
             // The seats used, a thin bar along the cell's foot
-            percentBar         : { allowResize : false, showPercentage : false },
-            summary            : {}
+            percentBar         : { allowResize : false, showPercentage : false }
         }
     };
 
     construct(config) {
-        const me = this;
+        const
+            me           = this,
+            { dispatch } = config;
 
+        me.days = [];
+
+        // The day header and the summary are drawn by this board's methods, its renderers set here where it exists
         super.construct({
             ...config,
-            startDate  : config.dispatch.dateOf(0),
-            endDate    : config.dispatch.dateOf(7),
+            startDate  : dispatch.dateOf(0),
+            endDate    : dispatch.dateOf(7),
             viewPreset : {
                 ...dayPreset,
-                headers : [{
-                    unit     : 'day',
-                    align    : 'start',
-                    renderer : (startDate, endDate, cell) => me.renderDay(startDate, cell)
-                }]
+                headers : [{ unit : 'day', align : 'start', renderer : (start, end, cell) => me.renderDay(start, cell) }]
             },
-            columns : [{
-                field          : 'name',
-                text           : 'Sea state',
-                width          : 168,
-                cls            : 'ow-week-axis',
-                cellCls        : 'ow-week-vessel',
-                sortable       : false,
-                groupable      : false,
-                headerRenderer : () => '<b>Sea state</b><small>CTV window, Hs, wind</small>',
-                renderer       : ({ record }) => [
-                    { tag : 'b', text : record.name },
-                    { tag : 'small', text : `${record.vesselType} · ${record.seats} pax` }
-                ],
-                // The summary row's label: the time axis has the values
-                summaries : [{ sum : () => 0, renderer : () => 'Jobs · planned / due' }]
-            }],
-            project : {
-                resourceModelClass          : VesselModel,
-                eventModelClass             : WeekCellModel,
-                resourceTimeRangeModelClass : VesselRangeModel,
-                resources                   : config.dispatch.vessels,
-                // Drawn again on each change of the plan (draw), records that stay are updated, not replaced
-                eventStore                  : { syncDataOnLoad : true },
-                resourceTimeRangeStore      : { syncDataOnLoad : true }
-            },
-            eventRenderer             : args => me.renderCell(args),
-            resourceTimeRangeRenderer : args => me.renderFree(args),
-            features                  : {
+            resources : dispatch.vessels,
+            features  : {
                 ...config.features,
-                summary : {
-                    summaries : [{ label : 'Jobs per day', renderer : ({ startDate }) => me.jobsText(startDate) }]
-                }
+                summary : { summaries : [{ label : 'Jobs per day', renderer : ({ startDate }) => me.jobsText(startDate) }] }
             }
         });
 
-        me.days = [];
-        config.dispatch.on({ change : 'onPlanChange', buffer : 1, thisObj : me });
+        dispatch.on({ change : 'onPlanChange', buffer : 1, thisObj : me });
         me.on({
             // Drawn when shown, if the plan changed while it was hidden
             show                : 'onPlanChange',
