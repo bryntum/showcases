@@ -40,7 +40,7 @@ To run it locally, see the [getting started guide](../CONTRIBUTING.md).
 | Trip times | The scheduling engine: dependencies between the legs, a constraint on the departure | `lib/model/TripModel.js#layout` |
 | "Must finish first" lines into a stop | `Dependencies`, dependencies with a lag | `lib/model/TripData.js` |
 | Weather no-go hatch, ghost of a trip brought forward | `ResourceTimeRanges` | `lib/schedule/DispatchScheduler.js` |
-| Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
+| Wave height and wind in the time axis | View preset header rows with renderers, AG Charts | `lib/feature/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | Dragging a trip, refused when it breaks the window | `EventDrag` with a `validatorFn` | `lib/schedule/TripValidator.js` |
 | Dragging a team from the header onto a trip | `DragHelper`, a `Tooltip` | `lib/drag/` |
 | The drop check: back when, does it fit, what it can reach; the outline of the stop | Plain synchronous functions, a `ResourceTimeRanges` range | `lib/plan/Planner.js`, `lib/schedule/DispatchScheduler.js` |
@@ -168,7 +168,7 @@ engine places each changed trip before the next one on the vessel is planned.
 | Whether a team fits on a trip, what a new forecast does to a trip, what a trip can still reach | `lib/plan/Planner.js` |
 | Whether a trip may be dragged or edited to a new time | `lib/schedule/TripValidator.js` |
 | How a trip bar, the vessel column and the no-go areas look | `lib/schedule/TripRendering.js`, `resources/schedule/` |
-| The rows of the time axis, the wave height chart | `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
+| The rows of the time axis, the wave height chart | `lib/feature/ForecastHeader.js`, `lib/schedule/WaveChart.js` |
 | The turbine illustration and the map markers | `lib/map/Turbine.js` |
 | Colours, light and dark | `resources/tokens.css` |
 
@@ -182,8 +182,7 @@ engine places each changed trip before the next one on the vessel is planned.
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
     the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
     and the phone tabs. It wires the plan, the dispatch state and its own view state to
-    the views. `DropController.js` checks and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
-    of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
+    the views. `DropController.js` checks and books a dropped team (TeamDrag's handler), `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
     `TeamTray.js` is the team tray in the header (a Container with a `List` of the waiting teams' store, a card
     per team, the drag sources)
   * `panel/` the panels of the app: `SchedulePanel` (a Panel whose header holds the title, the next forecast's
@@ -199,8 +198,11 @@ engine places each changed trip before the next one on the vessel is planned.
   * `week/` the Week view: `WeekBoard` (a Scheduler with a day-tick view preset, `fillTicks`, the PercentBar,
     ResourceTimeRanges and Summary features, redrawn from the Day view's project while it shows) and `WeekCells` (one
     derived cell per vessel per day)
+  * `feature/` the showcase's own Scheduler features, enabled in `DispatchScheduler`'s `features`: the time axis rows
+    with the wave height chart (`ForecastHeader`), the outline of a held team's stop and the trips it fits on
+    (`DropTarget`), and the hover linked between the map and the schedule (`MapLink`)
   * `schedule/` the `DispatchScheduler` (which also keeps the no-go ranges and the now line in the project's stores),
-    its time axis rows (`ForecastHeader`), the wave height chart (`WaveChart`), the trip tooltip
+    the wave height chart (`WaveChart`), the trip tooltip
     (`TripTip`), the checks of a trip moved to a new time (`TripValidator`), and the rendering of the trips and their
     legs, the vessels, groups, ranges and the dependency (`TripRendering`)
   * `model/` `TripModel` (an `EventModelEnterprise`, a trip or one of its legs), `TripData` (a trip, its legs and the
@@ -262,7 +264,7 @@ bring a trip ahead of what its stops wait for (`TripModel#earliestDeparture`). T
 line orange when the plan breaks it. A stop a forecast cuts takes its dependency with it, and the forecast's Undo
 (the STM) brings both back.
 
-### Weather in the time axis: `lib/schedule/ForecastHeader.js`, `lib/schedule/WaveChart.js`
+### Weather in the time axis: `lib/feature/ForecastHeader.js`, `lib/schedule/WaveChart.js`
 
 The view preset has three header rows: the hours, the wave height and the wind (the day shown is in the page's
 header). A header row is drawn by its

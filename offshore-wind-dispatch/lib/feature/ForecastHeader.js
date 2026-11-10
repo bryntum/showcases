@@ -1,41 +1,29 @@
 import { DomHelper, StringHelper } from '@bryntum/core-enterprise';
-import WaveChart from './WaveChart.js';
+import { SchedulerFeature } from '@bryntum/scheduler-enterprise';
+import WaveChart from '../schedule/WaveChart.js';
 
 /**
- * The time axis rows of the Day view (hours, wave height, wind) and the vessel column's header naming them. The wave
- * height row is one cell over the day; the chart lives in an element of its own, moved into that cell whenever the
- * time axis is drawn, never recreated. A new forecast updates the wind values and the label in place, the time axis
- * itself does not change.
+ * The time axis rows of the Day view (hours, wave height, wind) and the vessel column's header naming them, for the
+ * forecast of the Scheduler's `dispatch` state. The wave height row is one cell over the day; the chart lives in an
+ * element of its own, moved into that cell whenever the time axis is drawn, never recreated. A new forecast updates the
+ * wind values and the label in place, the time axis itself does not change.
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Scheduler/preset/ViewPreset#config-headers
  * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-headerRenderer
  */
-export default class ForecastHeader {
-    /**
-     * @param {DispatchState} state
-     */
-    constructor(state) {
-        const me = this;
+export default class ForecastHeader extends SchedulerFeature {
+    static $name = 'ForecastHeader';
 
-        me.state     = state;
-        me.chartHost = DomHelper.createElement({ class : 'ow-wave-chart' });
-        // Not the header's own content: DomSync leaves it where it is mounted instead of releasing (hiding) it
-        me.chartHost.retainElement = true;
-        me.chart     = new WaveChart({
-            element : me.chartHost,
-            limits  : { ctv : state.limits.ctv.hs, swath : state.limits.swath.hs },
-            day     : state.day
-        });
-    }
+    static type = 'forecastHeader';
 
     /**
-     * The header rows of the view preset. The day is in the page's header, not a row
+     * The header rows of the view preset, which the Scheduler is configured with before its features exist: the
+     * renderers ask for the feature when they run. The day is in the page's header, not a row
+     * @param {Function} feature Returns this feature
      * @returns {Object[]}
      */
-    get headers() {
-        const me = this;
-
+    static headers(feature) {
         return [
             { unit : 'hour', dateFormat : 'HH:mm', align : 'start', headerCellCls : 'ow-hour-cell' },
             {
@@ -43,7 +31,7 @@ export default class ForecastHeader {
                 renderer : (startDate, endDate, config) => {
                     config.headerCellCls = 'ow-sea-cell ow-sea-today';
                     // The cell is in the page once the header is drawn
-                    queueMicrotask(() => me.mount());
+                    queueMicrotask(() => feature().mount());
 
                     return '';
                 }
@@ -54,10 +42,45 @@ export default class ForecastHeader {
                 renderer : (startDate, endDate, config) => {
                     config.headerCellCls = 'ow-wind-cell';
 
-                    return me.windHtml(startDate.getHours());
+                    return feature().windHtml(startDate.getHours());
                 }
             }
         ];
+    }
+
+    construct(config) {
+        super.construct(config);
+
+        this.chartHost = DomHelper.createElement({ class : 'ow-wave-chart' });
+        // Not the header's own content: DomSync leaves it where it is mounted instead of releasing (hiding) it
+        this.chartHost.retainElement = true;
+
+        this.client.on({ paint : 'onClientPaint', thisObj : this });
+    }
+
+    doDestroy() {
+        this._chart?.destroy();
+        super.doDestroy();
+    }
+
+    // Made on first use: the features exist before the Scheduler's `dispatch` is set
+    get chart() {
+        const { limits, day } = this.state;
+
+        return this._chart ??= new WaveChart({
+            element : this.chartHost,
+            limits  : { ctv : limits.ctv.hs, swath : limits.swath.hs },
+            day
+        });
+    }
+
+    get state() {
+        return this.client.dispatch;
+    }
+
+    onClientPaint() {
+        this.mount();
+        this.refresh();
     }
 
     // The wind of an hour, marked when it is over the helicopters' limit
@@ -102,20 +125,14 @@ export default class ForecastHeader {
      * Puts the chart in the wave height cell, and again into the new cell whenever the Scheduler draws its time axis
      * anew (another view preset, time span or tick size). The header's own redraws (scroll, resize) keep the cell, and
      * the `retainElement` chart stays in it
-     * @param {Scheduler.view.Scheduler} scheduler
      */
-    attach(scheduler) {
-        this.scheduler = scheduler;
-        this.mount();
-    }
-
     mount() {
         const
             me   = this,
-            cell = me.scheduler?.element.querySelector('.ow-sea-today');
+            cell = me.client.element?.querySelector('.ow-sea-today');
 
         // Moved, and drawn again, only into a new cell
-        if (cell && (me.chartHost.parentElement !== cell)) {
+        if (cell && me.chartHost.parentElement !== cell) {
             cell.append(me.chartHost);
             me.chart.redraw();
         }
@@ -127,17 +144,18 @@ export default class ForecastHeader {
      */
     refresh() {
         const
-            me                  = this,
-            { state, scheduler } = me;
+            me                    = this,
+            { state, client }     = me,
+            { element }           = client;
 
-        scheduler?.element.querySelectorAll('.ow-wind[data-hour]').forEach(element => {
-            const { wind, over } = me.windAt(Number(element.dataset.hour));
+        element?.querySelectorAll('.ow-wind[data-hour]').forEach(wind => {
+            const { wind : value, over } = me.windAt(Number(wind.dataset.hour));
 
-            element.textContent = wind ?? '';
-            element.classList.toggle('ow-wind-over', over);
+            wind.textContent = value ?? '';
+            wind.classList.toggle('ow-wind-over', over);
         });
 
-        const label = scheduler?.element.querySelector('.ow-axis-row-head');
+        const label = element?.querySelector('.ow-axis-row-head');
 
         if (label) {
             label.innerHTML = me.forecastLabel;
@@ -149,8 +167,7 @@ export default class ForecastHeader {
             was    : state.previousWindows?.ctv
         });
     }
-
-    destroy() {
-        this.chart.destroy();
-    }
 }
+
+// Registers the feature, enabled by `features : { forecastHeader : true }`
+ForecastHeader.initClass();

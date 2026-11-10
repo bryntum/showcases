@@ -3,7 +3,10 @@ import '@bryntum/grid-enterprise';
 import { Scheduler } from '@bryntum/scheduler-enterprise';
 import { DateHelper, StringHelper } from '@bryntum/core-enterprise';
 import DispatchProject from '../model/DispatchProject.js';
-import ForecastHeader from './ForecastHeader.js';
+import ForecastHeader from '../feature/ForecastHeader.js';
+// Also register the features enabled below
+import '../feature/DropTarget.js';
+import '../feature/MapLink.js';
 import { hhmm } from '../util/Time.js';
 import { renderBuffers, renderDependency, renderGroup, renderRange, renderTrip, renderVessel } from './TripRendering.js';
 import { tripTipContent } from './TripTip.js';
@@ -48,13 +51,6 @@ export default class DispatchScheduler extends Scheduler {
          */
         phone : false,
 
-        /**
-         * The check of a team held over a trip or a vessel's row (DropController#previewDrop): its stop is outlined
-         * where it would go, a resource time range, and its trip marked. Nothing of it is in the plan
-         * @prp {Object|null}
-         */
-        drop : null,
-
         cls                       : 'ow-scheduler',
         rowHeight                 : 56,
         barMargin                 : 0,
@@ -81,7 +77,7 @@ export default class DispatchScheduler extends Scheduler {
             cellCls        : 'ow-resource-cell',
             sortable       : false,
             groupable      : false,
-            headerRenderer : ({ column }) => column.grid.forecastHeader.labelHtml,
+            headerRenderer : ({ column }) => column.grid.features.forecastHeader.labelHtml,
             renderer       : ({ record, grid }) => grid.renderVesselCell(record)
         }],
 
@@ -162,30 +158,26 @@ export default class DispatchScheduler extends Scheduler {
                 showHeaderElements  : true,
                 showCurrentTimeLine : false,
                 enableResizing      : false
-            }
+            },
+            // The showcase's own, in lib/feature/
+            forecastHeader : true,
+            dropTarget     : true,
+            mapLink        : true
         }
     };
 
     construct(config) {
         const me = this;
 
-        me.forecastHeader = new ForecastHeader(config.dispatch);
-        me.dayPreset      = {
+        me.dayPreset = {
             base              : 'hourAndDay',
             tickWidth         : config.phone ? minTick.phone : minTick.wide,
             displayDateFormat : 'HH:mm',
             shiftUnit         : 'hour',
             shiftIncrement    : 1,
             timeResolution    : { unit : 'minute', increment : 5 },
-            headers           : me.forecastHeader.headers
+            headers           : ForecastHeader.headers(() => me.features.forecastHeader)
         };
-
-        /**
-         * The trips a dragged team would fit on, outlined while the drag lasts (DropController#markFitting). Not a
-         * field of the trip: changing the record would redraw the trip and its legs
-         * @property {Set<TripModel>}
-         */
-        me.fittingTrips = new Set();
 
         super.construct({
             ...config,
@@ -203,7 +195,6 @@ export default class DispatchScheduler extends Scheduler {
             beforeTaskSave     : 'onBeforeTripSave',
             afterTaskSave      : 'onAfterTripSave',
             beforeTaskEditShow : beforeTripEditShow,
-            paint              : 'onSchedulerPaint',
             thisObj            : me
         });
     }
@@ -261,11 +252,6 @@ export default class DispatchScheduler extends Scheduler {
         this.trigger('tripTimeChange', { trip });
     }
 
-    doDestroy() {
-        this.forecastHeader.destroy();
-        super.doDestroy();
-    }
-
     /**
      * The trips of the day shown, without their legs. The event store holds the whole week
      * @property {TripModel[]}
@@ -280,21 +266,16 @@ export default class DispatchScheduler extends Scheduler {
         return this.eventStore.rootNode?.children ?? [];
     }
 
-    onSchedulerPaint() {
-        this.forecastHeader.attach(this);
-        this.forecastHeader.refresh();
-    }
-
     renderEvent(args) {
         const
-            { dispatch, timeAxisViewModel } = this,
-            { trip }                        = args.eventRecord;
+            { dispatch, timeAxisViewModel, features } = this,
+            { trip }                                  = args.eventRecord;
 
         return renderTrip(args, {
             close   : dispatch.closeOf(trip.resource),
             sailOut : timeAxisViewModel.getDistanceForDuration(trip.transits.out * 60_000),
-            dropFit : this.fittingTrips.has(trip),
-            held    : this.drop?.trip === trip,
+            dropFit : features.dropTarget.isFitting(trip),
+            held    : features.dropTarget.isHeld(trip),
             typeOf  : turbine => dispatch.jobAt(turbine)?.type ?? ''
         });
     }
@@ -354,22 +335,6 @@ export default class DispatchScheduler extends Scheduler {
 
     //region Data and drag
 
-    // The outline moves with the check, the trips held over and left are marked
-    updateDrop(drop, was) {
-        const me = this;
-
-        if (me.isConfiguring) {
-            return;
-        }
-
-        me.syncRanges();
-
-        if (was?.trip !== drop?.trip) {
-            new Set([was?.trip, drop?.trip]).forEach(trip => trip?.isModel && !trip.isDestroyed &&
-                me.repaintEventsForResource(trip.resource));
-        }
-    }
-
     /**
      * Redraws after the plan changed: the ghosts of the trips brought forward, the vessels' seats taken
      */
@@ -384,16 +349,16 @@ export default class DispatchScheduler extends Scheduler {
     refreshDispatch() {
         this.refreshPlan();
         this.syncNow();
-        this.forecastHeader.refresh();
+        this.features.forecastHeader.refresh();
     }
 
     // A vessel's weather no-go from its window's close to the end of the day, the ghost of a trip the forecast
-    // brought forward at its old place, and the outline of a held team's stop
+    // brought forward at its old place, and the outline of a held team's stop (DropTarget)
     syncRanges() {
         const
             me     = this,
             state  = me.dispatch,
-            at     = minutes => DateHelper.add(state.midnight, minutes, 'minute'),
+            at     = minutes => state.dateAt(minutes),
             end    = at(state.day.dayEnd * 60),
             // The Group feature's header rows are records of the store too
             nogo   = me.resourceStore.allRecords.filter(vessel => !vessel.isGroupHeader).map(vessel => ({
@@ -412,26 +377,16 @@ export default class DispatchScheduler extends Scheduler {
                 startDate  : trip.previousDeparture,
                 endDate    : DateHelper.add(trip.previousDeparture,
                     trip.outerEndDate.getTime() - trip.outerStartDate.getTime(), 'millisecond')
-            })),
-            // Not over a cell of the Week view, nor for a helicopter, which takes no team
-            { drop } = me,
-            vessel   = drop?.trip.resource,
-            outline  = drop && !drop.target.isWeekCell && vessel?.mode === 'vessel' ? [{
-                id         : 'drop',
-                kind       : 'drop',
-                resourceId : vessel.id,
-                startDate  : at(drop.result.stop.from),
-                endDate    : at(drop.result.stop.to)
-            }] : [];
+            }));
 
-        me.resourceTimeRangeStore.data = [...nogo, ...ghosts, ...outline];
+        me.resourceTimeRangeStore.data = [...nogo, ...ghosts, ...me.features.dropTarget.ranges];
     }
 
     // The now line and the shaded past, today only
     syncNow() {
         const
             state = this.dispatch,
-            now   = DateHelper.add(state.midnight, state.now, 'minute');
+            now   = state.dateAt(state.now);
 
         this.project.timeRangeStore.data = !state.isToday ? [] : [
             { id : 'past', startDate : this.startDate, endDate : now, cls : 'ow-past' },

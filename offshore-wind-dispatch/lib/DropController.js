@@ -54,10 +54,15 @@ export default class DropController {
         return this.dispatch.waitingStore.getById(teamId);
     }
 
-    // The chip stays in the tray, dimmed, until the team is booked
+    // The chip stays in the tray, dimmed, until the team is booked. The trips it fits on are outlined, checked once
     liftTeam(teamId) {
-        this.state.lifted = teamId;
-        this.markFitting(teamId);
+        const
+            me    = this,
+            entry = me.waitingTeam(teamId);
+
+        me.state.lifted = teamId;
+        me.scheduler.features.dropTarget.fitting = entry ?
+            me.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid) : [];
     }
 
     /**
@@ -226,31 +231,6 @@ export default class DropController {
             me.rawCheck(plan, vessel, team, job, at, true) : result;
     }
 
-    // Outlines the trips the team fits on, checked once when it is lifted
-    markFitting(teamId) {
-        const
-            me    = this,
-            entry = me.waitingTeam(teamId);
-
-        me.clearFitting();
-        entry && me.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid)
-            .forEach(trip => me.scheduler.fittingTrips.add(trip));
-        me.outlineFitting(true);
-    }
-
-    clearFitting() {
-        this.outlineFitting(false);
-        this.scheduler.fittingTrips.clear();
-    }
-
-    // The outline is the trip's class, put on its element now, no redraw (the renderer keeps it on a later one)
-    outlineFitting(on) {
-        const { scheduler } = this;
-
-        scheduler.fittingTrips.forEach(trip => scheduler.getElementFromEventRecord(trip)
-            ?.classList.toggle('ow-trip-fits', on));
-    }
-
     // The vessel's other trips of the day are kept clear of
     rawCheck(plan, vessel, team, job, at = null, nowhere = false) {
         const { dispatch } = this;
@@ -373,8 +353,8 @@ export default class DropController {
     }
 
     endDrag() {
-        this.clearFitting();
-        this.held          = null;
+        this.scheduler.features.dropTarget.fitting = [];
+        this.held         = null;
         this.state.lifted = null;
     }
 }

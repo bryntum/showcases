@@ -91,6 +91,11 @@ export default class DispatchState extends Base.mixin(Events) {
         return this.dateOf(this.dayIndex);
     }
 
+    // Minutes since midnight of the day shown as a Date
+    dateAt(minutes) {
+        return DateHelper.add(this.midnight, minutes, 'minute');
+    }
+
     get dayShort() {
         return DateHelper.format(this.midnight, 'ddd D MMM');
     }

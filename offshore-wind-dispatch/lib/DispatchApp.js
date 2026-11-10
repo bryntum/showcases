@@ -3,7 +3,7 @@ import DispatchState from './plan/DispatchState.js';
 import ForecastPlanner from './plan/ForecastPlanner.js';
 import DropController from './DropController.js';
 import TeamDrag from './drag/TeamDrag.js';
-import MapLink, { tripsOf } from './MapLink.js';
+import { tripsOf } from './feature/MapLink.js';
 import PhoneLayout from './PhoneLayout.js';
 import { tipContent, tipInfo } from './map/TurbineCard.js';
 // Also registers the widget types used below
@@ -102,7 +102,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             onBooked : booked => me.onTeamBooked(booked)
         });
         me.drag            = new TeamDrag({ tray, scheduler, board, handler : me.dropController });
-        me.mapLink         = new MapLink({ map, scheduler, focusTrip : () => me.held?.trip ?? me.selectedTrip });
+        scheduler.features.mapLink.setConfig({ map, focusTrip : () => me.held?.trip ?? me.selectedTrip });
 
         // Several changes made together redraw once (`buffer`)
         scheduler.project.on({ dataReady : 'onPlanReady', buffer : 1, thisObj : me });
@@ -231,7 +231,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
     updateHeld(held) {
         if (this.parts) {
-            this.scheduler.drop = held;
+            this.scheduler.features.dropTarget.drop = held;
         }
 
         this.redrawSide?.();
@@ -278,7 +278,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             await me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
         }
 
-        await scheduler.forecastHeader.refresh();
+        await scheduler.features.forecastHeader.refresh();
 
         if (view === 'week') {
             me.parts.schedulePane.showView('week');
@@ -300,7 +300,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             me.dispatch.showDay(index);
             me.scheduler.showDay();
             await me.replan();
-            await me.scheduler.forecastHeader.refresh();
+            await me.scheduler.features.forecastHeader.refresh();
         }
     }
 
@@ -446,7 +446,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             follow       : me.mapFollows
         });
         // The plan under the pointer may have changed
-        me.mapLink.refresh();
+        me.scheduler.features.mapLink.refresh();
     }
 
     turbineTip(turbine) {
