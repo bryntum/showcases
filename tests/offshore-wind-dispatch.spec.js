@@ -1415,4 +1415,34 @@ test.describe('Offshore Wind Dispatch on a phone', () => {
 
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
     });
+
+    test('says which trip is back after its window, and Show scrolls the schedule to its return', async({ page }) => {
+        await open(page, '?tab=map');
+
+        const
+            risk = page.locator('.ow-risk'),
+            // The time axis' scroll, and the trip selected
+            view = () => page.evaluate(() => {
+                const { scheduler } = globalThis.bryntum.query('dispatchapp');
+
+                return {
+                    x        : scheduler.timeAxisSubGrid.scrollable.x,
+                    selected : scheduler.selectedEvents.map(trip => trip.id)
+                };
+            });
+
+        // From the data: Sea Puffin is due back 14:17, the CTV window closes 14:00
+        await expect(risk).toBeVisible();
+        await expect(risk.locator('.ow-risk-text')).toHaveText('Sea Puffin back 17 min after the window closes');
+        // The counts give way to it
+        await expect(page.locator('.ow-kpis .ow-kpi').first()).toBeHidden();
+
+        await risk.getByRole('button', { name : 'Show' }).click();
+
+        // The schedule shown, the trip selected, its late return in view
+        await expect(scheduler(page)).toBeVisible();
+        await expect.poll(async() => (await view()).x).toBeGreaterThan(0);
+        expect((await view()).selected).toEqual(['SP-1']);
+        await expect(trip(page, 'SP-1').locator('.ow-transit-late')).toBeInViewport();
+    });
 });

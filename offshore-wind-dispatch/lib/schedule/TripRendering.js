@@ -182,7 +182,7 @@ export function renderVessel(vessel, { day, close, limit }) {
             {
                 class       : `ow-resource-ring${risk ? ' ow-resource-ring-risk' : ''}`,
                 style       : `--ow-use:${used}%`,
-                'data-btip' : `${vessel.kind} · ${limit.hs == null ? `wind up to ${limit.wind} m/s` :
+                'data-btip' : `${vessel.name}, ${vessel.kind} · ${limit.hs == null ? `wind up to ${limit.wind} m/s` :
                     `waves up to Hs ${limit.hs.toFixed(1)} m`} · ${pax} of ${vessel.seats} seats taken`,
                 children : [iconConfig(vessel.glyph, 'ow-resource-icon')]
             },

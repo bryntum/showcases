@@ -9,6 +9,10 @@
     /* A narrower inset in the vessel column; on the Scheduler itself, which sets the wide one */
     .ow-scheduler {
         --ow-column-inset : 0.625rem;
+
+        .ow-resource-cell.b-grid-cell {
+            --b-grid-cell-padding-inline : var(--ow-column-inset) 0.25rem;
+        }
     }
 
     .ow-kpis {
@@ -18,14 +22,37 @@
         flex-wrap : wrap;
         height    : auto;
 
+        /* The counts give way to the message about the trips back late (DispatchApp#refreshRisk), on a row of its own */
         .ow-kpi, .ow-kpi-split {
             display : none;
         }
 
-        .ow-kpi-warn {
-            display             : block;
-            margin-inline-start : auto;
+        /* On rows of their own, as tall as they need */
+        :is(.ow-kpis-lead, .ow-kpis-counts) {
+            height : auto;
         }
+
+        .ow-kpis-counts {
+            --b-container-padding : 0;
+
+            flex  : 1 1 100%;
+            width : auto;
+        }
+    }
+
+    /* A tag in the late return's colours, as the schedule draws it, its button in the same ink */
+    .ow-risk {
+        --b-container-padding      : 0 0 0 0.75rem;
+        --b-container-gap          : 0.5rem;
+        --b-button-type-text-color : var(--ow-c-risk-ink);
+        --b-button-height          : 2rem;
+
+        flex             : 1;
+        border-radius    : var(--ow-c-radius);
+        color            : var(--ow-c-risk-ink);
+        background-color : var(--ow-c-risk-tint);
+        font-size        : var(--ow-size-sm);
+        font-weight      : 600;
     }
 
     /* One half at a time (the ButtonGroup over them picks it), edge to edge under a line */
@@ -66,11 +93,34 @@
         white-space     : normal;
     }
 
-    /* The muted line gives way in the narrow column */
-    .ow-resource small {
-        font-size     : 0.625rem;
-        overflow      : hidden;
-        text-overflow : ellipsis;
+    /* The narrow column cuts a long name and the muted line with an ellipsis; the ring's tooltip names the vessel */
+    .ow-resource {
+        b, small {
+            overflow      : hidden;
+            text-overflow : ellipsis;
+            white-space   : nowrap;
+        }
+
+        b {
+            font-size : var(--ow-size-base);
+        }
+
+        small {
+            font-size : 0.625rem;
+        }
+
+        /* A smaller ring and gap leave the name more room */
+        gap : 0.4em;
+
+        .ow-resource-ring {
+            width  : 2.2em;
+            height : 2.2em;
+        }
+
+        .ow-icon-host {
+            width  : 1.9em;
+            height : 1.9em;
+        }
     }
 
     .ow-trip-head .ow-trip-change {

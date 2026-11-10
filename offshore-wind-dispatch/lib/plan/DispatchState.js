@@ -279,6 +279,19 @@ export default class DispatchState extends Base.mixin(Events) {
         ];
     }
 
+    /**
+     * The trips back after their window closes, the latest first. Their status is set once the engine has placed them
+     * (DispatchApp#evaluate)
+     * @param {TripModel[]} trips The trips of the day shown
+     * @returns {Object[]} `{ trip, late }`, `late` in minutes
+     */
+    lateTrips(trips) {
+        return trips
+            .filter(trip => trip.status === 'at-risk')
+            .map(trip => ({ trip, late : trip.endMinute - this.closeOf(trip.resource) }))
+            .sort((a, b) => b.late - a.late);
+    }
+
     dueOn(index) {
         return this.week.days[index].due;
     }

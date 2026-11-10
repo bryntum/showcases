@@ -66,8 +66,9 @@ dropped.
   wind), the vessels, the teams and their jobs, the trips and the dependency of today, and under `week` the forecast,
   trips and jobs of the six days after it
 * `lib/` the classes and modules, one per file:
-  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
-    the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
+  * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (`KpiBar.js`, a Container
+    of the site and the day, the team tray and the day's four counts; on a phone `RiskNote.js` in place of the counts,
+    the trips back after their window with a Show button), the schedule panel and the map panel (`panel/`),
     and the phone's Schedule | Map switch (a `ButtonGroup`). It wires the plan, the dispatch state and its own view
     state to the views; on a phone it shows one half or the other by their `hidden`, nothing is moved.
     `DropController.js` checks and books a dropped team (TeamDrag's handler), `TeamTray.js` is the team tray in the
