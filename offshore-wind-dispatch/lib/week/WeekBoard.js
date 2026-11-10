@@ -300,8 +300,13 @@ export default class WeekBoard extends Scheduler {
             `<small><span>Hs ${lo.toFixed(1)}–${hi.toFixed(1)} m</span> · <span>wind ${day.wind}</span></small>`;
     }
 
-    // A vessel's day with trips: its times top left, its seats top right, its turbines, and the seats bar
+    // A vessel's day with trips: its times top left, its seats top right, its turbines, and the seats bar. Work a
+    // forecast moved here from the day before says so
     renderCell({ eventRecord : cell, renderData }) {
+        const
+            late  = cell.late > 0 ? lateText(cell.late) : null,
+            moved = cell.moved ? `Moved here: ${cell.moved}` : null;
+
         renderData.cls['ow-cell']      = 1;
         // Its wrapper inset into the day, as a free day's placeholder (week/board.css)
         renderData.wrapperCls['ow-cell-wrap'] = 1;
@@ -315,7 +320,7 @@ export default class WeekBoard extends Scheduler {
             },
             {
                 class : 'ow-cell-jobs',
-                text  : cell.late > 0 ? `${lateText(cell.late)} · ${cell.turbines}` : cell.turbines
+                text  : [moved, late, cell.turbines].filter(Boolean).join(' · ')
             }
         ];
     }

@@ -5,11 +5,23 @@ import { duration, hhmm } from '../util/Time.js';
 /**
  * The week as a day board, plain functions from the week's trips and the dispatch state to the Week view's data
  * (WeekBoard): one cell per vessel per day. A day a vessel has trips is ONE derived event over them, from the earliest
- * departure to the latest return, so cells never stack; a day without is a whole-day resource time range, `No-go` when
- * its window never opens, else `Free` until its window closes.
+ * departure to the latest return, so cells never stack, a trip moved to tomorrow on the day it went to (workDayOf); a
+ * day without is a whole-day resource time range, `No-go` when its window never opens, else `Free` until its window
+ * closes.
  */
 
 const dayCount = 7;
+
+/**
+ * The day a trip's work is on: its own, or the next one for a trip a forecast moved to tomorrow. The trip keeps its
+ * record and its day in the plan (the Day view shows it greyed where it was, the forecast's Undo puts it back); the
+ * week shows its work where it went, at the same times
+ * @param {TripModel} trip
+ * @returns {Number}
+ */
+export function workDayOf(trip) {
+    return trip.change === 'moved' ? trip.day + 1 : trip.day;
+}
 
 /**
  * The day of the week a date is on
@@ -54,7 +66,7 @@ export function weekDays(state, trips) {
     return Array.from({ length : dayCount }, (_, index) => {
         const
             { hs, wind } = state.forecastOf(index),
-            planned      = new Set(trips.filter(trip => trip.day === index && trip.change !== 'moved' && !trip.draft)
+            planned      = new Set(trips.filter(trip => workDayOf(trip) === index && !trip.draft)
                 .flatMap(trip => trip.turbines));
 
         return {
@@ -90,8 +102,8 @@ export function weekCells(state, vessels, trips) {
         for (const vessel of vessels) {
             const
                 close = windows[vessel.window],
-                own   = trips.filter(trip => trip.day === index && trip.resource?.id === vessel.id &&
-                    trip.change !== 'moved' && !trip.draft),
+                own   = trips.filter(trip => workDayOf(trip) === index && trip.resource?.id === vessel.id &&
+                    !trip.draft),
                 id    = `${vessel.id}:${index}`;
 
             if (own.length) {
@@ -111,6 +123,8 @@ export function weekCells(state, vessels, trips) {
                     endDate     : DateHelper.add(state.dateOf(index), back, 'minute'),
                     name        : `${hhmm(departs)}–${hhmm(back)}`,
                     trips       : own.map(trip => trip.id).join(' '),
+                    // Moved here from the day before by its forecast
+                    moved       : own.filter(trip => trip.change === 'moved').map(trip => trip.id).join(' '),
                     turbines    : turbines.map(turbine => (turbine === substation ? 'OSS' : turbine)).join(' '),
                     pax,
                     seats       : vessel.seats,

@@ -19,6 +19,8 @@ export default class WeekCellModel extends EventModelEnterprise {
         'trips',
         // The turbines served, "T-07 T-08 T-17"
         'turbines',
+        // The IDs of its trips a forecast moved here from the day before
+        { name : 'moved', defaultValue : '' },
         // The most people on board on one trip, of the seats the vessel has
         { name : 'pax', type : 'number' },
         { name : 'seats', type : 'number' },
