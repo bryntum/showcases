@@ -1,5 +1,5 @@
 import {
-    AgCharts, AllCommunityModule, LicenseManager, ModuleRegistry
+    AgCharts, AllCommunityModule, LicenseManager, ModuleRegistry, RangeAreaSeriesModule
 } from 'ag-charts-enterprise';
 import { hhmm } from '../util/Time.js';
 
@@ -11,7 +11,7 @@ if (licenseKey) {
     LicenseManager.setLicenseKey(licenseKey);
 }
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, RangeAreaSeriesModule]);
 
 const
     fontFamily = 'Montserrat Variable, Helvetica Neue, Arial, sans-serif',
@@ -53,12 +53,14 @@ function cssColor(element, name) {
  * The wave height row of the time axis, an AG Charts Enterprise area chart. Not a widget: it draws into the element it
  * is given, which ForecastHeader moves into the header cell. Its x axis is the schedule's day in hours with no
  * padding, so each hour of the chart sits over the same hour of the trips. The wave is one area series in two
- * segments, the limits are axis cross lines and the window's close a line series. Colours are read from CSS custom
- * properties, so the chart is drawn again when the page switches between light and dark.
+ * segments, the forecast's spread a range area under it, the limits are axis cross lines and the window's close a line
+ * series. Colours are read from CSS custom properties, so the chart is drawn again when the page switches between
+ * light and dark.
  *
  * Learn more:
  * https://www.ag-grid.com/charts/javascript/area-series/
  * https://www.ag-grid.com/charts/javascript/series-segmentation/
+ * https://www.ag-grid.com/charts/javascript/range-area-series/
  */
 export default class WaveChart {
     /**
@@ -86,6 +88,8 @@ export default class WaveChart {
     /**
      * @param {Object} forecast
      * @param {Number[]} forecast.hs Hourly wave height from `dayStart`
+     * @param {Number[]} [forecast.low] The low end of its likely range, hour for hour
+     * @param {Number[]} [forecast.high] The high end
      * @param {Number} forecast.closes When the CTV window closes, minutes since midnight
      * @param {Number} [forecast.was] When it closed in the previous forecast
      * @returns {Promise} Resolves once drawn
@@ -124,10 +128,10 @@ export default class WaveChart {
     // A point mid hour, the first and the last value held to the edges so the area spans the whole day
     data() {
         const
-            { hs }               = this.forecast,
+            { hs, low, high }    = this.forecast,
             { dayStart, dayEnd } = this.day,
             count                = dayEnd - dayStart,
-            point                = (t, i, end) => ({ t, hs : hs[i], end });
+            point                = (t, i, end) => ({ t, hs : hs[i], low : low?.[i], high : high?.[i], end });
 
         return [
             point(dayStart, 0),
@@ -162,7 +166,19 @@ export default class WaveChart {
             seriesArea : { padding : 0 },
             animation  : off,
             legend     : off,
+            // One tooltip, from the band or the wave, whichever is nearer: the same hour either way
+            tooltip    : { mode : 'single' },
             series     : [
+                // The forecast's likely range, a faint band without an outline under the wave
+                me.forecast.low && {
+                    ...series,
+                    type         : 'range-area',
+                    yLowKey      : 'low',
+                    yHighKey     : 'high',
+                    fillOpacity  : 0.14,
+                    strokeWidth  : 0,
+                    segmentation : split(at, [c.work, c.work], [c.rough, c.rough])
+                },
                 me.wave(at, c, series),
                 me.closing(at, range, c, series)
             ].filter(Boolean),
@@ -294,9 +310,9 @@ export default class WaveChart {
         };
     }
 
-    // The hour under the pointer: who may transfer and its Hs. Hs is the mean of the highest third of the waves; the
-    // largest in a sea state reach about 1.9 × Hs
-    tooltip({ datum : { t, hs } }) {
+    // The hour under the pointer: who may transfer, its Hs and the forecast's likely range. Hs is the mean of the
+    // highest third of the waves; the largest in a sea state reach about 1.9 × Hs
+    tooltip({ datum : { t, hs, low, high } }) {
         const
             { ctv, swath } = this.limits,
             hour           = Math.min(Math.floor(t), this.day.dayEnd - 1);
@@ -306,8 +322,9 @@ export default class WaveChart {
             title   : hs > swath ? 'No crew transfer' : hs > ctv ? 'SWATH only' : 'CTV and SWATH can transfer',
             data    : [
                 { label : 'Hs', value : `${hs.toFixed(1)} m` },
+                low != null && { label : 'Likely', value : `${low.toFixed(1)} – ${high.toFixed(1)} m` },
                 { label : 'Largest waves', value : `about ${(hs * 1.9).toFixed(1)} m` }
-            ]
+            ].filter(Boolean)
         };
     }
 }

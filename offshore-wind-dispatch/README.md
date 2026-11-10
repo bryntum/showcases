@@ -62,8 +62,9 @@ dropped.
 
 * `app.js` loads the farm data and creates the `DispatchApp`. It imports `scheduler.css` (the structural CSS of
   Scheduler and the products it builds on), the Svalbard theme, then `resources/app.css`
-* `data/farm.json` the site, the limits, the forecasts, the vessels, the teams and their jobs, the trips and the
-  dependency of today, and under `week` the forecast, trips and jobs of the six days after it
+* `data/farm.json` the site, the limits, the forecasts (each hour's Hs, its likely range `hsLow` to `hsHigh` and the
+  wind), the vessels, the teams and their jobs, the trips and the dependency of today, and under `week` the forecast,
+  trips and jobs of the six days after it
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
     the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),

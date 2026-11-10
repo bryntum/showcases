@@ -163,6 +163,8 @@ export default class ForecastHeader extends SchedulerFeature {
 
         return me.chart.show({
             hs     : state.forecast.hs,
+            low    : state.forecast.hsLow,
+            high   : state.forecast.hsHigh,
             closes : state.windows.ctv,
             was    : state.previousWindows?.ctv
         });
