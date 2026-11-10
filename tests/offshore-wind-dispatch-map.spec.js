@@ -29,15 +29,14 @@ test.afterEach(() => {
 });
 
 test.describe('Offshore Wind Dispatch map selection', () => {
-    test('the turbines are a store, the selection a collection, each turbine an option with aria-selected', async({ page }) => {
+    test('the turbines are a store, the selection one turbine, each turbine an option with aria-selected', async({ page }) => {
         await open(page);
 
         expect(await page.evaluate(() => {
             const map = globalThis.bryntum.query('turbinemap');
 
-            return [map.turbines.isStore, map.turbines.count, map.selected.isCollection,
-                map.selected.values.map(each => each.id)];
-        })).toEqual([true, 60, true, ['T-41']]);
+            return [map.turbines.isStore, map.turbines.count, map.selected];
+        })).toEqual([true, 60, 'T-41']);
 
         await expect(page.locator('.ow-side [role="listbox"] [role="option"]')).toHaveCount(60);
         await expect(page.locator('.ow-side .ow-marker[aria-selected="true"]')).toHaveCount(1);
@@ -51,18 +50,15 @@ test.describe('Offshore Wind Dispatch map selection', () => {
         await page.evaluate(() => {
             globalThis.mapChanges = [];
             globalThis.bryntum.query('turbinemap').on({
-                selectionChange : ({ selection, user }) => globalThis.mapChanges.push({
-                    selection : selection.map(each => each.id),
-                    user
-                })
+                turbineSelect : ({ turbine }) => globalThis.mapChanges.push(turbine)
             });
         });
 
         await marker(page, 'T-07').click();
 
-        // The first change is the click's, the app's own redraw follows without one
-        expect((await page.evaluate(() => globalThis.mapChanges))[0]).toEqual({ selection : ['T-07'], user : true });
+        // The click asks for the turbine, the app's redraw selects it without asking again
         await expect(marker(page, 'T-07')).toHaveAttribute('aria-selected', 'true');
+        expect(await page.evaluate(() => globalThis.mapChanges)).toEqual(['T-07']);
         await expect(marker(page, 'T-41')).toHaveAttribute('aria-selected', 'false');
         expect(await selectedTrip(page)).toEqual(['SR-1']);
         await expect(card(page)).toContainText('T-07');
@@ -229,7 +225,7 @@ test.describe('Offshore Wind Dispatch map pan and zoom', () => {
         // SR-1 selected, with the stop clicked. The drag starts on another of its turbines
         const
             before   = await viewBox(page),
-            selected = await page.evaluate(() => globalThis.bryntum.query('turbinemap').selected.values[0].id),
+            selected = await page.evaluate(() => globalThis.bryntum.query('turbinemap').selected),
             other    = ['T-07', 'T-08', 'T-17'].find(id => id !== selected),
             from     = await marker(page, other).boundingBox();
 

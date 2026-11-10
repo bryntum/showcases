@@ -1,4 +1,4 @@
-import { Collection, DomSync, EventHelper, Store, Widget } from '@bryntum/core-enterprise';
+import { DomSync, EventHelper, Store, Widget } from '@bryntum/core-enterprise';
 import { mapXY, rowName, turbineIds } from '../plan/Farm.js';
 import { labelSvg, mapSvg, routeSvg } from './MapDrawing.js';
 import TurbineModel from './TurbineModel.js';
@@ -16,7 +16,8 @@ const directions = {
 /**
  * The SVG map of the farm, drawn from a MapModel by `draw()`. Its turbines are records of a Store (`turbines`), each
  * drawn once as a marker of an SVG listbox and then updated in place as its record changes, so the focus, the hover
- * and the tooltip stay on a marker while the plan changes under it. The selection is a Collection (`selected`).
+ * and the tooltip stay on a marker while the plan changes under it. The selected turbine is the app's, set by `draw()`
+ * (`selected`); a click or Enter on a turbine asks for it (`turbineSelect`).
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
@@ -44,12 +45,9 @@ export default class TurbineMap extends Widget {
     };
 
     /**
-     * Fired when the selected turbines change, by a click, the keyboard or `draw()`
-     * @event selectionChange
-     * @param {TurbineModel[]} selection
-     * @param {TurbineModel[]} selected
-     * @param {TurbineModel[]} deselected
-     * @param {Boolean} user `false` when the app selected it (`draw()`)
+     * Fired when the user picks a turbine, by a click or the keyboard. The app selects it through `draw()`
+     * @event turbineSelect
+     * @param {String} turbine
      */
 
     /**
@@ -74,10 +72,9 @@ export default class TurbineMap extends Widget {
         });
         me.turbines.on({ update : ({ record }) => me.syncMarker(record), thisObj : me });
 
-        me.selected = new Collection();
-        me.selected.on({ change : 'onSelectedChange', thisObj : me });
-
-        me.ringed  = new Set();
+        // The ID of the selected turbine
+        me.selected = null;
+        me.ringed   = new Set();
         me.hovered = null;
 
         me.html = mapSvg(me.site);
@@ -158,16 +155,21 @@ export default class TurbineMap extends Widget {
     /**
      * @param {Object} model See MapModel#mapModel
      */
-    draw({ markers, labels, routes, callout, selected }) {
+    draw({ markerOf, labels, routes, callout, selected }) {
         const
             me        = this,
-            { parts } = me;
+            { parts } = me,
+            was       = me.selected;
 
-        me.turbines.forEach(record => {
-            const { status = '', dimmed = false } = markers.get(record.id) ?? {};
+        me.selected = selected;
+        me.turbines.forEach(record => record.set(markerOf(record.id)));
 
-            record.set({ status, dimmed });
-        });
+        if (selected !== was) {
+            // The substation is no turbine
+            [was, selected].map(id => me.turbines.getById(id)).forEach(record => record && me.syncMarker(record));
+            // The tab stop follows the selection
+            selected && me.setFocusable(selected);
+        }
 
         parts.routes.innerHTML = routes.map(route => routeSvg(route)).join('');
         parts.labels.innerHTML = labels.map(label => labelSvg(label)).join('');
@@ -176,11 +178,6 @@ export default class TurbineMap extends Widget {
             domConfig     : { className : 'ow-map-callout', hidden : callout ? null : true, children : callout ?? [] }
         });
 
-        // The app's selection, not the user's
-        me.drawing = true;
-        me.select(selected);
-        me.drawing = false;
-
         me.markerTip.refresh();
     }
 
@@ -188,7 +185,7 @@ export default class TurbineMap extends Widget {
         const
             me       = this,
             el       = me.markers?.get(record.id),
-            selected = me.selected?.includes(record);
+            selected = me.selected === record.id;
 
         if (!el) {
             return;
@@ -208,34 +205,6 @@ export default class TurbineMap extends Widget {
 
     //region Selection
 
-    select(id) {
-        const
-            { selected } = this,
-            record       = id ? this.turbines.getById(id) : null;
-
-        if (selected.count !== (record ? 1 : 0) || (record && !selected.includes(record))) {
-            selected.splice(0, selected.count, ...(record ? [record] : []));
-        }
-    }
-
-    onSelectedChange({ added = [], removed = [] }) {
-        const me = this;
-
-        [...removed, ...added].forEach(record => me.syncMarker(record));
-
-        // The tab stop follows the selection
-        if (added[0]) {
-            me.setFocusable(added[0].id);
-        }
-
-        me.trigger('selectionChange', {
-            selection  : me.selected.values.slice(),
-            selected   : added,
-            deselected : removed,
-            user       : !me.drawing
-        });
-    }
-
     // The click that ends a pan selects nothing, even where the pan started on a turbine: it stops on its way down
     onMapClickCapture(event) {
         if (this.viewport.panned) {
@@ -244,7 +213,7 @@ export default class TurbineMap extends Widget {
     }
 
     onMarkerClick(event) {
-        this.select(event.currentTarget.dataset.turbine);
+        this.trigger('turbineSelect', { turbine : event.currentTarget.dataset.turbine });
     }
 
     //endregion
@@ -314,7 +283,7 @@ export default class TurbineMap extends Widget {
             }
         }
         else if (event.key === 'Enter' || event.key === ' ') {
-            me.select(from);
+            me.trigger('turbineSelect', { turbine : from });
         }
         else if (event.key === 'Escape' && me.markerTip.isVisible) {
             me.markerTip.hide();

@@ -1,4 +1,3 @@
-import { turbineIds } from '../plan/Farm.js';
 import { duration, hhmm } from '../util/Time.js';
 
 /**
@@ -88,9 +87,9 @@ const turbineCount = reach => ({ tag : 'b', text : `${reach.size} turbines` });
  * @param {String} [options.selectedTurbine]
  * @param {Object} [options.drop] A team held over a trip: `{ trip, job, result, reach }`, see
  * DropController#previewDrop
- * @returns {Object} `{ markers, labels, routes, callout, selected }`: `markers` maps each turbine to
- * `{ status, dimmed }`, a label is `{ id, text, tone }`, a route `{ stops, kind }` (`selected`, `preview` or
- * none) and the callout the DomConfig children of its line, or `null`
+ * @returns {Object} `{ markerOf, labels, routes, callout, selected }`: `markerOf(id)` gives a turbine's
+ * `{ status, dimmed }` (its TurbineModel fields), a label is `{ id, text, tone }`, a route `{ stops, kind }`
+ * (`selected`, `preview` or none) and the callout the DomConfig children of its line, or `null`
  */
 export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) {
     const
@@ -103,7 +102,6 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) 
             target    : drop?.job.turbine,
             focusTrip : drop?.trip ?? null
         },
-        markers   = new Map(turbineIds.map(id => [id, markerOf(id, context)])),
         routes    = trips.filter(trip => trip.mode === 'vessel').map(trip => ({
             stops : trip.turbines,
             kind  : trip === (drop?.trip ?? selectedTrip) ? 'selected' : null
@@ -126,5 +124,5 @@ export function mapModel({ state, trips, selectedTrip, selectedTurbine, drop }) 
         labels = planLabels({ state, trips, selectedTurbine, byTurbine });
     }
 
-    return { markers, labels, routes, callout, selected : selectedTurbine };
+    return { markerOf : id => markerOf(id, context), labels, routes, callout, selected : selectedTurbine };
 }

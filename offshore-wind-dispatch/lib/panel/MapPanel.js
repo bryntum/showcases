@@ -83,7 +83,7 @@ export default class MapPanel extends Panel {
      * @param {TripModel|null} options.selectedTrip
      * @param {String|null} options.turbine The held team's turbine, else the selected one
      * @param {Object|null} options.held See DropController#previewDrop
-     * @param {Boolean} options.follow AppState#mapFollows
+     * @param {Boolean} options.follow DispatchApp#mapFollows
      */
     draw({ state, trips, selectedTrip, turbine, held, follow }) {
         const

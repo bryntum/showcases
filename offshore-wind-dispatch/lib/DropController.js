@@ -29,7 +29,7 @@ export default class DropController {
      * @param {Object} options
      * @param {DispatchState} options.dispatch
      * @param {DispatchScheduler} options.scheduler The Day view
-     * @param {AppState} options.state
+     * @param {DispatchApp} options.state Holds `held` and `lifted`
      * @param {Function} options.onBooked Called with `{ trip, turbine }` once a team is booked: on a trip of the Day
      * view, or (no `trip`) on a new trip on a day of the Week view
      */

@@ -115,7 +115,7 @@ data/farm.json ──► DispatchState (site, forecasts, windows, the day shown,
  (renderers)   (DispatchScheduler) (DispatchApp) (WeekBoard,         (MapPanel: MapModel,
                                                 its own listener)   TurbineMap, TurbineCard)
                                                                          ▲ change
-AppState (selected turbine, map follows, team lifted / held) ────────────┘
+View state (DispatchApp: selected turbine, map follows, team held) ──────┘
 TeamTray ◄── waitingStore        TeamDrag (DragHelper) ──► DropController ──► Planner#previewDrop, #reachable
 ```
 
@@ -124,15 +124,16 @@ sea (stops and the hops between them) are its children, the sail out and back it
 booked, a trip dragged or edited, a new forecast, its Undo) goes through `TripModel#layout`, the engine calculates it
 (`await project.commitAsync()`), and the project's `dataReady` redraws the views.
 
-The app holds three observable sources and wires them to the views, it pushes no redraws by hand:
+The app has three sources of state and wires them to the views, it pushes no redraws by hand:
 
 * the project (the plan), its `dataReady`
 * `DispatchState` (the day shown, the forecast and its windows, the clock), its `change`; the teams waiting are its
   `waitingStore`, which the team tray shows as a List, a card per record
-* `AppState` (the turbine selected, whether the map follows it, the team lifted and the team held with its check),
-  its `change`; the trip selected is the Scheduler's own selection
+* its own view state, configs of `DispatchApp` (the turbine selected, whether the map follows it, the team lifted and
+  the team held with its check); the trip selected is the Scheduler's own selection. The map gets the selected
+  turbine from it and only asks for another (`turbineSelect`)
 
-Several changes made together redraw once (the listeners' `buffer`).
+Several changes made together redraw once (the listeners' `buffer`, a buffered `refreshSide`).
 
 ### Who works out the times
 
@@ -181,7 +182,7 @@ engine places each changed trip before the next one on the vessel is planned.
 * `lib/` the classes and modules, one per file:
   * `DispatchApp.js` the app, a `Panel` (with the `Responsive` mixin) holding the header (a Container of
     the site and the day, the team tray and the day's four counts), the schedule panel and the map panel (`panel/`),
-    and the phone tabs. It wires the plan, the dispatch state and the app state (`AppState.js`, `Base` with the `Events` mixin) to
+    and the phone tabs. It wires the plan, the dispatch state and its own view state to
     the views. `DropController.js` previews and books a dropped team (TeamDrag's handler), `MapLink.js` links the hover
     of the map and the schedule, `PhoneLayout.js` moves the schedule and the map into the phone tabs and back,
     `TeamTray.js` is the team tray in the header (a Container with a `List` of the waiting teams' store, a card
