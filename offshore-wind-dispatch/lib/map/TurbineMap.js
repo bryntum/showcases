@@ -20,8 +20,8 @@ const directions = {
  * (`selected`); a click or Enter on a turbine asks for it (`turbineSelect`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
- * https://bryntum.com/products/scheduler/docs/api/Core/data/Store
+ * https://bryntum.com/docs/api/Core/widget/Widget
+ * https://bryntum.com/docs/api/Core/data/Store
  */
 export default class TurbineMap extends Widget {
     static $name = 'TurbineMap';

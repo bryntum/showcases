@@ -3,7 +3,7 @@
  * On a phone the primary column narrows and the secondary ones hide, so the timeline stays visible.
  *
  * Learn more:
- * https://bryntum.com/products/grid/docs/api/Grid/view/mixin/GridResponsive
+ * https://bryntum.com/docs/api/Grid/view/mixin/GridResponsive
  */
 
 export const

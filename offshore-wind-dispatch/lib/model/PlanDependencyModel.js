@@ -9,7 +9,7 @@ import { DependencyModelEnterprise } from '@bryntum/scheduler-enterprise';
  *   `text` as its tooltip
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/DependencyModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/model/DependencyModelEnterprise
  */
 export default class PlanDependencyModel extends DependencyModelEnterprise {
     static $name = 'PlanDependencyModel';

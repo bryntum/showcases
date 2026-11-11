@@ -8,8 +8,8 @@
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/data-update-high-frequency/
- * https://bryntum.com/products/scheduler/docs/api/Core/data/Store#event-change
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventSelection#event-eventSelectionChange
+ * https://bryntum.com/docs/api/Core/data/Store#event-change
+ * https://bryntum.com/docs/api/Scheduler/view/mixin/SchedulerEventSelection#event-eventSelectionChange
  */
 export default class GridSync {
     /**

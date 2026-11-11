@@ -7,8 +7,8 @@ import { paxText, teamText } from './TripRendering.js';
  * inside it, before its Save commits (DispatchScheduler#onBeforeTripSave), not in a transaction of their own.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TaskEdit
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/widget/taskeditor/SchedulerGeneralTab
+ * https://bryntum.com/docs/api/Scheduler/feature/TaskEdit
+ * https://bryntum.com/docs/api/Scheduler/widget/taskeditor/SchedulerGeneralTab
  */
 
 export const tripEdit = {

@@ -17,8 +17,8 @@ const labelConfig = (compact, label, icon) => compact ?
  * Listeners on the view use `thisObj`, so they are removed when the controls are destroyed
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Container
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Button#config-rendition
+ * https://bryntum.com/docs/api/Core/widget/Container
+ * https://bryntum.com/docs/api/Core/widget/Button#config-rendition
  */
 export default class SimulationControls extends Container {
     static $name = 'SimulationControls';

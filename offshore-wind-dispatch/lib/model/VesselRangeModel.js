@@ -6,7 +6,7 @@ import { ResourceTimeRangeModel } from '@bryntum/scheduler-enterprise';
  * without trips, `free` or `nogo` (WeekCells).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ResourceTimeRangeModel
+ * https://bryntum.com/docs/api/Scheduler/model/ResourceTimeRangeModel
  */
 export default class VesselRangeModel extends ResourceTimeRangeModel {
     static $name = 'VesselRangeModel';

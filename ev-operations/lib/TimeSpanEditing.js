@@ -2,8 +2,8 @@
  * Editing shared by the three views: the TaskEdit drawer and the Shift + arrow key nudge of the selected bar.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Panel#config-drawer
- * https://bryntum.com/products/gantt/docs/api/Core/widget/mixin/KeyMap
+ * https://bryntum.com/docs/api/Core/widget/Panel#config-drawer
+ * https://bryntum.com/docs/api/Core/widget/mixin/KeyMap
  */
 
 /**

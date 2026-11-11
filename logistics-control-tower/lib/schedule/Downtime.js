@@ -7,8 +7,8 @@ import { formatTime } from '../util/Time.js';
  * resized or moved into it, see DockBooking#getBusy and DockSchedule#validateSlotDrop.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-forSelector
+ * https://bryntum.com/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/docs/api/Core/widget/Tooltip#config-forSelector
  */
 export const
     /**

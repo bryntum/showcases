@@ -9,7 +9,7 @@ import { intersectsBlock } from './BlockedTime.js';
  * kept in sync with the events, and a dependency renderer turning each line into a dashed gap with a label.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Dependencies#config-renderer
+ * https://bryntum.com/docs/api/Scheduler/feature/Dependencies#config-renderer
  */
 
 const

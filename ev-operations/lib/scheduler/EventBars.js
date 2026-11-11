@@ -10,7 +10,7 @@ import { batteryWidth, chargeCurve, chargeState, maxKw } from './ChargingSession
  * returns the bar's DomConfig children for the event renderer, see OperationsScheduler#renderOpsEvent.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
+ * https://bryntum.com/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
  */
 
 const

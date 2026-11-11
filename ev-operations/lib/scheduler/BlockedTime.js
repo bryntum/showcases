@@ -6,8 +6,8 @@ import { formatTime } from '../util/Format.js';
  * with an icon per type, and the hover tooltip that explains a range too narrow for its label.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-forSelector
+ * https://bryntum.com/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/docs/api/Core/widget/Tooltip#config-forSelector
  */
 
 // Icon per blocked time type (the range's `state`): a die change, a breakdown, an inspection

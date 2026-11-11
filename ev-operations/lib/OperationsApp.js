@@ -16,9 +16,9 @@ import './StatusLegend.js';
  * heading, and the detail panel overlays the timeline.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Panel
- * https://bryntum.com/products/gantt/docs/api/Core/layout/Card
- * https://bryntum.com/products/gantt/docs/api/Core/widget/mixin/Responsive
+ * https://bryntum.com/docs/api/Core/widget/Panel
+ * https://bryntum.com/docs/api/Core/layout/Card
+ * https://bryntum.com/docs/api/Core/widget/mixin/Responsive
  */
 export default class OperationsApp extends Panel.mixin(Responsive) {
     static $name = 'OperationsApp';

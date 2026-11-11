@@ -14,7 +14,7 @@ const
  * SVG, the Show all button and the tooltip of the map that owns it.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
+ * https://bryntum.com/docs/api/Core/helper/DragHelper
  */
 export default class MapViewport {
     /**

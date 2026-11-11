@@ -9,8 +9,8 @@ const nowAnchor = 0.25;
  * the distance the clock moved, so wherever the user scrolled it to, it stays there relative to now.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#property-visibleDate
+ * https://bryntum.com/docs/api/Scheduler/feature/TimeRanges
+ * https://bryntum.com/docs/api/Scheduler/view/TimelineBase#property-visibleDate
  */
 export default Target => class Playhead extends Target {
     static $name = 'Playhead';

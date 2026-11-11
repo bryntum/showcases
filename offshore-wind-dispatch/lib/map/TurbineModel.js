@@ -16,7 +16,7 @@ const statusWords = {
  * (resources/map/map.css).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/data/Model
+ * https://bryntum.com/docs/api/Core/data/Model
  */
 export default class TurbineModel extends Model {
     static $name = 'TurbineModel';

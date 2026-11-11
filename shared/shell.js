@@ -26,7 +26,7 @@ import { createGetTheCode } from './get-the-code.js';
  * `DomHelper.colorScheme`, until a choice is made the page follows the system setting.
  *
  * Learn more:
- * https://bryntum.com/products/grid/docs/api/Core/helper/DomHelper#property-colorScheme-static
+ * https://bryntum.com/docs/api/Core/helper/DomHelper#property-colorScheme-static
  */
 
 /**

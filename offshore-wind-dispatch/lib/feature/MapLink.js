@@ -11,8 +11,8 @@ export function tripsOf(trips, turbine) {
  * DispatchApp.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#function-highlightEvents
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler#event-eventMouseEnter
+ * https://bryntum.com/docs/api/Scheduler/view/TimelineBase#function-highlightEvents
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler#event-eventMouseEnter
  */
 export default class MapLink extends SchedulerFeature {
     static $name = 'MapLink';

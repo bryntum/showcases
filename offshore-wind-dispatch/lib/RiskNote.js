@@ -7,7 +7,7 @@ import { duration } from './util/Time.js';
  * while no trip is late.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
+ * https://bryntum.com/docs/api/Core/widget/Container
  */
 export default class RiskNote extends Container {
     static $name = 'RiskNote';

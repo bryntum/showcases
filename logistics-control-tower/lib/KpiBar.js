@@ -8,7 +8,7 @@ import { hourMs } from './util/Time.js';
  * Built once, then only the text of the values changes.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
+ * https://bryntum.com/docs/api/Core/widget/Widget
  */
 export default class KpiBar extends Widget {
     static $name = 'KpiBar';

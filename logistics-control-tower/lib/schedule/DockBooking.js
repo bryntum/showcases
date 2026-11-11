@@ -13,8 +13,8 @@ const downtimeRounds = 5;
  * and keeps the slots out of door downtime.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/DependencyModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/model/ProjectModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/model/DependencyModelEnterprise
  */
 export default Target => class DockBooking extends Target {
     static $name = 'DockBooking';

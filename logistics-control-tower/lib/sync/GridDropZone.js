@@ -12,8 +12,8 @@ import { downtimeAt } from '../schedule/Downtime.js';
  *
  * Learn more:
  * https://www.ag-grid.com/javascript-data-grid/drag-and-drop/#row-drop-zone
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#function-getDateFromCoordinate
- * https://bryntum.com/products/scheduler/docs/api/Grid/view/Grid#function-getRecordFromElement
+ * https://bryntum.com/docs/api/Scheduler/view/TimelineBase#function-getDateFromCoordinate
+ * https://bryntum.com/docs/api/Grid/view/Grid#function-getRecordFromElement
  */
 export default class GridDropZone {
     /**

@@ -10,7 +10,7 @@ import VesselRangeModel from './VesselRangeModel.js';
  * (`runChange`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/model/ProjectModelEnterprise
  */
 export default class DispatchProject extends ProjectModelEnterprise {
     static $name = 'DispatchProject';

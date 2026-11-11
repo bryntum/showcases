@@ -58,8 +58,8 @@ function legendItems(view) {
  * call the app's `undoForecast` and `reviewNext` (`up.`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-strips
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/ButtonGroup
+ * https://bryntum.com/docs/api/Core/widget/Panel#config-strips
+ * https://bryntum.com/docs/api/Core/widget/ButtonGroup
  */
 export default class SchedulePanel extends Panel {
     static $name = 'SchedulePanel';

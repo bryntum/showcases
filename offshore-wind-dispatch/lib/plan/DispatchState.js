@@ -33,8 +33,8 @@ function closingTimes(forecast, limits, { dayStart, dayEnd }) {
  * start of the day. Fires `change` with `name` `day` or `forecast`.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
- * https://bryntum.com/products/scheduler/docs/api/Core/Base
+ * https://bryntum.com/docs/api/Core/mixin/Events
+ * https://bryntum.com/docs/api/Core/Base
  */
 export default class DispatchState extends Base.mixin(Events) {
     static $name = 'DispatchState';

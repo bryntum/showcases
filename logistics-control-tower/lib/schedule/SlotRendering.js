@@ -57,10 +57,10 @@ function textWidth(text, font = '700 13px', fallback = widestNumber) {
  * (`StringHelper.xss`) where a string is expected. Classes are styled in resources/schedule.css.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-renderer
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Summary#config-renderer
- * https://bryntum.com/products/scheduler/docs/api/Core/helper/StringHelper#function-xss-static
+ * https://bryntum.com/docs/api/Grid/column/Column#config-renderer
+ * https://bryntum.com/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
+ * https://bryntum.com/docs/api/Scheduler/feature/Summary#config-renderer
+ * https://bryntum.com/docs/api/Core/helper/StringHelper#function-xss-static
  */
 
 /**

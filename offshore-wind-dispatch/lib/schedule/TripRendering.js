@@ -8,8 +8,8 @@ import { clock, duration } from '../util/Time.js';
  * sizes), so they hold no state.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventBuffer#config-renderer
+ * https://bryntum.com/docs/api/Scheduler/view/mixin/SchedulerEventRendering#config-eventRenderer
+ * https://bryntum.com/docs/api/Scheduler/feature/EventBuffer#config-renderer
  */
 
 // A departure this close to the start of the timeline, px, has no room for its clock time ("07:45" at 11px) and the

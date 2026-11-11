@@ -6,7 +6,7 @@ import { SchedulerFeature } from '@bryntum/scheduler-enterprise';
  * go, a resource time range. Nothing of it is in the plan until the team is dropped.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/docs/api/Scheduler/feature/ResourceTimeRanges
  */
 export default class DropTarget extends SchedulerFeature {
     static $name = 'DropTarget';

@@ -3,7 +3,7 @@
  * after the predecessor into the start of the successor along its own row.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Gantt/feature/Dependencies#config-renderer
+ * https://bryntum.com/docs/api/Gantt/feature/Dependencies#config-renderer
  */
 
 const

@@ -17,8 +17,8 @@ import { bufferData, chainData, legsData, transitsOf } from './TripData.js';
  * `layout()` only.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/EventModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/feature/NestedEvents
+ * https://bryntum.com/docs/api/Scheduler/model/EventModelEnterprise
  */
 export default class TripModel extends EventModelEnterprise {
     static $name = 'TripModel';

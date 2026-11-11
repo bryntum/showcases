@@ -37,7 +37,7 @@
  *   below 760px, its Schedule | Map switch. See {@link DispatchApp} and {@link SchedulePanel}.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler
  */
 import { DomHelper } from '@bryntum/core-enterprise';
 import { createShell } from '@showcases/shared';

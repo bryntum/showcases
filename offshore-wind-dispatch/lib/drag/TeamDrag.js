@@ -49,7 +49,7 @@ function showOnChip(chip, drop) {
  * the outline of where the stop would go.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/helper/DragHelper
+ * https://bryntum.com/docs/api/Core/helper/DragHelper
  * https://bryntum.com/products/scheduler/examples/drag-from-grid/
  */
 export default class TeamDrag {

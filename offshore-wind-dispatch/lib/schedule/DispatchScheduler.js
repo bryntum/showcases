@@ -28,8 +28,8 @@ const
  * `refreshPlan()` and `refreshDispatch()`. Its event store holds the whole week; `trips` is the day shown.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/NestedEvents
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventBuffer
+ * https://bryntum.com/docs/api/Scheduler/feature/NestedEvents
+ * https://bryntum.com/docs/api/Scheduler/feature/EventBuffer
  */
 export default class DispatchScheduler extends Scheduler {
     static $name = 'DispatchScheduler';

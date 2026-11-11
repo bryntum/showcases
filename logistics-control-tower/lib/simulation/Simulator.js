@@ -22,9 +22,9 @@ const
  * timer is a Delayable one, cleared when the simulator is destroyed.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/Base
- * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
- * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Delayable
+ * https://bryntum.com/docs/api/Core/Base
+ * https://bryntum.com/docs/api/Core/mixin/Events
+ * https://bryntum.com/docs/api/Core/mixin/Delayable
  */
 export default class Simulator extends Events(Delayable(Base)) {
     static $name = 'Simulator';

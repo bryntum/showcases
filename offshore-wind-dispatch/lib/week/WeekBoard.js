@@ -21,8 +21,8 @@ const
  * shows: a hidden board is drawn when shown again. A click on a day or a cell opens that day (`dayClick`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler#config-fillTicks
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/PercentBar
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler#config-fillTicks
+ * https://bryntum.com/docs/api/Scheduler/feature/PercentBar
  */
 export default class WeekBoard extends Scheduler {
     static $name = 'WeekBoard';
