@@ -13,8 +13,8 @@ const flipMs = 700;
  * status flips.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/Base
- * https://bryntum.com/products/gantt/docs/api/Scheduler/feature/TimeRanges
+ * https://bryntum.com/docs/api/Core/Base
+ * https://bryntum.com/docs/api/Scheduler/feature/TimeRanges
  */
 export default Target => class SimulatedView extends ClippedBars(NowMarker(SimulationClock(Target))) {
     static $name = 'SimulatedView';

@@ -4,7 +4,7 @@ import { ResourceModelEnterprise } from '@bryntum/scheduler-enterprise';
  * A crew transfer vessel, the SWATH or a helicopter: a resource of both the Day and the Week view.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ResourceModelEnterprise
+ * https://bryntum.com/docs/api/Scheduler/model/ResourceModelEnterprise
  */
 export default class VesselModel extends ResourceModelEnterprise {
     static $name = 'VesselModel';

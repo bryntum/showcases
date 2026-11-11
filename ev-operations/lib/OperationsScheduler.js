@@ -34,13 +34,13 @@ import { getEventDetail } from './scheduler/EventDetail.js';
  *   bars repaint (`refreshEvents`), rows are not re-rendered
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/TimelineBase#function-refreshEvents
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Dependencies#config-renderer
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-forSelector
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TaskEdit
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-drawer
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler
+ * https://bryntum.com/docs/api/Scheduler/view/TimelineBase#function-refreshEvents
+ * https://bryntum.com/docs/api/Scheduler/feature/Dependencies#config-renderer
+ * https://bryntum.com/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/docs/api/Core/widget/Tooltip#config-forSelector
+ * https://bryntum.com/docs/api/Scheduler/feature/TaskEdit
+ * https://bryntum.com/docs/api/Core/widget/Panel#config-drawer
  */
 export default class OperationsScheduler extends TimeSpanEditing(SimulatedView(Scheduler)) {
     static $name = 'OperationsScheduler';

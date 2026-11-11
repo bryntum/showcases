@@ -4,7 +4,7 @@
  * shapes.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/helper/DomHelper#typedef-DomConfig
+ * https://bryntum.com/docs/api/Core/helper/DomHelper#typedef-DomConfig
  */
 
 /**

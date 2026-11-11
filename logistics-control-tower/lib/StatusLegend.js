@@ -7,7 +7,7 @@ import { statusText } from './util/Status.js';
  * and the credits, each product linking to its page.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget
+ * https://bryntum.com/docs/api/Core/widget/Widget
  */
 export default class StatusLegend extends Widget {
     static $name = 'StatusLegend';

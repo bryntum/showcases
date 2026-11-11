@@ -7,7 +7,7 @@ import { dayMs, elapsedFraction, weekMs } from '../util/Time.js';
  * baseline end, the slim summary bar of a group and the milestone diamond. See ProgramGantt#renderPhase.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Gantt/view/Gantt#config-taskRenderer
+ * https://bryntum.com/docs/api/Gantt/view/Gantt#config-taskRenderer
  */
 
 export const

@@ -27,9 +27,9 @@ import './schedule/DockSchedule.js';
  * header makes room for the counters, Simulate delay shows its icon only.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Splitter
+ * https://bryntum.com/docs/api/Core/widget/Panel
+ * https://bryntum.com/docs/api/Core/widget/mixin/Responsive
+ * https://bryntum.com/docs/api/Core/widget/Splitter
  */
 export default class ControlTowerApp extends Panel.mixin(Responsive) {
     static $name = 'ControlTowerApp';

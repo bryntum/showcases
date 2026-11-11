@@ -6,7 +6,7 @@ import { Widget } from '@bryntum/core-enterprise';
  * technology. Uses `compose()`, which re-renders when a config it reads changes.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Widget#function-compose
+ * https://bryntum.com/docs/api/Core/widget/Widget#function-compose
  */
 export default class StatusKey extends Widget {
     static $name = 'StatusKey';

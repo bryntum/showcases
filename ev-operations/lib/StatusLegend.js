@@ -9,7 +9,7 @@ import { statusKeys } from './util/Time.js';
  * when the legend is destroyed.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/List
+ * https://bryntum.com/docs/api/Core/widget/List
  */
 export default class StatusLegend extends List {
     static $name = 'StatusLegend';

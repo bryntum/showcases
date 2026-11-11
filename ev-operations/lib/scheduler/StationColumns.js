@@ -13,7 +13,7 @@ import { hiddenWhenSmall, responsiveWidth } from '../util/Responsive.js';
  * SimulatedView#refreshLiveCells.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-renderer
+ * https://bryntum.com/docs/api/Grid/column/Column#config-renderer
  */
 
 const

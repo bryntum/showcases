@@ -38,12 +38,12 @@ const
  * - Double-click (or Enter) edits a phase in the TaskEdit drawer
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Gantt/view/Gantt#config-taskRenderer
- * https://bryntum.com/products/gantt/docs/api/Scheduler/view/TimelineBase#function-refreshEvents
- * https://bryntum.com/products/gantt/docs/api/Gantt/feature/CriticalPaths
- * https://bryntum.com/products/gantt/docs/api/Gantt/feature/TaskEdit
- * https://bryntum.com/products/gantt/docs/api/Gantt/feature/Dependencies#config-renderer
- * https://bryntum.com/products/gantt/docs/api/Gantt/model/TaskModel#field-baselines
+ * https://bryntum.com/docs/api/Gantt/view/Gantt#config-taskRenderer
+ * https://bryntum.com/docs/api/Scheduler/view/TimelineBase#function-refreshEvents
+ * https://bryntum.com/docs/api/Gantt/feature/CriticalPaths
+ * https://bryntum.com/docs/api/Gantt/feature/TaskEdit
+ * https://bryntum.com/docs/api/Gantt/feature/Dependencies#config-renderer
+ * https://bryntum.com/docs/api/Gantt/model/TaskModel#field-baselines
  */
 export default class ProgramGantt extends TimeSpanEditing(SlipTracking(SimulatedView(Gantt))) {
     static $name = 'ProgramGantt';

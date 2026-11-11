@@ -19,7 +19,7 @@ import ControlTowerApp from './lib/ControlTowerApp.js';
  * a Bryntum Scheduler (Enterprise tier, formerly Scheduler Pro), kept in sync live while a simulation moves the trucks.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler
  * https://www.ag-grid.com/javascript-data-grid/
  */
 

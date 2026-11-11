@@ -14,7 +14,7 @@ import { icon } from './util/Icons.js';
  * see grid/AgGridSetup.js, so it follows light and dark mode with the rest of the app.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel
+ * https://bryntum.com/docs/api/Core/widget/Panel
  * https://www.ag-grid.com/javascript-data-grid/getting-started/
  * https://www.ag-grid.com/javascript-data-grid/filter-quick/
  */

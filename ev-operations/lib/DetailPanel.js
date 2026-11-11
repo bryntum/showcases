@@ -13,7 +13,7 @@ export const stat = (label, value) => ({ label, value });
  * button fires `close`. Uses `compose()`, which re-renders when a config it reads changes.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Core/widget/Widget#function-compose
+ * https://bryntum.com/docs/api/Core/widget/Widget#function-compose
  */
 export default class DetailPanel extends Widget {
     static $name = 'DetailPanel';

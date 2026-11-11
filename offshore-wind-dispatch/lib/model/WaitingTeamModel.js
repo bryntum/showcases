@@ -5,7 +5,7 @@ import { Model } from '@bryntum/core-enterprise';
  * team's, or `<team>:<turbine>` for a team waiting again for a stop a forecast cut: a team may wait for more than one.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/data/Model
+ * https://bryntum.com/docs/api/Core/data/Model
  */
 export default class WaitingTeamModel extends Model {
     static $name = 'WaitingTeamModel';

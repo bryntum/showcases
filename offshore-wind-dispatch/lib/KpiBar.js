@@ -14,7 +14,7 @@ const
  * (RiskNote), whose Show calls the app's `showRisk` (`up.`).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Container
+ * https://bryntum.com/docs/api/Core/widget/Container
  */
 export default class KpiBar extends Container {
     static $name = 'KpiBar';

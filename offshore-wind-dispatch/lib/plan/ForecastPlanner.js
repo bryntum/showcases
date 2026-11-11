@@ -12,7 +12,7 @@ import { duration, hhmm } from '../util/Time.js';
  * failed re-plan is rolled back. The forecast itself stays either way.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/data/stm/StateTrackingManager
+ * https://bryntum.com/docs/api/Core/data/stm/StateTrackingManager
  */
 
 // Changes are reviewed lost work first

@@ -6,8 +6,8 @@ import { intersectsBlock } from './BlockedTime.js';
  * rules a save must follow, the same as dragging (same resource, inside the day, no overlap, not into blocked time).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/TaskEdit
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Panel#config-drawer
+ * https://bryntum.com/docs/api/Scheduler/feature/TaskEdit
+ * https://bryntum.com/docs/api/Core/widget/Panel#config-drawer
  */
 
 const

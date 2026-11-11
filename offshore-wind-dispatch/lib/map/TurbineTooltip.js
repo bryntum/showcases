@@ -5,8 +5,8 @@ import { Tooltip } from '@bryntum/core-enterprise';
  * `showForMarker()`, on keyboard focus, which the Tooltip does not do for a delegated target on its own.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-forSelector
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip#config-getHtml
+ * https://bryntum.com/docs/api/Core/widget/Tooltip#config-forSelector
+ * https://bryntum.com/docs/api/Core/widget/Tooltip#config-getHtml
  */
 export default class TurbineTooltip extends Tooltip {
     static $name = 'TurbineTooltip';

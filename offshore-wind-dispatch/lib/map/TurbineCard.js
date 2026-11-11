@@ -11,7 +11,7 @@ import { rotorText, turbineSvg } from './Turbine.js';
  * the same card, smaller (tipInfo, tipContent).
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Widget#config-html
+ * https://bryntum.com/docs/api/Core/widget/Widget#config-html
  */
 
 // The wave limit of the vessel's window, the CTV's when none serves the turbine. None for a helicopter: its limit is

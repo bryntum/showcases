@@ -44,7 +44,7 @@ function dropTipContent({ trip, team, job, result, reach, close }) {
  * It is a live region, so a screen reader reads what each trip would give as the team moves from trip to trip.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/Tooltip
+ * https://bryntum.com/docs/api/Core/widget/Tooltip
  */
 export default class DropTooltip extends Tooltip {
     static $name = 'DropTooltip';

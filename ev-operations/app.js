@@ -29,10 +29,10 @@ import { dayMs, minuteMs } from './lib/util/Time.js';
  * 3. Vehicle program - Gantt, program phases with dependencies, critical path and a milestone
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
- * https://bryntum.com/products/gantt/docs/api/Gantt/view/Gantt
- * https://bryntum.com/products/gantt/docs/api/Core/layout/Card
- * https://bryntum.com/products/scheduler/docs/api/Grid/feature/Group
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler
+ * https://bryntum.com/docs/api/Gantt/view/Gantt
+ * https://bryntum.com/docs/api/Core/layout/Card
+ * https://bryntum.com/docs/api/Grid/feature/Group
  */
 
 const

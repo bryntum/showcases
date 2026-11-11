@@ -22,8 +22,8 @@ const openingTurbine = 'T-41';
  * `phone` (the Responsive mixin), which shows the schedule or the map, picked with a ButtonGroup.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/mixin/Responsive
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/model/ProjectModelEnterprise#event-dataReady
+ * https://bryntum.com/docs/api/Core/widget/mixin/Responsive
+ * https://bryntum.com/docs/api/Scheduler/model/ProjectModelEnterprise#event-dataReady
  */
 export default class DispatchApp extends Panel.mixin(Responsive) {
     static $name = 'DispatchApp';

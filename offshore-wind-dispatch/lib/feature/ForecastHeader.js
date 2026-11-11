@@ -9,8 +9,8 @@ import WaveChart from '../schedule/WaveChart.js';
  * wind values and the label in place, the time axis itself does not change.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/preset/ViewPreset#config-headers
- * https://bryntum.com/products/scheduler/docs/api/Grid/column/Column#config-headerRenderer
+ * https://bryntum.com/docs/api/Scheduler/preset/ViewPreset#config-headers
+ * https://bryntum.com/docs/api/Grid/column/Column#config-headerRenderer
  */
 export default class ForecastHeader extends SchedulerFeature {
     static $name = 'ForecastHeader';

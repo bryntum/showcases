@@ -40,12 +40,12 @@ const
  * - Zooming around the playhead, through custom presets with one header row each
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/Scheduler
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/ResourceTimeRanges
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventMenu
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/Summary
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/view/mixin/TimelineViewPresets#config-presets
+ * https://bryntum.com/docs/api/Scheduler/view/Scheduler
+ * https://bryntum.com/docs/api/Scheduler/feature/EventDrag#config-validatorFn
+ * https://bryntum.com/docs/api/Scheduler/feature/ResourceTimeRanges
+ * https://bryntum.com/docs/api/Scheduler/feature/EventMenu
+ * https://bryntum.com/docs/api/Scheduler/feature/Summary
+ * https://bryntum.com/docs/api/Scheduler/view/mixin/TimelineViewPresets#config-presets
  */
 export default class DockSchedule extends Playhead(DockBooking(Scheduler)) {
     static $name = 'DockSchedule';

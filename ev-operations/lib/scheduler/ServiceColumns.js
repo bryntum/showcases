@@ -12,7 +12,7 @@ import { hiddenWhenSmall, responsiveWidth } from '../util/Responsive.js';
  * - Group headers (Group feature on the resource `kind`) with a live occupancy summary
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Grid/feature/Group#config-renderer
+ * https://bryntum.com/docs/api/Grid/feature/Group#config-renderer
  */
 
 const

@@ -6,8 +6,8 @@ import { dayMs, weekMs } from '../util/Time.js';
  * Slip column and its shared chart scale. Follows a drag or resize live, from the proposed end date.
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Gantt/model/TaskModel#field-baselines
- * https://bryntum.com/products/gantt/docs/api/Gantt/model/TaskModel#field-totalSlack
+ * https://bryntum.com/docs/api/Gantt/model/TaskModel#field-baselines
+ * https://bryntum.com/docs/api/Gantt/model/TaskModel#field-totalSlack
  */
 
 // Leaf phases and milestones below a parent, what its slip rolls up from

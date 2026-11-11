@@ -11,7 +11,7 @@ const jobText = ({ turbine, job, short }, fault) => `${turbine} ${fault ? 'fault
  * tooltip, so the card stays two short lines.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Core/widget/List
+ * https://bryntum.com/docs/api/Core/widget/List
  */
 export default class TeamTray extends Container {
     static $name = 'TeamTray';

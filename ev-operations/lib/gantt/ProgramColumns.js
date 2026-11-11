@@ -15,8 +15,8 @@ import { hiddenWhenSmall, responsiveWidth } from '../util/Responsive.js';
  *   ProgramGantt#getSlipWeeks
  *
  * Learn more:
- * https://bryntum.com/products/gantt/docs/api/Grid/column/TreeColumn
- * https://bryntum.com/products/gantt/docs/api/Gantt/model/TaskModel#field-totalSlack
+ * https://bryntum.com/docs/api/Grid/column/TreeColumn
+ * https://bryntum.com/docs/api/Gantt/model/TaskModel#field-totalSlack
  */
 
 const

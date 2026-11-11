@@ -7,7 +7,7 @@ import { hhmm } from '../util/Time.js';
  * final check after the engine has placed a booking, a drag or an edit (`planBreak`), shared by all three.
  *
  * Learn more:
- * https://bryntum.com/products/scheduler/docs/api/Scheduler/feature/EventDrag#config-validatorFn
+ * https://bryntum.com/docs/api/Scheduler/feature/EventDrag#config-validatorFn
  */
 
 /**
