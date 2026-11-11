@@ -5,8 +5,8 @@ import WaveChart from '../schedule/WaveChart.js';
 /**
  * The time axis rows of the Day view (hours, wave height, wind) and the vessel column's header naming them, for the
  * forecast of the Scheduler's `dispatch` state. The wave height row is one cell over the day; the chart lives in an
- * element of its own, moved into that cell whenever the time axis is drawn, never recreated. A new forecast updates the
- * wind values and the label in place, the time axis itself does not change.
+ * element of its own, moved into that cell whenever the time axis is drawn, never recreated. The wind values and the
+ * label are the header renderers' output, a new forecast draws the headers again.
  *
  * Learn more:
  * https://bryntum.com/docs/api/Scheduler/preset/ViewPreset#config-headers
@@ -85,7 +85,7 @@ export default class ForecastHeader extends SchedulerFeature {
     windHtml(hour) {
         const { wind, over } = this.windAt(hour);
 
-        return `<span class="ow-wind${over ? ' ow-wind-over' : ''}" data-hour="${hour}">${wind ?? ''}</span>`;
+        return `<span class="ow-wind${over ? ' ow-wind-over' : ''}">${wind ?? ''}</span>`;
     }
 
     windAt(hour) {
@@ -137,26 +137,17 @@ export default class ForecastHeader extends SchedulerFeature {
     }
 
     /**
-     * Shows the dispatch state's forecast: the chart, the wind values and the label, updated in place
+     * Shows the dispatch state's forecast: the chart, and the headers drawn again for the wind values and the label
      * @returns {Promise} Resolves once the chart is drawn
      */
     refresh() {
         const
-            me                    = this,
-            { element, dispatch } = me.client;
+            me           = this,
+            { client }   = me,
+            { dispatch } = client;
 
-        element?.querySelectorAll('.ow-wind[data-hour]').forEach(wind => {
-            const { wind : value, over } = me.windAt(Number(wind.dataset.hour));
-
-            wind.textContent = value ?? '';
-            wind.classList.toggle('ow-wind-over', over);
-        });
-
-        const label = element?.querySelector('.ow-axis-row-head');
-
-        if (label) {
-            label.innerHTML = me.forecastLabel;
-        }
+        client.timeAxisColumn.refreshHeader();
+        client.columns.get('name').refreshHeader();
 
         return me.chart.show({
             hs     : dispatch.forecast.hs,
