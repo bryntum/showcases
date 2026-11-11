@@ -1,6 +1,7 @@
 import {
     AgCharts, AllCommunityModule, CrosshairModule, LicenseManager, ModuleRegistry, RangeAreaSeriesModule
 } from 'ag-charts-enterprise';
+import { GlobalEvents } from '@bryntum/core-enterprise';
 import { hhmm } from '../util/Time.js';
 
 // AG Charts Enterprise is licensed separately. The key is read at build time from `VITE_AG_LICENSE_KEY` (a gitignored
@@ -75,9 +76,10 @@ export default class WaveChart {
 
         Object.assign(me, { element, limits, day, forecast : null });
 
-        // Redrawn on a theme switch: the shell's switch sets `data-theme` on the root, or the system setting changes
-        me.observer = new MutationObserver(() => me.redraw());
-        me.observer.observe(document.documentElement, { attributes : true, attributeFilter : ['data-theme'] });
+        // Redrawn on a light / dark switch: Bryntum's `theme` event fires when the shell's toggle pins a mode
+        // (DomHelper.colorScheme). Bryntum reports a change of the system setting only once a widget has asked for the
+        // mode, so that one is watched here too
+        me.detachTheme = GlobalEvents.on({ theme : () => me.redraw() });
         me.media = matchMedia('(prefers-color-scheme: dark)');
         me.media.onchange = () => me.redraw();
         // AG Charts sizes itself to its container. A chart created while the container had no size (the header being
@@ -120,7 +122,7 @@ export default class WaveChart {
     }
 
     destroy() {
-        this.observer.disconnect();
+        this.detachTheme();
         this.sized.disconnect();
         this.media.onchange = null;
         this.chart?.destroy();
