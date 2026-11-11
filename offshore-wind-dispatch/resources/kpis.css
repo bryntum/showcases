@@ -142,19 +142,27 @@
     white-space : nowrap;
 }
 
-/* The List of the teams, a row of cards, their shadows outside it; none when no team waits */
+/* The List of the teams, a row of cards, their shadows outside it. Its items are the cards: no padding, background or
+   focus colour of their own. When no team waits it shows its emptyText */
 .ow-crews {
+    --b-list-item-padding          : 0;
+    --b-list-item-background       : transparent;
+    --b-list-item-focus-background : transparent;
+    --b-list-item-border-radius    : 0;
+
     flex-direction : row;
     gap            : 1rem;
     overflow       : visible;
     list-style     : none;
 
-    &.b-empty {
-        display : none;
+    .b-empty-text {
+        font-size   : var(--ow-size-sm);
+        color       : var(--b-neutral-40);
+        white-space : nowrap;
     }
 }
 
-.ow-tray-hint, .ow-tray-empty {
+.ow-tray-hint {
     font-size   : var(--ow-size-sm);
     color       : var(--b-neutral-40);
     white-space : nowrap;

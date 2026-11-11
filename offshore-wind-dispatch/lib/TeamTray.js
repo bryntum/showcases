@@ -42,12 +42,11 @@ export default class TeamTray extends Container {
                     hint  : { type : 'widget', cls : 'ow-tray-hint', html : 'Drag onto a trip' }
                 }
             },
-            empty : { type : 'widget', cls : 'ow-tray-empty', html : 'Every team has a trip' },
             // Only shown: no selection, no keyboard navigation, no scrolling of its own
-            list  : {
+            list : {
                 type            : 'list',
                 cls             : 'ow-crews',
-                itemCls         : 'ow-crew',
+                emptyText       : 'Every team has a trip',
                 navigator       : false,
                 itemsFocusable  : false,
                 scrollable      : null,
@@ -84,16 +83,15 @@ export default class TeamTray extends Container {
     // The title counts the teams
     updatePort() {
         const
-            { title, hint, empty } = this.widgetMap ?? {},
+            { title, hint }        = this.widgetMap ?? {},
             count                  = this.store?.count ?? 0;
 
         if (!title) {
             return;
         }
 
-        title.html   = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
-        hint.hidden  = !count;
-        empty.hidden = Boolean(count);
+        title.html  = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
+        hint.hidden = !count;
     }
 
     // On the card itself, not by redrawing the list: the drag holds the card's element
