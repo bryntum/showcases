@@ -21,14 +21,9 @@ export default class TeamTray extends Container {
     static configurable = {
         port : null,
 
-        // WaitingTeamModel records
+        // WaitingTeamModel records. A record changed redraws its card only (List#refreshItem syncs it in place, so the
+        // element a drag holds stays)
         store : null,
-
-        // The ID of the team dragged: its card stays in the tray, dimmed
-        lifted : null,
-
-        // The ID of the team whose booking the engine is placing: its card is dimmed and cannot be dragged
-        booking : null,
 
         cls    : 'ow-tray',
         layout : { type : 'hbox', align : 'center' },
@@ -58,13 +53,14 @@ export default class TeamTray extends Container {
         }
     };
 
-    // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min"
-    cardHtml({ id, team, job, fault }) {
-        const cls = `ow-team${fault ? ' ow-team-fault' : ''}${id === this.lifted ? ' ow-team-lifted' : ''}` +
-            `${id === this.booking ? ' ow-team-pending' : ''}`;
+    // Two short lines that never wrap: "Team F · 2" over "T-34 fault · 48 min". A team dragged stays in the tray,
+    // dimmed (`lifted`); one whose booking the engine is placing is dimmed and cannot be dragged (`pending`)
+    cardHtml({ id, team, job, fault, lifted, pending }) {
+        const cls = `ow-team${fault ? ' ow-team-fault' : ''}${lifted ? ' ow-team-lifted' : ''}` +
+            `${pending ? ' ow-team-pending' : ''}`;
 
-        return StringHelper.xss`<div class="${cls}" data-team="${id}"><span class="ow-team-crew">` +
-            `${icon('users')}</span>` + StringHelper.xss`<span class="ow-team-text">
+        return StringHelper.xss`<div class="${cls}" data-team="${id}" aria-busy="${Boolean(pending)}">` +
+            `<span class="ow-team-crew">${icon('users')}</span>` + StringHelper.xss`<span class="ow-team-text">
                 <span class="ow-team-name"><b>${team.name}</b> · ${team.techs}</span>
                 <span class="ow-team-job">${jobText(job, fault)} · ${duration(job.minutes)}</span>
             </span></div>`;
@@ -92,21 +88,6 @@ export default class TeamTray extends Container {
 
         title.html  = `Crews waiting at ${StringHelper.encodeHtml(this.port ?? 'the port')} · ${count}`;
         hint.hidden = !count;
-    }
-
-    // On the card itself, not by redrawing the list: the drag holds the card's element
-    updateLifted(lifted) {
-        this.element?.querySelectorAll('.ow-team[data-team]').forEach(card =>
-            card.classList.toggle('ow-team-lifted', card.dataset.team === lifted));
-    }
-
-    updateBooking(booking) {
-        this.element?.querySelectorAll('.ow-team[data-team]').forEach(card => {
-            const pending = card.dataset.team === booking;
-
-            card.classList.toggle('ow-team-pending', pending);
-            card.setAttribute('aria-busy', String(pending));
-        });
     }
 }
 

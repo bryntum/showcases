@@ -21,8 +21,8 @@ export default class DropTarget extends SchedulerFeature {
         drop : null,
 
         /**
-         * The trips the team fits on, checked once when it is lifted. Not a field of the trip: changing the record
-         * would redraw the trip and its legs
+         * The trips the team fits on, checked once when it is lifted. Not a field of the trip: it is the screen's, not
+         * the plan's
          * @prp {TripModel[]}
          */
         fitting : []
@@ -44,12 +44,17 @@ export default class DropTarget extends SchedulerFeature {
         }
     }
 
-    // The class goes on the trips' elements now, no redraw; the renderer keeps it on a later one (isFitting)
+    // The trip renderer outlines them (isFitting): only the vessels of the trips that start or stop fitting redraw
     updateFitting(trips, was = []) {
-        const outline = (each, on) => this.client.getElementFromEventRecord(each)?.classList.toggle('ow-trip-fits', on);
+        if (this.isConfiguring) {
+            return;
+        }
 
-        was.forEach(trip => outline(trip, false));
-        trips.forEach(trip => outline(trip, true));
+        const
+            changed = trip => !trip.isDestroyed && was.includes(trip) !== trips.includes(trip),
+            vessels = new Set([...was, ...trips].filter(changed).map(trip => trip.resource));
+
+        vessels.forEach(vessel => vessel && this.client.repaintEventsForResource(vessel));
     }
 
     isFitting(trip) {

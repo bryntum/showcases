@@ -27,7 +27,7 @@ export default class DropController {
      * @param {Object} options
      * @param {DispatchState} options.dispatch
      * @param {DispatchScheduler} options.scheduler The Day view
-     * @param {DispatchApp} options.state Holds `held` (see previewDrop), `lifted` and `booking`
+     * @param {DispatchApp} options.state Holds `held`, see previewDrop
      * @param {Function} options.onBooked Called with `{ trip, turbine }` once a team is booked: on a trip of the Day
      * view, or (no `trip`) on a new trip on a day of the Week view
      */
@@ -40,13 +40,15 @@ export default class DropController {
         return this.dispatch.waitingStore.getById(teamId);
     }
 
-    // The chip stays in the tray, dimmed, until the team is booked. The trips it fits on are outlined, checked once
+    // The card stays in the tray, dimmed (the record's `lifted`), until the team is booked. The trips it fits on are
+    // outlined, checked once
     liftTeam(teamId) {
         const
             me    = this,
             entry = me.waitingTeam(teamId);
 
-        me.state.lifted = teamId;
+        me.lifted = entry;
+        entry?.set('lifted', true);
         me.scheduler.features.dropTarget.fitting = entry ?
             me.scheduler.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid) : [];
     }
@@ -242,7 +244,7 @@ export default class DropController {
      * moved is still back in its window and clear of its vessel's other trips (planBreak). Else the trip is put back
      * and the reason shown.
      * One change of the plan at a time (DispatchProject#runChange): while the engine places it, the team is reserved
-     * (`state.booking`, its card in the tray shows it pending) and no other change starts
+     * (its record's `pending`, the card in the tray shows it) and no other change starts
      * @param {String} teamId
      * @param {TripModel|VesselModel|Object|null} target
      * @param {Number|null} [at] Minutes since midnight at the point released, see previewDrop
@@ -266,14 +268,17 @@ export default class DropController {
             return false;
         }
 
+        // The record, not its ID: it has left the store once booked
+        const entry = me.waitingTeam(drop.id);
+
         return project.runChange(async() => {
-            me.state.booking = drop.id;
+            entry.set('pending', true);
 
             try {
                 return await me.commitDrop(drop, target);
             }
             finally {
-                me.state.booking = null;
+                entry.set('pending', false);
             }
         });
     }
@@ -344,8 +349,11 @@ export default class DropController {
     }
 
     endDrag() {
-        this.scheduler.features.dropTarget.fitting = [];
-        this.state.held   = null;
-        this.state.lifted = null;
+        const me = this;
+
+        me.lifted?.set('lifted', false);
+        me.lifted = null;
+        me.scheduler.features.dropTarget.fitting = [];
+        me.state.held = null;
     }
 }

@@ -17,6 +17,11 @@ export default class WaitingTeamModel extends Model {
         { name : 'job', type : 'object' },
         // The turbine is stopped
         { name : 'fault', type : 'boolean' },
+        // Screen state for the tray's card, not data: dragged (`lifted`), its booking being placed by the engine
+        // (`pending`). Not persisted, which also keeps them out of the forecast's undo history (the STM records no
+        // change of a `persist : false` field)
+        { name : 'lifted', type : 'boolean', persist : false },
+        { name : 'pending', type : 'boolean', persist : false },
         // What the tray's List reads out for it
         { name : 'text', calculate : ({ team, job }) => `${team.name}, ${job.turbine} ${job.job}` }
     ];

@@ -47,12 +47,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         // The map fits itself to the selected trip or turbine. Off until the user selects one, and after Show all
         mapFollows : false,
 
-        // The ID of the team dragged from the tray
-        lifted : null,
-
-        // The ID of the waiting team whose booking the engine is placing (DropController#dropTeam)
-        booking : null,
-
         /**
          * The team held and its check, `{ id, target, trip, team, job, result, reach, close, at }`
          * (DropController#previewDrop), `null` while it is over nothing
@@ -210,19 +204,6 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
         this.redrawSide?.();
     }
 
-    // At once: the lifted card dims as the drag starts
-    updateLifted(lifted) {
-        if (this.parts) {
-            this.parts.tray.lifted = lifted;
-        }
-    }
-
-    updateBooking(booking) {
-        if (this.parts) {
-            this.parts.tray.booking = booking;
-        }
-    }
-
     /**
      * Shows the plan with T-41 and its trip selected, and the forecast chart drawn
      * @param {Object} [options]
@@ -254,7 +235,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             await me.applyForecast();
         }
         else if (state === 'drag' && me.dispatch.waitingStore.count) {
-            await me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
+            me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
         }
 
         await scheduler.features.forecastHeader.refresh();

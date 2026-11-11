@@ -97,13 +97,11 @@ export default class TeamDrag {
      * outline of its stop would, with no pointer. Escape puts it back
      * @param {String} teamId
      * @param {TripModel} trip
-     * @returns {Promise} Resolves once it is shown
      */
-    async showHeld(teamId, trip) {
+    showHeld(teamId, trip) {
         const
             me          = this,
-            { handler } = me,
-            outline     = () => me.scheduler.element.querySelector('.ow-drop-outline');
+            { handler } = me;
 
         me.lift(teamId);
         me.target = trip;
@@ -112,19 +110,13 @@ export default class TeamDrag {
         document.addEventListener('keydown', me.onKey);
         handler.previewDrop(teamId, trip);
 
-        // The outline is drawn a frame later
-        for (let frame = 0; frame < 30 && !outline(); frame++) {
-            await new Promise(resolve => requestAnimationFrame(resolve));
-        }
+        // The check draws the outline as it is set (DropTarget#updateDrop)
+        const rect = me.scheduler.element.querySelector('.ow-drop-outline')?.getBoundingClientRect();
 
-        const rect = outline()?.getBoundingClientRect();
-
-        if (me.team === teamId) {
-            me.point = rect ? { x : rect.left + rect.width / 2, y : rect.top + rect.height / 2 } :
-                { x : innerWidth / 2, y : innerHeight / 2 };
-            DomHelper.setTranslateXY(me.proxy, me.point.x - 20, me.point.y + 8);
-            me.hover(trip, me.point);
-        }
+        me.point = rect ? { x : rect.left + rect.width / 2, y : rect.top + rect.height / 2 } :
+            { x : innerWidth / 2, y : innerHeight / 2 };
+        DomHelper.setTranslateXY(me.proxy, me.point.x - 20, me.point.y + 8);
+        me.hover(trip, me.point);
     }
 
     onDragStart(context) {
