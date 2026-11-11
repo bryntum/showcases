@@ -235,7 +235,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
             await me.applyForecast();
         }
         else if (state === 'drag' && me.dispatch.waitingStore.count) {
-            await me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
+            me.drag.showHeld(me.dispatch.waitingStore.first.id, first);
         }
 
         await scheduler.features.forecastHeader.refresh();
