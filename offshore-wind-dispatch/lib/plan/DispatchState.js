@@ -34,15 +34,29 @@ function closingTimes(forecast, limits, { dayStart, dayEnd }) {
  *
  * Learn more:
  * https://bryntum.com/products/scheduler/docs/api/Core/mixin/Events
+ * https://bryntum.com/products/scheduler/docs/api/Core/Base
  */
 export default class DispatchState extends Base.mixin(Events) {
     static $name = 'DispatchState';
 
-    // `data` is the parsed data/farm.json
+    static configurable = {
+        /**
+         * The day shown, 0 is today, kept within the week. Each day keeps its own forecast in use
+         * @prp {Number}
+         */
+        dayIndex : 0,
+
+        /**
+         * The forecast in use on the day shown, 0 is the one the day was planned on, kept within the day's forecasts.
+         * Setting it moves the day's weather windows and its clock (the old windows are kept to show what changed)
+         * @prp {Number}
+         */
+        forecastIndex : 0
+    };
+
+    // `data` is the parsed data/farm.json. Read before the configs are applied: they are kept within the days
     construct(data) {
         const me = this;
-
-        super.construct();
 
         me.site     = data.site;
         me.limits   = data.limits;
@@ -72,13 +86,49 @@ export default class DispatchState extends Base.mixin(Events) {
             windows         : closingTimes(forecasts[0], me.limits, me.day),
             previousWindows : null
         }));
-        me.dayIndex = 0;
         // Tracked by the project's STM during a forecast's re-plan (ForecastPlanner), so its Undo restores it too
         me.waitingStore = new Store({
             modelClass : WaitingTeamModel,
             data       : data.waiting.map(turbine => me.waitingOf(turbine))
         });
         me.weekStart = DateHelper.clearTime(new Date());
+
+        super.construct();
+    }
+
+    changeDayIndex(index) {
+        return Math.min(Math.max(index, 0), this.days.length - 1);
+    }
+
+    // The day's own forecast; no `forecast` change, the day already has it (updateForecastIndex)
+    updateDayIndex(index) {
+        this.forecastIndex = this.days[index].forecastIndex;
+
+        if (!this.isConfiguring) {
+            this.trigger('change', { name : 'day' });
+        }
+    }
+
+    changeForecastIndex(index) {
+        return Math.min(Math.max(index, 0), this.current.forecasts.length - 1);
+    }
+
+    // The clock moves to when the forecast was received
+    updateForecastIndex(index) {
+        const
+            me          = this,
+            { current } = me,
+            forecast    = current.forecasts[index];
+
+        if (index !== current.forecastIndex) {
+            Object.assign(current, {
+                forecastIndex   : index,
+                previousWindows : current.windows,
+                windows         : closingTimes(forecast, me.limits, me.day),
+                now             : parseTime(forecast.received ?? forecast.issued)
+            });
+            me.trigger('change', { name : 'forecast' });
+        }
     }
 
     // Midnight of a day of the week, 0 is today
@@ -106,11 +156,6 @@ export default class DispatchState extends Base.mixin(Events) {
 
     get nextLong() {
         return DateHelper.format(this.dateOf(this.dayIndex + 1), 'dddd');
-    }
-
-    showDay(index) {
-        this.dayIndex = index;
-        this.trigger('change', { name : 'day' });
     }
 
     /**
@@ -149,24 +194,9 @@ export default class DispatchState extends Base.mixin(Events) {
         return this.days[this.dayIndex];
     }
 
-    get forecasts() {
-        return this.current.forecasts;
-    }
-
-    get forecastIndex() {
-        return this.current.forecastIndex;
-    }
-
-    set forecastIndex(value) {
-        this.current.forecastIndex = value;
-    }
-
+    // Minutes since midnight
     get now() {
         return this.current.now;
-    }
-
-    set now(value) {
-        this.current.now = value;
     }
 
     // By window, `ctv`, `swath`, `heli`, minutes since midnight
@@ -174,16 +204,9 @@ export default class DispatchState extends Base.mixin(Events) {
         return this.current.windows;
     }
 
-    set windows(value) {
-        this.current.windows = value;
-    }
-
+    // The windows of the forecast before the one in use, null on the forecast the day was planned on
     get previousWindows() {
         return this.current.previousWindows;
-    }
-
-    set previousWindows(value) {
-        this.current.previousWindows = value;
     }
 
     // `{ issued, received, hs, wind }`
@@ -202,7 +225,7 @@ export default class DispatchState extends Base.mixin(Events) {
     }
 
     get nextForecast() {
-        return this.forecasts[this.forecastIndex + 1] ?? null;
+        return this.current.forecasts[this.forecastIndex + 1] ?? null;
     }
 
     // The forecast in use replaced the one the day was planned on
@@ -210,15 +233,9 @@ export default class DispatchState extends Base.mixin(Events) {
         return this.forecastIndex > 0;
     }
 
-    // The clock moves to when the forecast was received; the old windows are kept to show what changed
+    // The next forecast in use on the day shown, see updateForecastIndex
     applyForecast() {
-        const me = this;
-
-        me.previousWindows = me.windows;
-        me.forecastIndex++;
-        me.windows = closingTimes(me.forecast, me.limits, me.day);
-        me.now     = parseTime(me.forecast.received ?? me.forecast.issued);
-        me.trigger('change', { name : 'forecast' });
+        this.forecastIndex++;
     }
 
     // Minutes since midnight

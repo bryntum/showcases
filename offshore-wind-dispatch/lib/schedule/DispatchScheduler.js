@@ -332,7 +332,7 @@ export default class DispatchScheduler extends Scheduler {
     //region Views
 
     /**
-     * Shows the day the dispatch state is on (DispatchState#showDay)
+     * Shows the day the dispatch state is on (DispatchState#dayIndex)
      */
     showDay() {
         const

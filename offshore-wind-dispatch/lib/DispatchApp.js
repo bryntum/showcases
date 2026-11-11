@@ -276,7 +276,7 @@ export default class DispatchApp extends Panel.mixin(Responsive) {
 
         if (index !== me.dispatch.dayIndex) {
             me.scheduler.clearEventSelection();
-            me.dispatch.showDay(index);
+            me.dispatch.dayIndex = index;
             me.scheduler.showDay();
             await me.replan();
             await me.scheduler.features.forecastHeader.refresh();
