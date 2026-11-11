@@ -332,7 +332,7 @@ export default class DispatchScheduler extends Scheduler {
     //region Views
 
     /**
-     * Shows the day the dispatch state is on (DispatchState#showDay)
+     * Shows the day the dispatch state is on (DispatchState#dayIndex)
      */
     showDay() {
         const
@@ -355,7 +355,7 @@ export default class DispatchScheduler extends Scheduler {
 
         if (!me.timeAxisSubGrid.width) {
             await Promise.race([
-                new Promise(resolve => me.ion({ timelineViewportResize : resolve, once : true })),
+                new Promise(resolve => me.on({ timelineViewportResize : resolve, once : true })),
                 AsyncHelper.sleep(500)
             ]);
         }

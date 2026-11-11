@@ -67,17 +67,13 @@ export default class ForecastHeader extends SchedulerFeature {
 
     // Made on first use: the features exist before the Scheduler's `dispatch` is set
     get chart() {
-        const { limits, day } = this.state;
+        const { limits, day } = this.client.dispatch;
 
         return this._chart ??= new WaveChart({
             element : this.chartHost,
             limits  : { ctv : limits.ctv.hs, swath : limits.swath.hs },
             day
         });
-    }
-
-    get state() {
-        return this.client.dispatch;
     }
 
     onClientPaint() {
@@ -94,7 +90,7 @@ export default class ForecastHeader extends SchedulerFeature {
 
     windAt(hour) {
         const
-            { forecast, limits, day } = this.state,
+            { forecast, limits, day } = this.client.dispatch,
             wind                      = forecast.wind[hour - day.dayStart];
 
         // Strictly above, as DispatchState closes the window
@@ -116,7 +112,7 @@ export default class ForecastHeader extends SchedulerFeature {
 
     // "Forecast 06:00", the newer one flagged
     get forecastLabel() {
-        const { forecast, isUpdated } = this.state;
+        const { forecast, isUpdated } = this.client.dispatch;
 
         return isUpdated ?
             StringHelper.xss`<span class="ow-axis-forecast ow-pill">Forecast ${forecast.issued}</span>` :
@@ -141,14 +137,13 @@ export default class ForecastHeader extends SchedulerFeature {
     }
 
     /**
-     * Shows the state's forecast: the chart, the wind values and the label, updated in place
+     * Shows the dispatch state's forecast: the chart, the wind values and the label, updated in place
      * @returns {Promise} Resolves once the chart is drawn
      */
     refresh() {
         const
             me                    = this,
-            { state, client }     = me,
-            { element }           = client;
+            { element, dispatch } = me.client;
 
         element?.querySelectorAll('.ow-wind[data-hour]').forEach(wind => {
             const { wind : value, over } = me.windAt(Number(wind.dataset.hour));
@@ -164,11 +159,11 @@ export default class ForecastHeader extends SchedulerFeature {
         }
 
         return me.chart.show({
-            hs     : state.forecast.hs,
-            low    : state.forecast.hsLow,
-            high   : state.forecast.hsHigh,
-            closes : state.windows.ctv,
-            was    : state.previousWindows?.ctv
+            hs     : dispatch.forecast.hs,
+            low    : dispatch.forecast.hsLow,
+            high   : dispatch.forecast.hsHigh,
+            closes : dispatch.windows.ctv,
+            was    : dispatch.previousWindows?.ctv
         });
     }
 }

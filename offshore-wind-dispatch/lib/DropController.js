@@ -27,25 +27,12 @@ export default class DropController {
      * @param {Object} options
      * @param {DispatchState} options.dispatch
      * @param {DispatchScheduler} options.scheduler The Day view
-     * @param {DispatchApp} options.state Holds `held`, `lifted` and `booking`
+     * @param {DispatchApp} options.state Holds `held` (see previewDrop), `lifted` and `booking`
      * @param {Function} options.onBooked Called with `{ trip, turbine }` once a team is booked: on a trip of the Day
      * view, or (no `trip`) on a new trip on a day of the Week view
      */
     constructor({ dispatch, scheduler, state, onBooked }) {
         Object.assign(this, { dispatch, scheduler, state, onBooked });
-    }
-
-    // See previewDrop, kept in the app state
-    get held() {
-        return this.state.held;
-    }
-
-    set held(held) {
-        this.state.held = held;
-    }
-
-    get trips() {
-        return this.scheduler.trips;
     }
 
     // `{ team, job }`, the waiting record (WaitingTeamModel)
@@ -61,7 +48,7 @@ export default class DropController {
 
         me.state.lifted = teamId;
         me.scheduler.features.dropTarget.fitting = entry ?
-            me.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid) : [];
+            me.scheduler.trips.filter(trip => me.checkDrop(trip, entry.team, entry.job).valid) : [];
     }
 
     /**
@@ -76,15 +63,16 @@ export default class DropController {
      */
     previewDrop(teamId, target, at = null, fresh = false) {
         const
-            me       = this,
-            blocked  = me.blockedAt(target, at),
-            { held } = me;
+            me        = this,
+            { state } = me,
+            blocked   = me.blockedAt(target, at),
+            { held }  = state;
 
         if (!fresh && held?.target === target && held.id === teamId && (held.at != null) === (blocked != null)) {
             return held;
         }
 
-        return me.held = target ? me.check(teamId, target, blocked) : null;
+        return state.held = target ? me.check(teamId, target, blocked) : null;
     }
 
     // The minute held at when it is in the vessel's no-go range, else none. A cell of the week is the whole day
@@ -181,7 +169,7 @@ export default class DropController {
 
         const
             vessel = isTrip ? target.resource : target,
-            trips  = this.trips.filter(trip => trip.resource === vessel),
+            trips  = this.scheduler.trips.filter(trip => trip.resource === vessel),
             open   = trips.filter(joinable).map(trip => {
                 const plan = trip.plan;
 
@@ -236,7 +224,7 @@ export default class DropController {
 
         return previewDrop({
             nowhere,
-            busy   : busyOf(this.trips, vessel, plan.id),
+            busy   : busyOf(this.scheduler.trips, vessel, plan.id),
             trip   : plan,
             team,
             job,
@@ -357,7 +345,7 @@ export default class DropController {
 
     endDrag() {
         this.scheduler.features.dropTarget.fitting = [];
-        this.held         = null;
+        this.state.held   = null;
         this.state.lifted = null;
     }
 }

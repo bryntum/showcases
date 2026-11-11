@@ -75,8 +75,9 @@ export default class TeamTray extends Container {
         const me = this;
 
         me.widgetMap.list.store = store;
-        me.detachListeners('store');
-        store?.ion({ name : 'store', change : 'updatePort', thisObj : me });
+        // `on()` returns the function that detaches its listener again
+        me.detachStore?.();
+        me.detachStore = store?.on({ change : 'updatePort', thisObj : me });
         me.updatePort();
     }
 
