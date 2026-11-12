@@ -155,6 +155,11 @@
     overflow       : visible;
     list-style     : none;
 
+    /* Bryntum clips a list item to its square box, which would cut the card's hover ring and shadow to its corners */
+    .b-list-item {
+        overflow : visible;
+    }
+
     .b-empty-text {
         font-size   : var(--ow-size-sm);
         color       : var(--b-neutral-40);
