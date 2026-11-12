@@ -64,6 +64,14 @@ jobs:
         with:
           path: dist
 
+      # The same build for the Kinsta deploys below
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site
+          path: dist
+          retention-days: 1
+
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: build
@@ -79,3 +87,65 @@ jobs:
 
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # bryntum.com/showcase/ on Kinsta's staging environment. The SFTP user is SFTP only and locked to public/showcase,
+  # so it cannot run rsync and cannot reach the rest of the WordPress site. lftp mirrors over SFTP in two passes:
+  # everything except the HTML first, so new pages never reference assets that are not there yet, then the HTML,
+  # deleting files the build no longer has. Then Kinsta's cache is cleared, since it would keep serving the old HTML
+  deploy-kinsta-staging:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: kinsta-staging
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: dist
+
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp sshpass
+
+      # The server's host key is not verified: Kinsta gives an environment a new one when staging is pushed to live, so
+      # a pinned key would break the deploy each time. This gives up protection against an impostor server, which could
+      # capture the password of an SFTP user locked to public/showcase. The key's fingerprint is logged on every deploy
+      - run: ssh-keyscan -p "$KINSTA_SSH_PORT" "$KINSTA_SSH_HOST" 2>/dev/null | ssh-keygen -lf -
+        env:
+          KINSTA_SSH_HOST: ${{ secrets.KINSTA_SSH_HOST }}
+          KINSTA_SSH_PORT: ${{ secrets.KINSTA_SSH_PORT }}
+
+      # sshpass answers ssh's password prompt, whatever its wording (Kinsta asks "(user@host) Password:"), taking the
+      # password from SSHPASS (-e), so it is never on a command line. lftp itself is given a dummy password
+      - run: |
+          lftp <<LFTP
+          set cmd:fail-exit yes
+          set net:max-retries 3
+          set net:timeout 30
+          set sftp:connect-program "sshpass -e ssh -a -x -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          open -u "$KINSTA_SSH_USER,unused" "sftp://$KINSTA_SSH_HOST:$KINSTA_SSH_PORT"
+          mirror --reverse --no-perms --parallel=4 --exclude '\.html$' dist/ "$KINSTA_PATH"
+          mirror --reverse --no-perms --parallel=4 --delete dist/ "$KINSTA_PATH"
+          bye
+          LFTP
+        env:
+          KINSTA_SSH_HOST: ${{ secrets.KINSTA_SSH_HOST }}
+          KINSTA_SSH_PORT: ${{ secrets.KINSTA_SSH_PORT }}
+          KINSTA_SSH_USER: ${{ secrets.KINSTA_SSH_USER }}
+          KINSTA_PATH: ${{ secrets.KINSTA_PATH }}
+          SSHPASS: ${{ secrets.KINSTA_SSH_PASSWORD }}
+
+      # Kinsta's cache would keep serving the old HTML. Clearing it needs an API key, which only a Kinsta company owner or
+      # administrator can create: without one the step is skipped with a warning
+      - run: |
+          if [ -z "$KINSTA_API_KEY" ]; then
+            echo "::warning::KINSTA_API_KEY is not set, Kinsta's cache was not cleared"
+            exit 0
+          fi
+          curl --silent --show-error --fail-with-body --request POST \
+            --header "Authorization: Bearer $KINSTA_API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "{\"environment_id\": \"$KINSTA_ENV_ID\"}" \
+            https://api.kinsta.com/v2/sites/tools/clear-cache
+        env:
+          KINSTA_API_KEY: ${{ secrets.KINSTA_API_KEY }}
+          KINSTA_ENV_ID: ${{ secrets.KINSTA_ENV_ID }}
