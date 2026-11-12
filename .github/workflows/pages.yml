@@ -88,16 +88,23 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v5
 
-  # bryntum.com/showcase/ on Kinsta's staging environment. The SFTP user is SFTP only and locked to public/showcase,
-  # so it cannot run rsync and cannot reach the rest of the WordPress site. lftp mirrors over SFTP in two passes:
-  # everything except the HTML first, so new pages never reference assets that are not there yet, then the HTML,
-  # deleting files the build no longer has. Then Kinsta's cache is cleared, since it would keep serving the old HTML
-  deploy-kinsta-staging:
+  # bryntum.com/showcase/ on Kinsta, staging and live alike. Both are deployed on every push to main, since Kinsta
+  # replaces live's files with staging's when staging is pushed to live: deploying only one would let the other fall
+  # behind. Each environment holds its own secrets. Its SFTP user is SFTP only and locked to public/showcase, so it
+  # cannot run rsync and cannot reach the rest of the WordPress site. lftp mirrors over SFTP in two passes: everything
+  # except the HTML first, so new pages never reference assets that are not there yet, then the HTML, deleting files
+  # the build no longer has. Then Kinsta's cache is cleared, since it would keep serving the old HTML
+  deploy-kinsta:
     if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      # One environment failing does not stop the other
+      fail-fast: false
+      matrix:
+        environment: [kinsta-staging, kinsta-production]
     environment:
-      name: kinsta-staging
+      name: ${{ matrix.environment }}
     steps:
       - uses: actions/download-artifact@v8
         with:
