@@ -22,7 +22,7 @@ Drag a shipment by its handle onto a door to book a slot there (a door without t
 a slot to move it, right-click a row or a slot to book, unbook or expedite. Selecting a row selects its slot and the
 other way round, both scroll into view.
 
-**[Live demo](https://showcase.bryntum.com/logistics-control-tower/)**
+**[Live demo](https://bryntum.com/showcase/logistics-control-tower/)**
 
 ## How it works
 
