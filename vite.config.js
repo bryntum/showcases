@@ -32,7 +32,7 @@ const
     };
 
 export default defineConfig({
-    // Relative asset URLs, so one build runs at https://showcase.bryntum.com/, under /showcases/ and at any local path
+    // Relative asset URLs, so one build runs at https://bryntum.com/showcase/, under /showcases/ (smoke tests) and at any local path
     base : './',
 
     plugins : [pageHead],

@@ -4,7 +4,7 @@ Real-world apps built with [Bryntum](https://bryntum.com) scheduling components:
 dashboards and project plans, the kind of screens teams run their day on. Each showcase is a complete, polished app
 you can open in the browser, read the source of, and copy as a starting point.
 
-**[Open the live gallery →](https://showcase.bryntum.com/)**
+**[Open the live gallery →](https://bryntum.com/showcase/)**
 
 * **Real use cases, not feature demos.** A distribution centre's dock doors, an EV factory's production line, a
   vehicle program plan: realistic data, a live simulation, and the interactions a planner actually needs
@@ -18,7 +18,7 @@ you can open in the browser, read the source of, and copy as a starting point.
 
 ### Logistics Control Tower
 
-<a href="https://showcase.bryntum.com/logistics-control-tower/">
+<a href="https://bryntum.com/showcase/logistics-control-tower/">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="gallery/logistics-control-tower-dark-1200.png">
     <img src="gallery/logistics-control-tower-light-1200.png" alt="Logistics Control Tower: inbound shipments in AG Grid next to a dock door schedule in Bryntum Scheduler">
@@ -35,12 +35,12 @@ into a conflict.
 * Shows how to run Bryntum and AG Grid side by side, kept in sync from one source of truth
 
 **Built with** Scheduler (Enterprise tier), AG Grid Enterprise and AG Charts ·
-**[Live demo](https://showcase.bryntum.com/logistics-control-tower/)** ·
+**[Live demo](https://bryntum.com/showcase/logistics-control-tower/)** ·
 **[Source and walkthrough](logistics-control-tower/)**
 
 ### EV Operations
 
-<a href="https://showcase.bryntum.com/ev-operations/">
+<a href="https://bryntum.com/showcase/ev-operations/">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="gallery/ev-operations-dark-1200.png">
     <img src="gallery/ev-operations-light-1200.png" alt="EV Operations: a production line schedule with batches on work centers">
@@ -56,7 +56,7 @@ dependencies, baselines and a milestone.
 * Shows how far Scheduler and Gantt can be styled and composed into one product-grade app
 
 **Built with** Scheduler (Enterprise tier) and Gantt ·
-**[Live demo](https://showcase.bryntum.com/ev-operations/)** ·
+**[Live demo](https://bryntum.com/showcase/ev-operations/)** ·
 **[Source and walkthrough](ev-operations/)**
 
 ## Run it yourself
