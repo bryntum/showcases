@@ -32,11 +32,11 @@
         "screenshots": "node scripts/screenshots.js"
     },
     "dependencies": {
-        "@bryntum/core-enterprise": "8.0.0",
-        "@bryntum/engine-enterprise": "8.0.0",
-        "@bryntum/gantt-enterprise": "8.0.0",
-        "@bryntum/grid-enterprise": "8.0.0",
-        "@bryntum/scheduler-enterprise": "8.0.0",
+        "@bryntum/core-enterprise": "8.0.1",
+        "@bryntum/engine-enterprise": "8.0.1",
+        "@bryntum/gantt-enterprise": "8.0.1",
+        "@bryntum/grid-enterprise": "8.0.1",
+        "@bryntum/scheduler-enterprise": "8.0.1",
         "@fontsource-variable/montserrat": "^5.3.0"
     },
     "devDependencies": {
